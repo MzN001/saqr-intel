@@ -53,11 +53,17 @@ function merge(list: LiveBlock[], incoming: LiveBlock[]): LiveBlock[] {
   return [...byId.values()].sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, MAX_ITEMS);
 }
 
-/** Same-origin first (works through the Next proxy and HTTPS tunnels), then the backend port on plain http. */
+/**
+ * NEXT_PUBLIC_SAQR_WS_URL first (hosted builds, e.g. Vercel, which can't proxy WebSockets), then
+ * same-origin (Next dev proxy), then the backend port on plain http.
+ */
 function socketUrls(): string[] {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   const path = "/ws/live?topics=url_scan,maps_scan";
-  const urls = [`${proto}//${window.location.host}${path}`];
+  const urls: string[] = [];
+  const configured = process.env.NEXT_PUBLIC_SAQR_WS_URL;
+  if (configured) urls.push(`${configured.replace(/\/+$/, "")}${path}`);
+  urls.push(`${proto}//${window.location.host}${path}`);
   if (window.location.protocol === "http:") urls.push(`ws://${window.location.hostname}:8000${path}`);
   return urls;
 }
