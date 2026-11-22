@@ -141,6 +141,7 @@ async def nextdns_status():
             "alerts_sent": block_watcher.alerts_sent,
             "last_alert": block_watcher.last_alert,
             "watcher_error": block_watcher.last_error,
+            "watcher_mode": block_watcher.mode,
         },
     }
 

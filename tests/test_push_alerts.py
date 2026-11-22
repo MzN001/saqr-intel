@@ -37,7 +37,7 @@ def client():
 def sent(monkeypatch):
     calls = []
 
-    def fake_send(sub, payload):
+    def fake_send(sub, payload, *_):
         calls.append((sub["endpoint"], payload))
         return 201
 
@@ -70,7 +70,7 @@ def test_subscribe_rejects_non_https_endpoint(client):
 def test_expired_subscription_is_removed(client, monkeypatch):
     from pywebpush import WebPushException
 
-    def gone(sub, payload):
+    def gone(sub, payload, *_):
         raise WebPushException("gone", response=FakeResponse(410))
 
     monkeypatch.setattr(push, "_send_sync", gone)
@@ -79,11 +79,53 @@ def test_expired_subscription_is_removed(client, monkeypatch):
     assert client.post("/api/push/test", json={"endpoint": SUB["endpoint"]}).status_code == 404  # deleted
 
 
+def test_stale_connection_is_retried_fresh(client, monkeypatch):
+    import requests
+
+    attempts = []
+
+    def flaky(sub, payload, session):
+        attempts.append(session)
+        if len(attempts) == 1:
+            raise requests.exceptions.ReadTimeout("stale connection")
+        return 201
+
+    monkeypatch.setattr(push, "_send_sync", flaky)
+    client.post("/api/push/subscribe", json={"subscription": SUB})
+    assert client.post("/api/push/test", json={"endpoint": SUB["endpoint"]}).status_code == 200
+    assert len(attempts) == 2 and attempts[0] is not attempts[1]  # second try used a new session
+
+
 def test_alert_verdict_for_flagged_domain(client):
     client.post("/api/analyze-url", json={"url": "http://127.0.0.1:8000/mock-scam/tamm-fine", "run_sandbox": False})
     v = client.get("/api/alerts/verdict?domain=tamm-smart-pay.net").json()
     assert v["verdict"] == "HIGH-RISK SCAM" and "screenshot_base64" not in v
     assert client.get("/api/alerts/verdict?domain=example.org").status_code == 404
+
+
+def test_live_stream_alerts_instantly(client, sent):
+    client.post("/api/push/subscribe", json={"subscription": SUB, "lang": "en"})
+    body = (
+        'data: {"timestamp":"2026-11-22T11:00:00Z","domain":"ads.example","status":"blocked"}\n\n'
+        'data: {"timestamp":"2026-11-22T11:00:01Z","domain":"emiratespost-track-uae.com","status":"default"}\n\n'
+        'id: abc\ndata: {"timestamp":"2026-11-22T11:00:02Z","domain":"emiratespost-track-uae.com","status":"blocked"}\n\n'
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path.endswith("/logs/stream")
+        return httpx.Response(200, text=body, headers={"content-type": "text/event-stream"})
+
+    async def go():
+        watcher = BlockWatcher()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+            await watcher.stream(c)
+        return watcher
+
+    before = len(sent)
+    watcher = client.portal.call(go)
+    new = sent[before:]
+    assert watcher.alerts_sent == 1 and len(new) == 1  # only the blocked, SAQR-flagged entry
+    assert "emiratespost-track-uae[.]com" in new[0][1]["body"]
 
 
 def test_block_watcher_alerts_only_for_saqr_flagged_domains(client, sent):

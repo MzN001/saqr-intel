@@ -13,6 +13,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+import requests
+import requests.adapters
 from cryptography.hazmat.primitives import serialization
 from py_vapid import Vapid
 from pywebpush import WebPushException, webpush
@@ -89,38 +91,61 @@ def alert_payload(domain: str, entity_en: str | None, lang: str, test: bool = Fa
             "lang": lang, "ts": int(time.time() * 1000)}
 
 
-def _send_sync(sub: dict[str, Any], payload: dict[str, Any]) -> int:
+# Keep-alive HTTPS session to the push services (Apple / Google / Mozilla): reusing the TLS
+# connection cuts ~0.7 s off alerts sent close together. A stale connection is retried fresh.
+def _new_session() -> requests.Session:
+    s = requests.Session()
+    s.mount("https://", requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=8))
+    return s
+
+
+_session = _new_session()
+
+
+def _send_sync(sub: dict[str, Any], payload: dict[str, Any], session: requests.Session) -> int:
     resp = webpush(
         subscription_info=sub,
         data=json.dumps(payload, ensure_ascii=False),
         vapid_private_key=vapid(),
         vapid_claims={"sub": VAPID_SUB},
         ttl=600,
+        timeout=6,
         headers={"Urgency": "high"},
+        requests_session=session,
     )
     return getattr(resp, "status_code", 201)
 
 
 async def send(row: dict[str, Any], payload: dict[str, Any]) -> bool:
-    try:
-        await asyncio.to_thread(_send_sync, json.loads(row["sub_json"]), payload)
-        return True
-    except WebPushException as exc:
-        status = getattr(exc.response, "status_code", None)
-        if status in (404, 410):
-            await delete_subscription(row["endpoint"])
-            log.info("Removed expired push subscription")
-        else:
+    """Deliver one alert. Never raises: returns False if the push service refused or was unreachable."""
+    global _session
+    sub = json.loads(row["sub_json"])
+    for attempt in (1, 2):
+        try:
+            await asyncio.to_thread(_send_sync, sub, payload, _session)
+            return True
+        except WebPushException as exc:
+            status = getattr(exc.response, "status_code", None)
+            if status in (404, 410):
+                await delete_subscription(row["endpoint"])
+                log.info("Removed expired push subscription")
+                return False
             log.warning("Push failed (HTTP %s): %s", status, str(exc)[:200])
-        return False
+        except requests.RequestException as exc:  # stale/broken connection: retry once on a fresh one
+            log.info("Push connection problem (%s), retrying fresh", type(exc).__name__)
+        except Exception:  # noqa: BLE001
+            log.exception("Unexpected push error")
+            return False
+        if attempt == 1:
+            _session.close()
+            _session = _new_session()
+    return False
 
 
 async def alert_all(domain: str, entity_en: str | None) -> int:
     rows = await db.fetchall("SELECT * FROM push_subscriptions")
-    sent = 0
-    for row in rows:
-        if await send(row, alert_payload(domain, entity_en, row["lang"])):
-            sent += 1
+    results = await asyncio.gather(*(send(row, alert_payload(domain, entity_en, row["lang"])) for row in rows))
+    sent = sum(1 for ok in results if ok)
     if rows:
         log.info("Scam alert for %s sent to %d/%d phone(s)", domain, sent, len(rows))
     return sent

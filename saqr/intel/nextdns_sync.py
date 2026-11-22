@@ -10,6 +10,7 @@ returned by the status endpoint.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from typing import Any
@@ -144,6 +145,13 @@ class NextDNSSync:
 nextdns_sync = NextDNSSync()
 
 
+def _retry_after(resp: httpx.Response, default: float) -> float:
+    try:
+        return min(300.0, max(1.0, float(resp.headers.get("retry-after", default))))
+    except ValueError:
+        return default
+
+
 class BlockWatcher:
     """Turns 'a phone just tried to open a SAQR-flagged scam' (NextDNS logs) into a push alert.
 
@@ -151,7 +159,11 @@ class BlockWatcher:
     flagged trigger alerts, so ordinary ad/tracker blocks never notify anyone.
     """
 
-    POLL_SECONDS = 4.0
+    # NextDNS's live stream delivers entries in ~1.3 s but ends after 10-40 s and can only be reopened
+    # about once a minute; the plain logs endpoint tolerates polling every few seconds. So: stream
+    # whenever allowed, poll in between.
+    POLL_SECONDS = 2.5
+    STREAM_RETRY_SECONDS = 60.0
     REPEAT_AFTER_SECONDS = 120
 
     def __init__(self) -> None:
@@ -161,6 +173,10 @@ class BlockWatcher:
         self.alerts_sent = 0
         self.last_alert: str | None = None
         self.last_error: str | None = None
+        self.mode = "idle"  # stream | polling | idle
+        self._flagged_cache: dict[str, dict[str, Any]] = {}
+        self._flagged_at = -1e9
+        self._last_event_id: str | None = None
 
     def start(self) -> None:
         if settings.nextdns_api_key and settings.nextdns_profile_id:
@@ -175,23 +191,104 @@ class BlockWatcher:
                 pass
 
     async def _loop(self) -> None:
+        """Live log stream (Server-Sent Events, ~1 s) with polling as a fallback when it drops."""
         from .. import push
 
-        async with httpx.AsyncClient(timeout=10, headers={"X-Api-Key": settings.nextdns_api_key}) as client:
+        headers = {"X-Api-Key": settings.nextdns_api_key}
+        next_stream = 0.0
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=None), headers=headers) as client:
             while True:
+                if not await push.count_subscriptions():
+                    self.mode = "idle"
+                    await asyncio.sleep(2)
+                    continue
+                if time.monotonic() >= next_stream:
+                    next_stream = time.monotonic() + self.STREAM_RETRY_SECONDS
+                    try:
+                        await self.stream(client)  # instant alerts while it lasts
+                    except httpx.HTTPStatusError as exc:
+                        if exc.response.status_code != 429:
+                            self.last_error = f"stream: HTTP {exc.response.status_code}"
+                    except Exception as exc:  # noqa: BLE001
+                        self.last_error = f"stream: {type(exc).__name__}: {exc}"[:200]
+                self.mode = "polling"
                 try:
-                    if await push.count_subscriptions():
-                        await self.poll_once(client)
-                    self.last_error = None
+                    await self.poll_once(client)
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code == 429:
+                        self.last_error = "NextDNS rate limit on logs; slowing down"
+                        await asyncio.sleep(_retry_after(exc.response, default=15))
+                    else:
+                        self.last_error = f"poll: HTTP {exc.response.status_code}"
                 except Exception as exc:  # noqa: BLE001
-                    self.last_error = f"{type(exc).__name__}: {exc}"[:200]
-                    log.debug("block watcher: %s", self.last_error)
+                    self.last_error = f"poll: {type(exc).__name__}: {exc}"[:200]
                 await asyncio.sleep(self.POLL_SECONDS)
 
-    async def poll_once(self, client: httpx.AsyncClient) -> list[str]:
-        from .. import push
+    async def stream(self, client: httpx.AsyncClient) -> None:
+        url = f"{settings.nextdns_api_base.rstrip('/')}/profiles/{settings.nextdns_profile_id}/logs/stream"
+        params = {"id": self._last_event_id} if self._last_event_id else None
+        async with client.stream("GET", url, params=params) as r:
+            if r.status_code == 400 and params:  # resume id expired: start fresh next time
+                self._last_event_id = None
+                return
+            r.raise_for_status()
+            if self.mode != "stream":
+                log.info("NextDNS live log stream connected (scam alerts in ~1 s)")
+            self.mode = "stream"
+            self.last_error = None
+            async for line in r.aiter_lines():
+                if line.startswith("id:"):
+                    self._last_event_id = line[3:].strip() or self._last_event_id
+                    continue
+                if not line.startswith("data:"):
+                    continue
+                try:
+                    item = json.loads(line[5:].strip())
+                except json.JSONDecodeError:
+                    continue
+                ts = item.get("timestamp", "")
+                if ts and (self._last_ts is None or ts > self._last_ts):
+                    self._last_ts = ts  # so polling afterwards doesn't re-process stream entries
+                if item.get("status") == "blocked":
+                    await self.handle([item])
+
+    async def _flagged(self) -> dict[str, dict[str, Any]]:
+        """SAQR-flagged domains, cached for a few seconds so each event is handled instantly."""
         from ..routers.blocklist import collect
 
+        now = time.monotonic()
+        if now - self._flagged_at > 5 or not self._flagged_cache:
+            self._flagged_cache = {e["domain"]: e for e in await collect(settings.nextdns_min_score)}
+            self._flagged_at = now
+        return self._flagged_cache
+
+    async def handle(self, items: list[dict[str, Any]]) -> list[str]:
+        from .. import push
+
+        flagged = await self._flagged()
+        alerted: list[str] = []
+        now = time.monotonic()
+        for item in items:
+            names = [(item.get("domain") or "").lower().rstrip("."), (item.get("root") or "").lower().rstrip(".")]
+            hit = next((n for n in names if n in flagged), None)
+            if not hit and names[0]:
+                hit = next((d for d in flagged if names[0].endswith("." + d)), None)
+            if not hit and now - self._flagged_at > 1:
+                # Maybe flagged in the last few seconds (e.g. the live phone demo): refresh once.
+                self._flagged_at = -1e9
+                flagged = await self._flagged()
+                hit = next((n for n in names if n in flagged), None)
+            if not hit or now - self._recent.get(hit, -1e9) < self.REPEAT_AFTER_SECONDS or hit in alerted:
+                continue
+            if not await push.alert_all(hit, flagged[hit].get("impersonated_entity")):
+                continue  # nothing delivered: allow a retry on the next blocked attempt
+            self._recent[hit] = now
+            alerted.append(hit)
+            self.alerts_sent += 1
+            self.last_alert = iso()
+        return alerted
+
+    async def poll_once(self, client: httpx.AsyncClient) -> list[str]:
         url = f"{settings.nextdns_api_base.rstrip('/')}/profiles/{settings.nextdns_profile_id}/logs"
         r = await client.get(url, params={"status": "blocked", "limit": 50})
         r.raise_for_status()
@@ -202,25 +299,7 @@ class BlockWatcher:
             return []
         fresh = [i for i in items if i.get("timestamp", "") > self._last_ts]
         self._last_ts = newest or self._last_ts
-        if not fresh:
-            return []
-
-        flagged = {e["domain"]: e for e in await collect(settings.nextdns_min_score)}
-        alerted: list[str] = []
-        now = time.monotonic()
-        for item in fresh:
-            names = [(item.get("domain") or "").lower().rstrip("."), (item.get("root") or "").lower().rstrip(".")]
-            hit = next((n for n in names if n in flagged), None)
-            if not hit and names[0]:
-                hit = next((d for d in flagged if names[0].endswith("." + d)), None)
-            if not hit or now - self._recent.get(hit, -1e9) < self.REPEAT_AFTER_SECONDS or hit in alerted:
-                continue
-            self._recent[hit] = now
-            await push.alert_all(hit, flagged[hit].get("impersonated_entity"))
-            alerted.append(hit)
-            self.alerts_sent += 1
-            self.last_alert = iso()
-        return alerted
+        return await self.handle(fresh) if fresh else []
 
 
 block_watcher = BlockWatcher()
