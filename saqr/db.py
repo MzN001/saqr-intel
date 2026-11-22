@@ -64,6 +64,12 @@ CREATE TABLE IF NOT EXISTS ct_events (
     data_json TEXT DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_ct_seen ON ct_events(seen_at);
+CREATE TABLE IF NOT EXISTS push_subscriptions (  -- phones that enabled SAQR scam alerts (Web Push)
+    endpoint TEXT PRIMARY KEY,
+    sub_json TEXT NOT NULL,
+    lang TEXT NOT NULL DEFAULT 'en',
+    created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS self_hosts (       -- public hostnames this backend is served from (never blocked)
     host TEXT PRIMARY KEY,
     seen_at TEXT NOT NULL

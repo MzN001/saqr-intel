@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -141,3 +142,85 @@ class NextDNSSync:
 
 
 nextdns_sync = NextDNSSync()
+
+
+class BlockWatcher:
+    """Turns 'a phone just tried to open a SAQR-flagged scam' (NextDNS logs) into a push alert.
+
+    Needs logging enabled in the NextDNS profile (Settings -> Logs). Only domains SAQR itself
+    flagged trigger alerts, so ordinary ad/tracker blocks never notify anyone.
+    """
+
+    POLL_SECONDS = 4.0
+    REPEAT_AFTER_SECONDS = 120
+
+    def __init__(self) -> None:
+        self._task: asyncio.Task | None = None
+        self._last_ts: str | None = None
+        self._recent: dict[str, float] = {}
+        self.alerts_sent = 0
+        self.last_alert: str | None = None
+        self.last_error: str | None = None
+
+    def start(self) -> None:
+        if settings.nextdns_api_key and settings.nextdns_profile_id:
+            self._task = asyncio.create_task(self._loop(), name="nextdns-block-watcher")
+
+    async def stop(self) -> None:
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+
+    async def _loop(self) -> None:
+        from .. import push
+
+        async with httpx.AsyncClient(timeout=10, headers={"X-Api-Key": settings.nextdns_api_key}) as client:
+            while True:
+                try:
+                    if await push.count_subscriptions():
+                        await self.poll_once(client)
+                    self.last_error = None
+                except Exception as exc:  # noqa: BLE001
+                    self.last_error = f"{type(exc).__name__}: {exc}"[:200]
+                    log.debug("block watcher: %s", self.last_error)
+                await asyncio.sleep(self.POLL_SECONDS)
+
+    async def poll_once(self, client: httpx.AsyncClient) -> list[str]:
+        from .. import push
+        from ..routers.blocklist import collect
+
+        url = f"{settings.nextdns_api_base.rstrip('/')}/profiles/{settings.nextdns_profile_id}/logs"
+        r = await client.get(url, params={"status": "blocked", "limit": 50})
+        r.raise_for_status()
+        items = r.json().get("data", [])
+        newest = max((i.get("timestamp", "") for i in items), default=self._last_ts)
+        if self._last_ts is None:  # first look: remember where we are, don't alert on old history
+            self._last_ts = newest or ""
+            return []
+        fresh = [i for i in items if i.get("timestamp", "") > self._last_ts]
+        self._last_ts = newest or self._last_ts
+        if not fresh:
+            return []
+
+        flagged = {e["domain"]: e for e in await collect(settings.nextdns_min_score)}
+        alerted: list[str] = []
+        now = time.monotonic()
+        for item in fresh:
+            names = [(item.get("domain") or "").lower().rstrip("."), (item.get("root") or "").lower().rstrip(".")]
+            hit = next((n for n in names if n in flagged), None)
+            if not hit and names[0]:
+                hit = next((d for d in flagged if names[0].endswith("." + d)), None)
+            if not hit or now - self._recent.get(hit, -1e9) < self.REPEAT_AFTER_SECONDS or hit in alerted:
+                continue
+            self._recent[hit] = now
+            await push.alert_all(hit, flagged[hit].get("impersonated_entity"))
+            alerted.append(hit)
+            self.alerts_sent += 1
+            self.last_alert = iso()
+        return alerted
+
+
+block_watcher = BlockWatcher()

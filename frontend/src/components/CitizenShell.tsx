@@ -3,13 +3,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Cpu, Globe, MessageSquareWarning, Network, Radar, ScanSearch, ShieldCheck, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { analyzeUrl, scanMaps, type InterceptionChannel, type ScanVerdict } from "@/lib/api";
+import { analyzeUrl, getAlertVerdict, scanMaps, type InterceptionChannel, type ScanVerdict } from "@/lib/api";
 import { useLang, type DictKey } from "@/lib/i18n";
 import { hostOf, isMapsUrl } from "@/lib/url";
 import { AwarenessRadar } from "./AwarenessRadar";
 import { BackgroundShieldCard } from "./BackgroundShieldCard";
 import { Header, StatusBanner } from "./Chrome";
 import { LinkChecker } from "./LinkChecker";
+import { ScamAlertsCard } from "./ScamAlertsCard";
 import { SearchMapsShield } from "./SearchMapsShield";
 import { SmsGuard } from "./SmsGuard";
 import { VerdictScreen, type ScanState } from "./VerdictScreen";
@@ -78,7 +79,15 @@ function Stage({ children, side }: { children: ReactNode; side: ReactNode }) {
   );
 }
 
-export function CitizenShell({ sharedTarget, onSharedDone }: { sharedTarget: string | null; onSharedDone: () => void }) {
+export function CitizenShell({
+  sharedTarget,
+  alertDomain,
+  onSharedDone,
+}: {
+  sharedTarget: string | null;
+  alertDomain: string | null;
+  onSharedDone: () => void;
+}) {
   const { t } = useLang();
   const [tab, setTab] = useState<Tab>("search");
   const [scan, setScan] = useState<ScanState>({ status: "idle" });
@@ -138,6 +147,15 @@ export function CitizenShell({ sharedTarget, onSharedDone }: { sharedTarget: str
     void execute(sharedTarget, "MOBILE_OS_SHARE_SHEET", job);
   }, [sharedTarget, execute]);
 
+  // Opened from a SAQR scam-alert notification: show the police warning for the blocked site.
+  const alertHandled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!alertDomain || alertHandled.current === alertDomain) return;
+    alertHandled.current = alertDomain;
+    fromShare.current = true;
+    void execute(alertDomain, "AUTO_TELECOM_DNS", () => getAlertVerdict(alertDomain));
+  }, [alertDomain, execute]);
+
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
@@ -169,7 +187,10 @@ export function CitizenShell({ sharedTarget, onSharedDone }: { sharedTarget: str
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
         <div className="mb-8 grid gap-4 lg:mb-10">
           <LinkChecker onCheck={runManualScan} />
-          <BackgroundShieldCard />
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <BackgroundShieldCard />
+            <ScamAlertsCard />
+          </div>
         </div>
         <AnimatePresence mode="wait">
           <motion.section

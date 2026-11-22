@@ -19,11 +19,11 @@ from saqr.config import settings
 from saqr.db import db, seed_if_empty
 from saqr.intel.ct_monitor import ct_monitor
 from saqr.intel.domain_intel import shutdown_pools
-from saqr.intel.nextdns_sync import nextdns_sync
+from saqr.intel.nextdns_sync import block_watcher, nextdns_sync
 from saqr.intel.sandbox import sandbox
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
-from saqr.routers import analysis, blocklist, ct, graph, live, maps, mobile, system, takedown
+from saqr.routers import analysis, blocklist, ct, graph, live, maps, mobile, push, system, takedown
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("saqr")
@@ -37,6 +37,7 @@ async def lifespan(_: FastAPI):
     seed_task = asyncio.create_task(seed_historical_scans(), name="seed-scans")
     ct_monitor.start()
     nextdns_sync.start()
+    block_watcher.start()
     log.info("SAQR-INTEL %s ready — LLM engine: %s, CT mode: %s", __version__, settings.active_llm, settings.ct_mode)
     try:
         yield
@@ -44,6 +45,7 @@ async def lifespan(_: FastAPI):
         seed_task.cancel()
         await ct_monitor.stop()
         await nextdns_sync.stop()
+        await block_watcher.stop()
         await sandbox.close()
         await db.close()
         shutdown_pools()
@@ -105,7 +107,7 @@ async def mock_scam(slug: str):
 
 
 for r in (system.router, analysis.router, maps.router, ct.router, graph.router, takedown.router, live.router,
-          mobile.router, blocklist.router):
+          mobile.router, blocklist.router, push.router):
     app.include_router(r)
 
 

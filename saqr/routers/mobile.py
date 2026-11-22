@@ -131,9 +131,18 @@ async def ios_dns_profile(
 @router.get("/nextdns-status")
 async def nextdns_status():
     """Is SAQR's live threat feed being pushed to a NextDNS profile? (never exposes the API key)"""
-    from ..intel.nextdns_sync import nextdns_sync
+    from .. import push
+    from ..intel.nextdns_sync import block_watcher, nextdns_sync
 
-    return nextdns_sync.status()
+    return {
+        **nextdns_sync.status(),
+        "alerts": {
+            "subscribed_phones": await push.count_subscriptions(),
+            "alerts_sent": block_watcher.alerts_sent,
+            "last_alert": block_watcher.last_alert,
+            "watcher_error": block_watcher.last_error,
+        },
+    }
 
 
 @router.get("/android-dns-config")

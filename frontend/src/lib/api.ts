@@ -298,6 +298,29 @@ export async function getNextDnsStatus(): Promise<NextDnsStatus> {
   return request<NextDnsStatus>("/api/nextdns-status");
 }
 
+// ---------------------------------------------------------------- scam-alert push notifications
+export async function getVapidPublicKey(): Promise<string> {
+  return (await request<{ publicKey: string }>("/api/push/vapid-public-key")).publicKey;
+}
+
+export async function savePushSubscription(subscription: PushSubscriptionJSON, lang: "en" | "ar"): Promise<void> {
+  await request("/api/push/subscribe", { method: "POST", body: JSON.stringify({ subscription, lang }) });
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  await request("/api/push/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) });
+}
+
+export async function sendTestAlert(endpoint: string): Promise<void> {
+  await request("/api/push/test", { method: "POST", body: JSON.stringify({ endpoint }) });
+}
+
+/** The verdict a scam-alert notification opens (the domain the phone's DNS shield just blocked). */
+export async function getAlertVerdict(domain: string): Promise<ScanVerdict> {
+  const r = await request<UrlScanResponse>(`/api/alerts/verdict?domain=${encodeURIComponent(domain)}`);
+  return fromUrlScan(r, "AUTO_TELECOM_DNS");
+}
+
 export async function getAwareness(params: { entity?: string; useLlm?: boolean } = {}): Promise<AwarenessAlert> {
   const q = new URLSearchParams({ hours: "168" });
   if (params.entity) q.set("entity", params.entity);
