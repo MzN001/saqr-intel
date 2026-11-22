@@ -28,6 +28,10 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
 - Telecom feed: `GET /api/dns-blocklist` (JSON) / `?format=rpz` (zone file, `domain CNAME .` + wildcard). Sources: non-SAFE scans, seeded syndicate intel, CT detections; never publishes whitelisted/trusted domains (`saqr/routers/blocklist.py`). With `CT_MODE=simulated` most entries are synthetic CT names.
 - Phone DNS shield: `GET /api/ios-dns-profile` (.mobileconfig, DoH host allow-listed) and `/api/android-dns-config` (`saqr/routers/mobile.py`); UI in `BackgroundShieldCard.tsx`.
 - `interception_channel` defaults to `DIRECT_API` on both scan endpoints.
+- Real phone protection (verified on the owner's iPhone): `saqr/intel/nextdns_sync.py` pushes blocklist domains (score ≥ NEXTDNS_MIN_SCORE, not CT-only) to the NextDNS denylist every 60 s and right after any high-risk scan; status at `/api/nextdns-status` (never returns the key). Needs NEXTDNS_PROFILE_ID + NEXTDNS_API_KEY in `.env`; restart backend after editing `.env`.
+  - `saqr/self_hosts.py`: hostnames the API/WS is reached through (e.g. the Vercel tunnel) are never published and are deleted from NextDNS if present — otherwise phones block SAQR itself.
+  - `start-phone-demo.ps1`: fresh tunnel serving `/mock-scam/tamm-fine` on a new public host → live scan (HIGH-RISK 70 via page content) → synced → link opens on laptop, blocked on a shielded phone ("Safari can't open the page").
+  - `tests/conftest.py` blanks real API keys so tests never touch live accounts.
 
 ## Run
 - One click: `start-windows.bat` (backend in a second window, frontend on 3000).
