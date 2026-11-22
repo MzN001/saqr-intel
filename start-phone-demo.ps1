@@ -26,8 +26,8 @@ if (-not $status.configured) {
 }
 if ($status.last_error) { Say "Warning: last NextDNS sync failed: $($status.last_error)" Yellow }
 
-$log = Join-Path $env:TEMP "saqr-phone-demo-tunnel.log"
-if (Test-Path $log) { Remove-Item $log -Force }
+# A new log per run: an earlier demo tunnel may still be running and holding its own log file.
+$log = Join-Path $env:TEMP ("saqr-phone-demo-tunnel-{0}.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
 Say "1/4  Creating a fresh public address for the fake TAMM page..." Cyan
 Start-Process -FilePath $cloudflared -ArgumentList "tunnel", "--no-autoupdate", "--url", "$api", "--logfile", "`"$log`"" -WindowStyle Minimized
 $base = $null

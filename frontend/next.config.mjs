@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
-const BACKEND = (process.env.NEXT_PUBLIC_API_URL || process.env.SAQR_BACKEND_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+// Trim BOMs / whitespace / newlines that sneak in when env vars are set from a Windows shell.
+const clean = (v) => (v ?? "").replace(/[﻿\s]+/g, "").replace(/\/+$/, "");
+const BACKEND = clean(process.env.NEXT_PUBLIC_API_URL) || clean(process.env.SAQR_BACKEND_URL) || "http://127.0.0.1:8000";
 
 const nextConfig = {
   // Lets phones load the dev server through a Cloudflare quick tunnel or the local Wi-Fi network.

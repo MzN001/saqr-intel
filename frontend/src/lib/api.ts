@@ -2,7 +2,7 @@
  * Where the browser sends API calls. Empty locally (relative `/api/...`, proxied by next.config);
  * on Vercel set NEXT_PUBLIC_API_URL to the public backend (e.g. the Cloudflare tunnel URL).
  */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/[﻿\s]+/g, "").replace(/\/+$/, "");
 
 export function apiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;

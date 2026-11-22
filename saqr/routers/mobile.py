@@ -17,6 +17,8 @@ from xml.sax.saxutils import escape
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 
+from ..config import settings
+
 router = APIRouter(prefix="/api", tags=["Mobile DNS shield"])
 
 DEFAULT_DOH = "https://security.cloudflare-dns.com/dns-query"
@@ -111,9 +113,11 @@ async def ios_dns_profile(
     doh_url: str = Query(DEFAULT_DOH, description="DNS-over-HTTPS URL (Cloudflare, NextDNS or Quad9 only)."),
     nextdns_id: str | None = Query(None, description="Optional NextDNS configuration ID; overrides doh_url."),
 ):
-    nid = _nextdns_id(nextdns_id)
+    # No ID given: use the NextDNS profile SAQR's live threat feed is synced to (if configured),
+    # so the "SAQR DNS" profile really blocks what SAQR detects.
+    nid = _nextdns_id(nextdns_id) or (settings.nextdns_profile_id if doh_url == DEFAULT_DOH else None) or None
     if nid:
-        doh, label = f"https://dns.nextdns.io/{nid}", f"NextDNS {nid}"
+        doh, label = f"https://dns.nextdns.io/{nid}", f"SAQR live feed via NextDNS {nid}"
     else:
         doh = _checked_doh(doh_url)
         label = urlsplit(doh).hostname or "DoH"
@@ -134,7 +138,7 @@ async def nextdns_status():
 
 @router.get("/android-dns-config")
 async def android_dns_config(nextdns_id: str | None = Query(None, description="Optional NextDNS configuration ID.")):
-    nid = _nextdns_id(nextdns_id)
+    nid = _nextdns_id(nextdns_id) or settings.nextdns_profile_id or None
     host = f"{nid}.dns.nextdns.io" if nid else DEFAULT_DOT
     return {
         "dot_hostname": host,
