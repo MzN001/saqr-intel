@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+/* `dark:` classes apply when <html data-theme="dark"> (set by lib/theme.tsx). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  /* Semantic colours that flip between light and dark (see [data-theme="dark"] below). */
+  /* Light theme: warm cream paper + deep navy ink (easier on the eyes than pure white). */
+  --color-canvas: #f3ecdf;
+  --color-surface: #faf6ee;
+  --color-muted: #eee5d5;
+  --color-line: #e0d4bf;
+  --color-ink: #0b192c;
+  --color-ink-soft: #2b4568;
+  /* Phone-screen "white" for the simulated Google / Messages apps. */
+  --color-screen: #fdfaf4;
+
+  --color-navy-950: #060f1c;
+  --color-navy-900: #0b192c;
+  --color-navy-800: #132a47;
+  --color-navy-700: #1e3a5f;
+  --color-navy-100: #e7edf5;
+  --color-navy-50: #f3f6fa;
+  --color-emerald-brand: #0e9f6e;
+  --color-crimson-700: #a50e25;
+  --color-crimson-600: #c8102e;
+  --color-crimson-50: #fdecee;
+  --color-gold-500: #c5a572;
+  --color-gold-100: #f6efe2;
+
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-arabic: "Noto Kufi Arabic", "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
+
+  --animate-sweep: sweep 4s linear infinite;
+  --animate-ping-slow: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-scanline: scanline 1.6s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.8s linear infinite;
+
+  @keyframes sweep {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes ping-slow {
+    0% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    80%,
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+  @keyframes scanline {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(400%);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #070e1a;
+  --color-surface: #0f1d33;
+  --color-muted: #15263f;
+  --color-line: #233552;
+  --color-ink: #e8eef7;
+  --color-ink-soft: #a7b6ca;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+html[lang="ar"] body {
+  font-family: var(--font-arabic);
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, currentColor 25%, rgba(255, 255, 255, 0.95) 50%, currentColor 75%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: var(--animate-shimmer);
+}
+
+.map-grid {
+  background-color: #e8eef1;
+  background-image:
+    linear-gradient(115deg, transparent 46%, #ffffff 46%, #ffffff 54%, transparent 54%),
+    linear-gradient(25deg, transparent 47%, #fbe7a8 47%, #fbe7a8 53%, transparent 53%),
+    linear-gradient(#d6e0e5 1px, transparent 1px),
+    linear-gradient(90deg, #d6e0e5 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 22px 22px, 22px 22px;
+}
+
+[data-theme="dark"] .map-grid {
+  background-color: #1d2c35;
+  background-image:
+    linear-gradient(115deg, transparent 46%, #3c4a55 46%, #3c4a55 54%, transparent 54%),
+    linear-gradient(25deg, transparent 47%, #6b5b2e 47%, #6b5b2e 53%, transparent 53%),
+    linear-gradient(#26363f 1px, transparent 1px),
+    linear-gradient(90deg, #26363f 1px, transparent 1px);
+}
+
+/* ---- Theme switch animation ----
+   Browsers with the View Transitions API get a circle that grows out of the
+   toggle button (driven from lib/theme.tsx). Others get a soft colour fade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+html.theme-fading,
+html.theme-fading *,
+html.theme-fading *::before,
+html.theme-fading *::after {
+  transition:
+    background-color 450ms ease,
+    border-color 450ms ease,
+    color 450ms ease,
+    fill 450ms ease,
+    box-shadow 450ms ease !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

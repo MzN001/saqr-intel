@@ -1,0 +1,210 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { Cpu, Globe, MessageSquareWarning, Network, Radar, ScanSearch, ShieldCheck, Smartphone } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { analyzeUrl, scanMaps, type InterceptionChannel, type ScanVerdict } from "@/lib/api";
+import { useLang, type DictKey } from "@/lib/i18n";
+import { hostOf, isMapsUrl } from "@/lib/url";
+import { AwarenessRadar } from "./AwarenessRadar";
+import { Header, StatusBanner } from "./Chrome";
+import { LinkChecker } from "./LinkChecker";
+import { SearchMapsShield } from "./SearchMapsShield";
+import { SmsGuard } from "./SmsGuard";
+import { VerdictScreen, type ScanState } from "./VerdictScreen";
+
+type Tab = "search" | "sms" | "radar";
+
+const TABS: { id: Tab; label: DictKey; short: DictKey; icon: typeof Globe }[] = [
+  { id: "search", label: "tabSearch", short: "tabSearchShort", icon: Globe },
+  { id: "sms", label: "tabSms", short: "tabSmsShort", icon: MessageSquareWarning },
+  { id: "radar", label: "tabRadar", short: "tabRadarShort", icon: Radar },
+];
+
+const STEP_COPY: Record<Exclude<Tab, "radar">, { icon: typeof Globe; en: string; ar: string }[]> = {
+  search: [
+    { icon: Smartphone, en: "Resident taps a search ad or a Maps “Visit Website” button.", ar: "يضغط المقيم على إعلان بحث أو زر «زيارة الموقع» في الخرائط." },
+    { icon: Network, en: "e& / du DNS shield holds the request and asks SAQR-INTEL.", ar: "يحتجز درع DNS لدى اتصالات ودو الطلب ويستعلم من صقر." },
+    { icon: Cpu, en: "Cloud sandbox + AI verify the site against the UAE registry.", ar: "تتحقق البيئة السحابية المعزولة والذكاء الاصطناعي من الموقع مقابل السجل الرسمي." },
+    { icon: ShieldCheck, en: "Scams are blocked and synced to AD Police instantly.", ar: "يتم حظر المواقع الاحتيالية ومزامنتها فوراً مع شرطة أبوظبي." },
+  ],
+  sms: [
+    { icon: MessageSquareWarning, en: "A smishing SMS lands in the inbox.", ar: "تصل رسالة نصية احتيالية إلى صندوق الوارد." },
+    { icon: ScanSearch, en: "The OS filter sends the link to SAQR-INTEL in the background.", ar: "يرسل مرشّح النظام الرابط إلى صقر في الخلفية." },
+    { icon: ShieldCheck, en: "Scam messages move to Quarantine with the link disabled.", ar: "تُنقل الرسائل الاحتيالية إلى العزل مع تعطيل الرابط." },
+    { icon: Network, en: "Police receive the report — the citizen never had to tap.", ar: "تتلقى الشرطة البلاغ دون أن يضغط المواطن على أي شيء." },
+  ],
+};
+
+const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+
+function SidePanel({ tab }: { tab: Exclude<Tab, "radar"> }) {
+  const { t, lang } = useLang();
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
+          {t(tab === "search" ? "tabSearch" : "tabSms")}
+        </h1>
+        <p className="mt-3 text-base leading-relaxed text-ink-soft">{t(tab === "search" ? "searchIntro" : "smsIntro")}</p>
+      </div>
+      <ol className="space-y-3">
+        {STEP_COPY[tab].map((s, i) => (
+          <motion.li
+            key={`${tab}-${i}`}
+            initial={{ opacity: 0, x: lang === "ar" ? 20 : -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 + i * 0.1 }}
+            className="flex items-start gap-3 rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-line"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-navy-900 text-gold-500 dark:bg-navy-950 dark:ring-1 dark:ring-white/10">
+              <s.icon className="size-4.5" />
+            </span>
+            <span className="pt-1.5 text-sm font-medium text-ink">{s[lang]}</span>
+          </motion.li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function Stage({ children, side }: { children: ReactNode; side: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="order-2 min-w-0 lg:order-1 lg:pt-8">{side}</div>
+      <div className="order-1 -mx-4 min-w-0 sm:mx-0 lg:order-2">{children}</div>
+    </div>
+  );
+}
+
+export function CitizenShell({ sharedTarget, onSharedDone }: { sharedTarget: string | null; onSharedDone: () => void }) {
+  const { t } = useLang();
+  const [tab, setTab] = useState<Tab>("search");
+  const [scan, setScan] = useState<ScanState>({ status: "idle" });
+  const lastJob = useRef<{ target: string; interception: InterceptionChannel; job: () => Promise<ScanVerdict> } | null>(null);
+  const sharedHandled = useRef<string | null>(null);
+  const fromShare = useRef(false);
+
+  const execute = useCallback(async (target: string, interception: InterceptionChannel, job: () => Promise<ScanVerdict>) => {
+    lastJob.current = { target, interception, job };
+    setScan({ status: "scanning", target, interception });
+    try {
+      const [result] = await Promise.all([job(), sleep(2600)]);
+      setScan({ status: "done", result });
+    } catch (e) {
+      setScan({ status: "error", target, interception, message: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
+  const runDnsScan = useCallback(
+    (target: string, job: () => Promise<ScanVerdict>) => void execute(target, "AUTO_TELECOM_DNS", job),
+    [execute],
+  );
+
+  const runManualScan = useCallback(
+    (url: string, rawText?: string) => {
+      const maps = isMapsUrl(url);
+      const job = maps
+        ? () => scanMaps({ maps_url: url }, "CITIZEN_MANUAL_CHECK")
+        : () => analyzeUrl(url, "CITIZEN_MANUAL_CHECK", rawText ? "sms" : "web", rawText);
+      void execute(maps ? "Google Maps listing" : hostOf(url), "CITIZEN_MANUAL_CHECK", job);
+    },
+    [execute],
+  );
+
+  const showVerdict = useCallback((result: ScanVerdict) => setScan({ status: "done", result }), []);
+
+  const close = useCallback(() => {
+    setScan({ status: "idle" });
+    if (fromShare.current) {
+      fromShare.current = false;
+      onSharedDone();
+    }
+  }, [onSharedDone]);
+
+  const retry = useCallback(() => {
+    const j = lastJob.current;
+    if (j) void execute(j.target, j.interception, j.job);
+  }, [execute]);
+
+  useEffect(() => {
+    if (!sharedTarget || sharedHandled.current === sharedTarget) return;
+    sharedHandled.current = sharedTarget;
+    fromShare.current = true;
+    const job = isMapsUrl(sharedTarget)
+      ? () => scanMaps({ maps_url: sharedTarget }, "MOBILE_OS_SHARE_SHEET")
+      : () => analyzeUrl(sharedTarget, "MOBILE_OS_SHARE_SHEET", "social");
+    void execute(sharedTarget, "MOBILE_OS_SHARE_SHEET", job);
+  }, [sharedTarget, execute]);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+  }, []);
+
+  return (
+    <div className="min-h-dvh">
+      <Header />
+      <StatusBanner />
+
+      <nav className="sticky top-[69px] z-20 border-b border-line bg-canvas/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 no-scrollbar sm:px-6">
+          {TABS.map(({ id, label, short, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`relative flex shrink-0 items-center gap-2 px-3 py-3.5 text-sm font-semibold transition-colors sm:px-4 ${tab === id ? "text-ink" : "text-ink-soft/60 hover:text-ink"}`}
+            >
+              <Icon className={`size-4 ${tab === id ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
+              <span className="sm:hidden">{t(short)}</span>
+              <span className="hidden sm:inline">{t(label)}</span>
+              {tab === id && <motion.span layoutId="tab-underline" className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-ink" />}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
+        <div className="mb-8 lg:mb-10">
+          <LinkChecker onCheck={runManualScan} />
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.section
+            key={tab}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+          >
+            {tab === "search" && (
+              <Stage side={<SidePanel tab="search" />}>
+                <SearchMapsShield runScan={runDnsScan} />
+              </Stage>
+            )}
+            {tab === "sms" && (
+              <Stage side={<SidePanel tab="sms" />}>
+                <SmsGuard onVerdict={showVerdict} />
+              </Stage>
+            )}
+            {tab === "radar" && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{t("radarTitle")}</h1>
+                  <p className="mt-2 max-w-3xl text-ink-soft">{t("radarIntro")}</p>
+                </div>
+                <AwarenessRadar />
+              </div>
+            )}
+          </motion.section>
+        </AnimatePresence>
+      </main>
+
+      <footer className="border-t border-line bg-surface">
+        <div className="mx-auto max-w-7xl px-4 py-5 text-center text-xs font-medium text-ink-soft sm:px-6">{t("footer")}</div>
+      </footer>
+
+      <VerdictScreen state={scan} onClose={close} onRetry={retry} />
+    </div>
+  );
+}
