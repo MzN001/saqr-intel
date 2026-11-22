@@ -43,13 +43,13 @@ for ($i = 0; $i -lt 30; $i++) {
     try { if ((Invoke-RestMethod "$tunnel/health" -TimeoutSec 5).status -eq "ok") { break } } catch { Start-Sleep -Seconds 2 }
 }
 
-$wss = $tunnel -replace "^https://", "wss://"
+# NEXT_PUBLIC_API_URL: the browser calls the tunnel directly for /api and the /ws/live feed
+# (the backend's CORS allows saqr-intel*.vercel.app); next.config also proxies /api to it.
 Push-Location (Join-Path $root "frontend")
 try {
     npx --yes vercel@latest deploy --prod --yes `
-        --build-env "SAQR_BACKEND_URL=$tunnel" `
-        --build-env "NEXT_PUBLIC_SAQR_WS_URL=$wss" `
-        --env "SAQR_BACKEND_URL=$tunnel"
+        --build-env "NEXT_PUBLIC_API_URL=$tunnel" `
+        --env "NEXT_PUBLIC_API_URL=$tunnel"
 } finally {
     Pop-Location
 }
