@@ -47,6 +47,12 @@ for ($i = 0; $i -lt 30; $i++) {
 # (the backend's CORS allows saqr-intel*.vercel.app); next.config also proxies /api to it.
 Push-Location (Join-Path $root "frontend")
 try {
+    # Save it as the project's environment variable too (Vercel Dashboard -> Settings -> Environment
+    # Variables), so a later "Redeploy" from the dashboard or a GitHub push keeps the same backend.
+    foreach ($target in "production", "preview") {
+        npx --yes vercel@latest env rm NEXT_PUBLIC_API_URL $target --yes 2>&1 | Out-Null
+        $tunnel | npx --yes vercel@latest env add NEXT_PUBLIC_API_URL $target | Out-Null
+    }
     npx --yes vercel@latest deploy --prod --yes `
         --build-env "NEXT_PUBLIC_API_URL=$tunnel" `
         --env "NEXT_PUBLIC_API_URL=$tunnel"
