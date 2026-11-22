@@ -29,7 +29,12 @@ class FakeNextDNS:
     def handler(self, request: httpx.Request) -> httpx.Response:
         if request.headers.get("X-Api-Key") != self.key:
             return httpx.Response(403, json={"errors": [{"code": "forbidden"}]})
-        if request.url.path != f"/profiles/{self.profile}/denylist":
+        base = f"/profiles/{self.profile}/denylist"
+        if request.method == "DELETE" and request.url.path.startswith(base + "/"):
+            gone = request.url.path[len(base) + 1:]
+            self.denylist = [d for d in self.denylist if d["id"] != gone]
+            return httpx.Response(204)
+        if request.url.path != base:
             return httpx.Response(404, json={"errors": [{"code": "notFound"}]})
         if request.method == "GET":
             return httpx.Response(200, json={"data": self.denylist})
@@ -83,6 +88,25 @@ def test_sync_pushes_seeded_scams_not_ct_only_and_keeps_owner_entries(client, fa
     st = sync.status()
     assert st["configured"] and st["synced_domains"] >= 2 and st["android_dot_hostname"] == "abc123.dns.nextdns.io"
     assert "good-key" not in json.dumps(st)
+
+
+def test_own_public_host_is_never_blocked_and_is_removed(client, fake):
+    own = "saqr-backend-demo.trycloudflare.com"
+    fake.denylist.append({"id": own, "active": True})  # pushed earlier by mistake
+
+    async def go():
+        await db.execute(
+            "INSERT OR REPLACE INTO scans (id, kind, target, domain, created_at, risk_score, verdict, result_json) "
+            "VALUES (?,?,?,?,?,?,?,?)", ("SCN-OWN", "url", own, own, iso(), 90, "HIGH-RISK SCAM", "{}"))
+        sync = mod.NextDNSSync()
+        await sync.sync_once()
+        return sync
+
+    client.get("/api/nextdns-status", headers={"host": own})  # API traffic arrives through that address
+    sync = client.portal.call(go)
+    assert own not in {d["id"] for d in fake.denylist}
+    assert own not in fake.posts and own in sync.status()["protected_removed"]
+    assert own not in {d["domain"] for d in client.get("/api/dns-blocklist").json()["domains"]}
 
 
 def test_bad_key_reports_clear_error(client, fake):

@@ -14,7 +14,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
-from saqr import __version__
+from saqr import __version__, self_hosts
 from saqr.config import settings
 from saqr.db import db, seed_if_empty
 from saqr.intel.ct_monitor import ct_monitor
@@ -68,6 +68,11 @@ app.add_middleware(
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
+    if request.url.path.startswith(("/api/", "/ws/")):
+        try:
+            await self_hosts.remember(request.headers.get("host"))  # never blocklist our own public address
+        except Exception:  # noqa: BLE001
+            log.debug("could not record self host", exc_info=True)
     resp = await call_next(request)
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("X-Frame-Options", "DENY")

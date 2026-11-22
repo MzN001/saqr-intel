@@ -15,6 +15,7 @@ from typing import Any
 
 import httpx
 
+from .. import self_hosts
 from ..config import settings
 from ..db import iso
 
@@ -31,6 +32,7 @@ class NextDNSSync:
         self.last_sync: str | None = None
         self.last_error: str | None = None
         self.last_added: list[str] = []
+        self.removed: list[str] = []
 
     @property
     def configured(self) -> bool:
@@ -45,6 +47,7 @@ class NextDNSSync:
             "synced_domains": len(self.pushed),
             "last_sync": self.last_sync,
             "last_added": self.last_added[-10:],
+            "protected_removed": self.removed[-10:],
             "last_error": self.last_error,
             "min_score": settings.nextdns_min_score,
             "interval_seconds": settings.nextdns_sync_interval_s,
@@ -109,6 +112,16 @@ class NextDNSSync:
                 raise RuntimeError("NextDNS profile not found (check NEXTDNS_PROFILE_ID)")
             r.raise_for_status()
             existing = {item.get("id", "").lower() for item in r.json().get("data", [])}
+
+            # Never block SAQR's own public address (the Vercel site's tunnel): remove if present.
+            for own in existing & await self_hosts.all_self_hosts():
+                resp = await client.delete(f"{base}/{own}")
+                if resp.status_code < 300 or resp.status_code == 404:
+                    existing.discard(own)
+                    self.pushed.discard(own)
+                    self.removed.append(own)
+                    log.info("NextDNS: removed SAQR's own host %s from the denylist", own)
+
             self.pushed |= existing & set(await self._wanted())
 
             added: list[str] = []

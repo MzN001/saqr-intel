@@ -10,6 +10,7 @@ import json
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from .. import self_hosts
 from ..db import iso
 from ..security import ws_authorized
 from ..ws_hub import hub
@@ -32,6 +33,7 @@ async def live(ws: WebSocket):
     if not ws_authorized(ws):
         await ws.close(code=4401)
         return
+    await self_hosts.remember(ws.headers.get("host"))
     await hub.connect(ws, _topics(ws.query_params.get("topics")))
     try:
         await ws.send_json({"event": "hello", "ts": iso(),

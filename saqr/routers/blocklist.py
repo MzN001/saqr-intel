@@ -17,6 +17,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Query
 from fastapi.responses import PlainTextResponse
 
+from .. import self_hosts
 from ..config import settings
 from ..db import db, iso
 from ..intel.domain_intel import analyze_lexical
@@ -43,10 +44,11 @@ def _publishable(domain: str | None) -> str | None:
 
 async def collect(min_score: int) -> list[dict[str, Any]]:
     entries: dict[str, dict[str, Any]] = {}
+    own = await self_hosts.all_self_hosts()  # e.g. the tunnel the Vercel site uses to reach us
 
     def add(domain: str | None, score: int, entity: str | None, source: str, seen: str | None, reports: int = 0) -> None:
         d = _publishable(domain)
-        if not d or score < min_score:
+        if not d or score < min_score or d in own:
             return
         e = entries.setdefault(d, {"domain": d, "risk_score": 0, "impersonated_entity": None,
                                    "sources": [], "last_seen": None, "reports": 0})
