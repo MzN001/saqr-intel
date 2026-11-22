@@ -7,6 +7,7 @@ export const CHANNEL_DICT_KEY: Record<InterceptionChannel, DictKey> = {
   MOBILE_OS_SHARE_SHEET: "channelShare",
   CITIZEN_MANUAL_CHECK: "channelManual",
   PC_BROWSER_EXTENSION: "channelPc",
+  DIRECT_API: "channelApi",
   MANUAL: "channelManual",
 };
 

@@ -23,6 +23,7 @@ const CHANNEL_ICON: Record<InterceptionChannel, typeof Wifi> = {
   MOBILE_OS_SHARE_SHEET: Share2,
   CITIZEN_MANUAL_CHECK: ScanSearch,
   PC_BROWSER_EXTENSION: Monitor,
+  DIRECT_API: Radio,
   MANUAL: ScanSearch,
 };
 

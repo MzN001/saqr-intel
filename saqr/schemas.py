@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 Interception = Literal["MOBILE_OS_SHARE_SHEET", "AUTO_TELECOM_DNS", "AUTO_SMS_GUARD", "CITIZEN_MANUAL_CHECK",
-                       "PC_BROWSER_EXTENSION", "MANUAL"]
+                       "PC_BROWSER_EXTENSION", "DIRECT_API", "MANUAL"]
 Channel = Literal["sms", "whatsapp", "email", "social", "web", "call", "maps", "other"]
 
 
@@ -20,8 +20,8 @@ class AnalyzeURLRequest(BaseModel):
     device_profile: Literal["mobile", "desktop"] = "mobile"
     use_llm: bool = True
     include_screenshot: bool = True
-    interception_channel: Interception | None = Field(
-        None, description="How the link reached SAQR-INTEL (share sheet, telecom DNS shield, SMS guard).")
+    interception_channel: Interception = Field(
+        "DIRECT_API", description="How the link reached SAQR-INTEL (share sheet, telecom DNS shield, SMS guard, …).")
 
     @model_validator(mode="after")
     def _need_target(self) -> "AnalyzeURLRequest":
@@ -40,7 +40,7 @@ class ScanMapsRequest(BaseModel):
     lat: float | None = Field(None, ge=-90, le=90)
     lng: float | None = Field(None, ge=-180, le=180)
     reporter_id: str | None = Field(None, max_length=128)
-    interception_channel: Interception | None = None
+    interception_channel: Interception = "DIRECT_API"
 
     @model_validator(mode="after")
     def _need_target(self) -> "ScanMapsRequest":

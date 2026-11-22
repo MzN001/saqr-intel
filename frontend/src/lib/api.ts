@@ -25,6 +25,7 @@ export type InterceptionChannel =
   | "AUTO_SMS_GUARD"
   | "CITIZEN_MANUAL_CHECK"
   | "PC_BROWSER_EXTENSION"
+  | "DIRECT_API"
   | "MANUAL";
 
 export type VerdictLabel = "SAFE" | "SUSPICIOUS" | "HIGH-RISK SCAM";

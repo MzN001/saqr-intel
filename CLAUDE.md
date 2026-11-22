@@ -25,6 +25,10 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
   - Skips: port 3000 app, x.com, official UAE domains, private IPs, backend host except `/mock-scam/`, session allow-list ("continue anyway").
   - Icons from `python extension/generate_icons.py` (stdlib only). No build step; load unpacked.
 
+- Telecom feed: `GET /api/dns-blocklist` (JSON) / `?format=rpz` (zone file, `domain CNAME .` + wildcard). Sources: non-SAFE scans, seeded syndicate intel, CT detections; never publishes whitelisted/trusted domains (`saqr/routers/blocklist.py`). With `CT_MODE=simulated` most entries are synthetic CT names.
+- Phone DNS shield: `GET /api/ios-dns-profile` (.mobileconfig, DoH host allow-listed) and `/api/android-dns-config` (`saqr/routers/mobile.py`); UI in `BackgroundShieldCard.tsx`.
+- `interception_channel` defaults to `DIRECT_API` on both scan endpoints.
+
 ## Run
 - One click: `start-windows.bat` (backend in a second window, frontend on 3000).
 - Manually: `.venv\Scripts\activate` → `uvicorn main:app --port 8000`; then `cd frontend` → `npm run dev`.
