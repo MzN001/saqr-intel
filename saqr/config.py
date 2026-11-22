@@ -42,8 +42,11 @@ class Settings:
     env: str = os.getenv("APP_ENV", "development")
     database_path: str = os.getenv("DATABASE_PATH", str(BASE_DIR / "data" / "saqr_intel.db"))
     cors_origins: list[str] = field(
-        default_factory=lambda: _list("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+        default_factory=lambda: _list(
+            "CORS_ORIGINS", "https://saqr-intel.vercel.app,http://localhost:3000,http://127.0.0.1:3000")
     )
+    # Vercel production + preview deployments of this project (saqr-intel-<hash>-<team>.vercel.app).
+    cors_origin_regex: str = os.getenv("CORS_ORIGIN_REGEX", r"https://saqr-intel(-[a-z0-9-]+)?\.vercel\.app")
 
     # --- LLM -----------------------------------------------------------------
     # auto -> Gemini if key present, else OpenAI if key present, else rules engine

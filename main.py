@@ -22,7 +22,7 @@ from saqr.intel.domain_intel import shutdown_pools
 from saqr.intel.sandbox import sandbox
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
-from saqr.routers import analysis, ct, graph, live, maps, system, takedown
+from saqr.routers import analysis, ct, graph, live, maps, mobile, system, takedown
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("saqr")
@@ -56,6 +56,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    allow_origin_regex=settings.cors_origin_regex or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -95,7 +96,8 @@ async def mock_scam(slug: str):
     return HTMLResponse(html, headers={"X-Robots-Tag": "noindex", "Content-Security-Policy": "form-action 'none'"})
 
 
-for r in (system.router, analysis.router, maps.router, ct.router, graph.router, takedown.router, live.router):
+for r in (system.router, analysis.router, maps.router, ct.router, graph.router, takedown.router, live.router,
+          mobile.router):
     app.include_router(r)
 
 

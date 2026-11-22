@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { MapPinned, MessageSquareWarning, Monitor, Radio, ScanSearch, Share2, ShieldBan, TriangleAlert, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { InterceptionChannel, VerdictLabel } from "@/lib/api";
+import { API_BASE_URL, getWsUrl, type InterceptionChannel, type VerdictLabel } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
 import { CHANNEL_DICT_KEY, defang, ENTITY_AR, warningFromLive, type LiveBlock } from "@/lib/share";
 import { WarnOnXButton } from "./XAlertComposer";
@@ -53,18 +53,11 @@ function merge(list: LiveBlock[], incoming: LiveBlock[]): LiveBlock[] {
   return [...byId.values()].sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, MAX_ITEMS);
 }
 
-/**
- * NEXT_PUBLIC_SAQR_WS_URL first (hosted builds, e.g. Vercel, which can't proxy WebSockets), then
- * same-origin (Next dev proxy), then the backend port on plain http.
- */
+/** getWsUrl() (NEXT_PUBLIC_API_URL or same-origin proxy), then the backend port directly on plain http. */
 function socketUrls(): string[] {
-  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const path = "/ws/live?topics=url_scan,maps_scan";
-  const urls: string[] = [];
-  const configured = process.env.NEXT_PUBLIC_SAQR_WS_URL;
-  if (configured) urls.push(`${configured.replace(/\/+$/, "")}${path}`);
-  urls.push(`${proto}//${window.location.host}${path}`);
-  if (window.location.protocol === "http:") urls.push(`ws://${window.location.hostname}:8000${path}`);
+  const query = "?topics=url_scan,maps_scan";
+  const urls = [`${getWsUrl()}${query}`];
+  if (!API_BASE_URL && window.location.protocol === "http:") urls.push(`ws://${window.location.hostname}:8000/ws/live${query}`);
   return urls;
 }
 

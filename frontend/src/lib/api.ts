@@ -1,3 +1,24 @@
+/**
+ * Where the browser sends API calls. Empty locally (relative `/api/...`, proxied by next.config);
+ * on Vercel set NEXT_PUBLIC_API_URL to the public backend (e.g. the Cloudflare tunnel URL).
+ */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+
+export function apiUrl(path: string): string {
+  return `${API_BASE_URL}${path}`;
+}
+
+/** WebSocket address of the live feed (`/ws/live`). */
+export function getWsUrl(): string {
+  if (API_BASE_URL.startsWith("https://")) return `${API_BASE_URL.replace("https://", "wss://")}/ws/live`;
+  if (API_BASE_URL.startsWith("http://")) return `${API_BASE_URL.replace("http://", "ws://")}/ws/live`;
+  if (typeof window !== "undefined") {
+    // Same origin: the Next dev server proxies /ws to the backend (also works over LAN IPs and tunnels).
+    return `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/live`;
+  }
+  return "ws://127.0.0.1:8000/ws/live";
+}
+
 export type InterceptionChannel =
   | "MOBILE_OS_SHARE_SHEET"
   | "AUTO_TELECOM_DNS"
@@ -154,7 +175,7 @@ function errorDetail(body: unknown, status: number): string {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(path, {
+    res = await fetch(apiUrl(path), {
       ...init,
       headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
       cache: "no-store",
