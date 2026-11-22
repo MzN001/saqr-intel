@@ -124,6 +124,14 @@ async def ios_dns_profile(
     )
 
 
+@router.get("/nextdns-status")
+async def nextdns_status():
+    """Is SAQR's live threat feed being pushed to a NextDNS profile? (never exposes the API key)"""
+    from ..intel.nextdns_sync import nextdns_sync
+
+    return nextdns_sync.status()
+
+
 @router.get("/android-dns-config")
 async def android_dns_config(nextdns_id: str | None = Query(None, description="Optional NextDNS configuration ID.")):
     nid = _nextdns_id(nextdns_id)

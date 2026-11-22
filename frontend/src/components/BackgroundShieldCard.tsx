@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Download, Info, ShieldCheck, Smartphone, Tablet } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
-import { apiUrl } from "@/lib/api";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { apiUrl, getNextDnsStatus, type NextDnsStatus } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
 import { copyText } from "@/lib/share";
 
@@ -42,10 +42,28 @@ export function BackgroundShieldCard() {
   const platform: Platform = choice ?? detected ?? "android";
   const [rawId, setRawId] = useState("");
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
+  const [feed, setFeed] = useState<NextDnsStatus | null>(null);
+
+  // When the backend syncs SAQR's detections to a NextDNS profile, use that profile by default.
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      getNextDnsStatus()
+        .then((s) => alive && setFeed(s))
+        .catch(() => alive && setFeed(null));
+    load();
+    const timer = window.setInterval(load, 30_000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   const id = rawId.trim().toLowerCase();
   const idValid = id === "" || NEXTDNS_ID.test(id);
-  const activeId = idValid && id ? id : null;
+  const feedId = feed?.configured ? feed.profile_id : null;
+  const activeId = idValid && id ? id : feedId;
+  const usingFeed = Boolean(feedId && activeId === feedId);
   const dotHost = activeId ? `${activeId}.dns.nextdns.io` : DEFAULT_DOT;
   const profileHref = apiUrl(`/api/ios-dns-profile${activeId ? `?nextdns_id=${encodeURIComponent(activeId)}` : ""}`);
 
@@ -100,13 +118,32 @@ export function BackgroundShieldCard() {
         </div>
       </div>
 
+      {feed?.configured && (
+        <p
+          className={`mt-4 flex items-start gap-2 rounded-2xl p-3 text-xs font-semibold ring-1 ${
+            feed.last_error
+              ? "bg-amber-50 text-amber-900 ring-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+              : "bg-emerald-50 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+          }`}
+        >
+          <span className="relative mt-1 flex size-2 shrink-0">
+            {!feed.last_error && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-70" />}
+            <span className={`relative inline-flex size-2 rounded-full ${feed.last_error ? "bg-amber-500" : "bg-emerald-500"}`} />
+          </span>
+          <span>
+            {feed.last_error ? t("bgFeedError") : t("bgFeedOn")} · {feed.synced_domains} {t("bgFeedDomains")}
+            {usingFeed && <span className="block font-normal opacity-80">{t("bgFeedUsing")}</span>}
+          </span>
+        </p>
+      )}
+
       <label className="mt-4 block">
         <span className="text-xs font-semibold text-ink-soft">{t("bgNextdns")}</span>
         <input
           type="text"
           value={rawId}
           onChange={(e) => setRawId(e.target.value)}
-          placeholder="abc123"
+          placeholder={feedId ?? "abc123"}
           dir="ltr"
           autoComplete="off"
           autoCapitalize="off"

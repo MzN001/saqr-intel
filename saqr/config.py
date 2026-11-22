@@ -86,6 +86,17 @@ class Settings:
     ct_sim_interval_s: float = _float("CT_SIM_INTERVAL_SECONDS", 12.0)
     ct_alert_threshold: int = _int("CT_ALERT_THRESHOLD", 45)
 
+    # --- NextDNS phone shield sync --------------------------------------------
+    # SAQR's high-risk domains are pushed to this NextDNS profile's denylist, so phones using it
+    # (iPhone profile / Android Private DNS) block them in every app.
+    nextdns_api_key: str = os.getenv("NEXTDNS_API_KEY", "")
+    nextdns_profile_id: str = os.getenv("NEXTDNS_PROFILE_ID", "").strip().lower()
+    nextdns_api_base: str = os.getenv("NEXTDNS_API_BASE", "https://api.nextdns.io")
+    nextdns_sync_interval_s: float = _float("NEXTDNS_SYNC_INTERVAL_SECONDS", 60.0)
+    nextdns_min_score: int = _int("NEXTDNS_MIN_SCORE", 65)
+    # Domains seen ONLY by the certificate-transparency feed are not auto-pushed unless enabled.
+    nextdns_include_ct: bool = _bool("NEXTDNS_INCLUDE_CT", False)
+
     # --- Security ------------------------------------------------------------
     police_api_key: str = os.getenv("POLICE_API_KEY", "")  # empty = open demo mode
     rate_limit_per_minute: int = _int("RATE_LIMIT_PER_MINUTE", 30)

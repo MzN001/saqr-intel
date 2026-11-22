@@ -5,7 +5,9 @@ import base64
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
+from ..config import settings
 from ..db import db, iso
+from ..intel.nextdns_sync import nextdns_sync
 from ..pipeline import analyze_url, extract_url, new_scan_id
 from ..schemas import AnalyzeURLRequest
 from ..security import rate_limit, require_police
@@ -48,6 +50,8 @@ async def analyze_url_endpoint(req: AnalyzeURLRequest):
         raise HTTPException(422, str(exc)) from exc
     # 2) Completed verdict + graph delta
     await hub.broadcast("url_scan.completed", _summary(result))
+    if result["risk_score"] >= settings.nextdns_min_score:
+        nextdns_sync.kick()  # push to phones' DNS shield within seconds
     if result.get("graph_delta", {}).get("new_nodes") or result.get("graph_delta", {}).get("new_edges"):
         await hub.broadcast("graph.updated", {"scan_id": scan_id, **result["graph_delta"]})
     if not req.include_screenshot:

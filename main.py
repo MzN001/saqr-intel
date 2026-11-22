@@ -19,6 +19,7 @@ from saqr.config import settings
 from saqr.db import db, seed_if_empty
 from saqr.intel.ct_monitor import ct_monitor
 from saqr.intel.domain_intel import shutdown_pools
+from saqr.intel.nextdns_sync import nextdns_sync
 from saqr.intel.sandbox import sandbox
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
@@ -35,12 +36,14 @@ async def lifespan(_: FastAPI):
         log.info("Seeded syndicate intelligence (Sand Viper, Desert Mirage)")
     seed_task = asyncio.create_task(seed_historical_scans(), name="seed-scans")
     ct_monitor.start()
+    nextdns_sync.start()
     log.info("SAQR-INTEL %s ready — LLM engine: %s, CT mode: %s", __version__, settings.active_llm, settings.ct_mode)
     try:
         yield
     finally:
         seed_task.cancel()
         await ct_monitor.stop()
+        await nextdns_sync.stop()
         await sandbox.close()
         await db.close()
         shutdown_pools()

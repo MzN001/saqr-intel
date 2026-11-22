@@ -285,6 +285,19 @@ export async function scanMaps(input: MapsScanInput, interception: InterceptionC
   return fromMapsScan(r, interception);
 }
 
+export interface NextDnsStatus {
+  configured: boolean;
+  profile_id: string | null;
+  synced_domains: number;
+  last_sync: string | null;
+  last_error: string | null;
+}
+
+/** Is SAQR's live feed being pushed to a NextDNS profile (real phone protection)? */
+export async function getNextDnsStatus(): Promise<NextDnsStatus> {
+  return request<NextDnsStatus>("/api/nextdns-status");
+}
+
 export async function getAwareness(params: { entity?: string; useLlm?: boolean } = {}): Promise<AwarenessAlert> {
   const q = new URLSearchParams({ hours: "168" });
   if (params.entity) q.set("entity", params.entity);

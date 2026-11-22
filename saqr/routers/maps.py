@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from ..config import settings
 from ..db import db, iso
 from ..intel import graph_engine, maps_sentinel
+from ..intel.nextdns_sync import nextdns_sync
 from ..pipeline import new_scan_id
 from ..schemas import ScanMapsRequest
 from ..security import rate_limit
@@ -47,4 +49,6 @@ async def scan_maps(req: ScanMapsRequest):
         "red_flags": [f["code"] for f in scan["red_flags"]],
         "citizen_explanation_en": scan["citizen_explanation_en"], "citizen_explanation_ar": scan["citizen_explanation_ar"],
     })
+    if scan["risk_score"] >= settings.nextdns_min_score:
+        nextdns_sync.kick()
     return scan
