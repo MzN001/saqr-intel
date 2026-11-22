@@ -32,6 +32,7 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
   - `saqr/self_hosts.py`: hostnames the API/WS is reached through (e.g. the Vercel tunnel) are never published and are deleted from NextDNS if present — otherwise phones block SAQR itself.
   - `start-phone-demo.ps1`: fresh tunnel serving `/mock-scam/tamm-fine` on a new public host → live scan (HIGH-RISK 70 via page content) → synced → link opens on laptop, blocked on a shielded phone ("Safari can't open the page").
   - `tests/conftest.py` blanks real API keys so tests never touch live accounts.
+- Scam-alert push (verified on the owner's iPhone): `saqr/push.py` + `saqr/routers/push.py` (VAPID key auto-generated in `data/vapid_private.pem`, gitignored); `BlockWatcher` in `nextdns_sync.py` polls NextDNS logs (logging must be ON in the profile) and alerts subscribed phones only for SAQR-flagged domains; `public/sw.js` shows the notification and opens `/citizen?alert=<domain>` → `/api/alerts/verdict`. UI: `ScamAlertsCard.tsx`. iPhone needs the site added to the Home Screen (iOS 16.4+).
 
 ## Run
 - One click: `start-windows.bat` (backend in a second window, frontend on 3000).
