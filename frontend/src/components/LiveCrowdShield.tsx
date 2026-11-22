@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { MapPinned, MessageSquareWarning, Radio, ScanSearch, Share2, ShieldBan, TriangleAlert, Wifi } from "lucide-react";
+import { MapPinned, MessageSquareWarning, Monitor, Radio, ScanSearch, Share2, ShieldBan, TriangleAlert, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { InterceptionChannel, VerdictLabel } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
@@ -22,6 +22,7 @@ const CHANNEL_ICON: Record<InterceptionChannel, typeof Wifi> = {
   AUTO_SMS_GUARD: MessageSquareWarning,
   MOBILE_OS_SHARE_SHEET: Share2,
   CITIZEN_MANUAL_CHECK: ScanSearch,
+  PC_BROWSER_EXTENSION: Monitor,
   MANUAL: ScanSearch,
 };
 

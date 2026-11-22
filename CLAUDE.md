@@ -20,6 +20,11 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
   - Backend `uvicorn` runs without `--reload`: restart it after Python changes (e.g. a new `Interception` value) or requests 422.
   - Next 16 differs from older versions: check `frontend/node_modules/next/dist/docs/` before changing Next APIs.
 
+- `extension/` — Chrome/Edge MV3 extension "SAQR-INTEL | Citizen Web & Maps Scam Shield" (see `extension/README.md`).
+  - `background.js`: onBeforeNavigate → fast scan (`run_sandbox:false`), deep scan only if score ≥ 30; blocks when HIGH-RISK or ≥ 70 by redirecting to `blocked.html?mode=block&d=<json>`; per-site cache in `chrome.storage.session`; channel `PC_BROWSER_EXTENSION`.
+  - Skips: port 3000 app, x.com, official UAE domains, private IPs, backend host except `/mock-scam/`, session allow-list ("continue anyway").
+  - Icons from `python extension/generate_icons.py` (stdlib only). No build step; load unpacked.
+
 ## Run
 - One click: `start-windows.bat` (backend in a second window, frontend on 3000).
 - Manually: `.venv\Scripts\activate` → `uvicorn main:app --port 8000`; then `cd frontend` → `npm run dev`.

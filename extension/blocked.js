@@ -1,0 +1,329 @@
+// SAQR-INTEL block / verdict page. Data arrives in the URL (?mode=block|check|error&d=<json>).
+// Everything from the backend is inserted with textContent, never innerHTML.
+
+const X_LIMIT = 280;
+const $ = (id) => document.getElementById(id);
+
+const params = new URLSearchParams(location.search);
+const mode = params.get("mode") || "block";
+let v = {};
+try {
+  v = JSON.parse(params.get("d") || "{}");
+} catch {
+  v = { error: "Could not read the scan result." };
+}
+
+const tone = v.error ? "warn" : v.verdict === "HIGH-RISK SCAM" || v.score >= 70 ? "danger" : v.verdict === "SUSPICIOUS" ? "warn" : "safe";
+
+// ---------------------------------------------------------------- helpers
+function defang(domain) {
+  return String(domain || "")
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/\./g, "[.]");
+}
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url || "";
+  }
+}
+
+const LIGHT_RANGES = [
+  [0, 4351],
+  [8192, 8205],
+  [8208, 8223],
+  [8242, 8247],
+];
+/** X's weighted length: Latin/Arabic count 1, emoji and CJK count 2. */
+function xLength(text) {
+  const graphemes =
+    typeof Intl !== "undefined" && Intl.Segmenter
+      ? Array.from(new Intl.Segmenter("en", { granularity: "grapheme" }).segment(text), (s) => s.segment)
+      : Array.from(text);
+  let total = 0;
+  for (const g of graphemes) {
+    if (/\p{Extended_Pictographic}/u.test(g)) {
+      total += 2;
+      continue;
+    }
+    for (const ch of g) {
+      const cp = ch.codePointAt(0) || 0;
+      total += LIGHT_RANGES.some(([a, b]) => cp >= a && cp <= b) ? 1 : 2;
+    }
+  }
+  return total;
+}
+
+const REASONS = {
+  CREDENTIAL_HARVESTING: ["it asks for card and OTP details", "يطلب بيانات البطاقة ورمز التحقق"],
+  NEWLY_REGISTERED: ["the site was created only hours ago", "أُنشئ الموقع قبل ساعات فقط"],
+  KNOWN_SYNDICATE_INFRA: ["it is linked to a known scam network", "مرتبط بشبكة احتيال معروفة"],
+  UNOFFICIAL_DOMAIN_ON_LISTING: ["a fake Google Maps listing", "إدراج مزيف على خرائط جوجل"],
+  HOMOGLYPH_SPOOF: ["look-alike letters in the web address", "أحرف مشابهة في عنوان الموقع"],
+  BRAND_IMPERSONATION: ["it is not the official website", "ليس الموقع الرسمي"],
+  TYPOSQUAT: ["a misspelled copy of the official address", "نسخة بأخطاء إملائية من العنوان الرسمي"],
+  TLD_SWAP: ["the official name with the wrong ending", "الاسم الرسمي بامتداد خاطئ"],
+  CLOAKING: ["it hides from security scanners", "يتخفّى من أنظمة الفحص الأمني"],
+};
+function reason() {
+  const hit = (v.flags || []).find((f) => REASONS[f.code]);
+  return hit ? REASONS[hit.code] : ["it fails official verification", "لم يجتز التحقق الرسمي"];
+}
+
+function draft(lang) {
+  const site = v.domain || hostOf(v.url);
+  const masked = site ? ` (${defang(site)})` : "";
+  const [rEn, rAr] = reason();
+  if (lang === "ar") {
+    const who = v.entityAr ? `روابط مزيفة تنتحل صفة ${v.entityAr}` : "روابط مزيفة";
+    return `⚠️ تحذير احتيال في أبوظبي: احذروا ${who}${masked}. علامة الخطر: ${rAr}. تحقّقوا قبل الضغط وأبلغوا أمان 8002626 / رسالة 2828. #أبوظبي #الأمن_السيبراني #Aman8002626`;
+  }
+  const who = v.entityEn ? `fake ${v.entityEn} links` : "fake links";
+  return `⚠️ Fraud Alert in Abu Dhabi: Watch out for ${who}${masked}. Red flag: ${rEn}. Verify before clicking & report to Aman 8002626 / SMS 2828. #AbuDhabi #CyberSafety #Aman8002626`;
+}
+
+function amanReport() {
+  const when = new Date(v.at || Date.now()).toLocaleString("en-GB", { timeZone: "Asia/Dubai", dateStyle: "medium", timeStyle: "short" });
+  const site = defang(v.domain || hostOf(v.url)) || "—";
+  const lines = [
+    "SAQR-INTEL fraud report → Aman 8002626 / SMS 2828",
+    v.scanId ? `Scan ID: ${v.scanId}` : null,
+    `Time: ${when} (UAE)`,
+    `Verdict: ${v.verdict} (${v.score}/100)`,
+    v.entityEn ? `Impersonating: ${v.entityEn}` : null,
+    `Suspicious site (masked): ${site}`,
+    "Detected via: PC Browser Shield (Chrome/Edge extension)",
+    v.flags?.length ? `Red flags:\n${v.flags.map((f) => `- ${f.en}`).join("\n")}` : null,
+    "",
+    "بلاغ احتيال — صقر للاستخبارات",
+    v.entityAr ? `ينتحل صفة: ${v.entityAr}` : null,
+    `الموقع المشبوه (معطّل): ${site}`,
+    v.flags?.length ? `علامات الخطر:\n${v.flags.map((f) => `- ${f.ar}`).join("\n")}` : null,
+  ];
+  return lines.filter((l) => l !== null).join("\n");
+}
+
+async function copy(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  }
+}
+
+function toast(text, ok = true) {
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.toggle("err", !ok);
+  t.classList.remove("hidden");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.add("hidden"), 3500);
+}
+
+function hide(...ids) {
+  ids.forEach((id) => $(id).classList.add("hidden"));
+}
+
+// ---------------------------------------------------------------- render
+function renderGauge(score) {
+  const circle = $("gauge-value");
+  const r = 54;
+  const c = 2 * Math.PI * r;
+  circle.style.strokeDasharray = String(c);
+  circle.style.strokeDashoffset = String(c);
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      circle.style.strokeDashoffset = String(c - (Math.max(0, Math.min(100, score)) / 100) * c);
+    }),
+  );
+  const num = $("gauge-num");
+  const start = performance.now();
+  const step = (now) => {
+    const p = Math.min(1, (now - start) / 1300);
+    num.textContent = String(Math.round(score * (1 - Math.pow(1 - p, 3))));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  $("gauge").setAttribute("aria-label", `Risk score ${score} out of 100`);
+}
+
+function render() {
+  $("hero").className = `hero tone-${tone}`;
+  const badge = $("verdict-badge");
+  badge.className = `badge ${tone}`;
+
+  if (v.error) {
+    badge.textContent = "SCAN FAILED";
+    $("title-en").textContent = "Could not complete the scan";
+    $("title-ar").textContent = "تعذّر إكمال الفحص";
+    $("by").textContent = `${v.error} — Is the SAQR-INTEL backend running? Check the address in the extension popup.`;
+    $("target").textContent = v.url || "";
+    renderGauge(0);
+    hide("sync", "entity-row", "explain-en-card", "explain-ar-card", "flags-card", "x-card");
+    return;
+  }
+
+  const titles = {
+    danger:
+      mode === "block"
+        ? ["Website blocked for your protection", "تم حظر الموقع لحمايتك"]
+        : ["Dangerous website: do not open it", "موقع خطير: لا تفتحه"],
+    warn: ["Warning: this website looks suspicious", "تحذير: هذا الموقع يبدو مشبوهاً"],
+    safe: ["Verified safe", "تم التحقق: آمن"],
+  }[tone];
+  badge.textContent = v.verdict || "";
+  $("title-en").textContent = titles[0];
+  $("title-ar").textContent = titles[1];
+  document.title = `${titles[0]} · SAQR-INTEL`;
+  if (tone === "safe") $("by").textContent = "Checked by SAQR-INTEL · تم الفحص بواسطة صقر";
+  let path = "";
+  try {
+    path = new URL(v.url).pathname.replace(/\/$/, "");
+  } catch {
+    path = "";
+  }
+  // Demo pages (/mock-scam/<slug>) stand in for a seeded scam domain: show that domain instead.
+  const isDemo = path.startsWith("/mock-scam/");
+  $("target").textContent =
+    v.kind === "maps"
+      ? `${v.target}${v.domain ? ` → ${defang(v.domain)}` : ""}`
+      : isDemo && v.domain
+        ? defang(v.domain)
+        : defang(hostOf(v.url)) + path;
+  renderGauge(Number(v.score) || 0);
+
+  $("case").textContent = [v.scanId ? `Case ${v.scanId}` : null, new Date(v.at || Date.now()).toLocaleTimeString("en-GB", { timeZone: "Asia/Dubai" })]
+    .filter(Boolean)
+    .join(" · ");
+
+  if (v.entityEn && tone !== "safe") {
+    $("entity-en").textContent = v.entityEn;
+    $("entity-ar").textContent = v.entityAr || "";
+  } else {
+    hide("entity-card");
+  }
+  if (v.official?.length) {
+    $("official").textContent = v.official[0];
+    const go = $("go-official");
+    go.href = `https://${v.official[0]}`;
+    go.classList.remove("hidden");
+  } else {
+    hide("official-card");
+  }
+  if ($("entity-card").classList.contains("hidden") && $("official-card").classList.contains("hidden")) hide("entity-row");
+
+  if (tone === "safe") {
+    $("explain-en-title").textContent = "Why this is safe";
+    $("explain-ar-title").textContent = "لماذا هذا آمن";
+  }
+  const stripBullets = (t) =>
+    String(t || "")
+      .split(/\n\s*\n/)
+      .filter((p) => !/^\s*(red flags|علامات الخطر)\s*:/i.test(p) && !/^\s*•/.test(p))
+      .join("\n\n")
+      .trim();
+  const en = stripBullets(v.explanationEn);
+  const ar = stripBullets(v.explanationAr);
+  if (en) $("explain-en").textContent = en;
+  else hide("explain-en-card");
+  if (ar) $("explain-ar").textContent = ar;
+  else hide("explain-ar-card");
+
+  const list = $("flags");
+  (v.flags || []).forEach((f) => {
+    const li = document.createElement("li");
+    const sev = document.createElement("span");
+    sev.className = `sev ${f.sev}`;
+    sev.textContent = f.sev;
+    const text = document.createElement("div");
+    text.className = "flag-text";
+    const pe = document.createElement("p");
+    pe.textContent = f.en;
+    const pa = document.createElement("p");
+    pa.className = "ar";
+    pa.dir = "rtl";
+    pa.lang = "ar";
+    pa.textContent = f.ar;
+    text.append(pe, pa);
+    li.append(sev, text);
+    list.append(li);
+  });
+  if (!v.flags?.length) hide("flags-card");
+
+  if (tone === "safe" || (Number(v.score) || 0) < 60) hide("x-card");
+  if (tone === "safe") hide("sync");
+
+  if (mode === "block" && v.url) $("continue").classList.remove("hidden");
+}
+
+// ---------------------------------------------------------------- X composer
+let draftLang = "en";
+const drafts = { en: "", ar: "" };
+
+function syncDraft() {
+  const text = $("draft").value;
+  drafts[draftLang] = text;
+  const len = xLength(text);
+  const over = len > X_LIMIT || !text.trim();
+  $("count").textContent = `${len}/${X_LIMIT}`;
+  $("count").classList.toggle("over", len > X_LIMIT);
+  $("draft").classList.toggle("over", len > X_LIMIT);
+  $("draft-hint").textContent =
+    len > X_LIMIT ? "Too long for X. Shorten it to 280 characters." : "You can edit the text. X opens in a new tab; nothing posts until you press Post there.";
+  const open = $("x-open");
+  open.setAttribute("aria-disabled", String(over));
+  open.href = over ? "#" : `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
+}
+
+function setDraftLang(lang) {
+  draftLang = lang;
+  document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.lang === lang)));
+  const ta = $("draft");
+  ta.value = drafts[lang];
+  ta.dir = lang === "ar" ? "rtl" : "ltr";
+  syncDraft();
+}
+
+$("x-review").addEventListener("click", () => {
+  drafts.en = drafts.en || draft("en");
+  drafts.ar = drafts.ar || draft("ar");
+  $("x-editor").classList.remove("hidden");
+  setDraftLang(draftLang);
+  $("draft").focus();
+});
+document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => setDraftLang(b.dataset.lang)));
+$("draft").addEventListener("input", syncDraft);
+$("x-open").addEventListener("click", (e) => {
+  if ($("x-open").getAttribute("aria-disabled") === "true") e.preventDefault();
+});
+$("copy-aman").addEventListener("click", async () => {
+  const ok = await copy(amanReport());
+  toast(ok ? "Report copied. Paste it into an SMS to 2828 or read it to Aman 8002626. · تم نسخ البلاغ" : "Couldn't copy. Select the text manually.", ok);
+});
+
+// ---------------------------------------------------------------- navigation buttons
+$("safety").addEventListener("click", async () => {
+  const tab = await chrome.tabs.getCurrent();
+  if (mode !== "block" && tab?.id != null) {
+    chrome.tabs.remove(tab.id);
+    return;
+  }
+  chrome.tabs.update(tab?.id, { url: "chrome://newtab/" });
+});
+$("continue").addEventListener("click", async () => {
+  if (!confirm("This website was blocked as a scam. Continue anyway? Never enter card details, OTP codes or UAE PASS logins here.")) return;
+  await chrome.runtime.sendMessage({ type: "allowHost", host: hostOf(v.url) });
+  location.replace(v.url);
+});
+
+render();

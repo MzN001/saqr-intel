@@ -3,6 +3,7 @@ export type InterceptionChannel =
   | "AUTO_TELECOM_DNS"
   | "AUTO_SMS_GUARD"
   | "CITIZEN_MANUAL_CHECK"
+  | "PC_BROWSER_EXTENSION"
   | "MANUAL";
 
 export type VerdictLabel = "SAFE" | "SUSPICIOUS" | "HIGH-RISK SCAM";

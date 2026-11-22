@@ -5,7 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-Interception = Literal["MOBILE_OS_SHARE_SHEET", "AUTO_TELECOM_DNS", "AUTO_SMS_GUARD", "CITIZEN_MANUAL_CHECK", "MANUAL"]
+Interception = Literal["MOBILE_OS_SHARE_SHEET", "AUTO_TELECOM_DNS", "AUTO_SMS_GUARD", "CITIZEN_MANUAL_CHECK",
+                       "PC_BROWSER_EXTENSION", "MANUAL"]
 Channel = Literal["sms", "whatsapp", "email", "social", "web", "call", "maps", "other"]
 
 

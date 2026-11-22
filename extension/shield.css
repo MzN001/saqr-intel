@@ -1,0 +1,379 @@
+/* SAQR-INTEL extension — shared design system (matches the /citizen Next.js portal). */
+:root {
+  color-scheme: light dark;
+  --navy-950: #060f1c;
+  --navy-900: #0b192c;
+  --navy-800: #132a47;
+  --navy-700: #1e3a5f;
+  --gold: #c5a572;
+  --emerald: #10b981;
+  --emerald-700: #047857;
+  --crimson: #ef4444;
+  --crimson-700: #a50e25;
+  --amber: #f59e0b;
+
+  /* Light theme: cream paper + navy ink (same tokens as /citizen). */
+  --canvas: #f3ecdf;
+  --surface: #faf6ee;
+  --muted: #eee5d5;
+  --line: #e0d4bf;
+  --ink: #0b192c;
+  --ink-soft: #2b4568;
+
+  --font: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-ar: "Noto Kufi Arabic", "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
+  --radius: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #070e1a;
+    --surface: #0f1d33;
+    --muted: #15263f;
+    --line: #233552;
+    --ink: #e8eef7;
+    --ink-soft: #a7b6ca;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
+}
+
+[lang="ar"],
+.ar {
+  font-family: var(--font-ar);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Header (navy bar with gold shield) ---------- */
+.brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--navy-900);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex: none;
+  box-shadow: 0 0 0 2px rgba(197, 165, 114, 0.6);
+}
+.brand-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.brand-tag {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.65);
+}
+.status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--navy-950);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- Status dot ---------- */
+.dot {
+  position: relative;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--amber);
+}
+.dot.on {
+  background: var(--emerald);
+}
+.dot.off {
+  background: var(--crimson);
+}
+.dot.on::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--emerald);
+  animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ping {
+  75%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* ---------- Cards, pills, buttons ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.card-title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.85;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: #fff;
+}
+.badge.danger {
+  color: #c8102e;
+}
+.badge.warn {
+  color: #b45309;
+}
+.badge.safe {
+  color: var(--emerald-700);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.12s ease, filter 0.12s ease, background 0.12s ease;
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--navy-900);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--navy-800);
+}
+.btn-emerald {
+  background: var(--emerald);
+  color: #fff;
+}
+.btn-emerald:hover {
+  filter: brightness(0.94);
+}
+.btn-danger {
+  background: #c8102e;
+  color: #fff;
+}
+.btn-ghost {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.btn-ghost:hover {
+  background: var(--muted);
+}
+@media (prefers-color-scheme: dark) {
+  .btn-primary {
+    background: #fff;
+    color: var(--navy-900);
+  }
+  .btn-primary:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.field {
+  display: flex;
+  gap: 8px;
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--muted);
+  color: var(--ink);
+  font-size: 13px;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--emerald);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.toast {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--emerald-700);
+}
+.toast.err {
+  background: rgba(245, 158, 11, 0.16);
+  color: #92400e;
+}
+@media (prefers-color-scheme: dark) {
+  .toast {
+    color: #6ee7b7;
+  }
+  .toast.err {
+    color: #fcd34d;
+  }
+}
+.hidden {
+  display: none !important;
+}
+
+/* ---------- Risk gauge ---------- */
+.gauge {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  flex: none;
+}
+.gauge svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+.gauge .track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 10;
+}
+.gauge .value {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.3s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.55));
+}
+.gauge .label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  color: #fff;
+}
+.gauge .num {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.gauge .of {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.7);
+}
+.gauge.small {
+  width: 64px;
+  height: 64px;
+}
+.gauge.small .num {
+  font-size: 18px;
+}
+.gauge.small .of {
+  font-size: 9px;
+}
+.gauge.small .track,
+.gauge.small .value {
+  stroke-width: 12;
+}
+
+/* ---------- Verdict tones ---------- */
+.tone-danger {
+  background: linear-gradient(135deg, #a50e25, #c8102e 55%, #7a0a1c);
+}
+.tone-warn {
+  background: linear-gradient(135deg, #d97706, #f59e0b 55%, #b45309);
+}
+.tone-safe {
+  background: linear-gradient(135deg, #047857, #10b981 55%, #065f46);
+}
