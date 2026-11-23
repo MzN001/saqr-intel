@@ -40,3 +40,15 @@ services:
         sync: false
       - key: VAPID_PRIVATE_KEY          # keep scam-alert push keys stable across restarts (PEM, \n escaped)
         sync: false
+
+  # Phone-demo FAKE scam page (demo-scam-site/: training replica, inert form, noindex) on a neutral
+  # address without "saqr" or "vercel" in it. Static sites are free and never sleep.
+  - type: web
+    name: uae-fines-refund-portal
+    runtime: static
+    staticPublishPath: ./demo-scam-site
+    buildCommand: echo "static demo page"
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - demo-scam-site/**
