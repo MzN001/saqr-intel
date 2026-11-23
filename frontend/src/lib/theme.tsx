@@ -11,9 +11,9 @@ let current: Theme | null = null;
 
 function readStored(): Theme {
   try {
-    return window.localStorage.getItem(THEME_STORAGE_KEY) === "dark" ? "dark" : "light";
+    return window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark"; // dark by default
   } catch {
-    return "light";
+    return "dark";
   }
 }
 
@@ -35,7 +35,7 @@ const themeStore = {
     return current;
   },
   getServerSnapshot(): Theme {
-    return "light";
+    return "dark";
   },
   set(theme: Theme) {
     current = theme;

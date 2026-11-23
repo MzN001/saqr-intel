@@ -14,6 +14,9 @@
   --color-ink-soft: #2b4568;
   /* Phone-screen "white" for the simulated Google / Messages apps. */
   --color-screen: #fdfaf4;
+  /* Night Grid: the dot of the city map texture (warm grey on cream; see dark below). */
+  --color-grid-dot: #d9ccb4;
+  --color-scam: #e11d48;
 
   --color-navy-950: #060f1c;
   --color-navy-900: #0b192c;
@@ -74,14 +77,22 @@
   color-scheme: light;
 }
 
+/* Night Grid (default theme): night-navy ground, tiles one step lighter, hairline edges. */
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-canvas: #070e1a;
-  --color-surface: #0f1d33;
-  --color-muted: #15263f;
-  --color-line: #233552;
+  --color-canvas: #0a1220;
+  --color-surface: #111c2e;
+  --color-muted: #16243a;
+  --color-line: #1f2d45;
   --color-ink: #e8eef7;
-  --color-ink-soft: #a7b6ca;
+  --color-ink-soft: #a3b3c8;
+  --color-grid-dot: #1f2e47;
+}
+
+/* The city at night: a dot-matrix ground. Used behind the map tiles and the citizen hero. */
+.night-grid {
+  background-image: radial-gradient(var(--color-grid-dot) 1.4px, transparent 1.5px);
+  background-size: 14px 14px;
 }
 
 html {

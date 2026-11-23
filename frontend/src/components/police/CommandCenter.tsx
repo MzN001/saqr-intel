@@ -1,26 +1,27 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink, Flag, Globe2, Loader2, MapPinned, QrCode, Radar, ShieldCheck, Siren, Users } from "lucide-react";
-import dynamic from "next/dynamic";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import { ExternalLink, Flag, Loader2, Menu, QrCode, Search, Settings, ShieldCheck, Siren, Users, X, MapPinned } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { CityGridMap, type GridPin } from "@/components/CityGrid";
 import { Modal } from "@/components/Modal";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLang } from "@/lib/i18n";
-import { CHANNEL_LABEL, P, STATUS_LABEL, usePoliceLive, type Campaign, type MapPin, type PoliceEvent } from "@/lib/police";
+import { CHANNEL_LABEL, P, STATUS_LABEL, usePoliceLive, type Campaign, type CampaignStatus, type MapPin, type PoliceEvent } from "@/lib/police";
 import { ActionCenter } from "./ActionCenter";
 
-const AbuDhabiMap = dynamic(() => import("@/components/AbuDhabiMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="grid h-full place-items-center text-sm text-white/50">
-      <Loader2 className="size-5 animate-spin" />
-    </div>
-  ),
-});
-
 type L = (k: keyof typeof P) => string;
+type Section = "desk" | "campaigns" | "map" | "actions";
 const noSubscribe = () => () => {};
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+const NAV: { id: Section; en: string; ar: string }[] = [
+  { id: "desk", en: "Live desk", ar: "المكتب المباشر" },
+  { id: "campaigns", en: "Campaigns", ar: "الحملات" },
+  { id: "map", en: "Geo-spoof map", ar: "خريطة التزييف" },
+  { id: "actions", en: "Takedowns", ar: "الإزالة" },
+];
 
 function timeAgo(ts: string, lang: "en" | "ar"): string {
   const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000);
@@ -31,16 +32,29 @@ function timeAgo(ts: string, lang: "en" | "ar"): string {
   return rtf.format(-Math.round(s / 86400), "day");
 }
 
-function riskTone(score: number) {
-  return score >= 65 ? "bg-crimson-600 text-white" : score >= 30 ? "bg-amber-500 text-navy-900" : "bg-emerald-600 text-white";
+/** Crimson means scam, nothing else; lower scores stay neutral. */
+function Score({ v }: { v: number }) {
+  const tone = v >= 65 ? "bg-scam text-white" : v >= 30 ? "bg-gold-500 text-navy-950" : "bg-muted text-ink";
+  return <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${tone}`}>{v}</span>;
 }
 
-function Card({ title, icon, children, right, className = "" }: { title: string; icon: ReactNode; children: ReactNode; right?: ReactNode; className?: string }) {
+/** States stamp themselves onto the row (Night Grid): nothing silently changes. */
+export function Stamp({ status, lang }: { status: CampaignStatus; lang: "en" | "ar" }) {
+  const tone =
+    status === "SYNCED_TO_TELECOM_DNS" ? "text-emerald-600 dark:text-emerald-400" : status === "COMMUNITY_FLAGGED_X" ? "text-gold-500" : "text-scam";
   return (
-    <section className={`rounded-3xl bg-navy-900/70 p-4 ring-1 ring-white/10 backdrop-blur ${className}`}>
+    <span className={`inline-block -rotate-3 rounded-md border-2 border-current px-1.5 py-px text-[10px] font-extrabold uppercase tracking-[0.12em] ${tone}`}>
+      {STATUS_LABEL[status][lang]}
+    </span>
+  );
+}
+
+function Tile({ title, icon, right, children, className = "", id }: { title: string; icon: ReactNode; right?: ReactNode; children: ReactNode; className?: string; id?: string }) {
+  return (
+    <section id={id} className={`scroll-mt-40 rounded-[20px] border border-line bg-surface p-4 ${className}`}>
       <div className="mb-3 flex items-center gap-2">
-        <span className="grid size-8 place-items-center rounded-xl bg-white/10 text-white">{icon}</span>
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-white">{title}</h2>
+        <span className="text-ink-soft">{icon}</span>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-soft">{title}</h2>
         <div className="ms-auto">{right}</div>
       </div>
       {children}
@@ -48,61 +62,167 @@ function Card({ title, icon, children, right, className = "" }: { title: string;
   );
 }
 
-function Header({ link, lang, setLang, L }: { link: string; lang: "en" | "ar"; setLang: (l: "en" | "ar") => void; L: L }) {
+/* ------------------------------------------------------------------ top bar (Abu Dhabi Police site style) */
+
+function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: string; setQuery: (q: string) => void }) {
+  const { lang, setLang } = useLang();
+  const [active, setActive] = useState<Section>("desk");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const origin = useSyncExternalStore(noSubscribe, () => window.location.origin, () => "");
-  const citizenUrl = `${origin}/citizen`;
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  const go = (id: Section) => {
+    setActive(id);
+    setMenuOpen(false);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const badge =
     link === "offline"
-      ? { text: L("offline"), dot: "bg-amber-400", ring: "ring-amber-400/40 text-amber-200" }
-      : { text: link === "live" ? L("live") : L("polling"), dot: "bg-emerald-400", ring: "ring-emerald-400/40 text-emerald-200" };
+      ? { text: L("offline"), dot: "bg-gold-500" }
+      : { text: link === "live" ? L("live") : L("polling"), dot: "bg-emerald-500" };
+
+  const iconBtn = "grid size-10 place-items-center rounded-full text-ink-soft transition-colors hover:bg-muted hover:text-ink";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-navy-900 shadow-lg">
-      <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
-        <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-navy-950 shadow-md ring-2 ring-gold-500/60">
-          <ShieldCheck className="size-6 text-gold-500" />
-          <span className="absolute -bottom-0.5 -end-0.5 size-3 rounded-full border-2 border-navy-900 bg-emerald-500" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-base font-extrabold leading-tight tracking-tight text-white sm:text-lg">{L("title")}</h1>
-          <p className="text-xs font-medium text-white/60">{L("subtitle")}</p>
-        </div>
-
-        <span className={`ms-auto inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-extrabold tracking-wider ring-1 ${badge.ring}`}>
-          <span className="relative flex size-2.5">
-            <span className={`absolute inline-flex size-full animate-ping rounded-full opacity-75 ${badge.dot}`} />
-            <span className={`relative inline-flex size-2.5 rounded-full ${badge.dot}`} />
-          </span>
-          {badge.text}
-        </span>
-
-        <div className="flex items-center gap-2">
-          <a href="/citizen" target="_blank" rel="noopener"
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white ring-1 ring-white/15 hover:bg-white/20">
-            {L("citizenPortal")} <ExternalLink className="size-3.5" />
-          </a>
-          <button type="button" onClick={() => setQrOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3 py-1.5 text-xs font-extrabold text-navy-900 hover:brightness-110">
-            <QrCode className="size-3.5" /> {L("stageQr")}
+    <header className="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur">
+      <div className="mx-auto flex h-[76px] max-w-[1500px] items-center gap-1 px-3 sm:px-6">
+        <button type="button" className={`${iconBtn} lg:hidden`} aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+          {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+        </button>
+        <div className="relative hidden lg:block">
+          <button type="button" className={iconBtn} aria-label={lang === "ar" ? "الإعدادات" : "Settings"} aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
+            <Settings className="size-5" />
           </button>
-          <div role="radiogroup" aria-label="Language" className="flex rounded-full bg-navy-950 p-1 text-xs font-bold ring-1 ring-white/15" dir="ltr">
-            {(["en", "ar"] as const).map((l) => (
-              <button key={l} role="radio" aria-checked={lang === l} onClick={() => setLang(l)}
-                className={`rounded-full px-3 py-1.5 transition-colors ${lang === l ? "bg-white text-navy-900" : "text-white/75 hover:text-white"}`}>
-                {l === "en" ? "English" : "العربية"}
-              </button>
-            ))}
+          <AnimatePresence>
+            {settingsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.16 }}
+                className="absolute start-0 top-12 z-50 w-60 rounded-2xl border border-line bg-surface p-3 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.5)]"
+              >
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-soft">{lang === "ar" ? "المظهر" : "Appearance"}</p>
+                <div className="flex items-center justify-between gap-2 text-sm text-ink">
+                  {lang === "ar" ? "فاتح / داكن" : "Light / dark"} <ThemeToggle />
+                </div>
+                <button type="button" onClick={() => { setQrOpen(true); setSettingsOpen(false); }} className="mt-3 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm text-ink hover:bg-muted">
+                  <QrCode className="size-4" /> {L("stageQr")}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <span className="mx-2 hidden h-7 w-px bg-line lg:block" aria-hidden />
+        <div className="flex items-center">
+          <button type="button" className={iconBtn} aria-label={lang === "ar" ? "بحث" : "Search"} aria-expanded={searchOpen} onClick={() => setSearchOpen((v) => !v)}>
+            <Search className="size-5" />
+          </button>
+          <AnimatePresence initial={false}>
+            {searchOpen && (
+              <motion.input
+                ref={searchRef}
+                key="q"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 200, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.22, ease: EASE }}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Escape" && (setQuery(""), setSearchOpen(false))}
+                placeholder={lang === "ar" ? "ابحث عن نطاق أو جهة…" : "Search domain or entity…"}
+                className="h-9 rounded-full border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-emerald-600"
+                dir="ltr"
+              />
+            )}
+          </AnimatePresence>
+        </div>
+        <button type="button" onClick={() => setLang(lang === "en" ? "ar" : "en")} className="ms-3 hidden rounded-full px-3 py-2 text-[15px] text-ink-soft hover:text-ink sm:block">
+          {lang === "en" ? "العربية" : "English"}
+        </button>
+        <nav aria-label={lang === "ar" ? "أقسام مركز القيادة" : "Command Center sections"} className="ms-4 hidden h-full items-stretch lg:flex">
+          {NAV.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => go(n.id)}
+              aria-current={active === n.id ? "true" : undefined}
+              className={`relative px-3.5 text-[15px] font-bold uppercase tracking-[0.02em] transition-colors ${active === n.id ? "text-ink" : "text-ink-soft hover:text-ink"}`}
+            >
+              {lang === "ar" ? n.ar : n.en}
+              {active === n.id && <motion.span layoutId="adp-nav" className="absolute inset-x-0 bottom-0 h-1 bg-scam" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
+            </button>
+          ))}
+        </nav>
+
+        <div className="ms-auto flex items-center gap-3">
+          <div className="text-end leading-tight">
+            <p className="text-lg font-bold text-ink sm:text-[22px]" lang="ar" dir="rtl">شرطة أبوظبي</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-ink sm:text-[15px]">Abu Dhabi Police</p>
+          </div>
+          <span className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-gold-500 bg-navy-900 sm:size-[54px]" aria-hidden>
+            <ShieldCheck className="size-6 text-gold-500" />
+          </span>
+          <span className="hidden sm:block lg:hidden"><ThemeToggle /></span>
+        </div>
+      </div>
+
+      {/* live strip */}
+      <div className="border-t border-line bg-canvas">
+        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 sm:px-6">
+          <span className="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink">
+            <span className={`size-2 rounded-full ${badge.dot}`} /> {badge.text}
+          </span>
+          <span className="hidden text-xs text-ink-soft sm:inline">{L("title")}</span>
+          <div className="ms-auto flex items-center gap-2">
+            <a href="/citizen" target="_blank" rel="noopener" className="press inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-bold text-ink hover:bg-muted">
+              {L("citizenPortal")} <ExternalLink className="size-3.5" />
+            </a>
+            <button type="button" onClick={() => setQrOpen(true)} className="press inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3 py-1.5 text-xs font-extrabold text-navy-950 hover:brightness-110">
+              <QrCode className="size-3.5" /> {L("stageQr")}
+            </button>
+            <span className="hidden lg:block"><ThemeToggle /></span>
           </div>
         </div>
       </div>
 
+      {/* phone / tablet menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.nav
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-t border-line bg-surface lg:hidden"
+          >
+            <div className="flex flex-col p-2">
+              {NAV.map((n) => (
+                <button key={n.id} type="button" onClick={() => go(n.id)} className={`rounded-xl px-4 py-3 text-start text-sm font-bold uppercase ${active === n.id ? "bg-muted text-ink" : "text-ink-soft"}`}>
+                  {lang === "ar" ? n.ar : n.en}
+                </button>
+              ))}
+              <button type="button" onClick={() => setLang(lang === "en" ? "ar" : "en")} className="rounded-xl px-4 py-3 text-start text-sm text-ink-soft sm:hidden">
+                {lang === "en" ? "العربية" : "English"}
+              </button>
+              <div className="flex items-center justify-between rounded-xl px-4 py-2 text-sm text-ink-soft sm:hidden">
+                {lang === "ar" ? "فاتح / داكن" : "Light / dark"} <ThemeToggle />
+              </div>
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
+
       <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={L("stageQrTitle")}>
         <div className="flex flex-col items-center gap-4 py-2 text-center">
-          <div className="rounded-3xl bg-white p-4 shadow-inner ring-1 ring-line">
-            {origin && <QRCodeSVG value={citizenUrl} size={240} level="M" marginSize={1} />}
-          </div>
-          <p className="font-mono text-sm font-bold text-ink" dir="ltr">{citizenUrl}</p>
+          <div className="rounded-3xl bg-white p-4 ring-1 ring-line">{origin && <QRCodeSVG value={`${origin}/citizen`} size={240} level="M" marginSize={1} />}</div>
+          <p className="font-mono text-sm font-bold text-ink" dir="ltr">{origin}/citizen</p>
           <p className="max-w-sm text-sm text-ink-soft">{L("stageQrHint")}</p>
         </div>
       </Modal>
@@ -110,16 +230,16 @@ function Header({ link, lang, setLang, L }: { link: string; lang: "en" | "ar"; s
   );
 }
 
-function Kpi({ label, value, icon, tone }: { label: string; value: number | undefined; icon: ReactNode; tone: string }) {
+/* ------------------------------------------------------------------ desk */
+
+function Kpi({ label, value, icon, accent }: { label: string; value: number | undefined; icon: ReactNode; accent: string }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-navy-900/80 p-4 ring-1 ring-white/10">
-      <div className={`absolute -end-6 -top-6 size-24 rounded-full opacity-20 blur-2xl ${tone}`} />
-      <div className="flex items-center gap-2 text-white/70">
-        {icon}
-        <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
+    <div className="rounded-[20px] border border-line bg-surface p-4">
+      <div className="flex items-center gap-2 text-ink-soft">
+        <span className={accent}>{icon}</span>
+        <p className="text-[11px] font-bold uppercase tracking-[0.12em]">{label}</p>
       </div>
-      <motion.p key={value} initial={{ scale: 1.15, opacity: 0.4 }} animate={{ scale: 1, opacity: 1 }}
-        className="mt-2 text-4xl font-black tabular-nums text-white" dir="ltr">
+      <motion.p key={value} initial={{ opacity: 0.35 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="mt-2 text-[42px] font-light leading-none tracking-tight text-ink tabular-nums" dir="ltr">
         {value === undefined ? "—" : value.toLocaleString("en-US")}
       </motion.p>
     </div>
@@ -128,25 +248,21 @@ function Kpi({ label, value, icon, tone }: { label: string; value: number | unde
 
 function Stream({ events, selected, onPick, lang, L }: { events: PoliceEvent[]; selected: string | null; onPick: (e: PoliceEvent) => void; lang: "en" | "ar"; L: L }) {
   return (
-    <ul className="max-h-[420px] space-y-2 overflow-y-auto pe-1">
-      {events.length === 0 && <li className="p-4 text-sm text-white/50">{L("noEvents")}</li>}
+    <ul className="max-h-[360px] overflow-y-auto pe-1">
+      {events.length === 0 && <li className="p-3 text-sm text-ink-soft">{L("noEvents")}</li>}
       <AnimatePresence initial={false}>
         {events.map((e) => {
           const ch = CHANNEL_LABEL[e.channel] ?? CHANNEL_LABEL.CITIZEN_MANUAL_CHECK;
-          const active = selected !== null && e.campaign_id === selected;
+          const on = selected !== null && e.campaign_id === selected;
           return (
-            <motion.li key={e.id} layout initial={{ opacity: 0, y: -18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0 }} transition={{ type: "spring", stiffness: 380, damping: 32 }}>
-              <button type="button" onClick={() => onPick(e)}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start ring-1 transition ${active ? "bg-white/15 ring-gold-500/70" : "bg-white/5 ring-white/10 hover:bg-white/10"}`}>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ring-1 ${ch.tone}`}>{ch[lang]}</span>
+            <motion.li key={e.id} layout initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="border-t border-line first:border-0">
+              <button type="button" onClick={() => onPick(e)} className={`flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-start transition-colors ${on ? "bg-muted" : "hover:bg-muted/60"}`}>
+                <span className="w-24 shrink-0 text-[10px] font-extrabold uppercase tracking-[0.08em] text-emerald-700 dark:text-emerald-400">{ch[lang]}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-sm font-bold text-white" dir="ltr">{e.title ?? e.defanged_domain}</span>
-                  <span className="block truncate text-xs text-white/55">
-                    {e.impersonated_entity ?? "—"} · {timeAgo(e.ts, lang)}
-                  </span>
+                  <span className="block truncate font-mono text-[13px] font-bold text-ink" dir="ltr">{e.title ?? e.defanged_domain}</span>
+                  <span className="block truncate text-xs text-ink-soft">{e.impersonated_entity ?? "—"} · {timeAgo(e.ts, lang)}</span>
                 </span>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-black tabular-nums ${riskTone(e.risk_score)}`}>{e.risk_score}</span>
+                <Score v={e.risk_score} />
               </button>
             </motion.li>
           );
@@ -156,120 +272,127 @@ function Stream({ events, selected, onPick, lang, L }: { events: PoliceEvent[]; 
   );
 }
 
-function Campaigns({ list, selected, onPick, lang, L }: { list: Campaign[]; selected: string | null; onPick: (c: Campaign) => void; lang: "en" | "ar"; L: L }) {
+function Roster({ list, selected, onPick, lang, L }: { list: Campaign[]; selected: string | null; onPick: (c: Campaign) => void; lang: "en" | "ar"; L: L }) {
   return (
-    <ul className="max-h-[440px] space-y-2 overflow-y-auto pe-1">
-      {list.map((c) => {
-        const st = STATUS_LABEL[c.status];
-        const active = c.campaign_id === selected;
+    <ol className="grid gap-2 sm:grid-cols-2">
+      {list.map((c, i) => {
+        const on = c.campaign_id === selected;
         return (
           <li key={c.campaign_id}>
-            <button type="button" onClick={() => onPick(c)}
-              className={`w-full rounded-2xl p-3 text-start ring-1 transition ${active ? "bg-white/15 ring-gold-500/70" : "bg-white/5 ring-white/10 hover:bg-white/10"}`}>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate font-mono text-sm font-bold text-white" dir="ltr">{c.defanged_domain}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-black tabular-nums ${riskTone(c.risk_score)}`}>{c.risk_score}</span>
-              </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/60">
-                <span className="font-semibold text-white/80">{c.impersonated_entity ?? "—"}</span>
-                <span>·</span>
-                <span className="font-bold text-white">{c.hit_count}</span> {L("hits")}
-                <span className={`ms-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold ${st.tone}`}>{st[lang]}</span>
-              </div>
-              <div className="mt-1.5 grid grid-cols-2 gap-2 text-[11px] text-white/50">
-                <span className="truncate" dir="ltr" title={c.ip_asn}>{L("hosting")}: {c.ip_asn}</span>
-                <span className="truncate text-end" dir="ltr">{L("sslAge")}: {c.ssl_age}</span>
-              </div>
+            <button type="button" onClick={() => onPick(c)} className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-start transition-colors ${on ? "border-ink/40 bg-muted" : "border-line hover:bg-muted/60"}`}>
+              <span className="w-6 shrink-0 pt-0.5 text-sm font-light text-ink-soft tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate font-mono text-[13px] font-bold text-ink" dir="ltr">{c.defanged_domain}</span>
+                  <Score v={c.risk_score} />
+                </span>
+                <span className="mt-0.5 block text-xs text-ink-soft">
+                  {c.impersonated_entity ?? "—"} · <b className="font-semibold text-ink">{c.hit_count}</b> {L("hits")} · <span dir="ltr">{c.ip_asn}</span>
+                </span>
+                <span className="mt-2 block"><Stamp status={c.status} lang={lang} /></span>
+              </span>
             </button>
           </li>
         );
       })}
-    </ul>
+    </ol>
   );
 }
 
 export function CommandCenter() {
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const L: L = (k) => P[k][lang];
   const { state, link, refresh } = usePoliceLive();
   const [picked, setPicked] = useState<string | null>(null);
   const [pin, setPin] = useState<MapPin | null>(null);
+  const [query, setQuery] = useState("");
 
+  const q = query.trim().toLowerCase();
+  const match = (s: (string | null | undefined)[]) => !q || s.some((x) => x?.toLowerCase().includes(q));
   const campaigns = useMemo(() => state?.campaigns ?? [], [state]);
-  // Until the officer picks one, the most severe campaign is selected.
+  const shownCampaigns = campaigns.filter((c) => match([c.domain, c.impersonated_entity]));
+  const shownEvents = (state?.recent_events ?? []).filter((e) => match([e.domain, e.impersonated_entity, e.title]));
   const selected = picked ?? campaigns[0]?.campaign_id ?? null;
-  const setSelected = setPicked;
   const current = campaigns.find((c) => c.campaign_id === selected) ?? null;
+  const pins: GridPin[] = (state?.map_pins ?? []).map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, title: p.title, type: p.type }));
 
-  const pickPin = (p: MapPin) => {
+  const pickPin = (g: GridPin) => {
+    const p = state?.map_pins.find((x) => x.id === g.id) ?? null;
     setPin(p);
-    const c = campaigns.find((x) => x.domain === p.domain);
-    if (c) setSelected(c.campaign_id);
+    const c = p && campaigns.find((x) => x.domain === p.domain);
+    if (c) setPicked(c.campaign_id);
   };
 
   return (
-    <div className="min-h-dvh bg-navy-950 text-white" style={{ backgroundImage: "radial-gradient(circle at 20% -10%, rgba(30,58,95,.55), transparent 45%)" }}>
-      <Header link={link} lang={lang} setLang={setLang} L={L} />
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-dvh bg-canvas text-ink">
+        <TopBar L={L} link={link} query={query} setQuery={setQuery} />
 
-      <main className="mx-auto max-w-[1500px] space-y-4 px-4 py-5 sm:px-6">
-        {!state && (
-          <p className="flex items-center gap-2 rounded-2xl bg-white/5 p-4 text-sm text-white/70 ring-1 ring-white/10">
-            <Loader2 className="size-4 animate-spin" /> {L("loading")}
-          </p>
-        )}
+        <main id="desk" className="mx-auto max-w-[1500px] scroll-mt-40 space-y-4 px-4 py-5 sm:px-6">
+          {!state && (
+            <p className="flex items-center gap-2 rounded-2xl border border-line bg-surface p-4 text-sm text-ink-soft">
+              <Loader2 className="size-4 animate-spin" /> {L("loading")}
+            </p>
+          )}
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Kpi label={L("kProtected")} value={state?.kpis.citizens_protected} icon={<Users className="size-4" />} tone="bg-emerald-400" />
-          <Kpi label={L("kEntities")} value={state?.kpis.active_entities} icon={<Siren className="size-4" />} tone="bg-crimson-600" />
-          <Kpi label={L("kPins")} value={state?.kpis.hijacked_pins} icon={<MapPinned className="size-4" />} tone="bg-amber-400" />
-          <Kpi label={L("kX")} value={state?.kpis.x_alerts_dispatched} icon={<Flag className="size-4" />} tone="bg-sky-400" />
-        </div>
+          <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)_380px]">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-1 lg:content-start">
+              <Kpi label={L("kProtected")} value={state?.kpis.citizens_protected} icon={<Users className="size-4" />} accent="text-emerald-600 dark:text-emerald-400" />
+              <Kpi label={L("kEntities")} value={state?.kpis.active_entities} icon={<Siren className="size-4" />} accent="text-scam" />
+              <Kpi label={L("kPins")} value={state?.kpis.hijacked_pins} icon={<MapPinned className="size-4" />} accent="text-scam" />
+              <Kpi label={L("kX")} value={state?.kpis.x_alerts_dispatched} icon={<Flag className="size-4" />} accent="text-gold-500" />
+            </div>
 
-        <div className="grid gap-4 lg:grid-cols-5">
-          <div className="space-y-4 lg:col-span-3">
-            <Card title={L("stream")} icon={<Radar className="size-4" />} right={<span className="hidden text-[11px] text-white/50 sm:block">{L("streamHint")}</span>}>
-              <Stream events={state?.recent_events ?? []} selected={selected} lang={lang} L={L}
-                onPick={(e) => e.campaign_id && setSelected(e.campaign_id)} />
-            </Card>
-
-            <Card title={L("map")} icon={<Globe2 className="size-4" />}
+            <Tile id="map" title={L("map")} icon={<MapPinned className="size-4" />}
               right={
-                <span className="flex items-center gap-3 text-[11px] text-white/70">
-                  <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-crimson-600" />{L("spoofed")}</span>
+                <span className="flex items-center gap-3 text-[11px] text-ink-soft">
+                  <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-scam" />{L("spoofed")}</span>
                   <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-emerald-500" />{L("verified")}</span>
                 </span>
-              }>
-              <div className="relative h-[380px] overflow-hidden rounded-2xl ring-1 ring-white/10" dir="ltr">
-                <AbuDhabiMap pins={state?.map_pins ?? []} selectedId={pin?.id ?? null} onSelect={pickPin} />
-                {pin && (
-                  <div className="absolute inset-x-3 bottom-3 z-[500] rounded-2xl bg-navy-950/95 p-3 shadow-xl ring-1 ring-white/15" dir={lang === "ar" ? "rtl" : "ltr"}>
-                    <div className="flex items-start gap-2">
-                      <span className={`mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${pin.type === "SPOOFED" ? "bg-crimson-600" : "bg-emerald-600"}`}>
-                        {pin.type === "SPOOFED" ? L("spoofed") : L("verified")}
-                      </span>
-                      <p className="min-w-0 flex-1 text-sm font-bold">{pin.title}</p>
-                      <button type="button" onClick={() => setPin(null)} className="text-white/50 hover:text-white" aria-label="Close">✕</button>
-                    </div>
-                    <p className="mt-1.5 text-xs leading-relaxed text-white/75">
-                      <span className="font-bold text-white">{L("registry")}: </span>{pin.registry_note}
-                    </p>
-                    {pin.domain && <p className="mt-1 font-mono text-xs text-white/60" dir="ltr">{pin.domain.replace(/\./g, "[.]")}</p>}
-                  </div>
-                )}
+              }
+              className="flex flex-col"
+            >
+              <div className="relative min-h-[420px] flex-1 overflow-hidden rounded-2xl border border-line bg-canvas lg:min-h-[520px]">
+                <CityGridMap pins={pins} selectedId={pin?.id ?? null} onSelect={pickPin} label={L("map")} />
+                <AnimatePresence>
+                  {pin && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      transition={{ duration: 0.24, ease: EASE }}
+                      className="absolute inset-x-3 bottom-3 rounded-2xl border border-line bg-surface/95 p-3 backdrop-blur"
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className={`mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-extrabold text-white ${pin.type === "SPOOFED" ? "bg-scam" : "bg-emerald-700"}`}>
+                          {pin.type === "SPOOFED" ? L("spoofed") : L("verified")}
+                        </span>
+                        <p className="min-w-0 flex-1 text-sm font-bold text-ink">{pin.title}</p>
+                        <button type="button" onClick={() => setPin(null)} className="text-ink-soft hover:text-ink" aria-label="Close"><X className="size-4" /></button>
+                      </div>
+                      <p className="mt-1.5 text-xs leading-relaxed text-ink-soft"><b className="text-ink">{L("registry")}: </b>{pin.registry_note}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </Card>
+            </Tile>
+
+            <div className="space-y-4">
+              <Tile title={L("stream")} icon={<Siren className="size-4" />}>
+                <Stream events={shownEvents} selected={selected} lang={lang} L={L} onPick={(e) => e.campaign_id && setPicked(e.campaign_id)} />
+              </Tile>
+              <Tile id="actions" title={L("action")} icon={<ShieldCheck className="size-4" />}>
+                <ActionCenter campaign={current} onChanged={() => void refresh()} />
+              </Tile>
+            </div>
           </div>
 
-          <div className="space-y-4 lg:col-span-2">
-            <Card title={L("campaigns")} icon={<Siren className="size-4" />}>
-              <Campaigns list={campaigns} selected={selected} onPick={(c) => setSelected(c.campaign_id)} lang={lang} L={L} />
-            </Card>
-            <Card title={L("action")} icon={<ShieldCheck className="size-4" />}>
-              <ActionCenter campaign={current} onChanged={() => void refresh()} />
-            </Card>
-          </div>
-        </div>
-      </main>
-    </div>
+          <Tile id="campaigns" title={L("campaigns")} icon={<Siren className="size-4" />}
+            right={<span className="text-xs text-ink-soft tabular-nums">{shownCampaigns.length}</span>}>
+            <Roster list={shownCampaigns} selected={selected} onPick={(c) => setPicked(c.campaign_id)} lang={lang} L={L} />
+          </Tile>
+        </main>
+      </div>
+    </MotionConfig>
   );
 }
