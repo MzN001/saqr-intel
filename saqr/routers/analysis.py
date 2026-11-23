@@ -60,7 +60,7 @@ async def analyze_url_endpoint(req: AnalyzeURLRequest):
 
 
 @router.get("/scans", dependencies=[Depends(require_police)])
-async def list_scans(limit: int = Query(50, ge=1, le=500), kind: str | None = Query(None, pattern="^(url|maps)$")):
+async def list_scans(limit: int = Query(50, ge=1, le=500), kind: str | None = Query(None, pattern="^(url|maps|email)$")):
     return {"scans": await db.list_scans(limit, kind)}
 
 
