@@ -309,7 +309,9 @@ async def _checked_ip(scheme: str, host: str) -> str:
         raise UserLLMError("private_blocked")
     if scheme == "http" and any(public):
         raise UserLLMError("https_only")  # http only to this computer / the home network
-    return ips[0]
+    # ips is string-sorted, so "2600:..." comes before "3.x": prefer IPv4 (many hosts, Render included,
+    # have no IPv6 route; a dual-stack AI provider would otherwise always fail with "connect").
+    return next((ip for ip in ips if ":" not in ip), ips[0])
 
 
 class _PinnedTransport(httpx.AsyncBaseTransport):
@@ -411,7 +413,20 @@ def _scrub(text: str | None, secret: str) -> str | None:
         return None
     if secret:
         text = text.replace(secret, "[key hidden]")
-    return re.sub(r"(?i)(bearer\s+)\S+", r"\1[key hidden]", text)
+    return re.sub(r"(?i)(bearer\s+)(?!\[key hidden\])\S+", r"\1[key hidden]", text)
+
+
+def _scrub_verdict(verdict: dict[str, Any], secret: str) -> dict[str, Any]:
+    """A hostile / buggy model can echo the Authorization header in its answer: hide the key in every
+    text field before the verdict is returned, saved to the scans table or broadcast."""
+    out: dict[str, Any] = {}
+    for k, v in verdict.items():
+        if isinstance(v, str):
+            v = _scrub(v, secret)
+        elif isinstance(v, list):
+            v = [_scrub(x, secret) if isinstance(x, str) else x for x in v]
+        out[k] = v
+    return out
 
 
 def _status_code_error(status: int) -> str:
@@ -549,7 +564,7 @@ async def judge(cfg: dict[str, Any] | None, evidence: dict[str, Any]) -> tuple[d
         try:
             # One overall deadline for the network check + call (+ the single parameter fallback).
             raw = await asyncio.wait_for(_call_user_model(clean, text), timeout=settings.llm_timeout_s + 2)
-            verdict = _clean_verdict(ai_inspector._extract_json(raw))
+            verdict = _scrub_verdict(_clean_verdict(ai_inspector._extract_json(raw)), secret)
         except (ValueError, ValidationError, TypeError) as exc:  # JSON / schema problems
             log.warning("User AI model reply rejected (%s)", type(exc).__name__)
             return out(None, _msg("bad_reply"))

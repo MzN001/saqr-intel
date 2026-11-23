@@ -34,6 +34,7 @@ FAKE_DNS = {
     "rebind.example.com": ["10.0.0.5"],          # public-looking name that points inside
     "mixed.example.com": [PUBLIC_IP, "127.0.0.1"],
     "metadata.example.com": ["169.254.169.254"],
+    "dualstack.example.com": ["2606:4700::6810:1", "93.184.216.35"],  # IPv6 sorts first
 }
 GOOD = {"risk_score": 88, "verdict": "HIGH-RISK SCAM", "impersonated_entity": "PayPal",
         "citizen_explanation_en": "Fake PayPal email from a Gmail address.",
@@ -301,6 +302,27 @@ def test_key_absent_from_logs_and_errors(net, caplog):
     assert results[3][0] is not None
     assert KEY not in caplog.text
     assert "Bearer" not in caplog.text
+
+
+def test_dual_stack_host_is_pinned_to_ipv4(net):
+    """Found in the live E2E run: a host with AAAA records (httpbin.org, many AWS-hosted APIs) was
+    pinned to its IPv6 address and failed with "connect" on machines without IPv6."""
+    verdict, engine, err = run({**CFG, "base_url": "https://dualstack.example.com/v1"})
+    assert err is None and verdict is not None
+    assert net.requests[-1].url.host == "93.184.216.35" and net.requests[-1].headers["host"] == "dualstack.example.com"
+
+
+def test_key_echoed_inside_a_valid_verdict_is_hidden(net):
+    """A model that copies the Authorization header into its (valid) answer must not leak the key
+    into the response / scans table (found in the live E2E run)."""
+    echo = {**GOOD, "citizen_explanation_en": f"Your key is Bearer {KEY}",
+            "citizen_explanation_ar": f"المفتاح {KEY}", "impersonated_entity": KEY[:60] and f"x {KEY}",
+            "key_red_flags": [f"Bearer {KEY}", "fine"]}
+    net.handler = lambda req: completion(json.dumps(echo))
+    verdict, engine, err = run()
+    assert err is None and verdict["verdict"] == "HIGH-RISK SCAM" and verdict["risk_score"] == 88
+    assert KEY not in json.dumps(verdict, ensure_ascii=False)
+    assert verdict["citizen_explanation_en"] == "Your key is Bearer [key hidden]" and verdict["key_red_flags"][1] == "fine"
 
 
 def test_global_breaker_and_status_untouched(net):
