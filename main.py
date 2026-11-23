@@ -88,9 +88,11 @@ async def value_error_handler(_: Request, exc: ValueError):
 
 
 @app.get("/", include_in_schema=False)
-async def demo_console():
-    """Built-in demo console (no internet needed). The real dashboard runs on :3000."""
-    return FileResponse(Path(__file__).parent / "saqr" / "static" / "index.html")
+async def demo_console(request: Request):
+    """Browsers get the built-in demo console; uptime monitors / health checks get a small JSON 200."""
+    if "text/html" in request.headers.get("accept", ""):
+        return FileResponse(Path(__file__).parent / "saqr" / "static" / "index.html")
+    return {"status": "ok", "app": settings.app_name, "version": __version__, "health": "/health", "docs": "/docs"}
 
 
 @app.get("/mock-scam/{slug}", include_in_schema=False, response_class=HTMLResponse)

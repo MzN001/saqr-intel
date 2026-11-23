@@ -186,6 +186,14 @@ MOCK_SCAM_SLUGS = {
 _LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1", "0.0.0.0"}
 
 
+def _is_own_host(host: str) -> bool:
+    """Is this backend serving the URL? Then its /mock-scam/ page is evaluated in memory: fetching our
+    own public URL from inside a single-worker server (Render free tier) would deadlock."""
+    from . import self_hosts  # local import: self_hosts -> db, no cycle at module load
+
+    return host in _LOCAL_HOSTS or host.endswith(".onrender.com") or host in self_hosts.known_hosts()
+
+
 def resolve_mock_scam(url: str) -> tuple[str, str | None]:
     """Map http://127.0.0.1:8000/mock-scam/<slug>/... to https://<seeded-domain>/... (else unchanged)."""
     from urllib.parse import urlsplit
@@ -197,7 +205,7 @@ def resolve_mock_scam(url: str) -> tuple[str, str | None]:
     except ValueError:
         return url, None
     m = re.match(r"^/mock-scam/([a-z0-9-]+)(/.*)?$", parts.path or "")
-    if host not in _LOCAL_HOSTS or not m or m.group(1) not in MOCK_SCAM_SLUGS:
+    if not m or m.group(1) not in MOCK_SCAM_SLUGS or not _is_own_host(host):
         return url, None
     rest = (m.group(2) or "/") + (f"?{parts.query}" if parts.query else "")
     return f"https://{MOCK_SCAM_SLUGS[m.group(1)]}{rest}", m.group(1)

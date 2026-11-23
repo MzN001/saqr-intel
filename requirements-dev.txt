@@ -1,0 +1,7 @@
+# Local development / laptop demo: everything in requirements.txt plus the headless browser
+# sandbox (live screenshots, anti-cloaking) and the test runner.
+#   pip install -r requirements-dev.txt
+#   python -m playwright install chromium
+-r requirements.txt
+playwright==1.65.2
+pytest==9.2.0

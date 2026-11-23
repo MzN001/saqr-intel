@@ -34,6 +34,8 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
   - `tests/conftest.py` blanks real API keys so tests never touch live accounts.
 - Scam-alert push (verified on the owner's iPhone): `saqr/push.py` + `saqr/routers/push.py` (VAPID key auto-generated in `data/vapid_private.pem`, gitignored); `BlockWatcher` in `nextdns_sync.py` polls NextDNS logs (logging must be ON in the profile) and alerts subscribed phones only for SAQR-flagged domains; `public/sw.js` shows the notification and opens `/citizen?alert=<domain>` → `/api/alerts/verdict`. UI: `ScamAlertsCard.tsx`. iPhone needs the site added to the Home Screen (iOS 16.4+).
 
+- Cloud / Render free tier: `render.yaml` (repo root = backend). `ENABLE_PLAYWRIGHT=false` → no Chromium, pages fetched with httpx (`sandbox._from_http_only`, realistic UA), screenshots None, ~110 MB RAM. `requirements.txt` = runtime only (no Playwright/pytest); laptop uses `requirements-dev.txt`. `/mock-scam/<slug>` on loopback, `*.onrender.com` or any self host is resolved in memory (no self-request deadlock on one worker) and skips the LLM. Render disk is ephemeral: set `VAPID_PRIVATE_KEY` (PEM, `\n`-escaped) so push subscriptions survive restarts.
+
 ## Run
 - One click: `start-windows.bat` (backend in a second window, frontend on 3000).
 - Manually: `.venv\Scripts\activate` → `uvicorn main:app --port 8000`; then `cd frontend` → `npm run dev`.

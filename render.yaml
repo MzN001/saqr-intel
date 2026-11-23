@@ -1,0 +1,36 @@
+# Render Blueprint - SAQR-INTEL FastAPI backend on the free tier (512 MB RAM, one Uvicorn worker).
+# The backend is the repository root (main.py + saqr/); the Next.js site in frontend/ runs on Vercel.
+# Render dashboard -> New -> Blueprint -> pick this repo. Fill in the "sync: false" secrets when asked.
+services:
+  - type: web
+    name: saqr-intel-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      ignoredPaths:
+        - frontend/**
+        - extension/**
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: ENABLE_PLAYWRIGHT          # no headless Chromium on 512 MB: pages are fetched with httpx
+        value: "false"
+      - key: CT_MODE                    # simulated certificate feed for the demo radar
+        value: simulated
+      - key: DATABASE_PATH              # free tier disk is wiped on every restart / deploy
+        value: ./data/saqr_intel.db
+      - key: CORS_ORIGINS
+        value: https://saqr-intel.vercel.app,http://localhost:3000,http://127.0.0.1:3000
+      - key: GEMINI_API_KEY             # optional; without it the rules engine is used
+        sync: false
+      - key: NEXTDNS_PROFILE_ID         # phone DNS shield feed (optional)
+        sync: false
+      - key: NEXTDNS_API_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY          # keep scam-alert push keys stable across restarts (PEM, \n escaped)
+        sync: false

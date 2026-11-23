@@ -4,7 +4,7 @@ echo "=== SAQR-INTEL: first run takes a few minutes ==="
 command -v node >/dev/null || { echo "Node.js not found. Install the LTS version from https://nodejs.org"; exit 1; }
 [ -d .venv ] || python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m playwright install chromium
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
 BACKEND=$!

@@ -105,7 +105,9 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
         timings["sandbox_ms"] = int((time.perf_counter() - t) * 1000)
 
     t = time.perf_counter()
-    fv = await ai_inspector.inspect(lex, net, page, syndicate, use_llm=use_llm)
+    # Known training replicas are fully explained by the rules engine; skipping the LLM keeps the
+    # stage demo deterministic and fast (well under 100 ms) even on a small cloud instance.
+    fv = await ai_inspector.inspect(lex, net, page, syndicate, use_llm=use_llm and not mock_slug)
     timings["ai_ms"] = int((time.perf_counter() - t) * 1000)
 
     screenshot = (page or {}).pop("screenshot_b64", None)

@@ -36,7 +36,8 @@ async def collect_stats() -> dict:
 @router.get("/health")
 async def health():
     return {"status": "ok", "app": settings.app_name, "version": __version__, "llm_engine": settings.active_llm,
-            "offline_mode": settings.offline_mode, "ct_mode": ct_monitor.mode}
+            "playwright_enabled": settings.sandbox_enabled, "offline_mode": settings.offline_mode,
+            "ct_mode": ct_monitor.mode}
 
 
 @router.get("/api/stats")

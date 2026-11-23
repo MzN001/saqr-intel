@@ -32,6 +32,11 @@ async def remember(host_header: str | None) -> None:
     await db.execute("INSERT OR REPLACE INTO self_hosts (host, seen_at) VALUES (?, ?)", (host, iso()))
 
 
+def known_hosts() -> set[str]:
+    """Hosts seen so far in this process (synchronous, no DB access)."""
+    return set(_known)
+
+
 async def all_self_hosts() -> set[str]:
     rows = await db.fetchall("SELECT host FROM self_hosts")
     _known.update(r["host"] for r in rows)

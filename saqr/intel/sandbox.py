@@ -205,7 +205,11 @@ class Sandbox:
 
     # ------------------------------------------------------------------
     async def _naive_fetch(self, url: str) -> dict[str, Any]:
-        """Fetch as a datacenter bot would (no locale, python UA) for cloaking diff."""
+        """Fetch with httpx. With a browser available this is the 'datacenter bot' view used for the
+        cloaking diff; without one (ENABLE_PLAYWRIGHT=false) it IS the page evidence, so it presents a
+        realistic mobile browser so phishing kits serve the same page a citizen would see."""
+        user_agent = ("python-httpx/0.28 (datacenter-probe)" if settings.sandbox_enabled
+                      else PROFILES["mobile"]["user_agent"])
         async def guard(request: httpx.Request) -> None:
             ok, _ = await host_is_safe_target(request.url.host)
             if not ok:
@@ -214,7 +218,7 @@ class Sandbox:
         try:
             async with httpx.AsyncClient(follow_redirects=True, timeout=8, verify=False,
                                          event_hooks={"request": [guard]},
-                                         headers={"User-Agent": "python-httpx/0.28 (datacenter-probe)"}) as c:
+                                         headers={"User-Agent": user_agent, "Accept-Language": ACCEPT_LANGUAGE}) as c:
                 r = await c.get(url)
                 body = r.text[:200_000]
                 title = re.search(r"<title[^>]*>(.*?)</title>", body, re.I | re.S)

@@ -9,6 +9,7 @@ import asyncio
 import base64
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -39,7 +40,12 @@ _vapid: Vapid | None = None
 
 
 def vapid() -> Vapid:
+    """The push signing key. On hosts with a wiped disk (Render free tier) set VAPID_PRIVATE_KEY to the
+    PEM text (newlines may be written as \\n), otherwise phones' alert subscriptions break on restart."""
     global _vapid
+    if _vapid is None and os.getenv("VAPID_PRIVATE_KEY", "").strip():
+        pem = os.environ["VAPID_PRIVATE_KEY"].strip().replace("\\n", "\n")
+        _vapid = Vapid.from_pem(pem.encode())
     if _vapid is None:
         path = _key_path()
         if not path.exists():

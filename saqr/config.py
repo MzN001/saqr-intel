@@ -65,7 +65,9 @@ class Settings:
     extra_whitelist: list[str] = field(default_factory=lambda: _list("EXTRA_WHITELIST_DOMAINS"))
 
     # --- Sandbox -------------------------------------------------------------
-    sandbox_enabled: bool = _bool("SANDBOX_ENABLED", True)
+    # ENABLE_PLAYWRIGHT=false (cloud / Render free tier): never launch Chromium (keeps RAM low); pages
+    # are fetched with httpx instead and screenshots are None. Falls back to SANDBOX_ENABLED (default on).
+    sandbox_enabled: bool = _bool("ENABLE_PLAYWRIGHT", _bool("SANDBOX_ENABLED", True))
     sandbox_timeout_ms: int = _int("SANDBOX_TIMEOUT_MS", 15000)
     sandbox_max_concurrency: int = _int("SANDBOX_MAX_CONCURRENCY", 3)
     chromium_path: str = os.getenv("PLAYWRIGHT_CHROMIUM_PATH", "")
