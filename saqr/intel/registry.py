@@ -184,6 +184,9 @@ GLOBAL_BRANDS: tuple[Entity, ...] = (
     _g("adib", "Abu Dhabi Islamic Bank", "مصرف أبوظبي الإسلامي", "adib.ae", "adib"),
     _g("dubaipolice", "Dubai Police", "شرطة دبي", "dubaipolice.gov.ae", "dubaipolice"),
     _g("rta", "RTA Dubai", "هيئة الطرق والمواصلات", "rta.ae", "", "rta salik"),
+    # "dewa" is also a Balinese title / Indonesian word, so it only counts next to a lure word (dewa-bill-pay)
+    # or, in an email display name, next to a role word ("DEWA Customer Care").
+    _g("dewa", "DEWA", "هيئة كهرباء ومياه دبي", "dewa.gov.ae", "", "dewa"),
     _g("emiratesair", "Emirates (airline)", "طيران الإمارات", "emirates.com", "", "emirates"),
     _g("noon", "noon", "نون", "noon.com", "", "noon"),
     _g("careem", "Careem", "كريم", "careem.com", "careem"),
@@ -219,14 +222,22 @@ TRUSTED_UAE_DOMAINS: tuple[str, ...] = (
     "icp.gov.ae",            # Federal Authority for Identity & Citizenship
     "tdra.gov.ae",
     "mohre.gov.ae",
-    "dewa.gov.ae",
     "emirates.com",          # Emirates airline (not Emirates Post)
     "etihad.com",
     "adnoc.ae",
     "emiratesnbd.com",
+    "emiratesrc.ae",         # Emirates Red Crescent (verified 2026-11-23: emiratesrc.ae/en, Wikidata Q7303955)
 )
 
+# Extra official domains of an entity that are NOT used for look-alike matching (a 3-letter label such as
+# "epg" would make every 4-letter domain containing it a "typo"). Mail from them is that entity's own mail.
+ENTITY_EXTRA_DOMAINS: dict[str, str] = {
+    "epg.gov.ae": "emiratespost",  # Emirates Post Group (verified 2026-11-23: epg.gov.ae, custservice@epg.gov.ae)
+}
+
 OFFICIAL_DOMAINS: dict[str, Entity | None] = {d: e for e in ALL_BRANDS for d in e.domains}
+for _d, _id in ENTITY_EXTRA_DOMAINS.items():
+    OFFICIAL_DOMAINS.setdefault(_d, ENTITY_BY_ID[_id])
 for _d in (*TRUSTED_UAE_DOMAINS, *settings.extra_whitelist, *settings.own_hosts):
     OFFICIAL_DOMAINS.setdefault(_d.lower(), None)
 

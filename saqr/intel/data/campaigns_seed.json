@@ -1,0 +1,1969 @@
+{
+ "format": "saqr-campaigns",
+ "version": 1,
+ "generated_at": "2026-11-23T18:12:48Z",
+ "ttl_hours": 6,
+ "sources": [
+  {
+   "id": "saqr-research",
+   "name": "SAQR analyst research (public advisories, cited per campaign)",
+   "url": "https://saqr-intel-api.onrender.com/api/campaigns",
+   "license": "Summaries CC BY 4.0; facts from the cited sources",
+   "ok": true,
+   "fetched_at": "2026-11-23T18:12:48Z",
+   "items": 37
+  },
+  {
+   "id": "bleepingcomputer",
+   "name": "BleepingComputer security news",
+   "url": "https://www.bleepingcomputer.com/feed/",
+   "license": "Headlines and links only; content (c) BleepingComputer",
+   "ok": true,
+   "fetched_at": "2026-11-23T17:31:41Z",
+   "items": 15
+  },
+  {
+   "id": "ncsc-uk",
+   "name": "UK NCSC news and advisories",
+   "url": "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml",
+   "license": "Headlines and links only; Crown copyright",
+   "ok": true,
+   "fetched_at": "2026-11-23T17:31:41Z",
+   "items": 20
+  },
+  {
+   "id": "malwarebytes-labs",
+   "name": "Malwarebytes Labs blog",
+   "url": "https://www.malwarebytes.com/blog/feed/index.xml",
+   "license": "Headlines and links only; content (c) Malwarebytes",
+   "ok": true,
+   "fetched_at": "2026-11-23T17:31:41Z",
+   "items": 20
+  },
+  {
+   "id": "fbi-ic3",
+   "name": "FBI IC3 public service announcements",
+   "url": "https://www.ic3.gov/PSA/RSS",
+   "license": "US Government work (public domain)",
+   "ok": true,
+   "fetched_at": "2026-11-23T17:31:41Z",
+   "items": 5
+  },
+  {
+   "id": "cofense",
+   "name": "Cofense phishing intelligence blog",
+   "url": "https://cofense.com/feed/",
+   "license": "Headlines and links only; content (c) Cofense",
+   "ok": true,
+   "fetched_at": "2026-11-23T17:31:41Z",
+   "items": 12
+  }
+ ],
+ "campaigns": [
+  {
+   "id": "cmp-1e59d103",
+   "title_en": "Black Friday \"deals\" that steal Microsoft accounts",
+   "title_ar": "عروض «الجمعة السوداء» التي تسرق حسابات مايكروسوفت",
+   "summary_en": "Black Friday offer emails hosted on real marketing services lead to a fake \"protected document\" page and then a fake Microsoft check that asks you to \"copy code\" - a trick that hands over your Microsoft account.",
+   "summary_ar": "رسائل عروض الجمعة السوداء المستضافة على خدمات تسويق حقيقية تقود إلى صفحة «مستند محمي» مزيفة ثم إلى تحقق مزيف من مايكروسوفت يطلب «نسخ الرمز»، وهي حيلة تسلّم حسابك في مايكروسوفت للمحتال.",
+   "brands": [
+    "microsoft",
+    "microsoft 365",
+    "office 365",
+    "office365",
+    "adobe acrobat",
+    "مايكروسوفت"
+   ],
+   "terms": [
+    "black friday",
+    "black-friday-angebote",
+    "black friday deals",
+    "access your offer",
+    "continue here to access your offer",
+    "copy code",
+    "code kopieren",
+    "protected document",
+    "decrypt"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-23T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/fake-deals,-real-threats-black-friday-phishing-targets-microsoft-accounts",
+     "title": "Cofense: Fake deals, real threats - Black Friday phishing targets Microsoft accounts"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-28d49192",
+   "title_en": "Fake 'secure voicemail' HTML attachment (LUMEN portal): any click redirects",
+   "title_ar": "مرفق HTML لبريد صوتي «آمن» مزيف (بوابة LUMEN): أي نقرة تعيد التوجيه",
+   "summary_en": "A calm, routine-looking email about an encrypted voicemail asks you to open an HTML attachment showing a fake LUMEN secure voicemail portal. The whole page is one link, so a click anywhere sends you to the attacker's 'identity verification' site.",
+   "summary_ar": "رسالة هادئة تبدو روتينية عن بريد صوتي مشفّر تطلب فتح مرفق HTML يعرض بوابة بريد صوتي مزيفة باسم LUMEN. الصفحة كلها رابط واحد، فأي نقرة تنقلك إلى موقع «تحقق من الهوية» يديره المهاجم.",
+   "brands": [
+    "lumen"
+   ],
+   "terms": [
+    "secure voicemail",
+    "encrypted voicemail",
+    "voicemail portal",
+    "secure delivery",
+    "authenticated communication",
+    "identity verification",
+    "بريد صوتي آمن",
+    "رسالة صوتية مشفرة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-20T00:00:00Z",
+   "last_seen": "2026-11-20T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://blog.barracuda.com/2026/11/23/html-voicemail-phishing-trap",
+     "title": "Barracuda: Any click will do - the HTML voicemail scam where the entire page is a phishing trap"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "coachjosuecosta.com"
+    ]
+   }
+  },
+  {
+   "id": "cmp-56dcb5b5",
+   "title_en": "Device-code phishing: \"enter this code\" to see a document or voicemail",
+   "title_ar": "تصيّد «رمز الجهاز»: «أدخل هذا الرمز» لعرض مستند أو بريد صوتي",
+   "summary_en": "Emails about password expiry, documents to sign or new voicemails send you to the real Microsoft sign-in page and ask you to enter a short code. The code logs the attacker into your Microsoft 365 account - no password needed. Kits like EvilTokens and Tycoon 2FA spread it.",
+   "summary_ar": "رسائل عن انتهاء كلمة المرور أو مستندات للتوقيع أو بريد صوتي جديد ترسلك إلى صفحة تسجيل دخول مايكروسوفت الحقيقية وتطلب إدخال رمز قصير. هذا الرمز يُدخل المحتال إلى حسابك في Microsoft 365 دون كلمة مرور.",
+   "brands": [
+    "microsoft",
+    "microsoft 365",
+    "office 365",
+    "office365",
+    "microsoft teams",
+    "docusign",
+    "mimecast",
+    "مايكروسوفت"
+   ],
+   "terms": [
+    "action required: password expiration",
+    "password expiration",
+    "devicelogin",
+    "device login",
+    "get authentication code",
+    "authentication code",
+    "enter the code",
+    "new voicemail",
+    "missed call - new voicemail message",
+    "voicemail notification",
+    "new voice message",
+    "review document",
+    "signature required",
+    "agreement_review.pdf",
+    "document pending your electronic signature",
+    "contract awaiting your signature",
+    "scheduled electronic payment",
+    "remittance reports"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "critical",
+   "first_seen": "2026-04-06T00:00:00Z",
+   "last_seen": "2026-11-19T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.microsoft.com/en-us/security/blog/2026/04/06/ai-enabled-device-code-phishing-campaign/",
+     "title": "Microsoft Security: AI-enabled device code phishing campaign"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.mimecast.com/threat-intelligence-hub/oauth-device-code-phishing-campaigns/",
+     "title": "Mimecast: OAuth device code phishing campaigns surge with EvilTokens toolkit"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/beyond-passwords-how-attackers-abuse-device-code-authentication",
+     "title": "Cofense: Beyond passwords - how attackers abuse device code authentication"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.okta.com/blog/threat-intelligence/tycoon_2fa_phishing_actors_scatter/",
+     "title": "Okta: Tycoon 2FA phishing actors disperse, branch into new attacks"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.hornetsecurity.com/en/blog/microsoft-365-device-code-phishing/",
+     "title": "Hornetsecurity: Device code phishing resurges in November through fake SharePoint payment documents"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "graph-microsoft.com",
+     "portal-azure.com",
+     "office365-login.com",
+     "office-verify.net",
+     "00a7af15-a112-4457-86c2-5c56751f0f47-endpoint.com",
+     "sso-nodeconnect.icu",
+     "synerghylnksloads.cfd",
+     "promtateusachorloadscorp.sbs",
+     "krointechbillpaycheckingusalexingto.sbs"
+    ]
+   }
+  },
+  {
+   "id": "cmp-465198e4",
+   "title_en": "Black Friday \"early access\" luxury-store emails",
+   "title_ar": "رسائل «دخول مبكر» لتخفيضات الجمعة السوداء على منتجات فاخرة",
+   "summary_en": "Emails such as \"[Black Friday Early Access] Luxury Products starting from...\" show a luxury brand as the sender name but come from an unrelated address, and lead through redirects to fake shops. Black Friday phishing rose 82-103% in November 2026.",
+   "summary_ar": "رسائل مثل «[دخول مبكر للجمعة السوداء] منتجات فاخرة تبدأ من...» تُظهر اسم علامة فاخرة كمرسل لكنها تأتي من عنوان لا علاقة له بها، وتقود عبر تحويلات إلى متاجر مزيفة. ارتفع تصيّد الجمعة السوداء بين 82% و103% في نوفمبر 2026.",
+   "brands": [],
+   "terms": [
+    "black friday early access",
+    "early access",
+    "luxury products",
+    "luxury watches",
+    "leather bags",
+    "free worldwide shipping",
+    "starting from",
+    "black friday"
+   ],
+   "min_terms": 3,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-10-20T00:00:00Z",
+   "last_seen": "2026-11-18T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://blog.knowbe4.com/black-friday-phishing-surge-before-sale-starts",
+     "title": "KnowBe4: Black Friday phishing is already up 103%"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-d06c1876",
+   "title_en": "Fake \"update\" and statement emails that install remote-control tools",
+   "title_ar": "رسائل «تحديث» وكشوف مزيفة تثبّت برامج تحكم عن بعد",
+   "summary_en": "Emails using Adobe, Zoom, Docusign, IRS or Social Security Administration branding say \"Adobe Reader is out of date\" or that a statement or tax document is ready, and make you download an installer (.msi) that gives criminals control of your computer.",
+   "summary_ar": "رسائل تستخدم علامات Adobe أو Zoom أو Docusign أو مصلحة الضرائب الأمريكية تقول «برنامج Adobe Reader قديم» أو إن كشفاً أو مستنداً ضريبياً جاهز، وتدفعك لتنزيل برنامج تثبيت يمنح المجرمين التحكم بجهازك.",
+   "brands": [
+    "adobe",
+    "adobe reader",
+    "social security administration",
+    "irs",
+    "zoom",
+    "docusign"
+   ],
+   "terms": [
+    "adobe reader is out of date",
+    "reader is out of date",
+    "update required",
+    "update now",
+    "social security statement",
+    "statement is ready",
+    "download your statement",
+    "tax return",
+    "tax documents",
+    "meeting invitation",
+    "installer"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "US",
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-18T00:00:00Z",
+   "last_seen": "2026-11-18T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/betrayed-expectations-malware-delivery-via-common-brands",
+     "title": "Cofense: Malware delivery via common brands"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-68ea72e3",
+   "title_en": "\"Get GTA VI for free\" and fake pre-order codes",
+   "title_ar": "«احصل على GTA VI مجاناً» وأكواد طلب مسبق مزيفة",
+   "summary_en": "Ahead of the GTA VI launch, sites and posts offer \"FREE Pre-Order Codes\" or the game free after you \"complete verification\" - leading to fake Google logins, survey scams, crypto drainers and fake APKs.",
+   "summary_ar": "قبل إطلاق GTA VI تعرض مواقع ومنشورات «أكواد طلب مسبق مجانية» أو اللعبة مجاناً بعد «إكمال التحقق»، وتقود إلى صفحات دخول جوجل مزيفة وعروض احتيالية ومحافظ تسرق العملات الرقمية وتطبيقات مزيفة.",
+   "brands": [
+    "gta vi",
+    "gta 6",
+    "grand theft auto",
+    "rockstar games"
+   ],
+   "terms": [
+    "get gta vi for free",
+    "for free",
+    "free pre-order codes",
+    "pre-order code",
+    "complete verification",
+    "complete an offer",
+    "sponsored offers",
+    "live sale",
+    "stock limited",
+    "free download"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "web",
+    "social"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-18T00:00:00Z",
+   "last_seen": "2026-11-18T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.malwarebytes.com/blog/scams/2026/11/gta-6-scams-could-cost-you-your-account-money-or-crypto",
+     "title": "Malwarebytes: GTA 6 scams could cost you your account, money, or crypto"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-f38e707e",
+   "title_en": "Fake Amazon remote job offers (\"$5,000 a month\")",
+   "title_ar": "عروض عمل مزيفة عن بُعد باسم أمازون («5000 دولار شهرياً»)",
+   "summary_en": "Sites and \"HR\" emails using names like \"Amazon Seller Pro LLC\" promise a \"legitimate, fully remote position\" paying up to $5,000 a month, collect your ID and Social Security number, and say \"Keep your phone on\" for a call.",
+   "summary_ar": "مواقع ورسائل «موارد بشرية» بأسماء مثل «Amazon Seller Pro LLC» تَعِد «بوظيفة حقيقية عن بُعد بالكامل» براتب يصل إلى 5000 دولار شهرياً، وتجمع بيانات هويتك وتطلب «إبقاء هاتفك مفتوحاً» لاتصال.",
+   "brands": [
+    "amazon",
+    "amazon seller pro",
+    "amazon shipping services",
+    "أمازون",
+    "امازون"
+   ],
+   "terms": [
+    "legitimate, fully remote position",
+    "fully remote position",
+    "fully remote",
+    "no commute",
+    "no office",
+    "$5,000 a month",
+    "5,000 a month",
+    "our hr team calls you",
+    "keep your phone on",
+    "your data is secure",
+    "work from home",
+    "social security number"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email",
+    "web"
+   ],
+   "regions": [
+    "US",
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-17T00:00:00Z",
+   "last_seen": "2026-11-17T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.malwarebytes.com/blog/threat-intel/2026/11/amazon-job-offer-promises-5000-a-month-but-its-got-all-the-signs-of-a-scam",
+     "title": "Malwarebytes: \"Amazon\" job offer promises $5,000 a month"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "amzssapplication.com",
+     "applicationsamz.com",
+     "amzapplicationra.com",
+     "applyamazonsp.com",
+     "hiringamazonsp.com",
+     "hiringamzss.com",
+     "jobsamazonsp.com",
+     "jobsamzss.com",
+     "joinamazonsp.com",
+     "onlineapplicationamz.com",
+     "amzncrew.com",
+     "workatamazonsp.com",
+     "amzshippings.com",
+     "joinamzn.com",
+     "workatamzn.com"
+    ]
+   }
+  },
+  {
+   "id": "cmp-f9622df3",
+   "title_en": "Courier \"customs duties due\" emails (DHL, bpost, USPS ...)",
+   "title_ar": "رسائل شركات الشحن «رسوم جمركية مستحقة» (DHL وغيرها)",
+   "summary_en": "Emails such as \"Undelivered package - customs duties due\" or \"Customs - Waiting clearance fees\" ask for a few euros or dollars (e.g. EUR 4.95) with a \"Pay Customs Fees\" button. The page steals card and bank details. Amazon, USPS and UPS are among the most copied names this season.",
+   "summary_ar": "رسائل مثل «طرد غير مُسلَّم - رسوم جمركية مستحقة» أو «الجمارك - رسوم تخليص بانتظار الدفع» تطلب بضعة يوروهات أو دولارات (مثل 4.95 يورو) مع زر «ادفع الرسوم الجمركية». الصفحة تسرق بيانات البطاقة والبنك.",
+   "brands": [
+    "dhl",
+    "bpost",
+    "usps",
+    "fedex",
+    "postnl",
+    "colissimo",
+    "chronopost",
+    "correos",
+    "poste italiane",
+    "royal mail",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs duties",
+    "customs clearance fee",
+    "waiting clearance fees",
+    "pay customs fees",
+    "customs fee",
+    "undelivered package",
+    "could not be delivered",
+    "release your parcel",
+    "redelivery fee",
+    "have not been paid",
+    "final notice",
+    "رسوم جمركية",
+    "شحنة غير مسلمة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email",
+    "sms"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-04-14T00:00:00Z",
+   "last_seen": "2026-11-17T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.malwarebytes.com/?p=466445",
+     "title": "Malwarebytes: Fake parcel delivery messages steal your card and bank details"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.mailguard.com.au/blog/dhl-email-scam-targets-businesses-with-fake-customs-fee-requests",
+     "title": "MailGuard: DHL email scam targets businesses with fake customs fee requests"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.malwarebytes.com/blog/threat-intel/2026/11/holiday-shopping-in-a-world-of-fakes-how-ai-is-changing-the-game",
+     "title": "Malwarebytes: Holiday shopping in a world of fakes"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "bpost.center"
+    ]
+   }
+  },
+  {
+   "id": "cmp-675b9bd4",
+   "title_en": "Fake HMRC \"unclaimed tax repayment\" emails",
+   "title_ar": "رسائل مزيفة باسم الضرائب البريطانية HMRC عن «استرداد ضريبي غير مُطالَب به»",
+   "summary_en": "Around 900 reports in one wave: emails with an attachment say you have an unclaimed tax repayment and lead to a fake GOV.UK page asking you to verify your identity and payment details. HMRC never announces refunds by text or social media.",
+   "summary_ar": "نحو 900 بلاغ في موجة واحدة: رسائل بمرفق تقول إن لديك استرداداً ضريبياً غير مُطالَب به وتقود إلى صفحة GOV.UK مزيفة تطلب التحقق من هويتك وبيانات الدفع.",
+   "brands": [
+    "hmrc",
+    "hm revenue",
+    "hm revenue & customs",
+    "gov.uk"
+   ],
+   "terms": [
+    "unclaimed tax repayment",
+    "tax repayment",
+    "tax refund",
+    "tax rebate",
+    "verify your identity",
+    "payment details",
+    "self assessment",
+    "claim your refund"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email",
+    "sms"
+   ],
+   "regions": [
+    "GB"
+   ],
+   "severity": "high",
+   "first_seen": "2026-08-01T00:00:00Z",
+   "last_seen": "2026-11-17T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.gov.uk/government/news/nearly-2000-self-assessment-scams-reported",
+     "title": "GOV.UK (HMRC): Nearly 2,000 Self Assessment scams reported"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-ca016168",
+   "title_en": "Fake \"email outage: your messages are held\" notices",
+   "title_ar": "إشعارات مزيفة: «عطل في البريد ورسائلك محتجزة»",
+   "summary_en": "Riding on the November 2026 Microsoft 365 outage, emails styled as an \"Outage Notification\" from your own organisation say messages are held and \"will be deleted within 24 hours unless released\", with a \"RESTORE MESSAGES\" button that steals your password. Microsoft, Mimecast and Kaspersky saw the same wave, including \"Outlook is disconnected\" reconnect lures and a French version.",
+   "summary_ar": "استغلالاً لعطل Microsoft 365 في نوفمبر 2026، تصل رسائل بشكل «إشعار انقطاع» من جهة عملك تزعم أن رسائلك محتجزة «وستُحذف خلال 24 ساعة ما لم يتم الإفراج عنها» مع زر «استعادة الرسائل» يسرق كلمة المرور. رصدت مايكروسوفت وMimecast وكاسبرسكي الموجة نفسها، ومنها رسائل «Outlook غير متصل» لإعادة الربط ونسخة بالفرنسية.",
+   "brands": [],
+   "terms": [
+    "outage notification",
+    "messages are held",
+    "held messages",
+    "will be deleted within 24 hours",
+    "unless released",
+    "restore messages",
+    "release messages",
+    "pending messages",
+    "رسائل محتجزة",
+    "استعادة الرسائل",
+    "messages held after the outage",
+    "ex1550543",
+    "1 security issue found on your account",
+    "outlook is disconnected after the microsoft 365 outage",
+    "reconnectez vos services",
+    "reconnecter maintenant"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-12T00:00:00Z",
+   "last_seen": "2026-11-17T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/flash-alert-weaponizing-the-november-2026-microsoft-outage",
+     "title": "Cofense: Flash alert - weaponizing the November 2026 Microsoft outage"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.microsoft.com/en-us/security/blog/2026/11/16/high-volume-phishing-campaign-uses-microsoft-365-outage-lures-target-multiple-industry-sectors-2/",
+     "title": "Microsoft Security: High-volume phishing campaign uses Microsoft 365 outage lures"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.mimecast.com/blog/attackers-exploit-the-microsoft-365-outage-with-fake-held-messages-lures/",
+     "title": "Mimecast: Attackers exploit the Microsoft 365 outage with fake \"held messages\" lures"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.kaspersky.com/blog/microsoft-365-outage-phishing/56724/",
+     "title": "Kaspersky: Phishing scheme exploiting the Microsoft outage"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [
+     "moments-notice.com",
+     "planetmaison.com",
+     "newbooker.com"
+    ],
+    "url_domains": [
+     "reallifeaccounting.com",
+     "outagefixed.sbs",
+     "outagerestored.sbs"
+    ]
+   }
+  },
+  {
+   "id": "cmp-14a5ee34",
+   "title_en": "Fake 'Tell us about your MyChart experience' survey with a $10.55 'processing fee'",
+   "title_ar": "استبيان MyChart مزيف بمناسبة عيد الشكر يطلب «رسوم معالجة» 10.55 دولار",
+   "summary_en": "An image-only email in the name of MyChart offers a Thanksgiving survey and a discount on a medical monitoring kit. It collects name, email, phone and home address, then asks for a $10.55 processing fee.",
+   "summary_ar": "رسالة على شكل صورة باسم MyChart تعرض استبياناً بمناسبة عيد الشكر وخصماً على جهاز مراقبة طبي. تجمع الاسم والبريد والهاتف والعنوان، ثم تطلب «رسوم معالجة» قدرها 10.55 دولار.",
+   "brands": [
+    "mychart",
+    "my chart"
+   ],
+   "terms": [
+    "tell us about your mychart experience",
+    "my chart — customer survey",
+    "medical monitoring kit",
+    "processing fee",
+    "$10.55",
+    "slide to verify",
+    "جهاز مراقبة طبي",
+    "رسوم معالجة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "US"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-03T00:00:00Z",
+   "last_seen": "2026-11-17T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://malware.news/t/holiday-lures-real-threats-5-thanksgiving-and-black-friday-campaigns-from-2026/127571",
+     "title": "ANY.RUN (via Malware News): Holiday lures, real threats - 5 Thanksgiving and Black Friday campaigns from 2026"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ni03hfph.com",
+     "trustedaftermark.com",
+     "solidfairhubhost.com",
+     "awakeserver.com",
+     "exploredomainpole.com",
+     "specialhostdense.com",
+     "xcxfi08q.com",
+     "naverio.boats",
+     "commercialbuygroup.com"
+    ]
+   }
+  },
+  {
+   "id": "cmp-6368f781",
+   "title_en": "Fake \"Prime Gaming x EA SPORTS FC 27\" reward",
+   "title_ar": "مكافأة مزيفة «Prime Gaming × EA SPORTS FC 27»",
+   "summary_en": "\"Your Prime Gaming reward is waiting. Connect your EA account to continue.\" The page copies EA's sign-in and steals your EA password and two-factor code.",
+   "summary_ar": "«مكافأتك من Prime Gaming بانتظارك. اربط حسابك في EA للمتابعة.» الصفحة تقلّد تسجيل دخول EA وتسرق كلمة المرور ورمز التحقق الثنائي.",
+   "brands": [
+    "prime gaming",
+    "ea sports",
+    "ea sports fc",
+    "fc 27",
+    "ea account",
+    "electronic arts"
+   ],
+   "terms": [
+    "your prime gaming reward is waiting",
+    "reward is waiting",
+    "connect your ea account",
+    "prime gaming reward",
+    "claim your reward",
+    "ultimate team",
+    "fc points",
+    "you'll continue to ea's official authorization page"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "web",
+    "social",
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-16T00:00:00Z",
+   "last_seen": "2026-11-16T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.malwarebytes.com/blog/threat-intel/2026/11/fake-prime-gaming-x-fc-27-reward-site-harvests-ea-passwords-and-2fa-codes",
+     "title": "Malwarebytes: Fake Prime Gaming x FC 27 reward site harvests EA passwords and 2FA codes"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "fc27-prime.shop",
+     "fc27prime.shop",
+     "fc27utprime.com",
+     "fc27utprime.online",
+     "fcutprime.online",
+     "thenewsip.site"
+    ]
+   }
+  },
+  {
+   "id": "cmp-3f41c199",
+   "title_en": "Binance-breach emails: fake 'wallet-verification fee' and Trust Wallet checks",
+   "title_ar": "رسائل تستغل اختراق بينانس: «رسوم تحقق من المحفظة» وتحقق وهمي من Trust Wallet",
+   "summary_en": "After the late-October Binance breach, emails posing as a Binance 'SAFU Reconciliation Desk', Trust Wallet or Bitcoin wallets say your address is 'UNCLAIMED' or your wallet will be suspended. They ask for a Bitcoin 'wallet-verification fee' or a login, and steal crypto, credentials and recovery phrases.",
+   "summary_ar": "بعد اختراق بينانس، تصل رسائل بريد إلكتروني تنتحل صفة بينانس أو Trust Wallet أو محافظ بيتكوين. تزعم أن عنوان محفظتك «غير مُطالَب به» أو أن حسابك سيُعلَّق، وتطلب دفع «رسوم تحقق» بالبيتكوين أو تسجيل الدخول. الهدف سرقة العملات الرقمية وبيانات الدخول وعبارات الاسترداد.",
+   "brands": [
+    "binance",
+    "trust wallet",
+    "bitcoin",
+    "بينانس"
+   ],
+   "terms": [
+    "binance hack also impacts trust wallet users",
+    "please verify your trust wallet",
+    "due to the ongoing situation involving binance",
+    "safu reconciliation desk",
+    "returned as unclaimed in the reconciliation index",
+    "wallet-verification fee",
+    "settlement address",
+    "no seed phrase. no exchange login",
+    "bitcoin deposit confirmation",
+    "funds added to your bitcoin wallet",
+    "secure your bitcoin wallet fast",
+    "update your bitcoin details now",
+    "رسوم التحقق من المحفظة",
+    "اختراق بينانس"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-10-30T00:00:00Z",
+   "last_seen": "2026-11-13T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.bitdefender.com/en-us/blog/hotforsecurity/binance-breach-crypto-phishing-scams",
+     "title": "Bitdefender: Binance breach news is already being used in crypto phishing emails"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://blog.knowbe4.com/binance-heist-fallout-crypto-impersonation-phishing-scams",
+     "title": "KnowBe4: The Binance aftershocks - nearly 130% spike in crypto impersonation scams"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-3065f8b1",
+   "title_en": "Fake White Friday and holiday deals in the UAE",
+   "title_ar": "عروض مزيفة للجمعة البيضاء وموسم الأعياد في الإمارات",
+   "summary_en": "Cloned shop sites and ads offer 80-90% discounts with pressure lines like \"Only 1 unit left\" or \"Buy now or it's gone forever\", plus fake delivery-fee texts after you order. Banks warn the same tricks peak in December.",
+   "summary_ar": "مواقع متاجر مستنسخة وإعلانات تعرض خصومات 80-90% مع عبارات ضغط مثل «بقيت قطعة واحدة» أو «اشترِ الآن قبل نفاد الكمية»، ثم رسائل رسوم توصيل مزيفة بعد الطلب. وتحذر البنوك من ذروة هذه الحيل في ديسمبر.",
+   "brands": [],
+   "terms": [
+    "white friday",
+    "black friday",
+    "only 1 unit left",
+    "buy now or it's gone forever",
+    "80% off",
+    "90% off",
+    "flash sale",
+    "limited stock",
+    "الجمعة البيضاء",
+    "الجمعة السوداء",
+    "تخفيضات",
+    "خصم 90%",
+    "لفترة محدودة",
+    "الكمية محدودة"
+   ],
+   "min_terms": 3,
+   "channels": [
+    "email",
+    "sms",
+    "social",
+    "web"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "medium",
+   "first_seen": "2025-11-12T00:00:00Z",
+   "last_seen": "2026-11-12T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.remitly.com/blog/en-ae/scams/white-friday-scams",
+     "title": "Remitly: How to avoid White Friday scams in the UAE"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/dubai-bank-warning-holiday-scams-surge-as-travel-and-shopping-peak-in-december-1.500394209",
+     "title": "Gulf News: Dubai bank warning - holiday scams surge as travel and shopping peak"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-b82add26",
+   "title_en": "'Black Friday $5,000! Secret Link Access' fake celebrity reward",
+   "title_ar": "«بلاك فرايدي 5000 دولار! رابط سري»: جائزة وهمية باسم كانييه ويست",
+   "summary_en": "Emails say you were randomly selected for a $5,000 Black Friday reward linked to Kanye West and must enter a 'secret' promo code on a rewards platform. The site makes you create an account with your email and password and steals them.",
+   "summary_ar": "رسائل تزعم أنك اختِرت عشوائياً لجائزة بلاك فرايدي قيمتها 5000 دولار مرتبطة بكانييه ويست، وتطلب إدخال كود «سري» على منصة مكافآت. يطلب الموقع إنشاء حساب ببريدك وكلمة مرورك فيسرقهما.",
+   "brands": [
+    "kanye west",
+    "kanye"
+   ],
+   "terms": [
+    "black friday $5,000",
+    "secret link access",
+    "randomly selected",
+    "promo code",
+    "rewards platform",
+    "رابط سري",
+    "تم اختيارك عشوائياً"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "US"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-10-30T00:00:00Z",
+   "last_seen": "2026-11-10T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.bitdefender.com/en-au/blog/hotforsecurity/black-friday-scam-report-2026",
+     "title": "Bitdefender: Black Friday scam report 2026"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-3a416f33",
+   "title_en": "Fake Lloyds email: 'update your details because Halifax and Lloyds are integrating'",
+   "title_ar": "رسالة مزيفة من Lloyds: «حدّث بياناتك لأن Halifax وLloyds تندمجان»",
+   "summary_en": "Uses the real phase-out of the Halifax brand. The email, from an unofficial address, says your details need updating because Halifax and Lloyds Bank are integrating, and harvests personal information.",
+   "summary_ar": "تستغل الانتقال الحقيقي لعملاء Halifax إلى Lloyds. تقول الرسالة، المرسلة من عنوان غير رسمي، إن بياناتك تحتاج إلى تحديث بسبب اندماج Halifax وLloyds Bank، وتسرق بياناتك الشخصية.",
+   "brands": [
+    "lloyds bank",
+    "lloyds",
+    "halifax"
+   ],
+   "terms": [
+    "halifax and lloyds bank are integrating",
+    "your details need updating",
+    "halifax customers",
+    "update your details",
+    "تحديث بياناتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "GB"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-09T00:00:00Z",
+   "last_seen": "2026-11-09T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.which.co.uk/news/article/the-latest-scam-alerts-from-which-aBRLy2b02WkC",
+     "title": "Which?: The latest scam alerts"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-c72711ee",
+   "title_en": "Fake 'RSVP to Thanksgiving Potluck' invitation steals Google Workspace logins",
+   "title_ar": "دعوة مزيفة لحفلة عيد الشكر «Potluck» لسرقة حسابات Google Workspace",
+   "summary_en": "An office-style invitation ('Thanksgiving Potluck') asks you to RSVP before November 16 via a 'View & RSVP' button. After a fake 'I'm not a robot' check it shows a fake Google Workspace login that steals work passwords.",
+   "summary_ar": "دعوة بأسلوب رسائل العمل («حفلة عيد الشكر») تطلب تأكيد الحضور قبل 16 نوفمبر عبر زر «View & RSVP». بعد فحص مزيف «لست روبوتاً» تظهر صفحة دخول مزيفة لـ Google Workspace تسرق كلمة مرور العمل.",
+   "brands": [],
+   "terms": [
+    "rsvp to thanksgiving potluck",
+    "thanksgiving potluck",
+    "view & rsvp",
+    "rsvp before november 16",
+    "دعوة عيد الشكر",
+    "تأكيد الحضور"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-04T00:00:00Z",
+   "last_seen": "2026-11-05T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://malware.news/t/holiday-lures-real-threats-5-thanksgiving-and-black-friday-campaigns-from-2026/127571",
+     "title": "ANY.RUN (via Malware News): Holiday lures, real threats - 5 Thanksgiving and Black Friday campaigns from 2026"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "trident-ww.com",
+     "anthonnyfry.com"
+    ]
+   }
+  },
+  {
+   "id": "cmp-6cb2941e",
+   "title_en": "Fake British Gas email: 'you have credit available, submit a refund request'",
+   "title_ar": "رسالة مزيفة من British Gas: «لديك رصيد متاح، قدّم طلب استرداد»",
+   "summary_en": "Carries an accurate British Gas logo, but the sender name gives it away. It says you have credit available, and a 'submit a refund request' button leads to a fake British Gas site that collects your personal details.",
+   "summary_ar": "تحمل شعار British Gas الصحيح، لكن اسم المرسل يكشفها. تزعم أن لديك رصيداً متاحاً، وزر «submit a refund request» يقود إلى موقع British Gas مزيف يجمع بياناتك الشخصية.",
+   "brands": [
+    "british gas"
+   ],
+   "terms": [
+    "you have credit available",
+    "credit available",
+    "submit a refund request",
+    "refund request",
+    "رصيد متاح",
+    "طلب استرداد"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "GB"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-03T00:00:00Z",
+   "last_seen": "2026-11-03T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.which.co.uk/news/article/the-latest-scam-alerts-from-which-aBRLy2b02WkC",
+     "title": "Which?: The latest scam alerts"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-d25e2692",
+   "title_en": "Fake Thanksgiving e-card 'Invitation RSVP.pdf' installs a remote-control tool",
+   "title_ar": "بطاقة تهنئة مزيفة بعيد الشكر «Invitation RSVP.pdf» تثبّت أداة تحكم عن بُعد",
+   "summary_en": "An e-card email carries 'Invitation RSVP.pdf' with a 'VIEW INVITATION' button. The 'Special ThanksGiving Invitation' page downloads a ScreenConnect installer that gives criminals remote control of the computer.",
+   "summary_ar": "رسالة بطاقة تهنئة تحمل ملف «Invitation RSVP.pdf» وزر «VIEW INVITATION». تنزّل الصفحة برنامج ScreenConnect الذي يمنح المحتالين تحكماً كاملاً بالجهاز عن بُعد.",
+   "brands": [],
+   "terms": [
+    "invitation rsvp.pdf",
+    "view invitation",
+    "special thanksgiving invitation",
+    "thanksgiving invitation",
+    "thanksgiving e-card",
+    "screenconnect.clientsetup.msi",
+    "بطاقة تهنئة",
+    "دعوة خاصة بعيد الشكر"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-10-30T00:00:00Z",
+   "last_seen": "2026-10-30T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://malware.news/t/holiday-lures-real-threats-5-thanksgiving-and-black-friday-campaigns-from-2026/127571",
+     "title": "ANY.RUN (via Malware News): Holiday lures, real threats - 5 Thanksgiving and Black Friday campaigns from 2026"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-ae25e167",
+   "title_en": "Fake private-preview invitations for AI tools",
+   "title_ar": "دعوات مزيفة لتجربة خاصة لأدوات الذكاء الاصطناعي",
+   "summary_en": "Invitations to a \"private preview\" of a new AI tool (sent as \"Austin from nthropic\" through a real webinar service) lead to fake Google, Zoom and Microsoft sign-in pages.",
+   "summary_ar": "دعوات إلى «تجربة خاصة» لأداة ذكاء اصطناعي جديدة (تُرسل باسم «Austin from nthropic» عبر خدمة ندوات حقيقية) تقود إلى صفحات دخول مزيفة لجوجل وزووم ومايكروسوفت.",
+   "brands": [
+    "anthropic",
+    "nthropic",
+    "claude"
+   ],
+   "terms": [
+    "private preview",
+    "exclusive preview",
+    "early access",
+    "ai preview",
+    "register now",
+    "webinar",
+    "reserve your spot",
+    "join the preview"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-10-29T00:00:00Z",
+   "last_seen": "2026-10-29T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/would-your-employees-join-a-fake-anthropic-ai-preview",
+     "title": "Cofense: Would your employees join a fake Anthropic AI preview?"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "gle-access-eventregister.icu",
+     "us968web-zoom.us",
+     "com-access-sharepoint.com"
+    ]
+   }
+  },
+  {
+   "id": "cmp-99e51086",
+   "title_en": "Fake \"Project Bid Invitation\" with a password-protected PDF",
+   "title_ar": "دعوة مزيفة لتقديم «عطاء مشروع» مع ملف PDF محمي بكلمة مرور",
+   "summary_en": "Emails like \"Project Bid Invitation - Proposal Due ...\" attach a password-protected PDF (so scanners can't read it) that leads to fake OneDrive and Microsoft sign-in pages.",
+   "summary_ar": "رسائل مثل «دعوة لتقديم عطاء مشروع - موعد تسليم العرض ...» ترفق ملف PDF محمياً بكلمة مرور (حتى لا تقرأه برامج الفحص) يقود إلى صفحات OneDrive ومايكروسوفت مزيفة.",
+   "brands": [],
+   "terms": [
+    "project bid invitation",
+    "bid invitation",
+    "proposal due",
+    "invitation to bid",
+    "request for proposal",
+    "password-protected pdf",
+    "password protected",
+    "pdf password",
+    "onedrive",
+    "view document",
+    "دعوة لتقديم عطاء",
+    "مناقصة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-10-27T00:00:00Z",
+   "last_seen": "2026-10-27T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/locked-and-loaded-phishing-through-fake-bids-and-protected-documents",
+     "title": "Cofense: Phishing through fake bids and protected documents"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "slotpastimaxwin50jt.online",
+     "lastingonlineexperiences.de"
+    ]
+   }
+  },
+  {
+   "id": "cmp-253bc51a",
+   "title_en": "Hotel \"guest complaint\" emails that deliver malware",
+   "title_ar": "رسائل «شكوى نزيل» للفنادق تنشر برامج خبيثة",
+   "summary_en": "Hotels receive emails from a \"guest\" with a complaint who asks staff to review a photo or document. Opening it installs malware; earlier waves used fake Booking.com verification codes.",
+   "summary_ar": "تتلقى الفنادق رسائل من «نزيل» لديه شكوى يطلب من الموظفين مراجعة صورة أو مستند، وفتحه يثبّت برنامجاً خبيثاً. موجات سابقة استخدمت رموز تحقق مزيفة من Booking.com.",
+   "brands": [],
+   "terms": [
+    "guest complaint",
+    "review a photo",
+    "review the photo",
+    "photo of the room",
+    "my reservation",
+    "booking.com",
+    "verification code",
+    "negative review",
+    "refund my stay",
+    "شكوى نزيل",
+    "حجزي"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-10-07T00:00:00Z",
+   "last_seen": "2026-10-07T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/from-guest-complaints-to-malware-blockchain-abuse-targets-hotels",
+     "title": "Cofense: From guest complaints to malware - blockchain abuse targets hotels"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-35b0dcab",
+   "title_en": "Fake Abu Dhabi Customs \"shipment on hold\" notice",
+   "title_ar": "إشعار مزيف من جمارك أبوظبي بأن شحنتك «محتجزة»",
+   "summary_en": "Messages pretending to be Abu Dhabi Customs (for example \"Official Customs Hold Notice - Customs Tariff Classification Required\") use a reference number and time to look official, then ask you to open a link or share personal details. Real enquiries: 800 555.",
+   "summary_ar": "رسائل تنتحل صفة جمارك أبوظبي (مثل «إشعار احتجاز جمركي رسمي - مطلوب التصنيف الجمركي») تستخدم رقماً مرجعياً ووقتاً لتبدو رسمية، ثم تطلب فتح رابط أو مشاركة بياناتك. للاستفسارات الحقيقية: 800555.",
+   "brands": [
+    "abu dhabi customs",
+    "جمارك أبوظبي",
+    "جمارك ابوظبي"
+   ],
+   "terms": [
+    "customs hold notice",
+    "official customs hold",
+    "tariff classification",
+    "harmonized system",
+    "shipment on hold",
+    "shipment is on hold",
+    "pending delivery",
+    "update your details",
+    "شحنة محتجزة",
+    "شحنتك محتجزة",
+    "التصنيف الجمركي",
+    "تحديث بياناتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "sms",
+    "email"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "high",
+   "first_seen": "2026-03-10T00:00:00Z",
+   "last_seen": "2026-08-12T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.adcustoms.gov.ae/en/Media-Centre/News/Abu-Dhabi-Customs-warns-against-fraudulent-text-messages-impersonating-the-authority",
+     "title": "Abu Dhabi Customs: warning against fraudulent text messages impersonating the authority"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/uae/abu-dhabi-customs-warning-fraudulent-message-residents",
+     "title": "Khaleej Times: Abu Dhabi Customs warn residents against fraudulent message"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-8282d1ec",
+   "title_en": "Fake visa, domestic-worker and \"seized car\" offers",
+   "title_ar": "عروض مزيفة للتأشيرات واستقدام العمالة و«سيارات مصادرة»",
+   "summary_en": "Around salary time, fake accounts and texts offer quick residence visas, domestic-worker recruitment, cars \"seized by Abu Dhabi Customs\" at unrealistic prices, or guaranteed investments, and ask for a deposit first.",
+   "summary_ar": "تزامناً مع صرف الرواتب، تعرض حسابات ورسائل مزيفة تأشيرات إقامة سريعة واستقدام عمالة منزلية وسيارات «مصادرة من جمارك أبوظبي» بأسعار غير واقعية أو استثمارات مضمونة، وتطلب دفعة مقدمة.",
+   "brands": [],
+   "terms": [
+    "residence visa",
+    "quick visa",
+    "domestic workers",
+    "seized by abu dhabi customs",
+    "seized vehicles",
+    "labour supply",
+    "guaranteed returns",
+    "advance payment",
+    "تأشيرات الإقامة",
+    "استقدام العمالة",
+    "مصادرة من جمارك أبوظبي",
+    "مركبات مصادرة",
+    "دفعة مقدمة",
+    "أرباح مضمونة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "social",
+    "sms",
+    "web"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-05-14T00:00:00Z",
+   "last_seen": "2026-07-27T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/uae/abu-dhabi-police-warn-fraud-scams-salary-payments",
+     "title": "Khaleej Times: Abu Dhabi Police warn of surge in online fraud during salary payment period"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.emaratalyoum.com/local-section/accidents/2026-05-14-1.2045840",
+     "title": "الإمارات اليوم: شرطة أبوظبي تحذر من أساليب الاحتيال المتجددة"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-c91946d6",
+   "title_en": "Fake Docusign envelopes: \"Payment_Advice\", \"Transfer_Confirmation_Notice\"",
+   "title_ar": "مغلفات Docusign مزيفة: «إشعار دفع» و«تأكيد تحويل»",
+   "summary_en": "Fraudulent Docusign envelopes pretending to come from banks carry titles like \"Payment_Advice\", \"Payment_Disbursement\" or \"Vendor Contract PayApp Ref#\" and link or QR-code to a page that steals your login. Check envelopes at docusign.com with the access code instead.",
+   "summary_ar": "مغلفات Docusign احتيالية تدّعي أنها من بنوك بعناوين مثل «Payment_Advice» أو «Payment_Disbursement» أو «Vendor Contract PayApp Ref#» وتحتوي رابطاً أو رمز QR لصفحة تسرق بيانات الدخول. افتح المستند من docusign.com بكود الوصول بدلاً من ذلك.",
+   "brands": [
+    "docusign",
+    "دوكيوساين"
+   ],
+   "terms": [
+    "payment_advice",
+    "payment advice",
+    "payment_confirmation_receipt",
+    "payment confirmation receipt",
+    "payment_disbursement",
+    "payment disbursement",
+    "transfer_confirmation_notice",
+    "transfer confirmation notice",
+    "vendor contract payapp",
+    "payapp",
+    "enclosed.pdf",
+    "review document"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-05-22T00:00:00Z",
+   "last_seen": "2026-05-22T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.docusign.com/trust/alerts/fraud-alert-credential-harvesting-scam-impersonating-financial-institutions",
+     "title": "Docusign Trust Center: credential harvesting scam impersonating financial institutions"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-772733ae",
+   "title_en": "Real PayPal notices abused to show a fake \"call us\" number",
+   "title_ar": "إشعارات PayPal حقيقية مُستغلّة لعرض رقم هاتف مزيف «اتصل بنا»",
+   "summary_en": "Genuine service@paypal.com emails (they pass all checks) carry a subject like \"Pending charge of USD 987.90 for account activation. Questions? Call ...\" The number reaches tech-support scammers. Never call a number from a payment notice; open the PayPal app instead.",
+   "summary_ar": "رسائل حقيقية من service@paypal.com (تجتاز كل الفحوصات) تحمل عنواناً مثل «رسوم معلقة بقيمة 987.90 دولاراً لتفعيل الحساب. للاستفسار اتصل ...». الرقم يوصلك بمحتالين. لا تتصل برقم من إشعار دفع، وافتح تطبيق PayPal بدلاً من ذلك.",
+   "brands": [
+    "paypal",
+    "باي بال"
+   ],
+   "terms": [
+    "pending charge",
+    "account activation",
+    "questions? call",
+    "did not authorize",
+    "cancel this transaction",
+    "call us immediately",
+    "refund department",
+    "usd 987.90"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-04-30T00:00:00Z",
+   "last_seen": "2026-04-30T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.malwarebytes.com/blog/news/2026/04/more-paypal-emails-hijacked-to-deliver-tech-support-scams",
+     "title": "Malwarebytes: More PayPal emails hijacked to deliver tech support scams"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-daa0ade7",
+   "title_en": "\"iCloud storage is full\" threats",
+   "title_ar": "تهديدات «مساحة iCloud ممتلئة»",
+   "summary_en": "A run of \"your iCloud storage is full\" emails escalates to threats that your photos will be wiped on a date two days away unless you \"upgrade to iCloud+\" for a tiny fee - bait to steal your card details.",
+   "summary_ar": "سلسلة رسائل «مساحة iCloud ممتلئة» تتصاعد إلى تهديد بحذف صورك خلال يومين ما لم «تُرقِّ إلى iCloud+» مقابل رسوم صغيرة، وهي طُعم لسرقة بيانات بطاقتك.",
+   "brands": [
+    "icloud",
+    "icloud+",
+    "apple",
+    "apple id",
+    "آبل"
+   ],
+   "terms": [
+    "icloud storage is full",
+    "storage is full",
+    "upgrade to icloud+",
+    "lose your photos",
+    "will be deleted",
+    "photos and videos",
+    "payment method",
+    "final notice",
+    "renew your storage",
+    "مساحة التخزين ممتلئة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email",
+    "sms"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-04-16T00:00:00Z",
+   "last_seen": "2026-04-16T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.malwarebytes.com/blog/news/2026/04/icloud-storage-is-full-scam-is-back-and-now-it-wants-your-payment-details",
+     "title": "Malwarebytes: \"iCloud storage is full\" scam is back"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-49b13e59",
+   "title_en": "Fake traffic-fine payment links using police logos",
+   "title_ar": "روابط مزيفة لدفع المخالفات المرورية تحمل شعارات الشرطة",
+   "summary_en": "Messages with an official police logo claim you have a traffic violation, sometimes only Dh4, and ask you to \"check\" or pay it through a link. The site is run by fraudsters and steals card details. Check fines only in the official police or government apps.",
+   "summary_ar": "رسائل تحمل شعار الشرطة الرسمي تدّعي وجود مخالفة مرورية عليك، أحياناً بقيمة 4 دراهم فقط، وتطلب «التحقق» منها أو دفعها عبر رابط. الموقع يديره محتالون ويسرق بيانات البطاقة. استعلم عن المخالفات فقط عبر تطبيقات الشرطة أو الحكومة الرسمية.",
+   "brands": [
+    "abu dhabi police",
+    "adpolice",
+    "شرطة أبوظبي",
+    "شرطة ابوظبي",
+    "dubai police",
+    "شرطة دبي",
+    "ministry of interior",
+    "وزارة الداخلية"
+   ],
+   "terms": [
+    "traffic violation",
+    "traffic fine",
+    "traffic fines",
+    "unpaid fine",
+    "verify the violation",
+    "pay within 24 hours",
+    "avoid additional fines",
+    "black points",
+    "مخالفة مرورية",
+    "مخالفات مرورية",
+    "دفع المخالفة",
+    "سداد المخالفات",
+    "غرامة إضافية",
+    "نقاط سوداء"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "sms",
+    "email",
+    "whatsapp",
+    "social"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "high",
+   "first_seen": "2025-08-24T00:00:00Z",
+   "last_seen": "2026-04-11T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/crime/scam-alert-abu-dhabi-police-warn-against-traffic-fine-suspicious-link-1.500243502",
+     "title": "Gulf News: Abu Dhabi Police warn against suspicious traffic-fine link"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/uae/crime/dh4-traffic-fine-cross-emirate-fraud-network-busted-over-fake-sms-scam",
+     "title": "Khaleej Times: Dh4 traffic fine? Cross-emirate fraud network busted over fake SMS scam"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-42b8fcb4",
+   "title_en": "Fake \"Darb-Alert\" overdue toll texts (AED 4)",
+   "title_ar": "رسائل مزيفة «تنبيه درب» عن رسوم طريق متأخرة (4 دراهم)",
+   "summary_en": "Texts titled \"Darb-Alert\" say you owe AED 4.00 in overdue toll fees and will get an AED 100 fine and points unless you \"reply Y to open the secure payment portal\". Sender numbers can be spoofed.",
+   "summary_ar": "رسائل بعنوان «تنبيه درب» تزعم أن عليك 4 دراهم رسوم طريق متأخرة وستُفرض غرامة 100 درهم ونقاط ما لم «ترد بحرف Y لفتح بوابة الدفع الآمنة». قد يكون رقم المرسل مزوراً.",
+   "brands": [
+    "darb",
+    "درب",
+    "salik",
+    "سالك"
+   ],
+   "terms": [
+    "darb-alert",
+    "overdue toll",
+    "toll fees",
+    "avoid the issuance",
+    "pending status",
+    "secure payment portal",
+    "reply y",
+    "aed4.00",
+    "aed 4",
+    "رسوم الطريق",
+    "رسوم متأخرة",
+    "بوابة الدفع"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "sms"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "high",
+   "first_seen": "2026-02-05T00:00:00Z",
+   "last_seen": "2026-04-11T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/uae/rak-police-warn-motorists-fake-toll-payment-messages",
+     "title": "Khaleej Times: RAK Police warn motorists of fake toll payment messages"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/uae/crime/dh4-traffic-fine-cross-emirate-fraud-network-busted-over-fake-sms-scam",
+     "title": "Khaleej Times: Dh4 traffic fine? Cross-emirate fraud network busted over fake SMS scam"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-d0ee5562",
+   "title_en": "Fake Meta \"page policy violation\" and partner-request emails",
+   "title_ar": "رسائل مزيفة من Meta عن «مخالفة سياسات الصفحة» وطلبات الشراكة",
+   "summary_en": "Business-page owners get notices that their page is \"under formal review\" for a policy violation, or Business Manager \"partner requests\" sent through Meta's own system, with a \"Verify Content\" button leading to a fake Meta login.",
+   "summary_ar": "يتلقى أصحاب صفحات الأعمال إشعارات بأن صفحتهم «قيد المراجعة الرسمية» بسبب مخالفة السياسات، أو «طلبات شراكة» عبر نظام Meta نفسه، مع زر «تحقق من المحتوى» يقود إلى صفحة دخول مزيفة.",
+   "brands": [
+    "meta",
+    "facebook",
+    "meta business",
+    "business manager",
+    "meta business suite",
+    "فيسبوك",
+    "ميتا"
+   ],
+   "terms": [
+    "policy violation",
+    "under formal review",
+    "under review",
+    "partner request",
+    "verify content",
+    "appeal",
+    "avoid restrictions",
+    "policy violation confirmation",
+    "intellectual property",
+    "page will be"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2025-05-27T00:00:00Z",
+   "last_seen": "2026-04-09T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://cybersecuritynews.com/hackers-abuse-legitimate-meta-business-manager-notifications/",
+     "title": "Cyber Security News: Hackers abuse legitimate Meta Business Manager notifications"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.bitdefender.com/en-us/blog/hotforsecurity/facebook-business-page-phishing-scam-targets-small-businesses-with-convincing-policy-violation-emails",
+     "title": "Bitdefender: Facebook business page phishing with policy-violation emails"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-94a802d6",
+   "title_en": "UAE parcel \"AED 3 redelivery fee\" messages",
+   "title_ar": "رسائل «رسوم إعادة توصيل 3 دراهم» لشحنات في الإمارات",
+   "summary_en": "Texts and emails using courier names (Emirates Post, Aramex and others) say a parcel is waiting and ask you to pay a tiny fee, such as AED 3, or update your address through a link. The fake payment page steals your card; one victim almost lost AED 40,000.",
+   "summary_ar": "رسائل نصية وبريد إلكتروني تستخدم أسماء شركات التوصيل (بريد الإمارات وأرامكس وغيرها) تزعم أن شحنتك بانتظارك وتطلب دفع رسوم صغيرة مثل 3 دراهم أو تحديث عنوانك عبر رابط. صفحة الدفع المزيفة تسرق بطاقتك، وكادت إحدى الضحايا تخسر 40 ألف درهم.",
+   "brands": [
+    "emirates post",
+    "emiratespost",
+    "بريد الإمارات",
+    "بريد الامارات",
+    "aramex",
+    "أرامكس",
+    "ارامكس",
+    "fetchr",
+    "dhl"
+   ],
+   "terms": [
+    "pending shipment",
+    "could not be delivered",
+    "reschedule delivery",
+    "redelivery",
+    "aed 3",
+    "3 dirhams",
+    "update address",
+    "update your address",
+    "handling fee",
+    "delivery fee",
+    "customs fee",
+    "شحنتك",
+    "شحنة معلقة",
+    "إعادة التوصيل",
+    "إعادة جدولة التوصيل",
+    "تعذر توصيل",
+    "رسوم التوصيل",
+    "تحديث العنوان",
+    "3 دراهم"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "sms",
+    "email",
+    "whatsapp"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "high",
+   "first_seen": "2025-09-17T00:00:00Z",
+   "last_seen": "2026-03-30T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/crime/dh3-delivery-scam-abu-dhabi-police-alert-uae-residents-of-fake-messages-1.500272577",
+     "title": "Gulf News: Dh3 'delivery' scam - Abu Dhabi Police alert UAE residents of fake messages"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.remitly.com/blog/en-ae/scams/white-friday-scams",
+     "title": "Remitly: How to avoid White Friday scams in the UAE"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/business/fake-shipment-tracking-scams-surge-in-uae-and-region-heres-how-to-protect-yourself",
+     "title": "Khaleej Times: Fake shipment tracking scams surge in UAE and region"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://en.aletihad.ae/amp/news/uae/4641249/cyber-security-council--emirates-post-group--darb-warn-about",
+     "title": "Aletihad: Cyber Security Council, Emirates Post Group, DARB warn about fake messages"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-73549ac3",
+   "title_en": "Fake \"50% off your traffic fines\" emails",
+   "title_ar": "رسائل بريد مزيفة: «خصم 50% على المخالفات المرورية»",
+   "summary_en": "Emails using the RTA logo and radar-camera pictures offer a 50% discount on traffic fines if you \"pay today\", with a \"pay the fines\" button. The page does not belong to the authority. Discounts are only announced on official channels.",
+   "summary_ar": "رسائل بريد إلكتروني تستخدم شعار هيئة الطرق وصور كاميرات الرادار وتعرض خصم 50% على المخالفات إذا «دفعت اليوم» مع زر «دفع المخالفات». الصفحة لا تتبع الهيئة، والخصومات تُعلن فقط عبر القنوات الرسمية.",
+   "brands": [
+    "rta",
+    "roads and transport authority",
+    "هيئة الطرق والمواصلات",
+    "طرق دبي",
+    "dubai police",
+    "شرطة دبي",
+    "abu dhabi police",
+    "شرطة أبوظبي"
+   ],
+   "terms": [
+    "50% discount",
+    "50% off",
+    "discount on traffic fines",
+    "pay today",
+    "pay the fines",
+    "traffic fines",
+    "خصم 50%",
+    "تخفيض المخالفات",
+    "ادفع اليوم",
+    "دفع المخالفات",
+    "المخالفات المرورية"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email",
+    "social"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "high",
+   "first_seen": "2026-03-17T00:00:00Z",
+   "last_seen": "2026-03-17T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.emaratalyoum.com/local-section/other/2026-03-17-1.2025983",
+     "title": "الإمارات اليوم: «طرق دبي» تحذر من رسائل تخفيض المخالفات المرورية 50%"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-86f8ad0e",
+   "title_en": "Fake officials asking for UAE PASS and Emirates ID details",
+   "title_ar": "محتالون ينتحلون صفة مسؤولين ويطلبون بيانات UAE PASS والهوية الإماراتية",
+   "summary_en": "Callers and messages claiming to be from police or a \"Dubai Crisis Management\" department ask you to approve a UAE PASS login or share codes and Emirates ID data. They use it for SIM swaps and to empty bank accounts. Officials never ask for this by phone or text.",
+   "summary_ar": "مكالمات ورسائل تدّعي أنها من الشرطة أو من «إدارة الأزمات في دبي» تطلب الموافقة على تسجيل دخول UAE PASS أو مشاركة الرموز وبيانات الهوية الإماراتية، وتُستخدم لنقل شريحة الهاتف وسرقة الحسابات البنكية. الجهات الرسمية لا تطلب ذلك بالهاتف أو الرسائل.",
+   "brands": [
+    "uae pass",
+    "uaepass",
+    "الهوية الرقمية",
+    "dubai police",
+    "شرطة دبي",
+    "dubai crisis management"
+   ],
+   "terms": [
+    "dubai crisis management",
+    "login request",
+    "approve the request",
+    "otp",
+    "verification code",
+    "emirates id",
+    "verify your identity",
+    "update your data",
+    "رمز التحقق",
+    "الهوية الإماراتية",
+    "بطاقة الهوية",
+    "تحديث البيانات",
+    "طلب تسجيل دخول"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "phone",
+    "sms",
+    "whatsapp"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "high",
+   "first_seen": "2026-03-02T00:00:00Z",
+   "last_seen": "2026-03-02T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/uae/dubai-police-warn-scammers-impersonating-government-officials",
+     "title": "Khaleej Times: Dubai Police alert - scammers target UAE Pass, Emirates ID"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/crime/dubai-police-caution-residents-against-fake-calls-seeking-uae-pass-details-1.500460239",
+     "title": "Gulf News: Dubai Police caution residents against fake calls seeking UAE Pass details"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-3501ae46",
+   "title_en": "\"You have won\" / \"You are entitled to a refund\" messages",
+   "title_ar": "رسائل «لقد ربحت» و«يحق لك استرداد مبلغ»",
+   "summary_en": "The UAE Cyber Security Council reports a 35% rise in fake messages. Common phrases: \"You have won\", \"You are entitled to a refund\", \"Verify your bank account\" and \"Exclusive discounted credit card offer\". They pose as government bodies, banks or known companies.",
+   "summary_ar": "أفاد مجلس الأمن السيبراني بارتفاع الرسائل الاحتيالية بنسبة 35%. عبارات شائعة: «لقد ربحت» و«يحق لك استرداد مبلغ» و«تحقق من حسابك المصرفي» و«عرض حصري لبطاقة ائتمان بخصم». تنتحل صفة جهات حكومية أو بنوك أو شركات معروفة.",
+   "brands": [],
+   "terms": [
+    "you have won",
+    "you've won",
+    "you are entitled to a refund",
+    "you have a refund",
+    "verify your bank account",
+    "exclusive discounted credit card",
+    "low-interest credit card",
+    "لقد ربحت",
+    "مبروك لقد فزت",
+    "يحق لك استرداد",
+    "استرداد مبلغ",
+    "تحقق من حسابك المصرفي",
+    "بطاقة ائتمان بخصم"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "sms",
+    "email",
+    "whatsapp"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-01-20T00:00:00Z",
+   "last_seen": "2026-02-01T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.khaleejtimes.com/uae/cyber-security-council-warns-rise-fraudulent-messages",
+     "title": "Khaleej Times: UAE alerts public to risks from phishing, SMS scams; 35% rise in fake messages"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/uae-cybersecurity-council-warns-public-against-rising-phishing-scams-1.500414274",
+     "title": "Gulf News: UAE Cybersecurity Council warns public against rising phishing scams"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/uae-cyber-security-council-alerts-public-to-rising-online-fraud-threats-1.500426460",
+     "title": "Gulf News: UAE Cyber Security Council alerts public to rising online fraud threats"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-b038712b",
+   "title_en": "Fake RTA \"unpaid fine, AED 500 will be added\" SMS",
+   "title_ar": "رسالة مزيفة باسم هيئة الطرق: «مخالفة غير مدفوعة وستُضاف 500 درهم»",
+   "summary_en": "SMS headed \"Beware of SMS Scams - Roads and Transport Authority (RTA)\" says an unpaid 50-dirham fine is due and that 500 dirhams will be added today unless you pay immediately through the link.",
+   "summary_ar": "رسالة نصية بعنوان «احذر من الرسائل الاحتيالية - هيئة الطرق والمواصلات» تزعم أن مخالفة بقيمة 50 درهماً مستحقة وأنه ستُضاف 500 درهم اليوم ما لم تدفع فوراً عبر الرابط.",
+   "brands": [
+    "rta",
+    "roads and transport authority",
+    "هيئة الطرق والمواصلات",
+    "طرق دبي"
+   ],
+   "terms": [
+    "unpaid traffic fine",
+    "is due soon",
+    "pay immediately",
+    "automatic addition",
+    "500 dirhams",
+    "50 dirhams",
+    "مخالفة غير مدفوعة",
+    "ادفع فوراً",
+    "500 درهم",
+    "50 درهم"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "sms"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "high",
+   "first_seen": "2026-01-23T00:00:00Z",
+   "last_seen": "2026-01-23T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/new-dh500-dubai-scam-alert-for-unpaid-traffic-fines-rta-warns-1.500418185",
+     "title": "Gulf News: New Dh500 Dubai scam alert for unpaid traffic fines, RTA warns"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-d2fb49b7",
+   "title_en": "Fake Salik share-investment offers",
+   "title_ar": "عروض مزيفة للاستثمار في أسهم سالك",
+   "summary_en": "Professional-looking messages promise guaranteed, unusually high returns on Salik shares and ask you to click a link or share financial details. Salik shares trade only through the DFM app or licensed brokers.",
+   "summary_ar": "رسائل تبدو احترافية تَعِد بأرباح مضمونة ومرتفعة على أسهم سالك وتطلب الضغط على رابط أو مشاركة بياناتك المالية. أسهم سالك تُتداول فقط عبر تطبيق سوق دبي المالي أو الوسطاء المرخصين.",
+   "brands": [
+    "salik",
+    "سالك"
+   ],
+   "terms": [
+    "shares",
+    "share deal",
+    "guaranteed returns",
+    "high returns",
+    "invest now",
+    "ipo",
+    "instant profit",
+    "أسهم",
+    "أرباح مضمونة",
+    "عوائد مرتفعة",
+    "استثمر الآن"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "sms",
+    "social",
+    "web"
+   ],
+   "regions": [
+    "AE"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-01-12T00:00:00Z",
+   "last_seen": "2026-01-12T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://gulfnews.com/uae/crime/salik-warns-investors-against-fake-messages-promoting-share-deals-1.500406050",
+     "title": "Gulf News: Salik warns investors against fake messages promoting share deals"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-e0f41a32",
+   "title_en": "Year-end \"complete your bonus form\" QR-code emails",
+   "title_ar": "رسائل نهاية العام «أكمل نموذج المكافأة» برمز QR",
+   "summary_en": "Emails from hacked accounts, dressed as HR or Docusign, say \"Let's Wrap Up the Year Right - Complete Your Bonus Form!\" and attach a PDF with a QR code. Scanning it on your phone opens a page that steals your work password.",
+   "summary_ar": "رسائل من حسابات مخترقة بشكل الموارد البشرية أو Docusign تقول «لنختم العام بشكل صحيح - أكمل نموذج المكافأة!» ومعها ملف PDF برمز QR. مسحه بالهاتف يفتح صفحة تسرق كلمة مرور العمل.",
+   "brands": [],
+   "terms": [
+    "complete your bonus form",
+    "bonus form",
+    "let's wrap up the year right",
+    "year-end bonus",
+    "annual bonus",
+    "scan the qr code",
+    "qr code",
+    "hr department",
+    "salary adjustment",
+    "نموذج المكافأة",
+    "مكافأة نهاية العام",
+    "امسح رمز qr"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2025-11-21T00:00:00Z",
+   "last_seen": "2025-11-21T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.mimecast.com/threat-intelligence-hub/hr-themed-campaign/",
+     "title": "Mimecast: HR bonus-themed QR code phishing campaign"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "jafaclink.net"
+    ]
+   }
+  }
+ ]
+}

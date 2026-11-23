@@ -1,0 +1,73 @@
+Delivered-To: reader.example@gmail.com
+Received: by 2002:a05:7300:5c21:b0:1a2:3b4c:5d6e with SMTP id u33csp220913dyb;
+        Mon, 23 Nov 2026 04:00:13 -0800 (PST)
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@example.com header.s=s1 header.b=K3pQ9aZx;
+       dkim=pass header.i=@sendgrid.info header.s=smtpapi header.b=Wm81LcTe;
+       spf=pass (google.com: domain of bounces+4821913-ab12-reader.example=gmail.com@sendgrid.net designates 198.51.100.20 as permitted sender) smtp.mailfrom="bounces+4821913-ab12-reader.example=gmail.com@sendgrid.net";
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=example.com
+Return-Path: <bounces+4821913-ab12-reader.example=gmail.com@sendgrid.net>
+Received: from o1.ptr8812.sendgrid.net (o1.ptr8812.sendgrid.net. [198.51.100.20])
+        by mx.google.com with ESMTPS id d75a77b69052e-4b0f1e2d3c4si1234567cf.88.2026.11.23.04.00.12
+        for <reader.example@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 23 Nov 2026 04:00:12 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=example.com;
+        h=content-type:from:mime-version:subject:list-unsubscribe:list-id:to:cc;
+        s=s1; bh=FAKEbodyHashForFixtureOnlyBBBBBBBBBBBBBBBBBB=;
+        b=FAKEsignatureForFixtureOnlyBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sendgrid.info;
+        h=content-type:from:mime-version:subject:list-unsubscribe:list-id:to:cc;
+        s=smtpapi; bh=FAKEbodyHashForFixtureOnlyBBBBBBBBBBBBBBBBBB=;
+        b=FAKEsignatureForFixtureOnlyCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=
+Content-Type: multipart/alternative; boundary="nl_week47_boundary"
+From: "Example Weekly" <news@example.com>
+MIME-Version: 1.0
+Subject: Example Weekly #47: five recipes for cooler evenings
+List-Id: Example Weekly <weekly.news.example.com>
+List-Unsubscribe: <https://u8812.ct.sendgrid.net/asm/unsubscribe/?user_id=4821913&data=fixture>, <mailto:unsubscribe@example.com?subject=unsubscribe>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+Precedence: bulk
+Date: Mon, 23 Nov 2026 12:00:11 +0000
+Message-ID: <week47.newsletter.20261123120011@example.com>
+To: reader.example@gmail.com
+
+--nl_week47_boundary
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+Example Weekly #47
+
+Hello reader,
+
+The evenings are getting cooler, so this week we picked five warm
+recipes you can make in under 30 minutes.
+
+Read online: https://u8812.ct.sendgrid.net/ls/click?upn=fixture-read-online
+
+1. Lentil soup with lemon
+2. Saffron rice
+3. Roasted vegetables with za'atar
+4. Chickpea stew
+5. Date and walnut cake
+
+You are receiving this because you subscribed at example.com.
+Unsubscribe: https://u8812.ct.sendgrid.net/asm/unsubscribe/?user_id=4821913&data=fixture
+
+--nl_week47_boundary
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+<html><body>
+<h1>Example Weekly #47</h1>
+<p>Hello reader,</p>
+<p>The evenings are getting cooler, so this week we picked five warm
+recipes you can make in under 30 minutes.</p>
+<p><a href="https://u8812.ct.sendgrid.net/ls/click?upn=fixture-read-online">Read online</a></p>
+<p><a href="https://u8812.ct.sendgrid.net/ls/click?upn=fixture-site">www.example.com</a></p>
+<ol><li>Lentil soup with lemon</li><li>Saffron rice</li><li>Roasted vegetables with za'atar</li><li>Chickpea stew</li><li>Date and walnut cake</li></ol>
+<p style="font-size:11px">You are receiving this because you subscribed at example.com.
+<a href="https://u8812.ct.sendgrid.net/asm/unsubscribe/?user_id=4821913&amp;data=fixture">Unsubscribe</a></p>
+</body></html>
+
+--nl_week47_boundary--

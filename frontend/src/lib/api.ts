@@ -36,6 +36,9 @@ export interface RedFlag {
   points: number;
   en: string;
   ar: string;
+  /** Email flags only. */
+  strength?: "strong" | "weak" | "info";
+  evidence?: string | null;
 }
 
 interface SyndicateBrief {
@@ -95,7 +98,7 @@ interface MapsScanResponse {
 }
 
 export interface ScanVerdict {
-  kind: "url" | "maps";
+  kind: "url" | "maps" | "email";
   scanId: string;
   target: string;
   /** The website domain behind the scam (used, defanged, in community warnings). */
@@ -119,6 +122,8 @@ export interface ScanVerdict {
   syndicateAr: string | null;
   engine: string;
   interception: InterceptionChannel;
+  /** Only for kind "email": sender, authentication, links, attachments, campaigns, personal model. */
+  email?: EmailDetails;
 }
 
 export interface AwarenessWave {
@@ -326,4 +331,333 @@ export async function getAwareness(params: { entity?: string; useLlm?: boolean }
   if (params.entity) q.set("entity", params.entity);
   if (params.useLlm === false) q.set("use_llm", "false");
   return request<AwarenessAlert>(`/api/awareness-alert?${q.toString()}`);
+}
+
+// ---------------------------------------------------------------- email scanning (POST /api/analyze-email)
+
+export type EmailSource = "text" | "raw" | "eml" | "msg";
+export type AuthResult = "pass" | "fail" | "softfail" | "neutral" | "none" | "temperror" | "permerror" | "not_checked";
+
+export interface EmailAddressInfo {
+  display_name: string;
+  address: string;
+  domain: string;
+  registered_domain: string;
+  /** The domain written in its real letters (differs from `domain` when that is punycode "xn--..."). */
+  unicode_domain: string;
+  is_freemail: boolean;
+  is_official: boolean;
+}
+
+export interface EmailLink {
+  url: string;
+  display_text: string;
+  domain: string;
+  unwrapped_from: string | null;
+  text_mismatch: boolean;
+  scan_id: string | null;
+  risk_score: number | null;
+  verdict: VerdictLabel | null;
+}
+
+export interface EmailAttachment {
+  name: string;
+  size: number;
+  risky: boolean;
+  reason: string | null;
+}
+
+export interface UnicodeFinding {
+  where: string;
+  kind: "punycode" | "mixed_script" | "whole_script_confusable" | "invisible" | "bidi" | "fancy" | string;
+  /** The suspicious text with hidden/lookalike characters written as \uXXXX, safe to display. */
+  sample_escaped: string;
+  /** What the text imitates once lookalike letters are swapped for plain Latin ones. */
+  skeleton: string;
+}
+
+export interface CampaignMatch {
+  id: string;
+  title_en: string;
+  title_ar: string;
+  match: "ioc" | "lure";
+  points: number;
+  matched: string[];
+}
+
+export interface UserModelInfo {
+  available: boolean;
+  p_scam: number | null;
+  labels: number;
+  spec: string;
+}
+
+export interface EmailAuthentication {
+  trusted_authserv: string | null;
+  spf: { result: AuthResult; domain: string; client_ip: string; source: string };
+  dkim: { domain: string; selector: string; result: AuthResult; aligned: boolean; source: string }[];
+  dmarc: {
+    result: AuthResult;
+    policy: "reject" | "quarantine" | "none" | null;
+    alignment: { spf: boolean; dkim: boolean };
+    source: string;
+  };
+  arc: { result: AuthResult; chain_length: number };
+}
+
+/** Everything the email verdict screen shows (a subset of the server response). */
+export interface EmailDetails {
+  source: EmailSource | string;
+  subject: string;
+  date: string | null;
+  hasHeaders: boolean;
+  isBulk: boolean;
+  from: EmailAddressInfo | null;
+  replyTo: EmailAddressInfo | null;
+  returnPath: EmailAddressInfo | null;
+  bodyExcerpt: string;
+  auth: EmailAuthentication | null;
+  unicode: UnicodeFinding[];
+  links: EmailLink[];
+  attachments: EmailAttachment[];
+  campaigns: CampaignMatch[];
+  userModel: UserModelInfo | null;
+  llmRedFlags: string[];
+  userLlmHost: string | null;
+  userLlmError: string | null;
+}
+
+/** The server response of POST /api/analyze-email (tests/fixtures/contract/analyze_email_response.json). */
+export interface EmailScanVerdict {
+  scan_id: string;
+  kind: "email";
+  created_at: string;
+  target: string;
+  domain: null;
+  channel: "email";
+  interception_channel: string;
+  source: EmailSource | string;
+  risk_score: number;
+  verdict: VerdictLabel;
+  impersonated_entity: string | null;
+  impersonated_entity_ar: string | null;
+  official_domains: string[];
+  citizen_explanation_en: string;
+  citizen_explanation_ar: string;
+  red_flags: RedFlag[];
+  llm_red_flags: string[];
+  email: {
+    subject: string;
+    date: string | null;
+    has_headers: boolean;
+    is_bulk: boolean;
+    list_id: string | null;
+    to_count: number;
+    from: EmailAddressInfo | null;
+    reply_to: EmailAddressInfo | null;
+    return_path: EmailAddressInfo | null;
+    sender: EmailAddressInfo | null;
+    body_excerpt: string;
+  };
+  authentication: EmailAuthentication | null;
+  unicode: { findings: UnicodeFinding[] } | null;
+  links: EmailLink[];
+  attachments: EmailAttachment[];
+  campaigns: CampaignMatch[];
+  user_model: UserModelInfo | null;
+  model_features: number[];
+  analyzer: {
+    engine: string;
+    confidence: number | null;
+    user_llm_host: string | null;
+    user_llm_error: string | null;
+    /** Allowed extra: which optional engines were unavailable ("auth_unavailable", ...). */
+    notes?: string[];
+  };
+  timings: Record<string, number>;
+  /** Present only when a scam email's links joined a known scam network (same as URL scans). */
+  syndicate?: SyndicateBrief | null;
+  graph_delta?: unknown;
+}
+
+/** A user-supplied OpenAI-compatible endpoint. Sent with one request only; the server never stores it. */
+export interface UserLlmConfig {
+  base_url: string;
+  api_key: string;
+  model: string;
+}
+
+export interface EmailScanInput {
+  source: EmailSource;
+  /** Pasted visible text (source "text") or the full original with headers (source "raw"). */
+  text?: string;
+  /** A .eml / .msg file as base64 (no "data:" prefix). */
+  fileBase64?: string;
+  fileName?: string;
+  llm?: UserLlmConfig | null;
+}
+
+/** The most dangerous linked website, used (defanged) in community warnings. Never the sender's domain:
+ *  a scam sent from gmail.com must not make anyone warn about gmail.com. */
+function worstLinkDomain(links: EmailLink[]): string | null {
+  const flagged = links
+    .filter((l) => l.domain && l.verdict && l.verdict !== "SAFE")
+    .sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0));
+  return flagged[0]?.domain ?? null;
+}
+
+export function fromEmailScan(r: EmailScanVerdict, interception: InterceptionChannel): ScanVerdict {
+  const e = r.email ?? ({} as Partial<EmailScanVerdict["email"]>);
+  const links = Array.isArray(r.links) ? r.links : [];
+  return {
+    kind: "email",
+    scanId: r.scan_id,
+    target: r.target,
+    scamDomain: worstLinkDomain(links),
+    riskScore: r.risk_score,
+    verdict: r.verdict,
+    entityEn: r.impersonated_entity,
+    entityAr: r.impersonated_entity_ar,
+    officialDomains: r.official_domains ?? [],
+    officialPhones: [],
+    explanationEn: r.citizen_explanation_en,
+    explanationAr: r.citizen_explanation_ar,
+    redFlags: (r.red_flags ?? []).filter((f) => f.points > 0),
+    harvested: [],
+    ip: null,
+    sslIssuer: null,
+    domainAgeHours: null,
+    cloaking: false,
+    screenshot: null,
+    syndicateEn: r.syndicate?.name ?? null,
+    syndicateAr: r.syndicate?.name_ar ?? null,
+    engine: r.analyzer?.engine ?? "rules",
+    interception,
+    email: {
+      source: r.source,
+      subject: e.subject ?? "",
+      date: e.date ?? null,
+      hasHeaders: Boolean(e.has_headers),
+      isBulk: Boolean(e.is_bulk),
+      from: e.from ?? null,
+      replyTo: e.reply_to ?? null,
+      returnPath: e.return_path ?? null,
+      bodyExcerpt: e.body_excerpt ?? "",
+      auth: r.authentication ?? null,
+      unicode: r.unicode?.findings ?? [],
+      links,
+      attachments: Array.isArray(r.attachments) ? r.attachments : [],
+      campaigns: Array.isArray(r.campaigns) ? r.campaigns : [],
+      userModel: r.user_model ?? null,
+      llmRedFlags: Array.isArray(r.llm_red_flags) ? r.llm_red_flags : [],
+      userLlmHost: r.analyzer?.user_llm_host ?? null,
+      userLlmError: r.analyzer?.user_llm_error ?? null,
+    },
+  };
+}
+
+const REPORTER_KEY = "saqr-reporter-id";
+
+/**
+ * A random id for this browser, kept in localStorage. It links "This was a scam / fine" labels to the
+ * personal email model without any name, phone number or account. Never derived from the user.
+ */
+export function getReporterId(): string {
+  const fresh = () => {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return "r-" + Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  };
+  try {
+    const saved = window.localStorage.getItem(REPORTER_KEY);
+    if (saved && /^[\w-]{16,64}$/.test(saved)) return saved;
+    const id = fresh();
+    window.localStorage.setItem(REPORTER_KEY, id);
+    return id;
+  } catch {
+    return fresh(); // storage blocked (private mode): a one-off id still works for this scan
+  }
+}
+
+export async function analyzeEmail(input: EmailScanInput, interception: InterceptionChannel): Promise<ScanVerdict> {
+  const r = await request<EmailScanVerdict>("/api/analyze-email", {
+    method: "POST",
+    body: JSON.stringify({
+      source: input.source,
+      text: input.text ?? null,
+      file_base64: input.fileBase64 ?? null,
+      file_name: input.fileName ?? null,
+      channel: "email",
+      reporter_id: getReporterId(),
+      interception_channel: interception,
+      use_llm: true,
+      follow_links: true,
+      use_user_model: true,
+      ...(input.llm ? { llm: input.llm } : {}),
+    }),
+  });
+  return fromEmailScan(r, interception);
+}
+
+export interface CampaignReference {
+  source_id: string;
+  url: string;
+  title: string;
+}
+
+export interface Campaign {
+  id: string;
+  title_en: string;
+  title_ar: string;
+  summary_en: string;
+  summary_ar: string;
+  brands: string[];
+  terms: string[];
+  min_terms: number;
+  channels: string[];
+  regions: string[];
+  severity: string;
+  first_seen: string;
+  last_seen: string;
+  references: CampaignReference[];
+  indicators: { sender_domains: string[]; url_domains: string[] };
+}
+
+export interface CampaignFeed {
+  format: "saqr-campaigns";
+  version: number;
+  generated_at: string;
+  ttl_hours: number;
+  sources: { id: string; name: string; url: string; license: string; ok: boolean; fetched_at: string; items: number }[];
+  campaigns: Campaign[];
+}
+
+/** The scam-wave feed (GET /api/campaigns): used for the source links on a matched campaign. */
+export async function getCampaigns(): Promise<CampaignFeed> {
+  return request<CampaignFeed>("/api/campaigns");
+}
+
+export type EmailLabel = "scam" | "ham";
+
+/** What POST /api/email-model/label answers (only `labels` is relied on, and only when present). */
+export interface LabelResult {
+  ok?: boolean;
+  labels?: number;
+  scam?: number;
+  ham?: number;
+  available?: boolean;
+  user_model?: UserModelInfo;
+}
+
+/** Teach the personal email model: the server reuses the stored features of that scan (never the mail). */
+export async function labelEmail(scanId: string, label: EmailLabel): Promise<LabelResult> {
+  return request<LabelResult>("/api/email-model/label", {
+    method: "POST",
+    body: JSON.stringify({ reporter_id: getReporterId(), scan_id: scanId, label }),
+  });
+}
+
+/** Download link for this browser's personal email model (JSON, format "saqr-user-model"). */
+export function emailModelDownloadUrl(): string {
+  return apiUrl(`/api/email-model/${encodeURIComponent(getReporterId())}`);
 }

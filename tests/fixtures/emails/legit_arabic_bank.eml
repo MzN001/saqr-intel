@@ -1,0 +1,63 @@
+Delivered-To: fab.customer.example@gmail.com
+Received: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp311802pzb;
+        Mon, 23 Nov 2026 01:30:05 -0800 (PST)
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@bankfab.com header.s=selector1 header.b=Rk2bQxLp;
+       spf=pass (google.com: domain of notifications@bankfab.com designates 192.0.2.45 as permitted sender) smtp.mailfrom=notifications@bankfab.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=bankfab.com
+Return-Path: <notifications@bankfab.com>
+Received: from mta1.bankfab.com (mta1.bankfab.com. [192.0.2.45])
+        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si9988776a12.301.2026.11.23.01.30.04
+        for <fab.customer.example@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 23 Nov 2026 01:30:04 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bankfab.com; s=selector1;
+        h=from:to:subject:date:message-id:mime-version:content-type;
+        bh=FAKEbodyHashForFixtureOnlyDDDDDDDDDDDDDDDDDD=;
+        b=FAKEsignatureForFixtureOnlyDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD=
+From: =?UTF-8?B?2KjZhtmDINij2KjZiNi42KjZiiDYp9mE2KPZiNmE?= <notifications@bankfab.com>
+To: fab.customer.example@gmail.com
+Subject: =?UTF-8?B?2KjZhtmDINij2KjZiNi42KjZiiDYp9mE2KPZiNmEOiDYqtmFINil2YrYr9in2Lkg2LHYp9iq2KjZgw==?=
+Date: Mon, 23 Nov 2026 13:30:02 +0400
+Message-ID: <salary.4821.20261123133002@bankfab.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="fab_notice_4821"
+
+--fab_notice_4821
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+2LnYstmK2LLZiiDYp9mE2LnZhdmK2YTYjOKAjwoK2YbZiNivINil2LnZhNin2YXZgyDYqNij2YbZ
+hyDYqtmFINil2YrYr9in2Lkg2LHYp9iq2Kgg2LTZh9ixINmG2YjZgdmF2KjYsSDZgdmKINit2LPY
+p9io2YMg2KfZhNmF2YbYqtmH2Yog2KjZgCA0ODIx4oCPLgrYp9mE2YXYqNmE2Lo6IDE4LDUwMC4w
+MCDYr9ix2YfZheKAjwrYp9mE2KrYp9ix2YrYrjogMjMvMTEvMjAyNgoK2YrZhdmD2YbZgyDYp9mE
+2KfYt9mE2KfYuSDYudmE2Ykg2YPYtNmBINin2YTYrdiz2KfYqCDYudio2LEg2KrYt9io2YrZgiDY
+qNmG2YPigIzYo9io2YjYuNio2YrigIzYp9mE2KPZiNmEINij2Ygg2KfZhNmF2YjZgti5INin2YTY
+sdiz2YXZiiB3d3cuYmFua2ZhYi5jb20KCtmE2YYg2YbYt9mE2Kgg2YXZhtmDINij2KjYr9in2Ysg
+2LHZgtmFINin2YTYqti52LHZitmBINin2YTYtNiu2LXZiiDYo9mIINmD2YTZhdipINin2YTZhdix
+2YjYsSDYudio2LEg2KfZhNio2LHZitivINin2YTYpdmE2YPYqtix2YjZhtmKLgoK2YXYuSDYqtit
+2YrYp9iq2IwK2KjZhtmDINij2KjZiNi42KjZiiDYp9mE2KPZiNmE4oCPCgpEZWFyIGN1c3RvbWVy
+LCB5b3VyIE5vdmVtYmVyIHNhbGFyeSBoYXMgYmVlbiBjcmVkaXRlZCB0byB5b3VyIGFjY291bnQg
+ZW5kaW5nIDQ4MjEu
+
+--fab_notice_4821
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+PGh0bWwgZGlyPSJydGwiIGxhbmc9ImFyIj48Ym9keT4KPHA+2LnYstmK2LLZiiDYp9mE2LnZhdmK
+2YTYjOKAjzwvcD4KPHA+2YbZiNivINil2LnZhNin2YXZgyDYqNij2YbZhyDYqtmFINil2YrYr9in
+2Lkg2LHYp9iq2Kgg2LTZh9ixINmG2YjZgdmF2KjYsSDZgdmKINit2LPYp9io2YMg2KfZhNmF2YbY
+qtmH2Yog2KjZgCA0ODIx4oCPLjwvcD4KPHA+2KfZhNmF2KjZhNi6OiAxOCw1MDAuMDAg2K/YsdmH
+2YXigI88YnI+2KfZhNiq2KfYsdmK2K46IDIzLzExLzIwMjY8L3A+CjxwPtmK2YXZg9mG2YMg2KfZ
+hNin2LfZhNin2Lkg2LnZhNmJINmD2LTZgSDYp9mE2K3Ys9in2Kgg2LnYqNixINiq2LfYqNmK2YIg
+2KjZhtmD4oCM2KPYqNmI2LjYqNmK4oCM2KfZhNij2YjZhCDYo9mIINin2YTZhdmI2YLYuSDYp9mE
+2LHYs9mF2YogPGEgaHJlZj0iaHR0cHM6Ly93d3cuYmFua2ZhYi5jb20vYXItYWUvcGVyc29uYWwi
+Pnd3dy5iYW5rZmFiLmNvbTwvYT48L3A+CjxwPtmE2YYg2YbYt9mE2Kgg2YXZhtmDINij2KjYr9in
+2Ysg2LHZgtmFINin2YTYqti52LHZitmBINin2YTYtNiu2LXZiiDYo9mIINmD2YTZhdipINin2YTZ
+hdix2YjYsSDYudio2LEg2KfZhNio2LHZitivINin2YTYpdmE2YPYqtix2YjZhtmKLjwvcD4KPHA+
+2YXYuSDYqtit2YrYp9iq2Iw8YnI+2KjZhtmDINij2KjZiNi42KjZiiDYp9mE2KPZiNmE4oCPPC9w
+Pgo8cCBkaXI9Imx0ciI+RGVhciBjdXN0b21lciwgeW91ciBOb3ZlbWJlciBzYWxhcnkgaGFzIGJl
+ZW4gY3JlZGl0ZWQgdG8geW91ciBhY2NvdW50IGVuZGluZyA0ODIxLjwvcD4KPC9ib2R5PjwvaHRt
+bD4=
+
+--fab_notice_4821--

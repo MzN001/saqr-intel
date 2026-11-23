@@ -1,0 +1,322 @@
+{
+  "scan_id": "EML-20261123-4F9A1C",
+  "kind": "email",
+  "created_at": "2026-11-23T09:15:02.418Z",
+  "target": "paypal.support.team2026@gmail.com | Your PаyPal account has been limited – action required",
+  "domain": null,
+  "channel": "email",
+  "interception_channel": "PC_BROWSER_EXTENSION",
+  "source": "raw",
+  "risk_score": 100,
+  "verdict": "HIGH-RISK SCAM",
+  "impersonated_entity": "PayPal",
+  "impersonated_entity_ar": "باي بال",
+  "official_domains": [
+    "paypal.com",
+    "paypal.me",
+    "paypalobjects.com"
+  ],
+  "citizen_explanation_en": "This is a scam email pretending to be PayPal. It was sent from a free Gmail account, the subject hides a fake letter in \"PayPal\", and the \"paypal.com\" link really opens another website. Do not click the link or enter your password or card details. If you are worried about your account, open the PayPal app or type paypal.com yourself.",
+  "citizen_explanation_ar": "هذه رسالة احتيالية تنتحل صفة PayPal. أُرسلت من حساب Gmail مجاني، ويخفي العنوان حرفاً مزيفاً في كلمة \"PayPal\"، والرابط الذي يظهر كـ \"paypal.com\" يفتح موقعاً آخر. لا تضغط على الرابط ولا تُدخل كلمة المرور أو بيانات البطاقة. إذا كنت قلقاً على حسابك فافتح تطبيق PayPal أو اكتب paypal.com بنفسك.",
+  "red_flags": [
+    {
+      "code": "DISPLAY_NAME_CONFUSABLE",
+      "severity": "critical",
+      "points": 65,
+      "strength": "strong",
+      "en": "The subject spells \"PayPal\" with a Cyrillic letter that only looks like a Latin \"a\". Real companies never do this; scammers do it to slip past filters.",
+      "ar": "يكتب عنوان الرسالة كلمة \"PayPal\" بحرف سيريلي يشبه الحرف اللاتيني \"a\". الشركات الحقيقية لا تفعل ذلك؛ المحتالون يفعلونه لتجاوز أنظمة الحماية.",
+      "evidence": "subject: Your P\\u0430yPal account has been limited"
+    },
+    {
+      "code": "DISPLAY_NAME_BRAND_SPOOF",
+      "severity": "high",
+      "points": 35,
+      "strength": "strong",
+      "en": "The sender calls itself \"PayPal Support\" but the email was not sent from a PayPal address.",
+      "ar": "يسمي المرسل نفسه \"PayPal Support\" لكن الرسالة لم تُرسل من عنوان تابع لـ PayPal.",
+      "evidence": "display name \"PayPal Support\", from domain gmail.com"
+    },
+    {
+      "code": "FREEMAIL_BRAND_SENDER",
+      "severity": "high",
+      "points": 35,
+      "strength": "strong",
+      "en": "A message claiming to be from PayPal was sent from a free Gmail account. Real companies use their own email domain.",
+      "ar": "رسالة تدّعي أنها من PayPal أُرسلت من حساب Gmail مجاني. الشركات الحقيقية تستخدم نطاق بريدها الخاص.",
+      "evidence": "paypal.support.team2026@gmail.com"
+    },
+    {
+      "code": "LINK_TEXT_MISMATCH",
+      "severity": "high",
+      "points": 30,
+      "strength": "strong",
+      "en": "A link shows \"https://www.paypal.com/signin\" but actually opens paypal-account-review.test.",
+      "ar": "يظهر الرابط على أنه \"https://www.paypal.com/signin\" لكنه يفتح فعلياً الموقع paypal-account-review.test.",
+      "evidence": "text paypal.com -> href paypal-account-review.test"
+    },
+    {
+      "code": "LINK_SUSPICIOUS",
+      "severity": "medium",
+      "points": 30,
+      "strength": "strong",
+      "en": "A website linked in this email was scanned and looks suspicious.",
+      "ar": "تم فحص موقع مرتبط في هذه الرسالة ويبدو مشبوهاً.",
+      "evidence": "paypal-account-review.test (SUSPICIOUS 55)"
+    },
+    {
+      "code": "CAMPAIGN_LURE_MATCH",
+      "severity": "medium",
+      "points": 20,
+      "strength": "weak",
+      "en": "The wording matches a known scam campaign: \"PayPal account limited\".",
+      "ar": "تتطابق صياغة الرسالة مع حملة احتيال معروفة: «تقييد حساب PayPal».",
+      "evidence": "cmp-7f3a9c21: account has been limited, confirm your identity, restore access"
+    },
+    {
+      "code": "CREDENTIAL_REQUEST",
+      "severity": "medium",
+      "points": 15,
+      "strength": "weak",
+      "en": "The email asks you to sign in or give your password or card details.",
+      "ar": "تطلب الرسالة تسجيل الدخول أو إدخال كلمة المرور أو بيانات البطاقة.",
+      "evidence": "password, card details, confirm your identity"
+    },
+    {
+      "code": "URGENCY_LANGUAGE",
+      "severity": "low",
+      "points": 10,
+      "strength": "weak",
+      "en": "It pressures you to act fast (\"within 24 hours\", \"suspended\").",
+      "ar": "تضغط عليك للتصرف بسرعة («خلال 24 ساعة»، «إيقاف»).",
+      "evidence": "within 24 hours; suspended"
+    },
+    {
+      "code": "BRAND_MENTION",
+      "severity": "low",
+      "points": 10,
+      "strength": "weak",
+      "en": "The email talks about PayPal.",
+      "ar": "تتحدث الرسالة عن PayPal.",
+      "evidence": "PayPal"
+    },
+    {
+      "code": "DMARC_PASS",
+      "severity": "info",
+      "points": 0,
+      "strength": "info",
+      "en": "The sending address (gmail.com) is genuine, but anyone can open a free Gmail account.",
+      "ar": "عنوان الإرسال (gmail.com) حقيقي، لكن أي شخص يستطيع إنشاء حساب Gmail مجاني.",
+      "evidence": "dmarc=pass header.from=gmail.com"
+    }
+  ],
+  "llm_red_flags": [
+    "Brand impersonation from a free webmail account",
+    "Homoglyph (Cyrillic a) in brand name",
+    "Link text shows paypal.com but points elsewhere",
+    "Credential and card harvesting with 24-hour deadline"
+  ],
+  "email": {
+    "subject": "Your PаyPal account has been limited – action required",
+    "date": "Mon, 23 Nov 2026 09:14:27 +0000",
+    "has_headers": true,
+    "is_bulk": false,
+    "list_id": null,
+    "to_count": 1,
+    "from": {
+      "display_name": "PayPal Support",
+      "address": "paypal.support.team2026@gmail.com",
+      "domain": "gmail.com",
+      "registered_domain": "gmail.com",
+      "unicode_domain": "gmail.com",
+      "is_freemail": true,
+      "is_official": false
+    },
+    "reply_to": null,
+    "return_path": {
+      "display_name": "",
+      "address": "paypal.support.team2026@gmail.com",
+      "domain": "gmail.com",
+      "registered_domain": "gmail.com",
+      "unicode_domain": "gmail.com",
+      "is_freemail": true,
+      "is_official": false
+    },
+    "sender": null,
+    "body_excerpt": "Dear Customer,\n\nWe noticed unusual sign-in activity and your account has been limited.\nTo restore access, please confirm your identity within 24 hours or your\naccount will be permanently suspended. You will be asked for your password\nand card details.\n\nLog in here: https://www.paypal.com/signin\n\nCase ID: PP-48213\n\nThank you,\nPayPal Security Team"
+  },
+  "authentication": {
+    "trusted_authserv": "mx.google.com",
+    "spf": {
+      "result": "pass",
+      "domain": "gmail.com",
+      "client_ip": "209.85.220.41",
+      "source": "auth_results"
+    },
+    "dkim": [
+      {
+        "domain": "gmail.com",
+        "selector": "20230601",
+        "result": "pass",
+        "aligned": true,
+        "source": "auth_results"
+      }
+    ],
+    "dmarc": {
+      "result": "pass",
+      "policy": "none",
+      "alignment": {
+        "spf": true,
+        "dkim": true
+      },
+      "source": "auth_results"
+    },
+    "arc": {
+      "result": "none",
+      "chain_length": 0
+    }
+  },
+  "unicode": {
+    "findings": [
+      {
+        "where": "subject",
+        "kind": "mixed_script",
+        "sample_escaped": "P\\u0430yPal",
+        "skeleton": "paypal"
+      }
+    ]
+  },
+  "links": [
+    {
+      "url": "https://paypal-account-review.test/signin?case=PP-48213",
+      "display_text": "https://www.paypal.com/signin",
+      "domain": "paypal-account-review.test",
+      "unwrapped_from": "https://www.google.com/url?q=https%3A%2F%2Fpaypal-account-review.test%2Fsignin%3Fcase%3DPP-48213&sa=D&usg=AOvVaw0fake",
+      "text_mismatch": true,
+      "scan_id": "SCN-20261123-B71E0D",
+      "risk_score": 55,
+      "verdict": "SUSPICIOUS"
+    }
+  ],
+  "attachments": [
+    {
+      "name": "PayPal_Case_PP-48213.pdf",
+      "size": 15,
+      "risky": false,
+      "reason": null
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "cmp-7f3a9c21",
+      "title_en": "PayPal \"account limited\" phishing",
+      "title_ar": "تصيّد احتيالي: «تقييد حساب PayPal»",
+      "match": "lure",
+      "points": 20,
+      "matched": [
+        "account has been limited",
+        "confirm your identity",
+        "restore access"
+      ]
+    }
+  ],
+  "user_model": {
+    "available": false,
+    "p_scam": null,
+    "labels": 0,
+    "spec": "email-v1"
+  },
+  "model_features": [
+    718,
+    899,
+    2366,
+    2773,
+    3095,
+    3697,
+    4793,
+    6115,
+    9819,
+    9837,
+    10313,
+    10328,
+    10515,
+    12411,
+    12416,
+    12521,
+    12635,
+    12722,
+    13854,
+    17515,
+    18173,
+    18422,
+    18955,
+    19336,
+    20267,
+    20505,
+    20518,
+    22288,
+    22775,
+    22936,
+    23252,
+    24244,
+    24444,
+    24687,
+    25448,
+    25608,
+    25667,
+    25774,
+    26778,
+    27114,
+    28439,
+    28441,
+    30275,
+    33250,
+    36493,
+    36546,
+    36562,
+    37509,
+    37868,
+    40861,
+    41546,
+    41586,
+    42375,
+    42940,
+    44880,
+    46322,
+    48278,
+    48379,
+    48868,
+    50316,
+    50764,
+    52387,
+    53601,
+    53742,
+    53781,
+    53789,
+    54663,
+    56614,
+    58844,
+    59012,
+    59568,
+    59716,
+    62339,
+    64025,
+    64577
+  ],
+  "analyzer": {
+    "engine": "user:example-mini",
+    "confidence": 0.93,
+    "user_llm_host": "llm.example.com",
+    "user_llm_error": null
+  },
+  "timings": {
+    "parse_ms": 4,
+    "auth_ms": 2,
+    "unicode_ms": 1,
+    "links_ms": 812,
+    "campaigns_ms": 1,
+    "user_model_ms": 0,
+    "llm_ms": 1630,
+    "total_ms": 2461
+  }
+}

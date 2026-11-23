@@ -1,6 +1,6 @@
 // SAQR-INTEL toolbar popup: backend status, API address, scan-this-tab and 1-click demo buttons.
 
-const DEFAULT_API = "https://saqr-intel-api.onrender.com";
+const DEFAULT_API = globalThis.SaqrConfig.DEFAULT_API; // lib/config.js (loaded first by popup.html)
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
 
@@ -114,6 +114,27 @@ async function openDemo(slug) {
 $("demo-tamm").addEventListener("click", () => openDemo("tamm-fine"));
 $("demo-post").addEventListener("click", () => openDemo("emiratespost"));
 
+$("open-options").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+  window.close();
+});
+
+async function refreshEmailState() {
+  try {
+    const s = await send({ type: "emailSettings" });
+    if (!s?.ok) return;
+    const parts = [
+      s.autoScan
+        ? "Emails are checked when you open them · تُفحص الرسائل عند فتحها"
+        : "Automatic email checks are off: use the SAQR button in the email · الفحص التلقائي متوقف",
+    ];
+    if (s.llm?.model) parts.push(`Your AI: ${s.llm.model} · الذكاء الاصطناعي الخاص بك`);
+    $("email-state").textContent = parts.join(" — ");
+  } catch {
+    /* keep the default text */
+  }
+}
+
 $("api-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const res = await send({ type: "setApi", url: $("api-url").value.trim() || DEFAULT_API });
@@ -126,3 +147,4 @@ $("api-form").addEventListener("submit", async (e) => {
 });
 
 init();
+refreshEmailState();

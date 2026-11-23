@@ -1,0 +1,47 @@
+Received: from mail.xn--dcb-secure-yqi.test (unknown [198.51.100.23])
+        by mx1.mail.example.com (Postfix) with ESMTP id 4Rk9Lm2xQz
+        for <customer@example.com>; Mon, 23 Nov 2026 07:41:10 +0400 (+04)
+Return-Path: <bounce@xn--dcb-secure-yqi.test>
+From: "ADCB Card Services" <alerts@xn--dcb-secure-yqi.test>
+Reply-To: "ADCB Card Services" <adcb.cards.uae@outlook.com>
+To: customer@example.com
+Subject: ADCB: Your debit card has been temporarily blocked
+Date: Mon, 23 Nov 2026 07:41:08 +0400
+Message-ID: <20261123074108.91a7c@xn--dcb-secure-yqi.test>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1_puny_7731"
+
+--b1_puny_7731
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+Dear valued customer,
+
+For your security your ADCB debit card has been temporarily blocked
+after a suspicious transaction of AED 4,870.00.
+
+To unblock your card immediately, verify your card number, expiry date,
+CVV and the OTP we send you:
+
+https://xn--dcb-secure-yqi.test/verify?ref=ADCB-77310
+
+If you do not verify within 24 hours your account will be suspended.
+
+ADCB Card Services
+
+--b1_puny_7731
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+<html><body>
+<p>Dear valued customer,</p>
+<p>For your security your ADCB debit card has been temporarily blocked
+after a suspicious transaction of AED 4,870.00.</p>
+<p>To unblock your card immediately, verify your card number, expiry date,
+CVV and the OTP we send you:</p>
+<p><a href="https://xn--dcb-secure-yqi.test/verify?ref=ADCB-77310">Verify my card</a></p>
+<p>If you do not verify within 24 hours your account will be suspended.</p>
+<p>ADCB Card Services</p>
+</body></html>
+
+--b1_puny_7731--

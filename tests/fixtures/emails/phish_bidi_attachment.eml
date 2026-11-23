@@ -1,0 +1,35 @@
+Received: from smtp.ep-invoices.test (smtp.ep-invoices.test [203.0.113.77])
+        by mx1.mail.example.com (Postfix) with ESMTPS id 7Tq2Hc9Wd1
+        for <resident@example.com>; Mon, 23 Nov 2026 10:02:51 +0400 (+04)
+Authentication-Results: mx1.mail.example.com;
+       spf=softfail (domain of transitioning billing@ep-invoices.test does not designate 203.0.113.77 as permitted sender) smtp.mailfrom=billing@ep-invoices.test;
+       dkim=none;
+       dmarc=none header.from=ep-invoices.test
+Return-Path: <billing@ep-invoices.test>
+From: "Emirates Post Billing" <billing@ep-invoices.test>
+To: resident@example.com
+Subject: Invoice 88412 - customs fee due for your parcel
+Date: Mon, 23 Nov 2026 10:02:49 +0400
+Message-ID: <inv88412.20261123100249@ep-invoices.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mix_bidi_88412"
+
+--mix_bidi_88412
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+Dear customer,
+
+Your parcel EP-88412-AE is held at customs. A customs fee of AED 12.50
+is due before redelivery. Please open the attached invoice and follow
+the instructions.
+
+Emirates Post Billing
+
+--mix_bidi_88412
+Content-Type: application/octet-stream; name*=UTF-8''Invoice_88412_%E2%80%AEfdp.exe
+Content-Disposition: attachment; filename*=UTF-8''Invoice_88412_%E2%80%AEfdp.exe
+Content-Transfer-Encoding: base64
+
+TVotZml4dHVyZS1ub3QtYS1yZWFsLXByb2dyYW0K
+--mix_bidi_88412--

@@ -115,6 +115,18 @@ class Settings:
     # Domains seen ONLY by the certificate-transparency feed are not auto-pushed unless enabled.
     nextdns_include_ct: bool = _bool("NEXTDNS_INCLUDE_CT", False)
 
+    # --- Email scanning --------------------------------------------------------
+    # Live phishing-campaign feeds (CERT / vendor RSS) merged with the built-in seed list.
+    campaign_feeds_enabled: bool = _bool("CAMPAIGN_FEEDS", True)
+    campaign_refresh_hours: float = _float("CAMPAIGN_REFRESH_HOURS", 6.0)
+    # Own bucket for POST /api/analyze-email (0 = off); defaults to RATE_LIMIT_PER_MINUTE.
+    email_rate_limit_per_minute: int = _int("EMAIL_RATE_LIMIT_PER_MINUTE", _int("RATE_LIMIT_PER_MINUTE", 30))
+    # Extra mail servers whose Authentication-Results headers are believed (Gmail, Outlook, Yahoo,
+    # iCloud, Zoho and Proton are built in), e.g. "mx.myisp.ae".
+    email_trusted_authserv: list[str] = field(default_factory=lambda: _list("EMAIL_TRUSTED_AUTHSERV"))
+    # Laptop only: let a citizen's own AI endpoint be a local address (e.g. Ollama on 127.0.0.1).
+    user_llm_allow_private: bool = _bool("USER_LLM_ALLOW_PRIVATE", False)
+
     # --- Security ------------------------------------------------------------
     police_api_key: str = os.getenv("POLICE_API_KEY", "")  # empty = open demo mode
     rate_limit_per_minute: int = _int("RATE_LIMIT_PER_MINUTE", 30)

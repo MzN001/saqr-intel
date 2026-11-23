@@ -16,7 +16,30 @@ uvicorn main:app --reload --port 8000
 Open http://localhost:8000/docs. CORS allows `http://localhost:3000`.
 For a demo with no internet, set `OFFLINE_MODE=true`: the seeded syndicate, replica screenshots, rules engine and simulated CT feed all keep working.
 
-Run tests with `pytest -q`.
+Run tests with `pytest -q` (on Linux: `.venv/bin/python -m pytest -q`).
+
+## Email scam check (new)
+
+SAQR can now check an email, not only a website or an SMS.
+
+- **What you can give it:** paste the email text, paste the full original ("Show original" in Gmail,
+  "View message source" in Outlook), or upload a saved `.eml` / `.msg` file. In the web app this is
+  the **Email Scam Check** tab; in Chrome/Edge the extension checks emails in Gmail and Outlook by itself.
+- **What it looks at:** whether the sender is really who they say (SPF, DKIM and DMARC checks),
+  fake look-alike letters (a Russian "а" inside "pаypal"), hidden or reversed characters, a company
+  name sent from a free Gmail/Outlook account, dangerous attachments (`.exe`, `.html`, …), and every link
+  (each link is scanned like a website). It also compares the email with known scam campaigns.
+- **Your own filter (optional):** press "scam" or "not scam" on checked emails; after 10 of each,
+  SAQR also tells you how much an email looks like the ones you marked. You can download, import or
+  erase it at any time. You can also plug in your own AI service (OpenAI-compatible address + key);
+  the key is used for that one check and never saved on the server.
+- **Privacy:** SAQR keeps only the first 500 characters of the email, never the whole message, and
+  never puts the sender's domain (like `gmail.com`) on the DNS blocklist. Only scam links are blocked.
+
+```bash
+curl -X POST localhost:8000/api/analyze-email -H 'content-type: application/json' \
+  -d '{"source":"text","text":"From: PayPal <service@paypa1-secure.com>\nSubject: Account limited\n\nVerify your account now."}'
+```
 
 ## Folder structure
 
@@ -61,6 +84,9 @@ saqr-intel/
 | GET | `/api/scans` · `/api/scans/{id}` · `/api/scans/{id}/screenshot` | history / evidence | police |
 | GET | `/api/dossiers/{id}` | stored dossiers | police |
 | WS | `/ws/live?topics=&token=` | 6: live command-center feed | police |
+| POST | `/api/analyze-email` | email scam check (text, raw source, .eml/.msg as base64) | citizen (rate-limited) |
+| GET | `/api/campaigns` | known phishing campaigns (ETag / 304) | public |
+| POST · GET · PUT · DELETE | `/api/email-model/label` · `/api/email-model/{reporter_id}` | personal scam filter: label, download, import, erase | citizen |
 | GET | `/health` · `/api/stats` · `/api/whitelist` | system | public |
 
 "Police" endpoints are open while `POLICE_API_KEY` is empty (demo mode). Once it is set, they need an `X-API-Key` header, and the WebSocket needs `?token=`.
@@ -90,7 +116,7 @@ Envelope: `{"event": "...", "ts": "...", "data": {...}}`
 |---|---|
 | `hello` | on connect: stats plus the last 20 events |
 | `citizen_report.received` | as soon as a URL or Maps pin is submitted, before analysis |
-| `url_scan.completed` / `maps_scan.completed` | verdict ready |
+| `url_scan.completed` / `maps_scan.completed` / `email_scan.completed` | verdict ready |
 | `graph.updated` | new nodes/edges, with the syndicate the scan joined |
 | `ct.detection` | a lookalike certificate was issued |
 | `takedown.generated` · `awareness.drafted` | officer actions |

@@ -1,0 +1,118 @@
+{
+  "format": "saqr-campaigns",
+  "version": 1,
+  "generated_at": "2026-11-23T06:00:00Z",
+  "ttl_hours": 6,
+  "sources": [
+    {
+      "id": "saqr-curated",
+      "name": "SAQR curated campaigns (demo data)",
+      "url": "https://saqr-intel-api.onrender.com/api/campaigns",
+      "license": "CC0-1.0 (fictitious demo data)",
+      "ok": true,
+      "fetched_at": "2026-11-23T06:00:00Z",
+      "items": 2
+    },
+    {
+      "id": "openphish",
+      "name": "OpenPhish community feed",
+      "url": "https://openphish.com/feed.txt",
+      "license": "OpenPhish community terms",
+      "ok": true,
+      "fetched_at": "2026-11-23T05:59:41Z",
+      "items": 0
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "cmp-7f3a9c21",
+      "title_en": "PayPal \"account limited\" phishing",
+      "title_ar": "تصيّد احتيالي: «تقييد حساب PayPal»",
+      "summary_en": "Emails claim your PayPal account has been limited and ask you to confirm your identity through a link that steals your password and card details.",
+      "summary_ar": "رسائل تدّعي أن حسابك في PayPal قد تم تقييده وتطلب منك تأكيد هويتك عبر رابط يسرق كلمة المرور وبيانات البطاقة.",
+      "brands": [
+        "paypal"
+      ],
+      "terms": [
+        "account has been limited",
+        "account limited",
+        "confirm your identity",
+        "restore access",
+        "unusual activity"
+      ],
+      "min_terms": 2,
+      "channels": [
+        "email"
+      ],
+      "regions": [
+        "global"
+      ],
+      "severity": "high",
+      "first_seen": "2026-10-02T00:00:00Z",
+      "last_seen": "2026-11-23T05:12:00Z",
+      "references": [
+        {
+          "source_id": "saqr-curated",
+          "url": "https://www.paypal.com/us/security/learn-about-fake-messages",
+          "title": "PayPal: learn about fake messages"
+        }
+      ],
+      "indicators": {
+        "sender_domains": [
+          "paypal-support-center.test"
+        ],
+        "url_domains": [
+          "paypal-account-review.test",
+          "pp-resolution.test"
+        ]
+      }
+    },
+    {
+      "id": "cmp-2d81e0b4",
+      "title_en": "Emirates Post parcel \"redelivery fee\"",
+      "title_ar": "رسوم «إعادة توصيل» شحنة بريد الإمارات",
+      "summary_en": "SMS and emails say a parcel is held until you pay a small redelivery or customs fee on a fake Emirates Post page.",
+      "summary_ar": "رسائل نصية وبريد إلكتروني تزعم أن شحنتك محتجزة حتى تدفع رسوم إعادة توصيل أو رسوماً جمركية بسيطة عبر صفحة مزيفة لبريد الإمارات.",
+      "brands": [
+        "emirates post",
+        "emiratespost",
+        "بريد الإمارات"
+      ],
+      "terms": [
+        "redelivery",
+        "customs fee",
+        "parcel",
+        "إعادة التوصيل",
+        "رسوم جمركية",
+        "شحنتك"
+      ],
+      "min_terms": 2,
+      "channels": [
+        "email",
+        "sms"
+      ],
+      "regions": [
+        "AE"
+      ],
+      "severity": "high",
+      "first_seen": "2026-09-14T00:00:00Z",
+      "last_seen": "2026-11-22T21:40:00Z",
+      "references": [
+        {
+          "source_id": "saqr-curated",
+          "url": "https://www.emiratespost.ae",
+          "title": "Emirates Post official website"
+        }
+      ],
+      "indicators": {
+        "sender_domains": [
+          "emiratespost-redelivery.test"
+        ],
+        "url_domains": [
+          "ep-parcel-fee.test",
+          "uae-post-track.test"
+        ]
+      }
+    }
+  ]
+}

@@ -53,6 +53,28 @@
         font-size: 12.5px;
         padding: 9px 10px;
       }
+      .providers {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 10px;
+        font-size: 12.5px;
+      }
+      .providers li {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      .providers .ok {
+        color: var(--emerald-700);
+        font-weight: 700;
+      }
+      .providers .wip {
+        color: var(--ink-soft);
+        font-size: 11px;
+      }
       .status-line {
         display: flex;
         align-items: center;
@@ -105,6 +127,21 @@
         <div id="scan-msg" class="toast hidden" role="status" aria-live="polite"></div>
       </section>
 
+      <section class="card" aria-labelledby="email-title">
+        <p class="card-title" id="email-title">Email Shield · درع البريد</p>
+        <ul class="providers" aria-label="Supported email apps">
+          <li><span>Gmail</span><span class="ok">✓ Protected</span></li>
+          <li><span>Outlook</span><span class="ok">✓ Protected</span></li>
+          <li><span>Yahoo</span><span class="wip">Work in progress</span></li>
+          <li><span>Proton</span><span class="wip">Work in progress</span></li>
+          <li><span>iCloud</span><span class="wip">Work in progress</span></li>
+          <li><span>AOL</span><span class="wip">Work in progress</span></li>
+          <li><span>Zoho</span><span class="wip">Work in progress</span></li>
+        </ul>
+        <p class="note" id="email-state">Open an email in Gmail or Outlook: SAQR checks it for you. · افتح رسالة في Gmail أو Outlook وسيفحصها صقر.</p>
+        <button class="btn btn-ghost" id="open-options" type="button" style="margin-top: 10px">Email settings &amp; my AI · الإعدادات</button>
+      </section>
+
       <section class="card" aria-labelledby="demo-title">
         <p class="card-title" id="demo-title">1-click stage demo · عرض سريع</p>
         <div class="demo">
@@ -126,6 +163,7 @@
       </section>
     </main>
     <footer>Report fraud: Aman 8002626 · SMS 2828 · Emergency 999</footer>
+    <script src="lib/config.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

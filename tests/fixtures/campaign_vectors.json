@@ -1,0 +1,2040 @@
+[
+ {
+  "name": "ioc sender domain (sub-domain reduced to registered domain)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "mail.dhl-notify.test",
+   "link_domains": [],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "dhl-notify.test"
+   ]
+  }
+ },
+ {
+  "name": "ioc link domain with www",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [
+    "www.dhl-fee.test"
+   ],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "dhl-fee.test"
+   ]
+  }
+ },
+ {
+  "name": "ioc link on a 3-label registered domain (co.uk)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [
+    "secure.parcel-help.co.uk"
+   ],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "parcel-help.co.uk"
+   ]
+  }
+ },
+ {
+  "name": "3-label negative: org.uk is a different registered domain",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [
+    "x.parcel-help.org.uk"
+   ],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": null
+ },
+ {
+  "name": "ioc several hits: sender first, links in order, no duplicates",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "dhl-notify.test",
+   "link_domains": [
+    "dhl-fee.test",
+    "other.test",
+    "a.dhl-fee.test"
+   ],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "dhl-notify.test",
+    "dhl-fee.test"
+   ]
+  }
+ },
+ {
+  "name": "ioc host is lowercased and trailing dot removed",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "MAIL.DHL-NOTIFY.TEST.",
+   "link_domains": [],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "dhl-notify.test"
+   ]
+  }
+ },
+ {
+  "name": "ioc wins over a lure match",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [
+    "dhl-fee.test"
+   ],
+   "subject": "DHL customs fee",
+   "body_text": "parcel redelivery"
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "dhl-fee.test"
+   ]
+  }
+ },
+ {
+  "name": "lure: two terms + brand in subject (matched in campaign term order)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "DHL: customs fee due",
+   "body_text": "Your parcel is waiting"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "lure: brand required but missing",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "Customs fee due",
+   "body_text": "Your parcel is waiting"
+  },
+  "expect": null
+ },
+ {
+  "name": "lure: brand only in the display name (from_name)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "Customs fee",
+   "body_text": "parcel",
+   "from_name": "DHL Express"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "word boundary: brand glued inside other words does not count",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "adhl customs fee",
+   "body_text": "dhlx parcel"
+  },
+  "expect": null
+ },
+ {
+  "name": "word boundary: hyphen is a boundary (dhl-express)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "dhl-express customs fee",
+   "body_text": "parcel"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "word boundary: plural / longer words do not match terms",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "DHL customs fees",
+   "body_text": "for parcels and redeliverys"
+  },
+  "expect": null
+ },
+ {
+  "name": "min_terms edge: exactly 3 of 3",
+  "campaign": {
+   "id": "cmp-0000000c",
+   "title_en": "Test campaign cmp-0000000c",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "paypal"
+   ],
+   "terms": [
+    "account limited",
+    "confirm your identity",
+    "restore access"
+   ],
+   "min_terms": 3,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "PayPal: account limited",
+   "body_text": "Please confirm your identity to restore access."
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "account limited",
+    "confirm your identity",
+    "restore access"
+   ]
+  }
+ },
+ {
+  "name": "min_terms edge: 2 of the required 3",
+  "campaign": {
+   "id": "cmp-0000000c",
+   "title_en": "Test campaign cmp-0000000c",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "paypal"
+   ],
+   "terms": [
+    "account limited",
+    "confirm your identity",
+    "restore access"
+   ],
+   "min_terms": 3,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "PayPal: account limited",
+   "body_text": "Please confirm your identity."
+  },
+  "expect": null
+ },
+ {
+  "name": "distinct terms: spellings that normalise alike count once",
+  "campaign": {
+   "id": "cmp-0000000f",
+   "title_en": "Test campaign cmp-0000000f",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl"
+   ],
+   "terms": [
+    "Parcel",
+    "parcel",
+    "PARCEL",
+    "redelivery"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "DHL parcel",
+   "body_text": "PARCEL Parcel"
+  },
+  "expect": null
+ },
+ {
+  "name": "distinct terms: first spelling is reported",
+  "campaign": {
+   "id": "cmp-0000000f",
+   "title_en": "Test campaign cmp-0000000f",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl"
+   ],
+   "terms": [
+    "Parcel",
+    "parcel",
+    "PARCEL",
+    "redelivery"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "DHL parcel",
+   "body_text": "redelivery"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "Parcel",
+    "redelivery"
+   ]
+  }
+ },
+ {
+  "name": "arabic terms and arabic brand",
+  "campaign": {
+   "id": "cmp-0000000d",
+   "title_en": "Test campaign cmp-0000000d",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "بريد الإمارات",
+    "emirates post"
+   ],
+   "terms": [
+    "إعادة التوصيل",
+    "رسوم",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ep-track.ae",
+     "emiratespost-fee.co.ae"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "بريد الإمارات: شحنتك بانتظار إعادة التوصيل",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "إعادة التوصيل",
+    "شحنتك"
+   ]
+  }
+ },
+ {
+  "name": "arabic word boundary: a suffix letter blocks the match",
+  "campaign": {
+   "id": "cmp-0000000d",
+   "title_en": "Test campaign cmp-0000000d",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "بريد الإمارات",
+    "emirates post"
+   ],
+   "terms": [
+    "إعادة التوصيل",
+    "رسوم",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ep-track.ae",
+     "emiratespost-fee.co.ae"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "بريد الإمارات رسوم شحنتكم",
+   "body_text": ""
+  },
+  "expect": null
+ },
+ {
+  "name": "arabic brand missing",
+  "campaign": {
+   "id": "cmp-0000000d",
+   "title_en": "Test campaign cmp-0000000d",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "بريد الإمارات",
+    "emirates post"
+   ],
+   "terms": [
+    "إعادة التوصيل",
+    "رسوم",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ep-track.ae",
+     "emiratespost-fee.co.ae"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "شحنتك بانتظار إعادة التوصيل",
+   "body_text": ""
+  },
+  "expect": null
+ },
+ {
+  "name": "invisible-character evasion (ZWSP, soft hyphen, ZWJ)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "D\u200bHL cus\u00adtoms fee",
+   "body_text": "par\u200dcel"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "bidi isolate / override evasion",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "\u2066dhl\u2069 redelivery",
+   "body_text": "\u202eparcel\u202c"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "redelivery",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "NFKC: fullwidth letters",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "ＤＨＬ ｃｕｓｔｏｍｓ ｆｅｅ",
+   "body_text": "parcel"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "NFKC: mathematical bold (non-BMP) brand",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "𝐃𝐇𝐋 customs fee",
+   "body_text": "parcel"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "non-BMP letter after a term blocks the match (code points, not UTF-16 halves)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "dhl customs fee",
+   "body_text": "parcel𐐀"
+  },
+  "expect": null
+ },
+ {
+  "name": "emoji around a term is a boundary",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "DHL 📦parcel🚚",
+   "body_text": "redelivery"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "redelivery",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "whitespace collapse: newline, tab and no-break space inside a term",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "dhl customs\n\t fee",
+   "body_text": "parcel"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "whitespace collapse: no-break space",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "dhl customs\u00a0fee parcel",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "subject and body are joined with a space",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "DHL customs",
+   "body_text": "fee for your parcel"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "brandless campaign: terms alone are enough",
+  "campaign": {
+   "id": "cmp-0000000b",
+   "title_en": "Test campaign cmp-0000000b",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [],
+   "terms": [
+    "you have won",
+    "claim your prize",
+    "لقد ربحت"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "Congratulations, you have won!",
+   "body_text": "Claim your prize now"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "you have won",
+    "claim your prize"
+   ]
+  }
+ },
+ {
+  "name": "brandless campaign: one term is not enough",
+  "campaign": {
+   "id": "cmp-0000000b",
+   "title_en": "Test campaign cmp-0000000b",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [],
+   "terms": [
+    "you have won",
+    "claim your prize",
+    "لقد ربحت"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "You have won",
+   "body_text": ""
+  },
+  "expect": null
+ },
+ {
+  "name": "brandless campaign: mixed arabic + english",
+  "campaign": {
+   "id": "cmp-0000000b",
+   "title_en": "Test campaign cmp-0000000b",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [],
+   "terms": [
+    "you have won",
+    "claim your prize",
+    "لقد ربحت"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "لقد ربحت جائزة",
+   "body_text": "claim your prize"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "claim your prize",
+    "لقد ربحت"
+   ]
+  }
+ },
+ {
+  "name": "ioc on a 2-label .ae registered domain",
+  "campaign": {
+   "id": "cmp-0000000d",
+   "title_en": "Test campaign cmp-0000000d",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "بريد الإمارات",
+    "emirates post"
+   ],
+   "terms": [
+    "إعادة التوصيل",
+    "رسوم",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ep-track.ae",
+     "emiratespost-fee.co.ae"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [
+    "track.ep-track.ae"
+   ],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "ep-track.ae"
+   ]
+  }
+ },
+ {
+  "name": "ioc on a 3-label co.ae registered domain",
+  "campaign": {
+   "id": "cmp-0000000d",
+   "title_en": "Test campaign cmp-0000000d",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "بريد الإمارات",
+    "emirates post"
+   ],
+   "terms": [
+    "إعادة التوصيل",
+    "رسوم",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ep-track.ae",
+     "emiratespost-fee.co.ae"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [
+    "pay.emiratespost-fee.co.ae"
+   ],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "ioc",
+   "matched": [
+    "emiratespost-fee.co.ae"
+   ]
+  }
+ },
+ {
+  "name": "a bare public suffix is never an indicator hit",
+  "campaign": {
+   "id": "cmp-0000000d",
+   "title_en": "Test campaign cmp-0000000d",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "بريد الإمارات",
+    "emirates post"
+   ],
+   "terms": [
+    "إعادة التوصيل",
+    "رسوم",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ep-track.ae",
+     "emiratespost-fee.co.ae"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [
+    "co.ae"
+   ],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": null
+ },
+ {
+  "name": "digit before a term blocks it (150% off is not 50% off)",
+  "campaign": {
+   "id": "cmp-0000000e",
+   "title_en": "Test campaign cmp-0000000e",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [],
+   "terms": [
+    "50% off",
+    "pay today"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "150% off, pay today",
+   "body_text": ""
+  },
+  "expect": null
+ },
+ {
+  "name": "punctuation inside terms (50% off)",
+  "campaign": {
+   "id": "cmp-0000000e",
+   "title_en": "Test campaign cmp-0000000e",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [],
+   "terms": [
+    "50% off",
+    "pay today"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "Get 50% off - pay today!",
+   "body_text": ""
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "50% off",
+    "pay today"
+   ]
+  }
+ },
+ {
+  "name": "empty input",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "",
+   "body_text": ""
+  },
+  "expect": null
+ },
+ {
+  "name": "missing optional keys (no link_domains / body_text)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "subject": "DHL customs fee parcel"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "whitespace collapse uses the str.split() set (NEL, unit separator)",
+  "campaign": {
+   "id": "cmp-0000000a",
+   "title_en": "Test campaign cmp-0000000a",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "dhl",
+    "دي إتش إل"
+   ],
+   "terms": [
+    "customs fee",
+    "redelivery",
+    "parcel",
+    "رسوم جمركية",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [
+     "dhl-notify.test"
+    ],
+    "url_domains": [
+     "dhl-fee.test",
+     "parcel-help.co.uk"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "dhl customs\u0085fee",
+   "body_text": "parcel\u001fredelivery"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "customs fee",
+    "redelivery",
+    "parcel"
+   ]
+  }
+ },
+ {
+  "name": "brand text is subject + \" \" + body + \" \" + from_name (a brand may span body end and name)",
+  "campaign": {
+   "id": "cmp-0000000d",
+   "title_en": "Test campaign cmp-0000000d",
+   "title_ar": "حملة اختبار",
+   "summary_en": "",
+   "summary_ar": "",
+   "brands": [
+    "بريد الإمارات",
+    "emirates post"
+   ],
+   "terms": [
+    "إعادة التوصيل",
+    "رسوم",
+    "شحنتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-11-01T00:00:00Z",
+   "last_seen": "2026-11-23T00:00:00Z",
+   "references": [],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "ep-track.ae",
+     "emiratespost-fee.co.ae"
+    ]
+   }
+  },
+  "input": {
+   "sender_domain": "",
+   "link_domains": [],
+   "subject": "شحنتك",
+   "body_text": "إعادة التوصيل - emirates",
+   "from_name": "post office"
+  },
+  "expect": {
+   "match": "lure",
+   "matched": [
+    "إعادة التوصيل",
+    "شحنتك"
+   ]
+  }
+ }
+]

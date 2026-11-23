@@ -67,14 +67,65 @@ const REASONS = {
   TYPOSQUAT: ["a misspelled copy of the official address", "نسخة بأخطاء إملائية من العنوان الرسمي"],
   TLD_SWAP: ["the official name with the wrong ending", "الاسم الرسمي بامتداد خاطئ"],
   CLOAKING: ["it hides from security scanners", "يتخفّى من أنظمة الفحص الأمني"],
+  // Email Shield flag codes (email contract, section 2)
+  KNOWN_PHISHING_LINK: ["it links to a known phishing website", "يحتوي على رابط لموقع تصيّد معروف"],
+  CAMPAIGN_IOC_MATCH: ["it comes from a known scam campaign", "مرتبط بحملة احتيال معروفة"],
+  LINK_HIGH_RISK: ["its link opens a scam website", "رابطه يفتح موقعاً احتيالياً"],
+  IDN_MIXED_SCRIPT: ["look-alike letters in the sender or link address", "أحرف مشابهة في عنوان المرسل أو الرابط"],
+  DISPLAY_NAME_CONFUSABLE: ["a brand name spelled with fake look-alike letters", "اسم علامة تجارية مكتوب بأحرف مزيفة مشابهة"],
+  BIDI_OVERRIDE: ["hidden characters that reverse the text", "أحرف مخفية تعكس اتجاه النص"],
+  SENDER_LOOKALIKE: ["the sender's address imitates an official one", "عنوان المرسل يقلّد عنواناً رسمياً"],
+  DANGEROUS_ATTACHMENT: ["a dangerous file is attached", "مرفق ملف خطير"],
+  INVISIBLE_IN_TOKEN: ["invisible characters hidden inside words or links", "أحرف غير مرئية مخفية داخل الكلمات أو الروابط"],
+  PUNYCODE_DOMAIN: ["an unusual encoded web address", "عنوان ويب مُرمّز بشكل غير معتاد"],
+  DISPLAY_NAME_ADDRESS_SPOOF: ["the sender name shows a fake email address", "اسم المرسل يعرض عنوان بريد مزيفاً"],
+  DMARC_FAIL: ["the sender's address failed the official check", "فشل عنوان المرسل في التحقق الرسمي"],
+  DISPLAY_NAME_BRAND_SPOOF: ["a company name on an address that is not the company's", "اسم شركة على عنوان لا يتبع الشركة"],
+  FREEMAIL_BRAND_SENDER: ["a 'company' writing from a free email account", "«شركة» تراسلك من حساب بريد مجاني"],
+  LINK_TEXT_MISMATCH: ["a link that shows one address but opens another", "رابط يُظهر عنواناً ويفتح عنواناً آخر"],
+  SENDER_NEW_DOMAIN: ["the sender's domain was created days ago", "أُنشئ نطاق المرسل قبل أيام"],
+  LINK_SUSPICIOUS: ["its link opens a suspicious website", "رابطه يفتح موقعاً مشبوهاً"],
+  REPLY_TO_FREEMAIL_BRAND: ["replies go to a free email account", "الردود تذهب إلى حساب بريد مجاني"],
+  OFFICIAL_SENDER_UNAUTHENTICATED: ["it pretends to come from an official address", "يدّعي أنه صادر من عنوان رسمي"],
+  SPF_FAIL: ["the sending server is not allowed to send for that address", "خادم الإرسال غير مخوّل بالإرسال باسم هذا العنوان"],
+  SPF_SOFTFAIL: ["the sending server is probably not allowed to send for that address", "خادم الإرسال على الأرجح غير مخوّل بالإرسال باسم هذا العنوان"],
+  DKIM_FAIL: ["the email's digital signature is broken", "التوقيع الرقمي للرسالة غير صالح"],
+  DMARC_FAIL_P_NONE: ["the sender's address failed the domain check", "فشل عنوان المرسل في فحص النطاق"],
+  NO_AUTHENTICATION: ["the sender could not be verified at all", "تعذّر التحقق من المرسل إطلاقاً"],
+  CREDENTIAL_REQUEST: ["it asks for your password or card details", "يطلب كلمة المرور أو بيانات البطاقة"],
+  PAYMENT_REQUEST: ["it asks you to pay a fee", "يطلب منك دفع رسوم"],
+  URGENCY_LANGUAGE: ["fake deadlines and threats", "مهل وتهديدات مزيفة"],
+  CAMPAIGN_LURE_MATCH: ["it uses the wording of a known scam wave", "يستخدم صياغة موجة احتيال معروفة"],
+  USER_MODEL_SCAM: ["it looks like emails you marked as scams", "يشبه رسائل صنّفتها سابقاً كاحتيال"],
+  REPLY_TO_MISMATCH: ["replies go to a different address", "الردود تذهب إلى عنوان مختلف"],
+  RETURN_PATH_MISMATCH: ["its hidden return address belongs to someone else", "عنوان الإرجاع المخفي يتبع جهة أخرى"],
+  FANCY_UNICODE: ["text written in unusual styled letters", "نص مكتوب بأحرف مزخرفة غير معتادة"],
+  BRAND_MENTION: ["it uses a well-known company's name", "يستخدم اسم جهة معروفة"],
+  ATTACHMENT_ARCHIVE: ["a compressed file is attached", "مرفق ملف مضغوط"],
+  // Info flags (0 points) are never picked as "the red flag" (only flags with points reach this page).
+  HEADERS_NOT_AVAILABLE: ["only the visible text could be checked", "تم فحص النص الظاهر فقط"],
+  DMARC_PASS: ["the sender's domain passed DMARC", "اجتاز نطاق المرسل فحص DMARC"],
+  ARC_PASS: ["a trusted mail server vouched for the forwarding", "أكّد خادم بريد موثوق سلامة إعادة التوجيه"],
+  BULK_SENDER: ["it is a newsletter or mailing-list message", "رسالة نشرة بريدية أو قائمة مراسلات"],
+  OFFICIAL_SENDER: ["it was sent from an official address", "أُرسلت من عنوان رسمي"],
+  USER_MODEL_TRUSTED: ["it looks like emails you marked as safe", "تشبه رسائل صنّفتها كآمنة"],
 };
 function reason() {
   const hit = (v.flags || []).find((f) => REASONS[f.code]);
   return hit ? REASONS[hit.code] : ["it fails official verification", "لم يجتز التحقق الرسمي"];
 }
 
+const isEmail = v.kind === "email";
+
+/** For an email: the most dangerous linked site, else the sender's address (masked later). */
+function emailSite() {
+  const risky = (v.links || []).find((l) => l.domain && (l.verdict === "HIGH-RISK SCAM" || l.verdict === "SUSPICIOUS" || l.mismatch));
+  if (risky) return risky.domain;
+  return v.from?.freemail ? "" : v.from?.address || "";
+}
+
 function draft(lang) {
-  const site = v.domain || hostOf(v.url);
+  const site = isEmail ? emailSite() : v.domain || hostOf(v.url);
   const masked = site ? ` (${defang(site)})` : "";
   const [rEn, rAr] = reason();
   if (lang === "ar") {
@@ -87,20 +138,26 @@ function draft(lang) {
 
 function amanReport() {
   const when = new Date(v.at || Date.now()).toLocaleString("en-GB", { timeZone: "Asia/Dubai", dateStyle: "medium", timeStyle: "short" });
-  const site = defang(v.domain || hostOf(v.url)) || "—";
+  const site = (isEmail ? defang(emailSite()) : defang(v.domain || hostOf(v.url))) || "—";
   const lines = [
     "SAQR-INTEL fraud report → Aman 8002626 / SMS 2828",
     v.scanId ? `Scan ID: ${v.scanId}` : null,
     `Time: ${when} (UAE)`,
     `Verdict: ${v.verdict} (${v.score}/100)`,
     v.entityEn ? `Impersonating: ${v.entityEn}` : null,
-    `Suspicious site (masked): ${site}`,
-    "Detected via: PC Browser Shield (Chrome/Edge extension)",
+    isEmail ? `Suspicious email from (masked): ${defang(v.from?.address || "") || "—"}` : null,
+    isEmail && v.subject ? `Subject: ${v.subject}` : null,
+    `${isEmail ? "Linked site" : "Suspicious site"} (masked): ${site}`,
+    isEmail
+      ? `Detected via: Email Shield (${v.provider === "outlook" ? "Outlook" : v.provider === "gmail" ? "Gmail" : "webmail"} in the Chrome/Edge extension)`
+      : "Detected via: PC Browser Shield (Chrome/Edge extension)",
     v.flags?.length ? `Red flags:\n${v.flags.map((f) => `- ${f.en}`).join("\n")}` : null,
     "",
     "بلاغ احتيال — صقر للاستخبارات",
     v.entityAr ? `ينتحل صفة: ${v.entityAr}` : null,
-    `الموقع المشبوه (معطّل): ${site}`,
+    isEmail ? `البريد المشبوه من (معطّل): ${defang(v.from?.address || "") || "—"}` : null,
+    `${isEmail ? "الموقع المرتبط" : "الموقع المشبوه"} (معطّل): ${site}`,
+    isEmail ? "طريقة الكشف: درع البريد الإلكتروني (إضافة المتصفح)" : "طريقة الكشف: درع المتصفح (إضافة Chrome/Edge)",
     v.flags?.length ? `علامات الخطر:\n${v.flags.map((f) => `- ${f.ar}`).join("\n")}` : null,
   ];
   return lines.filter((l) => l !== null).join("\n");
@@ -173,19 +230,26 @@ function render() {
     return;
   }
 
-  const titles = {
-    danger:
-      mode === "block"
-        ? ["Website blocked for your protection", "تم حظر الموقع لحمايتك"]
-        : ["Dangerous website: do not open it", "موقع خطير: لا تفتحه"],
-    warn: ["Warning: this website looks suspicious", "تحذير: هذا الموقع يبدو مشبوهاً"],
-    safe: ["Verified safe", "تم التحقق: آمن"],
-  }[tone];
+  const titles = isEmail
+    ? {
+        danger: ["Scam email: do not click its links", "رسالة احتيالية: لا تضغط على روابطها"],
+        warn: ["Warning: this email looks suspicious", "تحذير: هذه الرسالة تبدو مشبوهة"],
+        safe: ["No scam signs found in this email", "لم نجد علامات احتيال في هذه الرسالة"],
+      }[tone]
+    : {
+        danger:
+          mode === "block"
+            ? ["Website blocked for your protection", "تم حظر الموقع لحمايتك"]
+            : ["Dangerous website: do not open it", "موقع خطير: لا تفتحه"],
+        warn: ["Warning: this website looks suspicious", "تحذير: هذا الموقع يبدو مشبوهاً"],
+        safe: ["Verified safe", "تم التحقق: آمن"],
+      }[tone];
   badge.textContent = v.verdict || "";
   $("title-en").textContent = titles[0];
   $("title-ar").textContent = titles[1];
   document.title = `${titles[0]} · SAQR-INTEL`;
   if (tone === "safe") $("by").textContent = "Checked by SAQR-INTEL · تم الفحص بواسطة صقر";
+  else if (isEmail) $("by").textContent = "Checked by the SAQR-INTEL Email Shield · فحص درع البريد من صقر";
   let path = "";
   try {
     path = new URL(v.url).pathname.replace(/\/$/, "");
@@ -194,8 +258,11 @@ function render() {
   }
   // Demo pages (/mock-scam/<slug>) stand in for a seeded scam domain: show that domain instead.
   const isDemo = path.startsWith("/mock-scam/");
-  $("target").textContent =
-    v.kind === "maps"
+  $("target").textContent = isEmail
+    ? [v.from?.address ? `From: ${defang(v.from.address)}` : null, v.subject ? `“${v.subject}”` : null].filter(Boolean).join(" · ") ||
+      v.target ||
+      ""
+    : v.kind === "maps"
       ? `${v.target}${v.domain ? ` → ${defang(v.domain)}` : ""}`
       : isDemo && v.domain
         ? defang(v.domain)

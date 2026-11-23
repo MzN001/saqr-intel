@@ -1,7 +1,9 @@
 """WS /ws/live  (Module 6) — real-time Police Command Center feed.
 
-Query params: `topics=citizen_report,url_scan,maps_scan,graph,ct,takedown,awareness` (optional filter),
+Query params: `topics=citizen_report,url_scan,maps_scan,email_scan,graph,ct,takedown,awareness` (optional filter),
 `token=<POLICE_API_KEY>` when a key is configured.
+Email events: `email_scan.completed` {scan_id, kind:"email", target, risk_score, verdict, channel,
+interception_channel, impersonated_entity, created_at, top_flags} and `email_scan.failed` {scan_id, error}.
 Client messages: "ping" | {"action": "subscribe", "topics": [...]} | {"action": "snapshot"}
 """
 from __future__ import annotations

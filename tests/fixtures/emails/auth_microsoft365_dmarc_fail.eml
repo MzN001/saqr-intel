@@ -1,0 +1,25 @@
+Received: from DM6PR12MB4321.namprd12.prod.outlook.com (2603:10b6:5:1b0::12) by
+ SN7PR12MB8765.namprd12.prod.outlook.com with HTTPS; Mon, 23 Nov 2026 05:20:11 +0000
+Received: from BN9PR03CA0123.namprd03.prod.outlook.com (2603:10b6:408:fe::8) by
+ DM6PR12MB4321.namprd12.prod.outlook.com (2603:10b6:5:1b0::12) with Microsoft SMTP Server; Mon, 23 Nov 2026 05:20:10 +0000
+Received: from BN8NAM11FT045.eop-nam11.prod.protection.outlook.com
+ (2603:10b6:408:fe:cafe::2) by BN9PR03CA0123.outlook.office365.com
+ (2603:10b6:408:fe::8) with Microsoft SMTP Server; Mon, 23 Nov 2026 05:20:10 +0000
+Authentication-Results: spf=fail (sender IP is 203.0.113.50)
+ smtp.mailfrom=dewa-billing.test; dkim=none (message not signed)
+ header.d=none;dmarc=fail action=quarantine header.from=dewa.gov.ae;compauth=fail reason=000
+Received-SPF: Fail (protection.outlook.com: domain of dewa-billing.test does not
+ designate 203.0.113.50 as permitted sender) receiver=protection.outlook.com;
+ client-ip=203.0.113.50; helo=mail.dewa-billing.test;
+Received: from mail.dewa-billing.test (203.0.113.50) by
+ BN8NAM11FT045.mail.protection.outlook.com (10.13.177.47) with Microsoft SMTP
+ Server id 15.20.8100.0 via Frontend Transport; Mon, 23 Nov 2026 05:20:09 +0000
+From: DEWA <billing@dewa.gov.ae>
+To: customer@outlook.com
+Subject: Your electricity will be disconnected today
+Date: Mon, 23 Nov 2026 09:20:05 +0400
+Message-ID: <dc4471@dewa-billing.test>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+Pay your overdue bill now: https://dewa-bill-pay.test/pay

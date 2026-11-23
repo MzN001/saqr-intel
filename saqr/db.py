@@ -80,6 +80,12 @@ CREATE TABLE IF NOT EXISTS dossiers (
     created_at TEXT NOT NULL,
     dossier_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS user_models (      -- personal email model per citizen: bucket COUNTS only, never mail text
+    reporter_hash TEXT PRIMARY KEY,            -- SHA-256 of the browser's random reporter_id (raw id is not stored here)
+    model_json TEXT NOT NULL,                  -- saqr-user-model JSON (contract section 4)
+    labelled_json TEXT NOT NULL DEFAULT '{}',  -- {scan_id: "scam"|"ham"} so relabelling a scan replaces its label
+    updated_at TEXT NOT NULL
+);
 """
 
 
@@ -167,11 +173,13 @@ class Database:
             )
             await self.conn.commit()
             return False
-        await self.conn.execute(
-            "INSERT INTO graph_nodes (id, type, label, risk, data_json, first_seen, last_seen) VALUES (?,?,?,?,?,?,?)",
+        cur = await self.conn.execute(  # OR IGNORE: two scans of the same new domain at once (email "scan all")
+            "INSERT OR IGNORE INTO graph_nodes (id, type, label, risk, data_json, first_seen, last_seen) VALUES (?,?,?,?,?,?,?)",
             (node_id, ntype, label, risk, json.dumps(data or {}, ensure_ascii=False), seen, seen),
         )
         await self.conn.commit()
+        if cur.rowcount == 0:  # lost the race: the other scan inserted it first, so merge like an update
+            return await self.upsert_node(node_id, ntype, label, risk, data, seen)
         return True
 
     async def upsert_edge(self, source: str, target: str, etype: str, data: dict | None = None,
