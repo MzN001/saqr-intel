@@ -47,7 +47,7 @@
   };
 
   const HOSTS = ["outlook.live.com", "outlook.office.com", "outlook.office365.com", "outlook.cloud.microsoft"];
-  const EMAIL_ONLY = /^\s*<?([A-Za-z0-9._%+\-À-￿]+@[A-Za-z0-9.\-À-￿]+\.[A-Za-zÀ-￿]{2,})>?\s*$/;
+  const EMAIL_ONLY = /^\s*<?([A-Za-z0-9._%+\-À-\uffff]+@[A-Za-z0-9.\-À-\uffff]+\.[A-Za-zÀ-\uffff]{2,})>?\s*$/;
   const NAME_AND_EMAIL = /^(.*?)\s*<\s*([^<>\s]+@[^<>\s]+\.[^<>\s]{2,})\s*>\s*$/;
   const FILE_NAME = /^[^\\/:*?"<>|\r\n@]{1,200}\.[A-Za-z0-9]{1,6}$/;
 

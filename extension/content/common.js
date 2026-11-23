@@ -45,7 +45,7 @@
   const ZERO_WIDTH = /[​-‍⁠﻿­͏]/;
   const BIDI_ANY = /[‪-‮⁦-⁩]/;
   const BIDI_OVERRIDE = /[‭‮]/; // RLO / LRO: the "reversed file name" trick
-  const EMAIL_RE = /[A-Za-z0-9._%+\-À-￿]+@[A-Za-z0-9.\-À-￿]+\.[A-Za-zÀ-￿]{2,}/;
+  const EMAIL_RE = /[A-Za-z0-9._%+\-À-\uffff]+@[A-Za-z0-9.\-À-\uffff]+\.[A-Za-zÀ-\uffff]{2,}/;
 
   // Fallback lists, used only if lib/email_features.js did not load (should not happen).
   const FREEMAIL_FALLBACK = new Set(
