@@ -27,7 +27,7 @@ from .ai_inspector import STRONG_LEXICAL, URGENCY, RuleResult, _entity_in_text, 
 from .domain_intel import _EXTRACT, RedFlag, analyze_lexical, to_unicode_host
 from .email_types import Address, AuthReport, ParsedEmail
 from .email_unicode import ADDRESS_WHERES, TEXT_WHERES, deconfuse, strip_invisible, unescape
-from .registry import ALL_BRANDS, Entity
+from .registry import ALL_BRANDS, ENTITY_EXTRA_DOMAINS, Entity
 from .threat_feeds import popularity_rank, threat_feeds
 
 # ---------------------------------------------------------------------------
@@ -167,7 +167,8 @@ def same_owner(a: str, b: str) -> bool:
     if ra == rb:
         return True
     for ent in ALL_BRANDS:
-        doms = {*ent.domains, *BRAND_MAIL_DOMAINS.get(ent.id, ())}
+        doms = {*ent.domains, *BRAND_MAIL_DOMAINS.get(ent.id, ()),
+                *(d for d, i in ENTITY_EXTRA_DOMAINS.items() if i == ent.id)}
         if ra in doms and rb in doms:
             return True
     return False
@@ -361,12 +362,137 @@ def short_brand_claim(text: str, context: str) -> Entity | None:
     return None
 
 
+# Brands whose name is also an ordinary word (Amazon, Apple, Chase, Wise, noon, Google ...): _entity_in_text
+# never matches them in free text. In an EMAIL display name they still count when the name is used like a
+# company department: the brand as a whole word right next to a corporate role word ("Amazon Recruitment
+# Team", "Apple Support", "Team Google"). People's names and casual names ("Chase Smith", "Apple Martin",
+# "Wise Guy", "Amazon rainforest trip") have no role word next to the brand.
+ROLE_WORDS = frozenset({
+    "support", "team", "security", "service", "services", "billing", "account", "accounts", "recruitment",
+    "recruiting", "careers", "career", "hr", "pay", "prime", "store", "id", "delivery", "customer", "customers",
+    "care", "help", "helpdesk", "verification", "notice", "notices", "alert", "alerts", "notification",
+    "notifications",
+    "الدعم", "دعم", "فريق", "الأمن", "أمن", "خدمة", "خدمات", "الفواتير", "الحساب", "حساب", "الحسابات",
+    "التوظيف", "توظيف", "الوظائف", "الموارد", "المتجر", "متجر", "التوصيل", "توصيل", "العملاء", "عملاء",
+    "المساعدة", "مساعدة", "التحقق", "تحقق", "تنبيه", "تنبيهات", "إشعار", "إشعارات", "رعاية",
+})
+_ROLE_FILLERS = frozenset({"and", "&", "of", "the", "-", "و"})
+# Arabic brand names that are ordinary Arabic words / letters ("نون" is the letter N).
+_AMBIGUOUS_AR = frozenset({"نون"})
+COMMON_NAME_BRANDS = tuple(e for e in ALL_BRANDS if e.category == "global" and e.name_en.isalpha()
+                           and len(e.name_en) >= 4 and e.name_en.lower() in e.common_keywords)
+_WORD_RE = re.compile(r"[^\W_]+|&", re.U)
+
+
+def common_brand_claim(display: str) -> Entity | None:
+    """A common-word brand used as a department name in a display name (see COMMON_NAME_BRANDS)."""
+    words = [w.lower() for w in _WORD_RE.findall(display or "")][:20]
+    if len(words) < 2:
+        return None
+    for ent in COMMON_NAME_BRANDS:
+        names = {ent.name_en.lower()} | ({ent.name_ar} if ent.name_ar not in _AMBIGUOUS_AR else set())
+        for i, w in enumerate(words):
+            if w not in names:
+                continue
+            # a role word within two words after the brand ("Amazon Recruitment Team", "Apple ID") or right
+            # before it ("Team Amazon", "فريق دعم أمازون"), skipping "and" / "of" fillers
+            after = [x for x in words[i + 1:i + 4] if x not in _ROLE_FILLERS][:2]
+            before = [x for x in words[max(0, i - 3):i] if x not in _ROLE_FILLERS][-2:]
+            if any(x in ROLE_WORDS for x in after + before):
+                return ent
+    return None
+
+
+# A subject only claims to come FROM a brand when it reads like the brand's notice: the brand plus an
+# account / payment / delivery / security word ("Your Aramex parcel is waiting", "PayPal: account limited"),
+# or the brand as a "Brand:" / "Brand -" prefix. "DHL vs Aramex prices?" just mentions them.
+SUBJECT_NOTICE_RE = re.compile(
+    r"\b(support|team|security|service|services|billing|accounts?|alerts?|notices?|notifications?|"
+    r"verif(?:y|ied|ication)|confirm(?:ation)?|update[sd]?|suspend(?:ed)?|suspension|lock(?:ed)?|limited|"
+    r"restrict(?:ed|ion)|block(?:ed)?|unusual|sign[- ]?in|log[- ]?in|password|payments?|paid|unpaid|invoices?|"
+    r"receipts?|refunds?|fees?|fines?|bills?|due|overdue|expir(?:e|ed|es|ing|y)|parcels?|packages?|shipments?|"
+    r"deliver(?:y|ed)|redelivery|tracking|customs|orders?|rewards?|prizes?|winner|claim|cards?|transactions?|"
+    r"statements?|wallet|subscription|renewal|membership|id|otp|code|action required|important|urgent|final|"
+    r"reminder|recruitment|job offer|hr|on hold|held|waiting|pending)\b|"
+    r"حساب|تحديث|تأكيد|تحقق|إيقاف|ايقاف|تعليق|مخالف|غرامة|دفع|رسوم|فاتورة|استرداد|شحن|طرد|توصيل|جمارك|"
+    r"تنبيه|إشعار|عاجل|بطاقة|مكافأة|جائزة|طلبك", re.I)
+
+
+def _entity_names(ent: Entity) -> set[str]:
+    if ent.category == "global":
+        n = ent.name_en.lower()
+        return set() if n in ent.common_keywords or len(n) < 4 else {n}
+    return {n for n in (ent.name_en.lower(), ent.name_ar, *[a.lower() for a in ent.aliases]) if len(n) >= 3}
+
+
+def subject_brand_claim(subject: str) -> Entity | None:
+    """_entity_in_text(subject), but only when the subject reads like a notice from that brand."""
+    ent = _entity_in_text(subject or "")
+    if not ent:
+        return None
+    if SUBJECT_NOTICE_RE.search(subject):
+        return ent
+    low = subject.lower()
+    for n in _entity_names(ent):
+        if re.match(rf"^\W*{re.escape(n)}(?!\w)\s*[:\-–—|]", low):
+            return ent
+    return None
+
+
+# Styled letters (math bold, small capitals, full-width ...) that spell a BRAND name: the owner's rule is
+# that a disguised brand name is flagged at once. Styled text that is not a brand (newsletter headings in
+# bold Unicode) stays the weak FANCY_UNICODE note.
+_STYLED_WHERES = ("subject", "display_name", "body")
+
+
+def _brand_terms() -> list[tuple[str, Entity, bool]]:
+    """(term, brand, needs_capitals) for every brand name / alias / keyword that is not an ordinary word."""
+    global _BRAND_TERMS
+    if _BRAND_TERMS is None:
+        out: dict[str, tuple[str, Entity, bool]] = {}
+        for ent in ALL_BRANDS:
+            common = {c.lower() for c in ent.common_keywords}
+            for raw in (ent.name_en, *ent.aliases, *ent.keywords):
+                t = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", raw.lower())).strip()
+                letters = t.replace(" ", "")
+                if not t or not raw.isascii() or t in common or len(letters) < 3:
+                    continue
+                out.setdefault(t, (t, ent, len(letters) < 4))
+        _BRAND_TERMS = sorted(out.values(), key=lambda x: -len(x[0]))  # longest first ("emirates post")
+    return _BRAND_TERMS
+
+
+_BRAND_TERMS: list[tuple[str, Entity, bool]] | None = None
+
+
+def styled_brand(findings: Iterable[dict[str, Any]]) -> tuple[Entity, str] | None:
+    """(brand, styled text) when the "fancy" letters in a subject / display name / body spell a brand."""
+    by_where: dict[str, list[dict[str, Any]]] = {}
+    for f in findings:
+        if f.get("kind") == "fancy" and f.get("where") in _STYLED_WHERES:
+            by_where.setdefault(f["where"], []).append(f)
+    for where in _STYLED_WHERES:
+        toks = by_where.get(where) or []
+        if not toks:
+            continue
+        plain = [deconfuse(unescape(f["sample_escaped"])) for f in toks]
+        joined = " ".join(re.sub(r"[^a-z0-9]+", " ", p.lower()).strip() for p in plain)
+        caps = " ".join(re.sub(r"[^a-z0-9]+", " ", p.lower()).strip() for p in plain if p.isupper())
+        for term, ent, needs_caps in _brand_terms():
+            hay = caps if needs_caps else joined
+            if hay and re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", hay):
+                shown = " ".join(unescape(f["sample_escaped"]) for f in toks)[:60]
+                return ent, shown
+    return None
+
+
 def sender_is_brand(ent: Entity, domain: str) -> bool:
     """Is this sending domain one the brand really uses?"""
     rd = regdom(domain)
     if rd in FREEMAIL:  # anyone can open a gmail.com / outlook.com account
         return False
-    doms = {*ent.domains, *BRAND_MAIL_DOMAINS.get(ent.id, ())}
+    doms = {*ent.domains, *BRAND_MAIL_DOMAINS.get(ent.id, ()),
+            *(d for d, i in ENTITY_EXTRA_DOMAINS.items() if i == ent.id)}
     return any(domain == d or domain.endswith("." + d) or rd == d for d in doms)
 
 
@@ -497,8 +623,16 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
     rank = popularity_rank(from_rd) if from_rd else None
     trusted = is_official or (bool(rank) and rank <= 10_000 and not from_free)
     dmarc_pass = auth.dmarc.result == "pass"
-    arc_pass = auth.arc.result == "pass"
-    is_list = bool(parsed.list_id) or arc_pass
+    # ARC: anyone can build a VALID seal for any mail, so a pass counts only when the citizen's own provider
+    # vouches for it (email_auth sets arc.trusted). Even then it only excuses weak forwarding side effects,
+    # and never a DMARC failure that the trusted provider itself reported.
+    arc_trusted = auth.arc.result == "pass" and bool(getattr(auth.arc, "trusted", False))
+    provider_dmarc_fail = auth.dmarc.result == "fail" and auth.dmarc.source == "auth_results"
+    arc_vouch = arc_trusted and not provider_dmarc_fail
+    is_list = bool(parsed.list_id) or arc_trusted
+    # Delivered mail always carries Received headers (every server adds one). A source without any is a
+    # draft, a template or an export: nothing in it can show where a real copy came from.
+    delivered = bool(parsed.headers_all("Received"))
     precedence = (parsed.header("Precedence") or "").strip().lower()
     is_bulk = is_list or bool(parsed.header("List-Unsubscribe")) or precedence in ("bulk", "list", "junk")
     display = deconfuse(parsed.from_.display_name if parsed.from_ else "")
@@ -510,8 +644,8 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
 
     # -- brand claims -------------------------------------------------------------------
     ent_display = (_entity_in_text(display) or short_brand_claim(display, f"{display}\n{subject}\n{body[:3000]}")
-                   if display else None)
-    ent_subject = (_entity_in_text(subject) or short_brand_claim(subject, subject)
+                   or common_brand_claim(display) if display else None)
+    ent_subject = (subject_brand_claim(subject) or short_brand_claim(subject, subject)
                    if subject and not forwarded and not ABOUT_SCAM_RE.search(subject) else None)
     claimed: Entity | None = None
     for ent in (ent_display, ent_subject):
@@ -520,8 +654,8 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
 
     if ent_display and from_dom and not via_form and not sender_is_brand(ent_display, from_dom):
         add("DISPLAY_NAME_BRAND_SPOOF", "high", 35,
-            f"The sender calls itself \"{parsed.from_.display_name[:60]}\" but the email was not sent from a "
-            f"{ent_display.name_en} address.",
+            f"The sender calls itself \"{parsed.from_.display_name[:60]}\" but the email was not sent from an "
+            f"address that belongs to {ent_display.name_en}.",
             f"يسمي المرسل نفسه \"{parsed.from_.display_name[:60]}\" لكن الرسالة لم تُرسل من عنوان تابع لـ"
             f"{ent_display.name_ar}.",
             f"display name \"{parsed.from_.display_name[:60]}\", from domain {from_dom}")
@@ -599,8 +733,10 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
     aligned_pass = (dmarc_pass
                     or any(d.result == "pass" and d.aligned for d in auth.dkim)
                     or (auth.spf.result == "pass" and bool(auth.dmarc.alignment.get("spf"))))
-    # A List-Id header alone is no proof (anyone can type one); a list forward must carry an ARC pass.
-    if is_official and parsed.has_headers and not aligned_pass and not arc_pass:
+    # A List-Id header alone is no proof (anyone can type one); a list forward must carry an ARC pass that
+    # the citizen's own provider vouches for. A source that was never delivered (no Received header: a
+    # draft or exported template) proves nothing either way: it gets an info note instead.
+    if is_official and parsed.has_headers and not aligned_pass and not arc_vouch and delivered:
         if official_entity and not claimed:
             claimed = official_entity
         add("OFFICIAL_SENDER_UNAUTHENTICATED", "high", 40,
@@ -612,14 +748,23 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
             f"dkim={','.join(d.result for d in auth.dkim) or 'none'}")
 
     # -- authentication (SPF / DKIM / DMARC / ARC) -------------------------------------------------
+    if parsed.has_headers and not delivered:
+        add("HEADERS_NOT_AVAILABLE", "info", 0,
+            "This copy has no delivery headers (for example a draft or an exported template), so SAQR could not "
+            "check where it really came from. To check that, paste the original of the email you received "
+            "(\"Show original\").",
+            "لا تحتوي هذه النسخة على ترويسات التسليم (مثل مسودة أو قالب مُصدَّر)، لذلك لم يتمكن صقر من التحقق من "
+            "مصدرها الحقيقي. للتحقق، الصق النسخة الأصلية من الرسالة التي وصلتك («إظهار الأصل»).",
+            "no Received header")
     if not parsed.has_headers:
         add("HEADERS_NOT_AVAILABLE", "info", 0,
             "Only the visible text was checked. Paste the full original message (\"Show original\") to also "
             "check where it really came from.",
             "تم فحص النص الظاهر فقط. الصق الرسالة الأصلية كاملة («إظهار الأصل») للتحقق أيضاً من مصدرها الحقيقي.")
     dm = auth.dmarc
-    if dm.result == "fail" and not arc_pass:
-        if (dm.policy or "").lower() in ("reject", "quarantine"):
+    strict_policy = (dm.policy or "").lower() in ("reject", "quarantine")
+    if dm.result == "fail" and not (arc_vouch if strict_policy else arc_trusted):
+        if strict_policy:
             add("DMARC_FAIL", "high", 35,
                 f"The email claims to be from {from_rd or 'a domain'} but failed that domain's anti-forgery check (DMARC).",
                 f"تدّعي الرسالة أنها من {from_rd or 'نطاق ما'} لكنها فشلت في فحص مكافحة التزوير الخاص بهذا النطاق (DMARC).",
@@ -631,7 +776,8 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
                 f"فشلت الرسالة في فحص مكافحة التزوير (DMARC)، مع أن النطاق {from_rd or ''} لا يطلب حظر هذه الرسائل.",
                 f"dmarc=fail p={dm.policy or 'none'}")
     spf = auth.spf.result
-    if spf in ("fail", "permerror"):
+    # permerror (broken SPF record) / temperror (DNS timeout) say nothing about THIS sender: no flag.
+    if spf == "fail":
         add("SPF_FAIL", "medium", 15,
             "The server that sent this email is not allowed to send mail for that address (SPF fail).",
             "الخادم الذي أرسل هذه الرسالة غير مسموح له بالإرسال باسم هذا العنوان (فشل SPF).",
@@ -648,7 +794,7 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
             "The email's digital signature (DKIM) is broken: it may have been changed or forged.",
             "التوقيع الرقمي للرسالة (DKIM) غير صالح: ربما تم تعديلها أو تزويرها.",
             ", ".join(f"d={d.domain}" for d in dkim_fail[:3]))
-    any_pass = spf == "pass" or dkim_pass or dmarc_pass or arc_pass
+    any_pass = spf == "pass" or dkim_pass or dmarc_pass or arc_trusted
     if (parsed.has_headers and not any_pass and spf not in ("fail", "softfail", "permerror")
             and not parsed.headers_all("DKIM-Signature") and dm.result != "fail"):
         add("NO_AUTHENTICATION", "low", 10,
@@ -665,7 +811,7 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
                 f"The email really comes from {from_rd} (it passed the domain's anti-forgery check).",
                 f"الرسالة صادرة فعلاً من {from_rd} (نجحت في فحص مكافحة التزوير الخاص بالنطاق).",
                 f"dmarc=pass header.from={from_rd}")
-    if arc_pass:
+    if arc_trusted:
         add("ARC_PASS", "info", 0, "A mail server that forwarded this email vouches that it passed checks (ARC).",
             "خادم البريد الذي أعاد توجيه هذه الرسالة يؤكد أنها اجتازت الفحوصات (ARC).")
     if is_bulk:
@@ -679,6 +825,16 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
 
     # -- Unicode tricks --------------------------------------------------------------------------
     _unicode_flags(findings, add)
+    styled = styled_brand(findings)
+    if styled and not (from_dom and sender_is_brand(styled[0], from_dom) and aligned_pass):
+        ent_s, shown = styled
+        add("DISPLAY_NAME_CONFUSABLE", "critical", 65,
+            f"The text writes the name \"{shown}\" ({ent_s.name_en}) in decorated look-alike letters (like 𝐁𝐎𝐋𝐃 or "
+            "ｗｉｄｅ letters). Real companies never do this; scammers do it to slip past filters.",
+            f"يكتب النص اسم \"{shown}\" ({ent_s.name_ar}) بأحرف مزخرفة مشابهة. الشركات الحقيقية لا تفعل ذلك؛ "
+            "المحتالون يفعلونه لتجاوز أنظمة الحماية.",
+            _samples([f for f in findings if f["kind"] == "fancy"]))
+        claimed = claimed or ent_s
 
     # -- links ------------------------------------------------------------------------------------
     max_link = 0

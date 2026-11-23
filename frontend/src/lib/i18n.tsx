@@ -269,6 +269,11 @@ const dict = {
   high: { en: "HIGH", ar: "مرتفع" },
   medium: { en: "MEDIUM", ar: "متوسط" },
   low: { en: "LOW", ar: "منخفض" },
+  sevCritical: { en: "CRITICAL", ar: "حرج" },
+  sevInfo: { en: "INFO", ar: "معلومة" },
+  verdictHighRisk: { en: "HIGH-RISK SCAM", ar: "احتيال عالي الخطورة" },
+  verdictSuspicious: { en: "SUSPICIOUS", ar: "مشبوه" },
+  verdictSafe: { en: "SAFE", ar: "آمن" },
   lastUpdated: { en: "Updated", ar: "آخر تحديث" },
   sharedLink: { en: "Shared to SAQR Verify", ar: "تمت المشاركة إلى صقر للتحقق" },
   footer: {
@@ -328,8 +333,8 @@ const dict = {
     ar: "Gmail: ⋮ المزيد ← تنزيل الرسالة (.eml). Outlook: اسحب الرسالة إلى سطح المكتب (.msg). الحد الأقصى 3 ميغابايت.",
   },
   emFileTooBig: {
-    en: "This file is too big to check (max 3 MB). Try “Paste full source” instead.",
-    ar: "هذا الملف كبير جداً للفحص (الحد الأقصى 3 ميغابايت). جرّب «الصق المصدر الكامل» بدلاً من ذلك.",
+    en: "This file is too big to check (max 3 MB). Large emails are usually big because of their attachments: forward the email to yourself without them, download it again and upload that file.",
+    ar: "هذا الملف كبير جداً للفحص (الحد الأقصى 3 ميغابايت). غالباً ما يكون حجم الرسالة كبيراً بسبب مرفقاتها: أعد توجيه الرسالة إلى نفسك بدون المرفقات، ثم نزّلها مرة أخرى وارفع ذلك الملف.",
   },
   emFileType: { en: "Only .eml or .msg email files can be checked here.", ar: "يمكن فحص ملفات البريد .eml أو .msg فقط." },
   emFileRead: {

@@ -229,12 +229,18 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
 
   const chooseFile = useCallback((f: File | undefined | null) => {
     if (!f) return;
+    const reject = (why: DictKey) => {
+      // Never keep an earlier file around after a rejected choice: "Check" must not scan the old one.
+      setFile(null);
+      if (picker.current) picker.current.value = "";
+      setError(why);
+    };
     if (!fileSource(f)) {
-      setError("emFileType");
+      reject("emFileType");
       return;
     }
     if (f.size > MAX_FILE_BYTES) {
-      setError("emFileTooBig");
+      reject("emFileTooBig");
       return;
     }
     setError(null);

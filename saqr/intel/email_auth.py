@@ -25,6 +25,7 @@ import ipaddress
 import logging
 import os
 import re
+import threading
 import warnings
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
@@ -49,6 +50,26 @@ TRUSTED_AUTHSERV_DOMAINS: tuple[str, ...] = (
 )
 
 SPF_RESULTS = {"pass", "fail", "softfail", "neutral", "none", "temperror", "permerror"}
+
+# Signing domains (ARC-Seal d=) of providers whose ARC seal we believe. dkimpy checks the seal against
+# the key published under that domain, so nobody else can seal with d=google.com.
+TRUSTED_ARC_SEALERS: tuple[str, ...] = (
+    "google.com", "microsoft.com", "outlook.com", "office365.com", "yahoo.com", "yahoo.co.jp", "aol.com",
+    "icloud.com", "me.com", "apple.com", "zoho.com", "zohomail.com", "protonmail.ch", "proton.me", "protonmail.com",
+)
+
+
+def is_trusted_sealer(domain: Optional[str]) -> bool:
+    d = (domain or "").strip().lower().rstrip(".")
+    if not d:
+        return False
+    return is_trusted_host(d) or any(d == b or d.endswith("." + b) for b in TRUSTED_ARC_SEALERS)
+
+
+def spf_deadline_s() -> float:
+    """Hard limit for one whole SPF evaluation. pyspf ignores its own timeout on some lookups (one check
+    took 13.7 s in testing), so the result is awaited at most this long: then it is "temperror"."""
+    return min(6.0, max(1.0, settings.dns_timeout_s * 1.5))
 
 
 def _extra_trusted() -> tuple[str, ...]:
@@ -600,6 +621,36 @@ async def _in_thread(fn: Callable[[], Any], timeout: float, default: Any) -> Any
         return default
 
 
+async def _with_deadline(fn: Callable[[], Any], deadline: float) -> Any:
+    """Run fn in its own daemon thread and wait at most deadline seconds (asyncio.TimeoutError after).
+
+    Not the shared executor: a lookup that hangs must neither hold one of its workers nor make
+    asyncio.run() / the server's shutdown wait for it."""
+    loop = asyncio.get_running_loop()
+    fut: asyncio.Future = loop.create_future()
+
+    def _settle(value: Any, exc: Optional[BaseException]) -> None:
+        if fut.done():
+            return
+        if exc is not None:
+            fut.set_exception(exc)
+        else:
+            fut.set_result(value)
+
+    def worker() -> None:
+        try:
+            value, exc = fn(), None
+        except BaseException as e:  # noqa: BLE001 - handed to the awaiting coroutine
+            value, exc = None, e
+        try:
+            loop.call_soon_threadsafe(_settle, value, exc)
+        except RuntimeError:
+            pass  # the event loop is gone (deadline passed long ago, server stopped)
+
+    threading.Thread(target=worker, name="saqr-email-spf", daemon=True).start()
+    return await asyncio.wait_for(fut, deadline)
+
+
 # ---------------------------------------------------------------------------
 # SPF (pyspf)
 # ---------------------------------------------------------------------------
@@ -715,7 +766,16 @@ async def _verify(parsed: ParsedEmail, *, offline: bool, dnsfunc: Optional[DnsFu
             if m.method == "arc":
                 arc_result = m.result if m.result in ("pass", "fail") else "none"
                 break
-    report.arc = AuthARC(result=arc_result, chain_length=chain_len)
+    # Who vouches for the pass? The citizen's own provider (its Authentication-Results say arc=pass), or a
+    # newest seal made by a trusted provider. A valid seal from anyone else is self-made and proves nothing.
+    provider_arc_pass = any(m.method == "arc" and m.result == "pass" for m in chain.methods)
+    newest_seal: dict[str, str] = {}
+    for v in seals:
+        tags = _dkim_tags(v)
+        if not newest_seal or (tags.get("i", "").isdigit() and int(tags["i"]) >= int(newest_seal.get("i") or 0)):
+            newest_seal = tags
+    arc_trusted = arc_result == "pass" and (provider_arc_pass or is_trusted_sealer(newest_seal.get("d")))
+    report.arc = AuthARC(result=arc_result, chain_length=chain_len, trusted=arc_trusted)
 
     # --- SPF ----------------------------------------------------------------------
     spf_m = next((m for m in methods if m.method == "spf"), None)
@@ -735,8 +795,14 @@ async def _verify(parsed: ParsedEmail, *, offline: bool, dnsfunc: Optional[DnsFu
         mailfrom = chain.return_path
         helo = chain.entry.get("helo", "")
         if mailfrom or helo:
-            result = await _in_thread(lambda: _spf_check_sync(entry_ip, mailfrom, helo),
-                                      timeout=settings.dns_timeout_s * 4 + 2, default="not_checked")
+            try:
+                result = await _with_deadline(lambda: _spf_check_sync(entry_ip, mailfrom, helo), spf_deadline_s())
+            except asyncio.TimeoutError:
+                log.info("SPF check passed its %.1f s deadline", spf_deadline_s())
+                result = "temperror"  # DNS too slow: no verdict (never shown as an SPF failure)
+            except Exception:  # noqa: BLE001 - crash: degrade, never raise
+                log.debug("SPF check failed", exc_info=True)
+                result = "not_checked"
             report.spf = AuthSPF(result=result, domain=_domain_of(mailfrom) or helo, client_ip=entry_ip,
                                  source="computed" if result != "not_checked" else "none")
 

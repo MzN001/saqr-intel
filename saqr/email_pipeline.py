@@ -20,6 +20,7 @@ import logging
 import re
 import time
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from .config import settings
 from .db import db, iso
@@ -157,12 +158,28 @@ def _scan_candidates(links: list[dict[str, Any]], own_domain: str | None) -> lis
     return list(picked.values())
 
 
+def _scan_target(l: dict[str, Any]) -> str:
+    """The link as a browser would open it: a percent-encoded host ("p%D0%B0ypal.com") is replaced by the
+    decoded (punycode) host that host_of() found, so the sub-scan - and the blocklist / NextDNS entry it
+    creates - names the real domain (xn--pypal-4ve.com), not the encoded spelling."""
+    url, host = l.get("url") or "", l.get("domain") or ""
+    try:
+        p = urlsplit(url)
+        raw_host = p.netloc.rpartition("@")[2]
+        port = p.port
+    except ValueError:
+        return url
+    if not host or "%" not in raw_host:
+        return url
+    return urlunsplit((p.scheme, host + (f":{port}" if port else ""), p.path, p.query, p.fragment))
+
+
 async def _scan_links(cands: list[dict[str, Any]], *, reporter: str | None,
                       interception_channel: str | None) -> dict[str, dict[str, Any]]:
     async def one(l: dict[str, Any]) -> tuple[str, dict[str, Any] | None]:
         try:
             r = await asyncio.wait_for(
-                analyze_url(l["url"], channel="email", reporter=reporter, run_sandbox=False, use_llm=False,
+                analyze_url(_scan_target(l), channel="email", reporter=reporter, run_sandbox=False, use_llm=False,
                             interception_channel=interception_channel),
                 timeout=LINK_SCAN_TIMEOUT_S)
             return l["domain"], r

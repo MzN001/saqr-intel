@@ -113,6 +113,11 @@ class AuthDMARC:
 class AuthARC:
     result: str = "none"  # pass|fail|none
     chain_length: int = 0
+    # True only when the pass is vouched for by someone we trust: the citizen's own mailbox provider
+    # wrote arc=pass in its Authentication-Results, or the newest ARC seal was made by a trusted
+    # provider (d=google.com, microsoft.com ...). Anyone can create a VALID ARC seal for any mail, so an
+    # untrusted pass proves nothing. Internal: not part of to_dict() (the response contract is frozen).
+    trusted: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {"result": self.result, "chain_length": self.chain_length}

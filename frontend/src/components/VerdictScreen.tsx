@@ -82,6 +82,31 @@ const SEVERITY_STYLE: Record<RedFlag["severity"], string> = {
   info: "bg-line text-ink-soft",
 };
 
+const SEVERITY_LABEL: Record<RedFlag["severity"], DictKey> = {
+  critical: "sevCritical",
+  high: "high",
+  medium: "medium",
+  low: "low",
+  info: "sevInfo",
+};
+
+const VERDICT_LABEL: Record<string, DictKey> = {
+  "HIGH-RISK SCAM": "verdictHighRisk",
+  SUSPICIOUS: "verdictSuspicious",
+  SAFE: "verdictSafe",
+};
+
+/** Look-alike findings repeat when the same text is seen twice (e.g. a link and its visible text): show each once. */
+function uniqueFindings(findings: UnicodeFinding[]): UnicodeFinding[] {
+  const seen = new Set<string>();
+  return findings.filter((f) => {
+    const key = `${f.where}\u0000${f.kind}\u0000${f.sample_escaped}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 const SCAN_STEPS: DictKey[] = ["stepIntercept", "stepRegistry", "stepSandbox", "stepAi", "stepPolice"];
 
 // ---------------------------------------------------------------- email verdict panels (kind "email")
@@ -302,7 +327,7 @@ function UnicodeCard({ findings }: { findings: UnicodeFinding[] }) {
       </p>
       <p className="mt-1 text-xs leading-relaxed text-crimson-700/80 dark:text-red-200/80">{t("emUnicodeIntro")}</p>
       <ul className="mt-3 space-y-2">
-        {findings.slice(0, 12).map((f, i) => (
+        {uniqueFindings(findings).slice(0, 12).map((f, i) => (
           <li key={`${f.where}-${i}`} className="rounded-xl bg-white p-3 ring-1 ring-crimson-600/15 dark:bg-black/30 dark:ring-crimson-600/40">
             <p className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase text-ink-soft">
               <span>{WHERE_LABEL[f.where] ? t(WHERE_LABEL[f.where]) : f.where}</span>
@@ -360,7 +385,9 @@ function LinksCard({ links }: { links: EmailLink[] }) {
                   l.verdict ? VERDICT_CHIP[l.verdict] ?? "bg-line text-ink-soft" : "bg-line text-ink-soft"
                 }`}
               >
-                {l.verdict ? `${l.verdict}${l.risk_score !== null ? ` · ${l.risk_score}` : ""}` : t("emLinkNotScanned")}
+                {l.verdict
+                  ? `${VERDICT_LABEL[l.verdict] ? t(VERDICT_LABEL[l.verdict]) : l.verdict}${l.risk_score !== null ? ` · ${l.risk_score}` : ""}`
+                  : t("emLinkNotScanned")}
               </span>
             </div>
             {(l.text_mismatch || l.unwrapped_from) && (
@@ -767,7 +794,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                 className="mb-2 inline-flex items-center gap-2 rounded-lg bg-white px-2.5 py-1 text-sm font-extrabold tracking-wide"
                 style={{ color: tone === "danger" ? "#c8102e" : tone === "warn" ? "#b45309" : "#047857" }}
               >
-                <HeaderIcon className="size-4" /> {result.verdict}
+                <HeaderIcon className="size-4" /> {VERDICT_LABEL[result.verdict] ? t(VERDICT_LABEL[result.verdict]) : result.verdict}
               </motion.div>
               <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl">{title}</h2>
               {email ? (
@@ -900,7 +927,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                     className="flex gap-3 rounded-xl bg-muted p-3"
                   >
                     <span className={`h-fit shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${SEVERITY_STYLE[f.severity]}`}>
-                      {f.severity}
+                      {SEVERITY_LABEL[f.severity] ? t(SEVERITY_LABEL[f.severity]) : f.severity}
                     </span>
                     <span className="text-sm leading-snug text-ink">{lang === "ar" ? f.ar : f.en}</span>
                   </motion.li>

@@ -28,6 +28,9 @@ def addr(display="", address=""):
 def mail(*, from_name="Sara", from_addr="sara@example.com", subject="Hello", body="See you soon.",
          reply_to=None, return_path=None, links=(), attachments=(), headers=None, has_headers=True,
          list_id=None, byte_exact=False, html=""):
+    if headers is None and has_headers:  # a delivered copy (every receiving server adds a Received header)
+        headers = [("Received", "from mail.example.com (mail.example.com [192.0.2.25]) by mx.example.net; "
+                                "Mon, 23 Nov 2026 10:00:00 +0400")]
     return ParsedEmail(
         source="raw", has_headers=has_headers, byte_exact=byte_exact, raw_bytes=None,
         headers=list(headers or []), subject=subject, date="", from_=addr(from_name, from_addr),
@@ -36,11 +39,11 @@ def mail(*, from_name="Sara", from_addr="sara@example.com", subject="Hello", bod
         links=[Link(h, t) for h, t in links], attachments=[Attachment(n, 10) for n in attachments])
 
 
-def auth(spf="pass", dkim=(), dmarc="none", policy=None, arc="none", align=False):
+def auth(spf="pass", dkim=(), dmarc="none", policy=None, arc="none", align=False, arc_trusted=True, dmarc_source="auth_results"):
     return AuthReport(trusted_authserv="mx.example.net", spf=AuthSPF(spf, "", "", "auth_results"),
                       dkim=[AuthDKIM(d, "s1", r, align, src) for d, r, src in dkim],
-                      dmarc=AuthDMARC(dmarc, policy, {"spf": align, "dkim": align}, "auth_results"),
-                      arc=AuthARC(arc, 1 if arc != "none" else 0))
+                      dmarc=AuthDMARC(dmarc, policy, {"spf": align, "dkim": align}, dmarc_source),
+                      arc=AuthARC(arc, 1 if arc != "none" else 0, trusted=arc_trusted))
 
 
 def link(domain, verdict=None, score=None, text="", mismatch=False):
