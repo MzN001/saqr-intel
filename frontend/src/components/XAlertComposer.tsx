@@ -14,6 +14,7 @@ import {
   xLength,
   type WarningInfo,
 } from "@/lib/share";
+import { logXAlert } from "@/lib/police";
 import { Modal } from "./Modal";
 
 /** The X logo (lucide has no X/Twitter brand icon). */
@@ -161,6 +162,7 @@ export function XWarningModal({
               href={xIntentUrl(text)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => logXAlert(warning.domain, warning.entityEn)} // live counter on /police
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-navy-800 dark:bg-white dark:text-navy-900 dark:hover:bg-white/90"
             >
               <XLogo className="size-4" /> {t("xApprove")}

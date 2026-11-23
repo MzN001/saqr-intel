@@ -271,6 +271,7 @@ const dict = {
   low: { en: "LOW", ar: "منخفض" },
   lastUpdated: { en: "Updated", ar: "آخر تحديث" },
   sharedLink: { en: "Shared to SAQR Verify", ar: "تمت المشاركة إلى صقر للتحقق" },
+  commandCenter: { en: "Command Center", ar: "مركز القيادة" },
   footer: {
     en: "Report fraud: Aman 8002626 · SMS 2828 · Emergency 999",
     ar: "للإبلاغ عن الاحتيال: أمان 8002626 · رسالة نصية 2828 · الطوارئ 999",

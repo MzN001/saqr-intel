@@ -78,6 +78,11 @@ async def collect(min_score: int) -> list[dict[str, Any]]:
     for domain in settings.demo_scam_domains:  # the phone-demo fake TAMM page (demo-scam-site/)
         add(domain, 70, "TAMM Abu Dhabi", "demo_scam_page", None)
 
+    from ..police_state import police_state  # local: police_state -> seed_data at import
+
+    for domain, at in police_state.telecom_synced.items():  # officer "Sync to e& / du" in /police
+        add(domain, 100, None, "police_telecom_sync", at)
+
     ct = await db.fetchall(
         "SELECT domain, MAX(score) AS score, MAX(seen_at) AS seen, MAX(entity) AS entity FROM ct_events "
         "WHERE entity IS NOT NULL GROUP BY domain")

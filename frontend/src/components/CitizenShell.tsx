@@ -9,6 +9,7 @@ import { hostOf, isMapsUrl } from "@/lib/url";
 import { AwarenessRadar } from "./AwarenessRadar";
 import { BackgroundShieldCard } from "./BackgroundShieldCard";
 import { Header, StatusBanner } from "./Chrome";
+import { OfficialWarningBanner } from "./OfficialWarningBanner";
 import { LinkChecker } from "./LinkChecker";
 import { ScamAlertsCard } from "./ScamAlertsCard";
 import { SearchMapsShield } from "./SearchMapsShield";
@@ -165,6 +166,7 @@ export function CitizenShell({
   return (
     <div className="min-h-dvh">
       <Header />
+      <OfficialWarningBanner />
       <StatusBanner />
 
       <nav className="sticky top-[69px] z-20 border-b border-line bg-canvas/90 backdrop-blur">
@@ -224,7 +226,12 @@ export function CitizenShell({
       </main>
 
       <footer className="border-t border-line bg-surface">
-        <div className="mx-auto max-w-7xl px-4 py-5 text-center text-xs font-medium text-ink-soft sm:px-6">{t("footer")}</div>
+        <div className="mx-auto max-w-7xl px-4 py-5 text-center text-xs font-medium text-ink-soft sm:px-6">
+          {t("footer")}
+          <a href="/police" className="ms-3 text-ink-soft/50 underline-offset-2 hover:text-ink hover:underline">
+            {t("commandCenter")}
+          </a>
+        </div>
       </footer>
 
       <VerdictScreen state={scan} onClose={close} onRetry={retry} />

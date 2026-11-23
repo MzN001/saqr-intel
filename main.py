@@ -24,7 +24,8 @@ from saqr.intel.sandbox import sandbox
 from saqr.intel.threat_feeds import threat_feeds
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
-from saqr.routers import analysis, blocklist, ct, graph, live, maps, mobile, push, system, takedown
+from saqr.police_state import police_state
+from saqr.routers import analysis, blocklist, ct, graph, live, maps, mobile, police, push, system, takedown
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("saqr")
@@ -36,6 +37,7 @@ async def lifespan(_: FastAPI):
     if await seed_if_empty():
         log.info("Seeded syndicate intelligence (Sand Viper, Desert Mirage)")
     seed_task = asyncio.create_task(seed_historical_scans(), name="seed-scans")
+    police_state.seed()  # /police looks active on a cold boot
     ct_monitor.start()
     threat_feeds.start()
     nextdns_sync.start()
@@ -114,7 +116,7 @@ async def mock_scam(slug: str):
 
 
 for r in (system.router, analysis.router, maps.router, ct.router, graph.router, takedown.router, live.router,
-          mobile.router, blocklist.router, push.router):
+          mobile.router, blocklist.router, push.router, police.router):
     app.include_router(r)
 
 
