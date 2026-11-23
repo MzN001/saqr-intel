@@ -36,7 +36,7 @@ async def collect_stats() -> dict:
             "sandbox_error": sandbox.error, "generated_at": iso()}
 
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])  # HEAD: uptime monitors (UptimeRobot's free plan)
 async def health():
     return {"status": "ok", "app": settings.app_name, "version": __version__, "llm_engine": settings.active_llm,
             "playwright_enabled": settings.sandbox_enabled, "keep_awake": bool(keepalive.public_url()),

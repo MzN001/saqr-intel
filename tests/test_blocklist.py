@@ -76,3 +76,8 @@ def test_demo_scam_page_always_flagged(client):
     names = {d["domain"]: d for d in client.get("/api/dns-blocklist").json()["domains"]}
     assert names["saqr-demo-scam.vercel.app"]["impersonated_entity"] == "TAMM Abu Dhabi"
     assert "vercel.app" not in names
+
+
+def test_health_answers_head_for_uptime_monitors(client):
+    assert client.head("/health").status_code == 200
+    assert client.get("/health").json()["status"] == "ok"
