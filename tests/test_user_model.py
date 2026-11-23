@@ -153,6 +153,8 @@ def test_flag_thresholds():
     (lambda m: m["senders"].update({"XYZ": {"scam": 0, "ham": 1}}), "bad sender key"),
     (lambda m: m["senders"].update({"0000000a": {"scam": 0, "ham": 99}}), "sender above docs"),
     (lambda m: m["senders"].update({"0000000a": {"scam": 0}}), "sender missing ham"),
+    (lambda m: m["classes"]["scam"]["counts"].update({"5\n": 1}), "bucket key with trailing newline"),
+    (lambda m: m["senders"].update({"0000000a\n": {"scam": 0, "ham": 1}}), "sender key with trailing newline"),
 ])
 def test_validate_model_is_strict(mutate, why):
     m = um.new_model()
@@ -280,4 +282,21 @@ def test_import_rejects_bad_files(client):
     huge = b" " * (um_router.MAX_IMPORT_BYTES + 1)
     assert client.put(f"/api/email-model/{rid}", content=huge).status_code == 413
     assert client.get("/api/email-model/too-short").status_code == 422
+    bomb = '{"format":"saqr-user-model","classes":' + "[" * 100_000 + "]" * 100_000 + "}"
+    assert client.put(f"/api/email-model/{rid}", content=bomb).status_code == 422  # RecursionError, not 500
     assert client.get(f"/api/email-model/{rid}").status_code == 404  # nothing was stored
+
+
+def test_merge_that_would_overflow_the_limits_is_refused(client):
+    """Merging must keep a model the server (and the extension) can import again."""
+    rid = "r-overflow-0123456789a"
+    client.delete(f"/api/email-model/{rid}")
+    big = um.new_model()
+    big["classes"]["scam"].update(docs=600_000_000, total=600_000_000, counts={"7": 600_000_000})
+    assert client.put(f"/api/email-model/{rid}", content=json.dumps(big)).status_code == 200
+    r = client.put(f"/api/email-model/{rid}", content=json.dumps(big))
+    assert r.status_code == 422 and "—" in r.json()["detail"]
+    stored = client.get(f"/api/email-model/{rid}").json()
+    assert stored["classes"]["scam"]["docs"] == 600_000_000  # unchanged
+    assert client.put(f"/api/email-model/{rid}?mode=replace", content=json.dumps(stored)).status_code == 200
+    client.delete(f"/api/email-model/{rid}")

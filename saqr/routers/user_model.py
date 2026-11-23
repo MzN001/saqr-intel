@@ -142,7 +142,7 @@ async def import_model(request: Request, reporter_id: str = ReporterId,
     body = await _read_capped(request)
     try:
         incoming = um.validate_model(json.loads(body.decode("utf-8")))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):  # RecursionError: "[[[[..." bombs
         raise _err(422, "This file is not a valid SAQR model (it is not JSON).",
                    "هذا الملف ليس نموذج SAQR صالحاً (ليس بصيغة JSON).") from None
     except ValueError as exc:
@@ -156,6 +156,11 @@ async def import_model(request: Request, reporter_id: str = ReporterId,
             model, labelled = incoming, {}
         else:
             model = um.merge(stored, incoming)
+            try:  # the sum must stay a file this server (and the extension) can import again
+                um.validate_model(model)
+            except ValueError:
+                raise _err(422, "Your personal filter would become too big after adding this file.",
+                           "سيصبح الفلتر الشخصي كبيراً جداً بعد إضافة هذا الملف.") from None
         await um.save_record(reporter_id, model, labelled)
     return {"ok": True, "mode": mode, **_summary(model)}
 

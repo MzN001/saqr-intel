@@ -71,7 +71,9 @@
       for (const [k, v] of Object.entries(counts)) {
         const b = Number(k);
         if (!/^(0|[1-9][0-9]{0,4})$/.test(k) || b >= F.BUCKETS || !isCount(v)) throw new Error("This SAQR model has invalid counts.");
-        if (v > 0) clean[String(b)] = v;
+        // A bucket appears at most once per email, so more than docs is impossible: clamp it (a crafted file
+        // could otherwise push any mail to p≈1; a relabel with drifted features can leave one over by a few).
+        if (v > 0) clean[String(b)] = Math.min(v, c.docs);
       }
       out.classes[label] = { docs: c.docs, total: c.total, counts: clean };
     }
@@ -81,7 +83,7 @@
       const scam = s.scam || 0;
       const ham = s.ham || 0;
       if (!isCount(scam) || !isCount(ham)) throw new Error("This SAQR model has invalid senders.");
-      out.senders[h] = { scam, ham };
+      out.senders[h] = { scam: Math.min(scam, out.classes.scam.docs), ham: Math.min(ham, out.classes.ham.docs) };
     }
     return out;
   }

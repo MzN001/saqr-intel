@@ -137,6 +137,20 @@ test("the contract's example model predicts the sample email", () => {
   assert.ok(p.p_scam > 0.9);
 });
 
+test("a crafted model cannot claim a bucket more often than it has emails", () => {
+  const m = M.newModel();
+  for (let i = 0; i < 10; i++) M.train(m, [1, 2], "scam", "x@y.test");
+  for (let i = 0; i < 10; i++) M.train(m, [3], "ham", "z@y.test");
+  const bad = JSON.parse(JSON.stringify(m));
+  bad.classes.ham.counts["7"] = 1e9; // 10 ham emails cannot contain bucket 7 a billion times
+  bad.senders[M.senderHash("z@y.test")].ham = 1e9;
+  const clean = M.validate(bad);
+  assert.equal(clean.classes.ham.counts["7"], 10);
+  assert.equal(clean.senders[M.senderHash("z@y.test")].ham, 10);
+  assert.ok(M.predict(clean, [7], "z@y.test").p_scam > 1e-6); // no longer "trusted" beyond what 10 labels allow
+  assert.deepEqual(M.validate(m), JSON.parse(JSON.stringify({ ...m, updated_at: M.validate(m).updated_at })));
+});
+
 // ---------------------------------------------------------------- shared vectors (WS-E)
 const vectors = fixture("model_vectors.json");
 

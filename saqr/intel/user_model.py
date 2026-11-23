@@ -342,8 +342,8 @@ def flag_for(p_scam: float | None) -> str | None:
 # ---------------------------------------------------------------------------
 # Strict validation of an uploaded model (PUT /api/email-model/{id})
 # ---------------------------------------------------------------------------
-_BUCKET_KEY_RE = re.compile(r"^(0|[1-9][0-9]{0,4})$")
-_SENDER_KEY_RE = re.compile(r"^[0-9a-f]{8}$")
+_BUCKET_KEY_RE = re.compile(r"(0|[1-9][0-9]{0,4})")  # used with fullmatch: "$" would accept "5\n"
+_SENDER_KEY_RE = re.compile(r"[0-9a-f]{8}")
 _MAX_COUNT = 10**9
 MAX_SENDERS = 100_000
 TOP_KEYS = {"format", "version", "spec", "buckets", "updated_at", "classes", "senders"}
@@ -386,7 +386,7 @@ def validate_model(obj: Any) -> dict[str, Any]:
             raise ValueError(f"classes.{label}.counts must be an object")
         clean: dict[str, int] = {}
         for k, v in counts.items():
-            if not isinstance(k, str) or not _BUCKET_KEY_RE.match(k) or int(k) >= BUCKETS:
+            if not isinstance(k, str) or not _BUCKET_KEY_RE.fullmatch(k) or int(k) >= BUCKETS:
                 raise ValueError(f"classes.{label}.counts has a bad bucket number: {str(k)[:20]}")
             n = _int(v, f"classes.{label}.counts[{k}]", hi=docs)  # a bucket counts once per email
             if n:
@@ -399,7 +399,7 @@ def validate_model(obj: Any) -> dict[str, Any]:
     if len(senders) > MAX_SENDERS:
         raise ValueError("Too many senders in the model file.")
     for k, s in senders.items():
-        if not isinstance(k, str) or not _SENDER_KEY_RE.match(k):
+        if not isinstance(k, str) or not _SENDER_KEY_RE.fullmatch(k):
             raise ValueError(f"senders has a bad key: {str(k)[:20]}")
         if not isinstance(s, dict) or set(s) != {"scam", "ham"}:
             raise ValueError('each sender must have exactly "scam" and "ham"')
