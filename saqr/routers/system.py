@@ -11,6 +11,8 @@ from ..db import db, iso, utcnow
 from ..intel.ct_monitor import ct_monitor
 from ..intel.registry import ENTITIES
 from ..intel.sandbox import sandbox
+from ..intel import ai_inspector, url_model
+from ..intel.threat_feeds import threat_feeds
 from ..ws_hub import hub
 
 router = APIRouter(tags=["System"])
@@ -38,7 +40,8 @@ async def health():
     return {"status": "ok", "app": settings.app_name, "version": __version__, "llm_engine": settings.active_llm,
             "playwright_enabled": settings.sandbox_enabled, "keep_awake": bool(keepalive.public_url()),
             "offline_mode": settings.offline_mode,
-            "ct_mode": ct_monitor.mode}
+            "ct_mode": ct_monitor.mode, "url_model": url_model.available(), "llm": ai_inspector.llm_status,
+            "threat_feeds": threat_feeds.status()}
 
 
 @router.get("/api/stats")

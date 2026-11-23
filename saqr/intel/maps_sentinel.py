@@ -25,9 +25,9 @@ from ..config import settings
 from ..db import db
 from ..security import host_is_safe_target
 from ..seed_data import MAP_PINS, resolve_mock_scam
-from .ai_inspector import verdict_for
+from .ai_inspector import intel_flags, verdict_for
 from .domain_intel import RedFlag, analyze_lexical
-from .registry import ABU_DHABI_BBOX, ENTITIES, Entity, normalise_phone
+from .registry import ABU_DHABI_BBOX, ALL_BRANDS, Entity, normalise_phone
 
 log = logging.getLogger("saqr.maps")
 
@@ -35,7 +35,7 @@ SUSPICIOUS_PLACE_TYPES = {
     "residential", "house", "villa", "apartments", "construction", "brownfield", "greenfield",
     "vacant", "vacant_lot", "grass", "farmland", "sand", "scrub", "parking", "road", "track",
 }
-STRONG_FLAGS = {"UNOFFICIAL_DOMAIN_ON_LISTING", "LOOKALIKE_WEBSITE", "PHONE_REUSED_ACROSS_PINS",
+STRONG_FLAGS = {"UNOFFICIAL_DOMAIN_ON_LISTING", "PHISHING_WEBSITE_ON_LISTING", "LOOKALIKE_WEBSITE", "PHONE_REUSED_ACROSS_PINS",
                 "KNOWN_SYNDICATE_INFRA", "MOBILE_FOR_INSTITUTION", "UNVERIFIED_LOCATION"}
 MAPS_HOSTS = ("google.", "goo.gl", "maps.app.goo.gl", "g.co")
 
@@ -160,8 +160,12 @@ def match_entity(name: str | None) -> tuple[Entity | None, float]:
         return None, 0.0
     n = name.lower()
     best: tuple[Entity | None, float] = (None, 0.0)
-    for ent in ENTITIES:
-        names = ([ent.name_en] if len(ent.name_en) > 3 else []) + [ent.name_ar, *ent.aliases]
+    for ent in ALL_BRANDS:
+        if ent.category == "global":
+            # Global brands by name only, and never ordinary words ("Noon Bakery" is not noon.com).
+            names = [] if ent.name_en.lower() in ent.common_keywords else [ent.name_en]
+        else:
+            names = ([ent.name_en] if len(ent.name_en) > 3 else []) + [ent.name_ar, *ent.aliases]
         for alias in names:
             a = alias.lower()
             if len(a) <= 4:  # short brands must be whole words ("Tammy's" != TAMM)
@@ -221,10 +225,21 @@ async def scan_listing(*, maps_url: str | None, business_name: str | None, query
     if site_lex and site_lex.impersonated and not entity:
         entity = site_lex.impersonated
 
+    # 0) The linked website is a known (threat feeds) or AI-detected phishing site
+    site_intel = intel_flags(site_lex) if site_lex and not site_lex.is_whitelisted else []
+    strong_intel = [f for f in site_intel if f.code in {"KNOWN_PHISHING_FEED", "AI_PHISHING_URL"}]
+    if strong_intel:
+        f0 = strong_intel[0]
+        flags.append(RedFlag(
+            "PHISHING_WEBSITE_ON_LISTING", "critical", 60 if f0.code == "KNOWN_PHISHING_FEED" else 40,
+            f"The listing's website {website_domain} is a phishing site: {f0.en}",
+            f"موقع الإدراج {website_domain} موقع تصيّد احتيالي: {f0.ar}",
+        ))
+
     # 1) Official name + unofficial domain
     if entity and site_lex and not site_lex.is_whitelisted:
         flags.append(RedFlag(
-            "UNOFFICIAL_DOMAIN_ON_LISTING", "critical", 40,
+            "UNOFFICIAL_DOMAIN_ON_LISTING", "critical", 30 if entity.category == "global" else 40,
             f"The listing uses the name '{entity.name_en}' but links to {website_domain}, which is NOT an official "
             f"{entity.name_en} website ({', '.join(entity.domains)}).",
             f"الإدراج يستخدم اسم «{entity.name_ar}» لكنه يربط بالموقع {website_domain} وهو ليس موقعاً رسمياً "

@@ -23,6 +23,7 @@ class Entity:
     lure_en: str = ""
     lure_ar: str = ""
     branches: tuple[tuple[str, float, float], ...] = field(default_factory=tuple)
+    common_keywords: tuple[str, ...] = ()  # ordinary words: impersonation only next to a lure word
 
 
 ENTITIES: tuple[Entity, ...] = (
@@ -135,7 +136,76 @@ ENTITIES: tuple[Entity, ...] = (
     ),
 )
 
-ENTITY_BY_ID = {e.id: e for e in ENTITIES}
+def _g(id_: str, en: str, ar: str, domains: str, keywords: str, common: str = "") -> Entity:
+    """A global brand. `keywords` alone prove impersonation (paypal, icloud); `common` keywords are
+    ordinary words (apple, chase, amazon) and only count next to a lure word (apple-id-verify)."""
+    return Entity(id=id_, name_en=en, name_ar=ar, category="global", domains=tuple(domains.split()),
+                  keywords=tuple(keywords.split()), phones=(), common_keywords=tuple(common.split()))
+
+
+# The brands phishing kits copy most worldwide (APWG / OpenPhish top targets) plus big UAE brands
+# outside the government list. Used for scam detection only (not Maps, CT simulation or awareness).
+GLOBAL_BRANDS: tuple[Entity, ...] = (
+    _g("paypal", "PayPal", "باي بال", "paypal.com paypal.me paypalobjects.com", "paypal"),
+    _g("microsoft", "Microsoft", "مايكروسوفت",
+       "microsoft.com microsoftonline.com live.com outlook.com office.com office365.com onedrive.com "
+       "msn.com bing.com azure.com xbox.com skype.com windows.com microsoft365.com hotmail.com",
+       "microsoft office365 microsoft365 onedrive hotmail msoffice outlook365 sharepoint", "outlook office"),
+    _g("apple", "Apple", "آبل", "apple.com icloud.com me.com apple.co", "icloud appleid itunes applepay", "apple"),
+    _g("amazon", "Amazon", "أمازون",
+       "amazon.com amazon.ae amazon.sa amazon.co.uk amazon.de amazon.in amazon.fr amazon.eg amazonaws.com "
+       "amazon.jobs primevideo.com", "amazonprime", "amazon prime"),
+    _g("netflix", "Netflix", "نتفليكس", "netflix.com nflxext.com", "netflix"),
+    _g("facebook", "Facebook", "فيسبوك", "facebook.com fb.com messenger.com meta.com", "facebook fbook", "meta"),
+    _g("instagram", "Instagram", "إنستغرام", "instagram.com", "instagram instagr"),
+    _g("whatsapp", "WhatsApp", "واتساب", "whatsapp.com whatsapp.net wa.me", "whatsapp"),
+    _g("google", "Google", "جوجل", "google.com google.ae gmail.com youtube.com googleapis.com withgoogle.com",
+       "gmail", "google"),
+    _g("dhl", "DHL", "دي إتش إل", "dhl.com dhl.ae dhl.de", "dhl"),
+    _g("fedex", "FedEx", "فيديكس", "fedex.com", "fedex"),
+    _g("ups", "UPS", "يو بي إس", "ups.com", "", "ups"),
+    _g("usps", "USPS", "البريد الأمريكي USPS", "usps.com", "usps"),
+    _g("aramex", "Aramex", "أرامكس", "aramex.com", "aramex"),
+    _g("binance", "Binance", "بينانس", "binance.com", "binance"),
+    _g("coinbase", "Coinbase", "كوين بيس", "coinbase.com", "coinbase"),
+    _g("metamask", "MetaMask", "ميتاماسك", "metamask.io", "metamask"),
+    _g("trustwallet", "Trust Wallet", "محفظة ترست", "trustwallet.com", "trustwallet"),
+    _g("ledger", "Ledger", "ليدجر", "ledger.com", "", "ledger"),
+    _g("cryptocom", "Crypto.com", "كريبتو.كوم", "crypto.com", "", "crypto"),
+    _g("steam", "Steam", "ستيم", "steampowered.com steamcommunity.com", "steamcommunity steampowered", "steam"),
+    _g("roblox", "Roblox", "روبلوكس", "roblox.com", "roblox"),
+    _g("chase", "Chase", "بنك تشيس", "chase.com", "", "chase"),
+    _g("wellsfargo", "Wells Fargo", "ويلز فارغو", "wellsfargo.com", "wellsfargo"),
+    _g("bofa", "Bank of America", "بنك أوف أمريكا", "bankofamerica.com", "bankofamerica"),
+    _g("hsbc", "HSBC", "بنك إتش إس بي سي", "hsbc.com hsbc.ae hsbc.co.uk", "hsbc"),
+    _g("citi", "Citibank", "سيتي بنك", "citi.com citibank.com", "citibank", "citi"),
+    _g("emiratesnbd", "Emirates NBD", "بنك الإمارات دبي الوطني", "emiratesnbd.com", "emiratesnbd enbd"),
+    _g("mashreq", "Mashreq", "بنك المشرق", "mashreq.com", "mashreq mashreqbank"),
+    _g("adib", "Abu Dhabi Islamic Bank", "مصرف أبوظبي الإسلامي", "adib.ae", "adib"),
+    _g("dubaipolice", "Dubai Police", "شرطة دبي", "dubaipolice.gov.ae", "dubaipolice"),
+    _g("rta", "RTA Dubai", "هيئة الطرق والمواصلات", "rta.ae", "", "rta salik"),
+    _g("emiratesair", "Emirates (airline)", "طيران الإمارات", "emirates.com", "", "emirates"),
+    _g("noon", "noon", "نون", "noon.com", "", "noon"),
+    _g("careem", "Careem", "كريم", "careem.com", "careem"),
+    _g("docusign", "DocuSign", "دوكيوساين", "docusign.com docusign.net", "docusign"),
+    _g("dropbox", "Dropbox", "دروب بوكس", "dropbox.com", "dropbox"),
+    _g("adobe", "Adobe", "أدوبي", "adobe.com", "adobe"),
+    _g("linkedin", "LinkedIn", "لينكدإن", "linkedin.com", "linkedin"),
+    _g("telegram", "Telegram", "تيليجرام", "telegram.org t.me", "telegram"),
+    _g("tiktok", "TikTok", "تيك توك", "tiktok.com", "tiktok"),
+    _g("twitter", "X (Twitter)", "إكس (تويتر)", "x.com twitter.com", "twitter"),
+    _g("att", "AT&T", "إيه تي آند تي", "att.com", "", "att"),
+    _g("yahoo", "Yahoo", "ياهو", "yahoo.com", "yahoo"),
+    _g("booking", "Booking.com", "بوكينج", "booking.com", "", "booking"),
+    _g("airbnb", "Airbnb", "إير بي إن بي", "airbnb.com airbnb.ae", "airbnb"),
+    _g("ebay", "eBay", "إيباي", "ebay.com", "ebay"),
+    _g("wise", "Wise", "وايز", "wise.com transferwise.com", "transferwise", "wise"),
+    _g("revolut", "Revolut", "ريفولوت", "revolut.com", "revolut"),
+)
+# Every brand scam detection knows: UAE entities first (they win ties), then global brands.
+ALL_BRANDS: tuple[Entity, ...] = ENTITIES + GLOBAL_BRANDS
+
+ENTITY_BY_ID = {e.id: e for e in ALL_BRANDS}
 
 # Well-known legitimate UAE websites that are not in ENTITIES above. They are trusted (scanned as
 # SAFE, subdomains included) but are not used as impersonation targets. Add more with the
@@ -156,7 +226,7 @@ TRUSTED_UAE_DOMAINS: tuple[str, ...] = (
     "emiratesnbd.com",
 )
 
-OFFICIAL_DOMAINS: dict[str, Entity | None] = {d: e for e in ENTITIES for d in e.domains}
+OFFICIAL_DOMAINS: dict[str, Entity | None] = {d: e for e in ALL_BRANDS for d in e.domains}
 for _d in (*TRUSTED_UAE_DOMAINS, *settings.extra_whitelist):
     OFFICIAL_DOMAINS.setdefault(_d.lower(), None)
 

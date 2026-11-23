@@ -22,12 +22,12 @@ from pywebpush import WebPushException, webpush
 
 from .config import settings
 from .db import db, iso
-from .intel.registry import ENTITIES
+from .intel.registry import ALL_BRANDS
 
 log = logging.getLogger("saqr.push")
 
 VAPID_SUB = "https://saqr-intel.vercel.app"  # contact claim required by push services (no personal data)
-_ENTITY_AR = {e.name_en: e.name_ar for e in ENTITIES}
+_ENTITY_AR = {e.name_en: e.name_ar for e in ALL_BRANDS}
 
 
 def _key_path() -> Path:

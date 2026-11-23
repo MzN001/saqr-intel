@@ -26,7 +26,7 @@ from rapidfuzz import fuzz
 
 from ..config import settings
 from .registry import (
-    ENTITIES,
+    ALL_BRANDS,
     LURE_KEYWORDS,
     OFFICIAL_DOMAINS,
     SHARED_INFRA_ASNS,
@@ -177,6 +177,22 @@ def _keyword_hit(keyword: str, host_skel: str, tokens: list[str]) -> bool:
     return kw in host_skel.replace("-", "").replace(".", "")
 
 
+def _lure_token(tokens: list[str]) -> bool:
+    return any(t in LURE_KEYWORDS or any(t.startswith(k) or t.endswith(k) for k in LURE_KEYWORDS if len(k) > 3)
+               for t in tokens)
+
+
+def _global_brand_hit(ent: Entity, tokens: list[str]) -> bool:
+    """Global brands match whole tokens only ("paypal-login", "secure.paypal.x", "paypalverify"), never
+    inside another word ("pineapple"). Ordinary-word brands (apple, chase) also need a lure word."""
+    def fused(kw: str) -> bool:
+        return any(t == kw or (t.startswith(kw) and t[len(kw):] in LURE_KEYWORDS)
+                   or (t.endswith(kw) and t[: -len(kw)] in LURE_KEYWORDS) for t in tokens)
+    if any(fused(k) for k in ent.keywords):
+        return True
+    return any(fused(k) for k in ent.common_keywords) and _lure_token(tokens)
+
+
 # ---------------------------------------------------------------------------
 # Lexical analysis (fast — also used on the CT firehose)
 # ---------------------------------------------------------------------------
@@ -210,12 +226,15 @@ def analyze_lexical(raw: str) -> LexicalReport:
     raw_tokens = _tokens(host_wo_tld.lower())
 
     best: tuple[float, Entity | None, str] = (0.0, None, "")
-    for ent in ENTITIES:
+    for ent in ALL_BRANDS:
+        is_global = ent.category == "global"
         for od in ent.domains:
             od_ext = _EXTRACT(od)
             od_label = od_ext.domain
             sim = fuzz.ratio(label_skel, od_label)
-            if sim > best[0]:
+            # Global brands: only long names count as typos (steamcommunite ~ steamcommunity), short
+            # ones collide with real words (chaser ~ chase, applea ~ apple).
+            if sim > best[0] and (not is_global or (len(od_label) >= 7 and sim >= 88)):
                 best = (sim, ent, od)
             # spoof: skeleton equals official label but raw differs (homoglyph / leet / punycode)
             if label_skel == od_label and label != od_label:
@@ -225,7 +244,8 @@ def analyze_lexical(raw: str) -> LexicalReport:
                     f"The address uses look-alike characters to imitate {od} ({unicode_host}).",
                     f"يستخدم العنوان أحرفاً مشابهة لتقليد الموقع الرسمي {od} ({unicode_host}).",
                 ))
-            elif label_skel == od_label and suffix != od_ext.suffix:
+            elif label_skel == od_label and suffix != od_ext.suffix and not is_global:
+                # (global brands own many endings: google.fr, amazon.eg; a missing one is not a scam)
                 rep.impersonated = ent
                 rep.flags.append(RedFlag(
                     "TLD_SWAP", "high", 40,
@@ -238,10 +258,14 @@ def analyze_lexical(raw: str) -> LexicalReport:
 
     # Brand keyword embedded in an unofficial domain (combosquatting)
     if not rep.flags:
-        for ent in ENTITIES:
-            if any(_keyword_hit(k, full_skel, tokens) for k in ent.keywords):
+        for ent in ALL_BRANDS:
+            hit = (_global_brand_hit(ent, tokens) if ent.category == "global"
+                   else any(_keyword_hit(k, full_skel, tokens) for k in ent.keywords))
+            if hit:
                 rep.impersonated = ent
                 pts = 40 if ent.category in {"government", "identity"} else 35
+                if ent.category == "global" and _lure_token(tokens):
+                    pts = 50  # brand + "login/verify/secure..." on a non-brand domain: classic phishing
                 rep.flags.append(RedFlag(
                     "BRAND_IMPERSONATION", "high", pts,
                     f"Uses the name of {ent.name_en} but is NOT an official {ent.name_en} website "
@@ -250,7 +274,10 @@ def analyze_lexical(raw: str) -> LexicalReport:
                 ))
                 break
 
-    if not rep.impersonated and sim_ent and 75 <= best[0] < 100:
+    from .threat_feeds import popularity_rank  # local: threat_feeds -> domain_intel at load time
+
+    if (not rep.impersonated and sim_ent and 75 <= best[0] < 100
+            and not popularity_rank(reg_domain)):  # a top-100k site is not a typo trap (adac.de vs adcb)
         rep.impersonated = sim_ent
         rep.flags.append(RedFlag(
             "TYPOSQUAT", "high", 35,

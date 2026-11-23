@@ -21,6 +21,7 @@ from saqr.intel.ct_monitor import ct_monitor
 from saqr.intel.domain_intel import shutdown_pools
 from saqr.intel.nextdns_sync import block_watcher, nextdns_sync
 from saqr.intel.sandbox import sandbox
+from saqr.intel.threat_feeds import threat_feeds
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
 from saqr.routers import analysis, blocklist, ct, graph, live, maps, mobile, push, system, takedown
@@ -36,6 +37,7 @@ async def lifespan(_: FastAPI):
         log.info("Seeded syndicate intelligence (Sand Viper, Desert Mirage)")
     seed_task = asyncio.create_task(seed_historical_scans(), name="seed-scans")
     ct_monitor.start()
+    threat_feeds.start()
     nextdns_sync.start()
     block_watcher.start()
     keepalive_task = asyncio.create_task(keepalive.run(), name="keep-awake")
@@ -46,6 +48,7 @@ async def lifespan(_: FastAPI):
         seed_task.cancel()
         keepalive_task.cancel()
         await ct_monitor.stop()
+        await threat_feeds.stop()
         await nextdns_sync.stop()
         await block_watcher.stop()
         await sandbox.close()

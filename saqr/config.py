@@ -52,7 +52,14 @@ class Settings:
     # auto -> Gemini if key present, else OpenAI if key present, else rules engine
     llm_provider: str = os.getenv("LLM_PROVIDER", "auto").lower()
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
-    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    # Tried in order; a model that is busy (503), retired (404) or over quota (429) is skipped in
+    # about a second. Google retires model names regularly (2.5-flash went in 2026), hence a chain.
+    gemini_models: list[str] = field(default_factory=lambda: _list(
+        "GEMINI_MODEL", "gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite"))
+
+    @property
+    def gemini_model(self) -> str:
+        return self.gemini_models[0] if self.gemini_models else "gemini-3.8-flash"
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     llm_timeout_s: float = _float("LLM_TIMEOUT_SECONDS", 20.0)
@@ -96,6 +103,8 @@ class Settings:
     nextdns_api_base: str = os.getenv("NEXTDNS_API_BASE", "https://api.nextdns.io")
     nextdns_sync_interval_s: float = _float("NEXTDNS_SYNC_INTERVAL_SECONDS", 60.0)
     nextdns_min_score: int = _int("NEXTDNS_MIN_SCORE", 65)
+    # Global phishing feeds (Phishing Army + OpenPhish), refreshed every 6 h. THREAT_FEEDS=false to disable.
+    threat_feeds_enabled: bool = _bool("THREAT_FEEDS", True)
     # Fake scam pages built for the phone demo (demo-scam-site/). Always flagged, so a Render restart
     # (which wipes the scan history) never stops the phone alert for them.
     demo_scam_domains: list[str] = field(default_factory=lambda: _list("DEMO_SCAM_DOMAINS") or ["saqr-demo-scam.vercel.app", "aed-refund-claim.vercel.app"])

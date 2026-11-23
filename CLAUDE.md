@@ -53,6 +53,13 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
 - `next dev` (Turbopack) sometimes keeps serving an old `globals.css` after an edit; restart `npm run dev` if new CSS rules don't appear.
 - Phone numbers / branch coordinates in `registry.py` are demo data; `185.220.101.44` in seed data is real IP space.
 
+## Detection upgrade (2026-11-23) — any fraud site, not only UAE brands
+- `registry.GLOBAL_BRANDS` (~50 most-phished brands: PayPal, Microsoft, Apple, banks, couriers, crypto…) + `ALL_BRANDS`. Global brands match whole tokens only; `common_keywords` (apple, chase, amazon, noon, wise) need a lure word; no TLD_SWAP for them (they own many ccTLDs); typosquat only for labels ≥7 chars at ≥88%. Maps/CT/awareness still use the UAE `ENTITIES`.
+- `intel/url_model.py` + `url_model.bin` (1 MB): logistic regression on hashed char n-grams of the HOSTNAME only, pure Python at runtime. Retrain: `tools/train_url_model.py` (needs scikit-learn; data: PhiUSIIL, Phishing Army, Tranco). PhiUSIIL legit URLs are all bare homepages → never train on paths. Never judges Tranco top-100k sites (`intel/data/popular_domains.txt.gz`) unless on free hosting. Flags: ≥0.98 AI_PHISHING_URL 65 (45 on free hosting), ≥0.92 45, ≥0.80 AI_SUSPICIOUS_URL 20; AI_PHISHING_URL + any `ML_CORROBORATION` clue → 70.
+- `intel/threat_feeds.py`: Phishing Army + OpenPhish, refreshed every 6 h, in memory; never lists platforms/official/top-10k sites. Hit = KNOWN_PHISHING_FEED 70. `THREAT_FEEDS=false` disables.
+- LLM: `GEMINI_MODEL` is a comma list tried in order with a circuit breaker (busy 30 s, quota 10 min, retired 24 h). gemini-2.5-flash was retired for this key in Nov 2026 and the AI judge had been silently failing — `/health` now shows `llm.last_ok/last_error`. `ai_inspector.blend`: confident LLM scam verdict + corroboration → 0.25 rules + 0.75 LLM; confident SAFE halves a classifier-only warning; hard evidence is never lowered.
+- Live evaluation (300 OpenPhish phishing vs 340 legit incl. login/bank pages and Tranco long tail), no LLM, no feeds: before 0% HIGH-RISK / 4% any warning; after: see commit message. 0 false alarms. Harness kept outside the repo (scratch `saqr-eval/`).
+
 ## Possible next steps discussed
 - Police Command Center dashboard (live WebSocket `/ws/live`, syndicate graph from `/api/syndicate-graph`).
 - A "Check a Maps listing" form; Google Places API key (`GOOGLE_MAPS_API_KEY`) for real listing lookups.
