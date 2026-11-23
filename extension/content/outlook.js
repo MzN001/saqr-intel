@@ -4,8 +4,10 @@
 // Outlook can show its UI in Arabic, so we NEVER match aria-label or visible UI words. Only
 // language-independent anchors are used: ARIA roles, data-convid, title attributes that hold an
 // e-mail address, and the ItemId in the URL. Outlook gives web pages no easy way to read the original
-// headers, so Outlook scans use the visible message only (banner chip: "headers not verified") and
-// inbox rows only get the quick local checks (badge "open to scan fully").
+// headers (its API needs an MSAL token the page keeps encrypted), so Outlook scans use the visible
+// message (banner chip: "headers not verified") unless the USER opens "View message source": that
+// dialog's text is then read and the message is rescanned with real SPF/DKIM/DMARC. Inbox rows only get
+// the quick local checks (badge "open to scan fully").
 //
 // ------------------------------------------------------------------------------------------------
 // E2E agent: please verify live (could not be checked without a real Outlook session):
@@ -51,6 +53,8 @@
     subject: ["[role=heading][id$='_SUBJECT']", "[role=heading][aria-level='2']", "[role=heading][aria-level='1']"],
     fromHeading: ["[role=heading][id$='_FROM']"],
     titled: ["[title]"],
+    // "View message source" (opened by the user): a modal [role=dialog] whose only text leaf is the original.
+    sourceDialog: ["[role=dialog][aria-modal=true]", "[role=dialog]"],
     attachmentTitles: ["[role=listbox] [title]", "[role=list] [title]", "[role=option] [title]"],
   };
 
@@ -101,6 +105,16 @@
     return null;
   }
 
+  /** Lower-cased address of the first From: header of a raw source, or "". */
+  function rawFromAddress(raw) {
+    const head = String(raw || "").split(/\r?\n\r?\n/, 1)[0];
+    const m = head.match(/^From:[ \t]*((?:.*)(?:\r?\n[ \t]+.*)*)/im);
+    if (!m) return "";
+    const v = m[1].replace(/\r?\n[ \t]+/g, " ");
+    const a = v.match(/<\s*([^<>\s]+@[^<>\s]+)\s*>/) || v.match(/([^\s<>"]+@[^\s<>"]+)/);
+    return a ? a[1].toLowerCase() : "";
+  }
+
   function looksLikeFileName(s) {
     return FILE_NAME.test(String(s || "").trim());
   }
@@ -146,7 +160,9 @@
     function rowLeaves(row, senderEl) {
       const out = [];
       for (const n of row.querySelectorAll("span, div")) {
-        if (n.closest("button, [role=button], [role=img], [role=checkbox], [aria-hidden=true]")) continue;
+        // Only look INSIDE the row: Outlook sets aria-hidden on the whole app while a dialog is open.
+        const skip = n.closest("button, [role=button], [role=img], [role=checkbox], [aria-hidden=true]");
+        if (skip && skip !== row && row.contains(skip)) continue;
         let own = "";
         for (const c of n.childNodes) if (c.nodeType === 3) own += c.nodeValue;
         if (!own.trim()) continue;
@@ -196,6 +212,25 @@
         if (M.pick(n, SELECTORS.heading)) return n;
       }
       return stop || body.parentElement;
+    }
+
+    /**
+     * The original source when the USER opened "View message source" (read-only; nothing is clicked for
+     * them). OWA's own API needs an MSAL token the page keeps encrypted (cookie-only GetItem = 401), so
+     * this is the only safe way to get real headers; otherwise scans stay DOM-only.
+     */
+    function rawFromPage() {
+      for (const d of M.pickAll(document, SELECTORS.sourceDialog)) {
+        if (!M.isVisible(d)) continue;
+        for (const n of d.querySelectorAll("div, pre, textarea")) {
+          if (n.children.length) continue;
+          const raw = n.tagName === "TEXTAREA" ? n.value : n.textContent;
+          if (raw && raw.length > 200 && /^[A-Za-z][A-Za-z0-9-]*:/.test(raw) && M.util.looksLikeRawEmail(raw)) {
+            return { raw, from: rawFromAddress(raw) };
+          }
+        }
+      }
+      return null;
     }
 
     function selectedRowId() {
@@ -277,9 +312,10 @@
       openMessages,
       selectedRowId,
       isSpamView: () => isJunkPath(location.pathname),
+      rawFromPage,
       health: () => ({ hits: Object.assign({}, hits), counts: Object.assign({}, counts), itemId: !!itemIdFromUrl(location.href) }),
     };
   }
 
-  return { SELECTORS, HOSTS, isOutlookHost, itemIdFromUrl, isJunkPath, addressFromTitle, looksLikeFileName, rowSubjectIndex, adapter };
+  return { SELECTORS, HOSTS, isOutlookHost, itemIdFromUrl, isJunkPath, addressFromTitle, looksLikeFileName, rowSubjectIndex, rawFromAddress, adapter };
 });

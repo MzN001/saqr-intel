@@ -46,11 +46,32 @@ $("learn-spam").addEventListener("change", async (e) => {
   if (res) showMsg("model-msg", res.learnSpam ? "Spam-folder learning is on · تم التفعيل" : "Spam-folder learning is off · تم الإيقاف");
 });
 
+// Same limits as background.js LLM_LIMITS and the server (saqr/intel/user_llm.py): say so, never cut silently.
+const LLM_LIMITS = { baseUrl: 300, model: 100, key: 512 };
+
+function llmTooLong(llm) {
+  if (llm.base_url.length > LLM_LIMITS.baseUrl) {
+    return `The AI address is too long (at most ${LLM_LIMITS.baseUrl} characters) · عنوان الخدمة طويل جداً (الحد الأقصى ${LLM_LIMITS.baseUrl} حرفاً)`;
+  }
+  if (llm.model.length > LLM_LIMITS.model) {
+    return `The model name is too long (at most ${LLM_LIMITS.model} characters) · اسم النموذج طويل جداً (الحد الأقصى ${LLM_LIMITS.model} حرفاً)`;
+  }
+  if (llm.api_key.length > LLM_LIMITS.key) {
+    return `The API key is too long (at most ${LLM_LIMITS.key} characters). Check that you pasted only the key · مفتاح الخدمة طويل جداً (الحد الأقصى ${LLM_LIMITS.key} حرفاً)`;
+  }
+  return null;
+}
+
 $("llm-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const llm = { base_url: $("llm-base").value.trim(), api_key: $("llm-key").value.trim(), model: $("llm-model").value.trim() };
   if (!llm.base_url || !llm.model) {
     showMsg("llm-msg", "Enter the AI address and the model name · أدخل العنوان واسم النموذج", false);
+    return;
+  }
+  const tooLong = llmTooLong(llm);
+  if (tooLong) {
+    showMsg("llm-msg", tooLong, false);
     return;
   }
   const res = await call({ type: "saveEmailSettings", llm }, "llm-msg");

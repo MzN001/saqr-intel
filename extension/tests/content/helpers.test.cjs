@@ -157,6 +157,12 @@ test("Outlook live DOM (2026-11): row subject leaf, FROM heading text", () => {
   assert.equal(Ol.addressFromTitle("", "kenan 1099"), null);
   assert.equal(Ol.SELECTORS.rows[0].includes("[role=main]"), false); // the list is NOT inside [role=main]
   assert.equal(Ol.SELECTORS.body.some((s) => s.includes("allowTextSelection")), false); // matched the subject
+  // "View message source" dialog text (CRLF, folded From header) -> sender address used to match the open message.
+  const src = "Received: from x by y\r\nFrom: =?utf-8?B?a2VuYW4=?=\r\n <Me@Outlook.com>\r\nSubject: hi\r\n\r\nFrom: body@evil.test\r\n";
+  assert.equal(Ol.rawFromAddress(src), "me@outlook.com");
+  assert.equal(Ol.rawFromAddress("From: plain@x.test\nSubject: a\n\nbody"), "plain@x.test");
+  assert.equal(Ol.rawFromAddress("Subject: none\n\nFrom: body@x.test"), "");
+  assert.ok(U.looksLikeRawEmail(src));
 });
 
 // ------------------------------------------------------------------------------------- language/theme

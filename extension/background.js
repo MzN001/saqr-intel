@@ -950,11 +950,28 @@ async function publicEmailSettings() {
   };
 }
 
+// The server's limits (saqr/intel/user_llm.py MAX_BASE_URL / MAX_MODEL / MAX_KEY, _MODEL_RE, _KEY_RE). A longer
+// value is refused with a clear message, never silently cut: a cut key would only fail later, confusingly.
+const LLM_LIMITS = Object.freeze({ baseUrl: 300, model: 100, key: 512 });
+const LLM_MODEL_RE = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,99}$/;
+const LLM_KEY_RE = /^[\x21-\x7e]+$/;
+
+function llmText(v, name) {
+  if (v == null) return "";
+  if (typeof v !== "string") bad(name + " must be text");
+  return v.trim();
+}
+
 function validateLlm(llm, previous) {
   const o = plainObject(llm, "llm");
-  const baseRaw = clip(o.base_url, 300, "AI address").trim();
-  const model = clip(o.model, 120, "model name").trim();
-  const key = clip(o.api_key, 500, "API key").trim();
+  const baseRaw = llmText(o.base_url, "AI address");
+  const model = llmText(o.model, "model name");
+  const key = llmText(o.api_key, "API key");
+  if (baseRaw.length > LLM_LIMITS.baseUrl) bad(`The AI address is too long (at most ${LLM_LIMITS.baseUrl} characters).`);
+  if (model.length > LLM_LIMITS.model) bad(`The model name is too long (at most ${LLM_LIMITS.model} characters).`);
+  if (key.length > LLM_LIMITS.key) {
+    bad(`The API key is too long (at most ${LLM_LIMITS.key} characters). Check that you pasted only the key.`);
+  }
   let base;
   try {
     base = new URL(baseRaw);
@@ -963,8 +980,9 @@ function validateLlm(llm, previous) {
   }
   if (base.protocol !== "https:") bad("The AI address must start with https:// so your key stays encrypted.");
   if (base.username || base.password) bad("Do not put a password inside the AI address.");
-  if (!/^[\w.:/@+-]{1,120}$/.test(model)) bad("Enter the model name, for example gpt-4o-mini");
+  if (!LLM_MODEL_RE.test(model)) bad("Enter the model name, for example gpt-4o-mini (letters, digits and . _ : / @ + - only)");
   if (key && /\s/.test(key)) bad("The API key must not contain spaces.");
+  if (key && !LLM_KEY_RE.test(key)) bad("The API key may only contain plain letters, digits and symbols.");
   const baseUrl = (base.origin + base.pathname).replace(/\/+$/, "");
   // Keep the saved key when the user only changed the model (the key box is left empty on purpose).
   const keepOld = !key && previous?.api_key && o.keep_key !== false && new URL(previous.base_url).host === base.host;

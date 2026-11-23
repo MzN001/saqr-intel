@@ -285,6 +285,28 @@ test("own-AI settings: https only, key never returned, key kept when left empty"
   assert.equal((await send(bg, { type: "saveEmailSettings", autoScan: "yes" }, SENDERS.options)).ok, false);
 });
 
+test("own-AI settings: the server's length limits are enforced with a message, never cut silently", async () => {
+  const bg = loadBackground(backendStub());
+  const save = (llm) => send(bg, { type: "saveEmailSettings", llm: { base_url: "https://llm.example.com/v1", ...llm } }, SENDERS.options);
+  const key512 = "k".repeat(512);
+  const ok = await save({ model: "m".repeat(100), api_key: key512 });
+  assert.equal(ok.ok, true);
+  assert.equal(bg.chrome.storage.local.data.userLlm.api_key, key512); // stored whole
+  assert.equal(bg.chrome.storage.local.data.userLlm.model.length, 100);
+  const longKey = await save({ model: "gpt-4o-mini", api_key: "k".repeat(513) });
+  assert.equal(longKey.ok, false);
+  assert.match(longKey.error, /API key is too long \(at most 512/);
+  assert.equal(bg.chrome.storage.local.data.userLlm.api_key, key512); // the saved key was not replaced by a cut one
+  const longModel = await save({ model: "m".repeat(101), api_key: "k" });
+  assert.equal(longModel.ok, false);
+  assert.match(longModel.error, /model name is too long \(at most 100/);
+  const longUrl = await send(bg, { type: "saveEmailSettings", llm: { base_url: "https://llm.example.com/" + "a".repeat(300), model: "m", api_key: "k" } }, SENDERS.options);
+  assert.equal(longUrl.ok, false);
+  assert.match(longUrl.error, /AI address is too long/);
+  assert.equal((await save({ model: "gpt 4o", api_key: "k" })).ok, false);
+  assert.equal((await save({ model: "gpt-4o", api_key: "k\u00e9y" })).ok, false);
+});
+
 test("campaign feed is cached and refreshed with If-None-Match", { skip: !FEED && "contract feed missing" }, async () => {
   const seen = [];
   const bg = loadBackground(

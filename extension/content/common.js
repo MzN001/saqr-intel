@@ -118,6 +118,10 @@
     safeHint: ["Still be careful with links and never share codes (OTP) or card details.", "ومع ذلك كن حذراً مع الروابط ولا تشارك رموز التحقق أو بيانات البطاقة أبداً."],
     score: ["Risk {0}/100", "الخطورة {0}/100"],
     headersNotVerified: ["Sender not verified (headers not available)", "لم يتم التحقق من المرسل (الترويسات غير متاحة)"],
+    sourceHint: [
+      "To check the sender too: open this email's menu → View → View message source. SAQR reads it automatically. Or paste that source into the SAQR web app (Email tab).",
+      "للتحقق من المرسل أيضاً: افتح قائمة هذه الرسالة ← عرض ← عرض مصدر الرسالة، وسيقرؤه صقر تلقائياً. أو الصق المصدر في تطبيق صقر على الويب (تبويب البريد).",
+    ],
     campaign: ["Matches a known scam campaign: {0}", "تطابق حملة احتيال معروفة: {0}"],
     lookalike: ["Look-alike or hidden letters:", "أحرف مشابهة أو مخفية:"],
     linksGuarded: ["Links in this email are locked. SAQR will ask before opening them.", "الروابط في هذه الرسالة مقفلة. سيسألك صقر قبل فتحها."],
@@ -793,6 +797,8 @@
       banners: new Map(), // message_key -> host element
       guarded: new WeakSet(),
       dismissed: new Set(),
+      pageRaw: new Map(), // message_key -> original source the user opened on the page (Outlook "View message source")
+      lastPageRaw: null,
     };
 
     const lang = () => pickLang(document.documentElement.getAttribute("lang"), navigator.languages || [navigator.language]);
@@ -883,6 +889,7 @@
           }
           if (!raw) logHealth("raw original not available, using page text");
         }
+        if (!raw && state.pageRaw.has(key)) ({ raw, truncated } = capRaw(state.pageRaw.get(key)));
         const msg = { type: "emailScan", provider: adapter.provider, message_key: key, meta: Object.assign({}, item.meta, { provider: adapter.provider, message_key: key }) };
         if (raw) msg.raw = raw;
         if (truncated) msg.truncated = true;
@@ -908,6 +915,8 @@
       try {
         const anchor = row.badgeAnchor;
         if (!anchor || !anchor.parent) return;
+        // The anchor can move (e.g. subject not found for a moment): never leave a second badge behind.
+        if (row.el && row.el.querySelectorAll) for (const old of row.el.querySelectorAll(".saqr-row-badge")) if (old.parentNode !== anchor.parent) old.remove();
         let badge = anchor.parent.querySelector(":scope > .saqr-row-badge");
         const rec = state.results.get(key);
         const loc = state.rowLocal.get(key);
@@ -1054,6 +1063,7 @@
           chips.appendChild(el("span", { cls: "chip", text: t("headersNotVerified", L) }));
         }
         wrap.appendChild(chips);
+        if (!(r.hasHeaders && checked) && adapter.rawFromPage) wrap.appendChild(el("div", { cls: "note", text: t("sourceHint", L) }));
       }
 
       if (tone === "dangerous" && msg.body) wrap.appendChild(el("div", { cls: "note", text: t("linksGuarded", L) }));
@@ -1101,8 +1111,7 @@
       state.labelled.add(key);
       if (!status) return resp;
       const L = lang();
-      status.textContent = resp && resp.ok ? (resp.labels != null ? t("thanks", L, resp.labels) : t("thanksShort", L)) : t("labelFail", L);
-      status.classList.remove("hidden");
+      status.textContent = resp && resp.ok ? (resp.labels != null ? t("thanks", L, resp.labels) : t("thanksShort", L)) : t("labelFail", L);      status.classList.remove("hidden");
       return resp;
     }
 
@@ -1406,6 +1415,20 @@
           if (key && (state.rowLocal.has(key) || state.results.has(key))) paintBadge(row, key);
         }
         checkRowsLocally(rows);
+
+        // Outlook: the user opened "View message source" -> rescan that message with real headers.
+        const pr = adapter.rawFromPage ? safe(() => adapter.rawFromPage(), null) : null;
+        if (pr && pr.raw && pr.raw !== state.lastPageRaw && looksLikeRawEmail(pr.raw)) {
+          const same = (m) => !pr.from || !m.meta.from_address || m.meta.from_address.toLowerCase() === pr.from;
+          const target = msgs.length === 1 ? (same(msgs[0]) ? msgs[0] : null) : msgs.find((m) => pr.from && m.meta.from_address && same(m)) || null;
+          if (target) {
+            state.lastPageRaw = pr.raw;
+            const k = target.key || (target.key = await keyFor(target.id, target.meta));
+            state.pageRaw.set(k, pr.raw);
+            if (state.pageRaw.size > 20) state.pageRaw.delete(state.pageRaw.keys().next().value);
+            scanOpen(target, { force: true });
+          }
+        }
 
         // Opened messages: banner + automatic scan (at most the last 3 expanded ones in a thread).
         for (const m of msgs.slice(-3)) {
