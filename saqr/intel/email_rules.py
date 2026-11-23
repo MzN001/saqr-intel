@@ -181,6 +181,8 @@ def host_of(url: str) -> str:
         return ""
     if not h:
         return ""
+    if "%" in h and not re.search(r"[/@?#\\\s%:]", unquote(h)):
+        h = unquote(h)  # browsers decode a percent-encoded host: "p%D0%B0ypal.com" opens xn--pypal-4ve.com
     try:
         return h.encode("idna").decode("ascii")
     except UnicodeError:

@@ -397,3 +397,9 @@ def test_regression_plain_text_punycode_in_body_is_high_risk_once():
     rr = run(mail(body=body), findings=scan_text(body, "body"))
     assert "DISPLAY_NAME_CONFUSABLE" in codes(rr) and "PUNYCODE_DOMAIN" not in codes(rr), codes(rr)
     assert rr.verdict == "HIGH-RISK SCAM"
+
+
+def test_regression_percent_encoded_link_host():
+    assert R.host_of("https://p%D0%B0ypal.com/signin") == "xn--pypal-4ve.com"
+    assert R.host_of("https://example.com/%D0%B0") == "example.com"
+    assert R.host_of("https://a%2Fb.example/") == "a%2fb.example"

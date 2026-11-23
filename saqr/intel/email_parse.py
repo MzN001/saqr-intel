@@ -226,15 +226,20 @@ def links_from_html(html: str) -> list[Link]:
     return out
 
 
+# pipeline.URL_IN_TEXT plus left-boundary look-behinds: the same links, in linear time. Without them a long
+# run of letters with no dot (a 100 kB "xxxx..." body) took 77 s of CPU and froze the one-worker server.
+_URL_SCAN = re.compile(r"(?:hxxps?|https?)://\S+|(?<![a-z0-9-])(?<![a-z0-9-]\.)(?<![a-z0-9-]\[\.\])"
+                       r"(?:[a-z0-9-]+(?:\.|\[\.\]))+[a-z]{2,24}(?:/\S*)?", re.I)
+
+
 def links_from_text(text: str) -> list[Link]:
     """URLs and bare domains in plain text (refanged), reusing the pipeline's URL pattern."""
     if not text:
         return []
-    from ..pipeline import URL_IN_TEXT
     from .domain_intel import _EXTRACT, refang
 
     out: list[Link] = []
-    for m in URL_IN_TEXT.finditer(text):
+    for m in _URL_SCAN.finditer(text):
         raw = re.split(r"[<>\"]", m.group(0))[0].rstrip(_TRAILING_PUNCT)
         if not raw:
             continue
@@ -890,6 +895,11 @@ def parse(*, source: str, text: Optional[str] = None, file_bytes: Optional[bytes
         head = file_bytes[:65536].decode("utf-8", "replace").lstrip("﻿")
         if _looks_like_headers(head):
             parsed = _parse_rfc822(file_bytes, source=source, byte_exact=True, notes=notes)
+        elif b"\x00" in file_bytes[:65536] or head.count("\ufffd") > len(head) // 20:
+            # A picture / PDF / zip renamed to .eml: its random bytes must not be scanned as text (they
+            # contain stray Cyrillic/Greek letters and came back as a HIGH-RISK look-alike scam).
+            raise ValueError("This file is not an email. Choose an .eml or .msg file. / "
+                             "هذا الملف ليس رسالة بريد إلكتروني. اختر ملف ‎.eml‎ أو ‎.msg‎.")
         else:
             notes.append("The file has no email header block; it was read as plain text.")
             parsed = _from_visible_text(file_bytes.decode("utf-8", "replace"), source=source, notes=notes)

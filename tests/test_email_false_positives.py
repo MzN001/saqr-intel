@@ -201,3 +201,25 @@ def test_pasted_official_text_without_headers_is_not_unauthenticated(client):
                                             "Thank you. Your request 4821 is being processed.")
     assert res["verdict"] == "SAFE"
     assert "HEADERS_NOT_AVAILABLE" in codes(res, False) and "OFFICIAL_SENDER_UNAUTHENTICATED" not in codes(res, False)
+
+
+# -- regressions from the end-to-end adversarial run (2026-11-23) -----------------------------------
+@pytest.mark.parametrize("body", [
+    "Здравствуйте! Bсе хорошо, "
+    "купила iPhone. Сайт: https://рост.рф/",
+    "Merhaba, kayıt için teşekkürler. Iğdır'dan selamlar. İstanbul.",
+    "Family \U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f 1️⃣ ❤️",
+])
+def test_regression_international_mail_not_high_risk(client, body):
+    res = scan(client, source="text", text="From: Friend <friend@example.org>\nSubject: hi\n\n" + body)
+    assert res["verdict"] != "HIGH-RISK SCAM", (res["risk_score"], codes(res))
+    assert not codes(res) & {"IDN_MIXED_SCRIPT", "DISPLAY_NAME_CONFUSABLE", "INVISIBLE_IN_TOKEN"}, codes(res)
+
+
+def test_regression_cyrillic_idn_flag_text_shows_real_name(client):
+    """A single-script IDN is only PUNYCODE_DOMAIN (SUSPICIOUS by design) and the citizen sees the real
+    name (пример.рф), not a half-Latin skeleton."""
+    res = scan(client, source="text", text="From: News <news@example.org>\n\nСайт: https://пример.рф/")
+    assert codes(res) == {"PUNYCODE_DOMAIN"} and res["risk_score"] == 40
+    flag = next(f for f in res["red_flags"] if f["code"] == "PUNYCODE_DOMAIN")
+    assert "пример.рф" in flag["en"] and "пример.рф" in flag["ar"]

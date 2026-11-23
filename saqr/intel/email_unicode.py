@@ -26,6 +26,7 @@ import re
 import unicodedata
 from functools import lru_cache
 from typing import Any
+from urllib.parse import unquote
 
 from .domain_intel import CONFUSABLES, skeleton as _domain_skeleton, to_unicode_host
 
@@ -46,6 +47,18 @@ BIDI_RE = re.compile("[‪-‮⁦-⁩]")
 # A "word": letters, digits, combining marks and the invisible characters hidden inside them.
 TOKEN_RE = re.compile("[\\ẁ-ͯ­͏​-‍⁠﻿]+")
 URL_SPAN = re.compile(r"(?:https?://|www\.)[^\s<>\"']+", re.I)
+# Other characters that render as nothing (invisible operators, Mongolian vowel separator, Hangul
+# fillers, variation selectors, tag characters). Not in the contract's norm() set (the JS twins keep
+# that one): handled here only, like INVISIBLE (inside a Latin word or anywhere in an address / URL).
+HIDDEN_EXTRA = frozenset("\u2061\u2062\u2063\u2064\u180e\u3164\u115f\u1160\uffa0"
+                         + "".join(map(chr, range(0xFE00, 0xFE10))) + "".join(map(chr, range(0xE0000, 0xE0080))))
+HIDDEN = INVISIBLE | HIDDEN_EXTRA
+_HIDDEN_EXTRA_RE = re.compile("[" + "".join(sorted(HIDDEN_EXTRA)) + "]")
+# In free text LRM / RLM between two Latin letters is a trick too ("Pay<LRM>Pal"); next to Arabic
+# letters, spaces or punctuation it is normal (_invisible_hits checks both neighbours).
+HIDDEN_RUN = re.compile("[" + "".join(sorted(HIDDEN | {"\u200e", "\u200f"})) + "]+")
+# Punycode domain written as plain text ("go to xn--pypal-4ve.com"): mail apps make it a link.
+HOST_IN_TEXT = re.compile(r"(?<![\w@./-])(?:[a-z0-9-]{1,63}\.)+[a-z0-9-]{2,63}(?![\w-])", re.I)
 
 # Letters of other alphabets that look like Latin letters (Unicode TR39 confusables most used in
 # phishing; upper and lower case), mapped to the Latin letter a person sees. Extends
@@ -64,9 +77,29 @@ LOOKALIKE: dict[str, str] = {
     # Cherokee capitals
     "Ꭺ": "a", "Ᏼ": "b", "Ꮯ": "c", "Ꭰ": "d", "Ꭼ": "e", "Ꮐ": "g", "Ꮋ": "h", "Ꭻ": "j", "Ꮶ": "k", "Ꮮ": "l",
     "Ꮇ": "m", "Ꮲ": "p", "Ꮪ": "s", "Ꭲ": "t", "Ꮩ": "v", "Ꮃ": "w", "Ꮓ": "z",
+    # Cherokee small letters (what lower() turns the capitals into, e.g. in a domain name)
+    **{ch.lower(): v for ch, v in {"Ꭺ": "a", "Ᏼ": "b", "Ꮯ": "c", "Ꭰ": "d", "Ꭼ": "e", "Ꮐ": "g", "Ꮋ": "h", "Ꭻ": "j",
+                                   "Ꮶ": "k", "Ꮮ": "l", "Ꮇ": "m", "Ꮲ": "p", "Ꮪ": "s", "Ꭲ": "t", "Ꮩ": "v",
+                                   "Ꮃ": "w", "Ꮓ": "z"}.items() if ch.lower() != ch},
+    # Lisu (TR39 confusables)
+    "\ua4ee": "a", "\ua4d0": "b", "\ua4da": "c", "\ua4d3": "d", "\ua4f0": "e", "\ua4dd": "f", "\ua4d6": "g",
+    "\ua4e7": "h", "\ua4f2": "i", "\ua4d9": "j", "\ua4d7": "k", "\ua4e1": "l", "\ua4df": "m", "\ua4e0": "n",
+    "\ua4f3": "o", "\ua4d1": "p", "\ua4e3": "r", "\ua4e2": "s", "\ua4d4": "t", "\ua4f4": "u", "\ua4e6": "v",
+    "\ua4ea": "w", "\ua4eb": "x", "\ua4ec": "y", "\ua4dc": "z",
+    # Latin letters that look like other Latin letters (no accent to notice)
+    "\u0251": "a", "\u0237": "j", "\u0269": "i",
 }
+# Latin-only look-alikes: reported only when the word / domain label then spells a brand (Turkish
+# "kay\u0131t" or "\u0131l\u0131k" are ordinary words).
+LATIN_LOOKALIKE = frozenset("\u0251\u0261\u0131\u0237\u0269\u2113")
+# Small capitals ("\u1d18\u1d00\u028f\u1d18\u1d00\u029f") are styled letters like math bold: "fancy", and read as Latin.
+SMALL_CAPS = {"\u1d00": "a", "\u0299": "b", "\u1d04": "c", "\u1d05": "d", "\u1d07": "e", "\ua730": "f",
+              "\u0262": "g", "\u029c": "h", "\u026a": "i", "\u1d0a": "j", "\u1d0b": "k", "\u029f": "l",
+              "\u1d0d": "m", "\u0274": "n", "\u1d0f": "o", "\u1d18": "p", "\u0280": "r", "\ua731": "s",
+              "\u1d1b": "t", "\u1d1c": "u", "\u1d20": "v", "\u1d21": "w", "\u028f": "y", "\u1d22": "z"}
+LOOKALIKE.update(SMALL_CAPS)
 # Scripts whose letters are used to fake Latin text.
-CONFUSABLE_SCRIPTS = frozenset({"Cyrillic", "Greek", "Armenian", "Cherokee", "Coptic"})
+CONFUSABLE_SCRIPTS = frozenset({"Cyrillic", "Greek", "Armenian", "Cherokee", "Coptic", "Lisu"})
 # Chinese / Japanese / Korean scripts are mixed with each other (and with Latin) in normal names.
 CJK_WORDS = frozenset({"CJK", "HIRAGANA", "KATAKANA", "HANGUL", "BOPOMOFO", "IDEOGRAPHIC"})
 # Styled "fancy" letters that normalise to plain Latin letters (math bold, full-width, circled ...).
@@ -111,6 +144,8 @@ def is_fancy(ch: str) -> bool:
     """A styled letter/digit (math bold, full-width, circled ...) that normalises to plain ASCII."""
     if ch.isascii():
         return False
+    if ch in SMALL_CAPS:
+        return True
     norm = unicodedata.normalize("NFKC", ch)
     if not (norm.isascii() and norm.isalnum()):
         return False
@@ -131,9 +166,14 @@ def escape(s: str, limit: int = MAX_SAMPLE) -> str:
     return "".join(out) + ("..." if len(s) > limit else "")
 
 
+def unescape(sample: str) -> str:
+    """Reverse of escape() (for showing a finding's text to a person)."""
+    return re.sub(r"\\u([0-9a-f]{4})|\\U([0-9a-f]{8})", lambda m: chr(int(m.group(1) or m.group(2), 16)), sample)
+
+
 def strip_invisible(s: str) -> str:
     """Remove invisible and bidi control characters (and LRM/RLM)."""
-    return STRIP_RE.sub("", s or "")
+    return _HIDDEN_EXTRA_RE.sub("", STRIP_RE.sub("", s or ""))
 
 
 def deconfuse(text: str) -> str:
@@ -212,7 +252,12 @@ def _brand_words() -> frozenset[str]:
 # ---------------------------------------------------------------------------
 # Per-token checks (shared by text and addresses)
 # ---------------------------------------------------------------------------
-def _token_confusable(token: str) -> str | None:
+def _spells_brand(word: str) -> bool:
+    """Does the word (or one of its hyphen parts) read as a brand name / keyword?"""
+    return any(re.sub(r"[^a-z0-9]", "", text_skeleton(p)) in _brand_words() for p in (word, *word.split("-")) if p)
+
+
+def _token_confusable(token: str, in_text: bool = False) -> str | None:
     """'mixed_script' for a Latin-looking word containing Cyrillic/Greek/... look-alike letters,
     'whole_script_confusable' for a word written fully in look-alikes that spells a brand."""
     clean = strip_invisible(token)
@@ -221,13 +266,23 @@ def _token_confusable(token: str) -> str | None:
         return None
     scripts = {script_of(ch) for ch in letters} - {None}
     others = scripts - {"Latin"}
-    if not others or not (others & CONFUSABLE_SCRIPTS):
+    if not others:
+        # "P\u0251yPal" (Latin alpha), "L\u0131nkedIn" (dotless i): Latin letters only, but chosen to look like a brand
+        if any(ch in LATIN_LOOKALIKE for ch in letters) and _spells_brand(clean):
+            return "whole_script_confusable"
+        return None
+    if not (others & CONFUSABLE_SCRIPTS):
         return None
     # Every letter must still read as Latin: a Russian word with one Latin letter, or "αβc",
     # is not a disguised Latin word; "PаyPal" is.
     if not all(_maps_to_latin(ch) for ch in letters):
         return None
     if "Latin" in scripts:
+        # In free text a mostly-Cyrillic word with one Latin letter is a keyboard-layout slip
+        # (Russian "B\u0441\u0435"), not a disguised Latin word - unless it spells a brand.
+        latin = sum(1 for ch in letters if script_of(ch) == "Latin")
+        if in_text and latin * 2 < len(letters) and not _spells_brand(clean):
+            return None
         return "mixed_script"
     skel = re.sub(r"[^a-z0-9]", "", text_skeleton(clean))
     return "whole_script_confusable" if skel in _brand_words() else None
@@ -238,6 +293,15 @@ def _word_around(text: str, start: int, end: int) -> str:
     for m in TOKEN_RE.finditer(text, max(0, start - 64), min(len(text), end + 64)):
         if m.start() <= start and m.end() >= end:
             return m.group(0)
+    # a hidden character TOKEN_RE does not cover (HIDDEN_EXTRA, LRM/RLM): grow the word around it
+    inside = HIDDEN | {"\u200e", "\u200f"}
+    a, b = start, end
+    while a > max(0, start - 64) and (text[a - 1].isalnum() or text[a - 1] in inside):
+        a -= 1
+    while b < min(len(text), end + 64) and (text[b].isalnum() or text[b] in inside):
+        b += 1
+    if a < start or b > end:
+        return text[a:b]
     return text[max(0, start - 20):end + 20]
 
 
@@ -247,7 +311,7 @@ def _invisible_hits(text: str) -> list[tuple[int, int]]:
     emoji are normal. A soft hyphen between Latin letters is normal hyphenation unless the joined
     word is a brand name."""
     hits = []
-    for m in INVISIBLE_RUN.finditer(text):
+    for m in HIDDEN_RUN.finditer(text):
         prev = text[m.start() - 1] if m.start() > 0 else None
         nxt = text[m.end()] if m.end() < len(text) else None
         if not (_latinish(prev) and _latinish(nxt)):
@@ -295,7 +359,7 @@ def scan_text(text: str | None, where: str) -> list[dict[str, Any]]:
         tok = m.group(0)
         if tok.isascii():
             continue
-        kind = _token_confusable(tok)
+        kind = _token_confusable(tok, in_text=True)
         if kind:
             out.append(_finding(where, kind, strip_invisible(tok), text_skeleton(tok)))
             if len(out) >= MAX_FINDINGS:
@@ -309,10 +373,18 @@ def scan_text(text: str | None, where: str) -> list[dict[str, Any]]:
     # 3. Invisible / bidi characters inside URLs written in the text
     for m in URL_SPAN.finditer(text):
         url = m.group(0).rstrip(".,;:!?)")
-        if any(ch in INVISIBLE for ch in url):
+        if any(ch in HIDDEN for ch in url):
             out.append(_finding(where, "invisible", url, strip_invisible(url).lower()))
         if any(ch in BIDI for ch in url):
             out.append(_finding(where, "bidi", url, strip_invisible(url).lower()))
+        if "xn--" in url.lower():  # e.g. visible link text "https://xn--pypal-4ve.com" over another href
+            out += [f for f in scan_url(url, where) if f["kind"] not in ("invisible", "bidi")]
+
+    # 3b. Punycode domains written as plain text (mail apps turn "xn--pypal-4ve.com" into a link)
+    if "xn--" in text.lower():
+        hosts = {m.group(0).lower() for m in HOST_IN_TEXT.finditer(text) if "xn--" in m.group(0).lower()}
+        for host in sorted(hosts)[:20]:
+            out += scan_domain(host, where)
 
     # 4. Bidi controls
     for m in BIDI_RE.finditer(text):
@@ -357,7 +429,7 @@ def scan_domain(host: str | None, where: str) -> list[dict[str, Any]]:
         h = h.rsplit("@", 1)[1]
     h = h[:253]
     out: list[dict[str, Any]] = []
-    if any(ch in INVISIBLE for ch in h):
+    if any(ch in HIDDEN for ch in h):
         out.append(_finding(where, "invisible", h, strip_invisible(h).lower()))
     if any(ch in BIDI for ch in h):
         out.append(_finding(where, "bidi", h, strip_invisible(h).lower()))
@@ -366,14 +438,23 @@ def scan_domain(host: str | None, where: str) -> list[dict[str, Any]]:
     if "xn--" not in h and uhost.isascii():
         return out
     skel = host_skeleton(uhost)
-    for label in uhost.split("."):
+    labels = uhost.split(".")
+    tld_scripts = {script_of(ch) for ch in _letters(labels[-1])} - {None}
+    for label in labels:
         letters = _letters(label)
         scripts = {script_of(ch) for ch in letters} - {None}
         if len(scripts) > 1 and not scripts <= {"Cjk", "Latin"}:
             out.append(_finding(where, "mixed_script", uhost, skel))
             break
-        if (len(letters) >= 2 and scripts and scripts != {"Latin"}
-                and all(ch in LOOKALIKE for ch in letters)):
+        if scripts == {"Latin"}:
+            # "p\u0251ypal.com", full-width / math-bold "paypal": no real domain is written like that
+            hit = any(ch in LATIN_LOOKALIKE or is_fancy(ch) for ch in letters) and _spells_brand(label)
+        else:
+            # A label written fully in look-alikes ("\u0430\u0440\u0440\u04cf\u0435.com"). Under a TLD of the same
+            # script it is an ordinary local name ("\u0440\u0443\u0441.\u0440\u0444", as browsers show it) unless it spells a brand.
+            hit = (len(letters) >= 2 and bool(scripts) and all(ch in LOOKALIKE for ch in letters)
+                   and (scripts != tld_scripts or _spells_brand(label)))
+        if hit:
             out.append(_finding(where, "whole_script_confusable", uhost, skel))
             break
     out.append(_finding(where, "punycode", uhost, skel))
@@ -392,7 +473,7 @@ def scan_address(address: str | None, where: str) -> list[dict[str, Any]]:
         local, domain = a, ""
     out: list[dict[str, Any]] = []
     if local:
-        if any(ch in INVISIBLE for ch in local):
+        if any(ch in HIDDEN for ch in local):
             out.append(_finding(where, "invisible", local, strip_invisible(local).lower()))
         if any(ch in BIDI for ch in local):
             out.append(_finding(where, "bidi", local, strip_invisible(local).lower()))
@@ -412,7 +493,7 @@ def scan_url(url: str | None, where: str = "link") -> list[dict[str, Any]]:
     if not u:
         return []
     out: list[dict[str, Any]] = []
-    if any(ch in INVISIBLE for ch in u):
+    if any(ch in HIDDEN for ch in u):
         out.append(_finding(where, "invisible", u, strip_invisible(u).lower()))
     if any(ch in BIDI for ch in u):
         out.append(_finding(where, "bidi", u, strip_invisible(u).lower()))
@@ -420,5 +501,9 @@ def scan_url(url: str | None, where: str = "link") -> list[dict[str, Any]]:
     m = re.match(r"^(?:[a-z][a-z0-9+.-]*:)?//([^/?#\s]+)", clean, re.I)
     netloc = m.group(1) if m else clean.split("/", 1)[0]
     host = re.sub(r":\d+$", "", netloc.rsplit("@", 1)[-1])
+    if "%" in host:
+        decoded = unquote(host)
+        if not re.search(r"[/@?#\\\s%]", decoded):
+            host = decoded
     out += scan_domain(host, where)
     return _dedupe(out)

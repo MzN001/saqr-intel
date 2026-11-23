@@ -148,3 +148,82 @@ def test_helpers():
 def test_findings_are_capped():
     text = " ".join(f"PаyPal{i}" for i in range(500))
     assert len(scan_text(text, "body")) <= 40
+
+
+# -- regressions from the end-to-end adversarial run (2026-11-23) -----------------------------------
+@pytest.mark.parametrize("hidden", ["⁢", "᠎", "ㅤ", "\U000e0041", "️", "‎"])
+def test_other_invisible_characters_inside_a_word(hidden):
+    # invisible operators, Mongolian vowel separator, Hangul filler, tag characters, variation
+    # selectors and LRM between two Latin letters hide a brand from filters just like U+200B
+    f = scan_text(f"Your Pay{hidden}Pal account is limited", "body")
+    assert kinds(f) == {"invisible"} and f[0]["skeleton"] == "paypal", f
+    if hidden != "\u200e":  # LRM next to an address is normal copy-paste from right-to-left mail
+        assert kinds(scan_address(f"service@pay{hidden}pal.com", "from.address")) >= {"invisible"}
+        assert "invisible" in kinds(scan_url(f"https://pay{hidden}pal.com/login"))
+
+
+@pytest.mark.parametrize("word,skel", [("PɑyPal", "paypal"), ("LınkedIn", "linkedin"),
+                                       ("Netflıx", "netflix")])
+def test_latin_only_lookalike_letters_spelling_a_brand(word, skel):
+    f = scan_text(f"Your {word} account", "body")
+    assert [(x["kind"], x["skeleton"]) for x in f] == [("whole_script_confusable", skel)]
+
+
+def test_latin_only_lookalike_domain_spelling_a_brand():
+    assert kinds(scan_domain("pɑypal.com", "link")) == {"whole_script_confusable", "punycode"}
+    assert kinds(scan_domain("pɑypal-secure.net", "link")) == {"whole_script_confusable", "punycode"}
+    assert kinds(scan_domain("kayıt.com.tr", "link")) == {"punycode"}  # Turkish word, not a brand
+
+
+def test_lisu_and_small_cherokee_lookalikes():
+    assert kinds(scan_text("ꓑayPal Billing", "display_name")) == {"mixed_script"}
+    assert "mixed_script" in kinds(scan_domain("ꮒaypal.com", "from.domain"))
+
+
+def test_percent_encoded_link_host_is_decoded():
+    f = scan_url("https://p%D0%B0ypal.com/signin")
+    assert kinds(f) == {"mixed_script", "punycode"} and f[0]["skeleton"] == "paypal.com"
+    assert scan_url("https://example.com/%D0%B0") == []
+
+
+def test_plain_text_punycode_domain_in_body():
+    f = scan_text("Go to xn--pypal-4ve.com and log in.", "body")
+    assert ("mixed_script", "paypal.com") in {(x["kind"], x["skeleton"]) for x in f}
+    assert scan_text("see https://example.com/xn--path and 3.14", "body") == []
+
+
+def test_small_capitals_are_fancy():
+    assert kinds(scan_text("Your ᴘᴀʏᴘᴀʟ account", "body")) == {"fancy"}
+    assert deconfuse("ᴘᴀʏᴘᴀʟ") == "paypal"
+
+
+@pytest.mark.parametrize("host", ["рус.рф", "рос.рф",
+                                  "xn--p1acf.xn--p1ai", "ехо.москва"])
+def test_cyrillic_name_under_cyrillic_tld_is_only_punycode(host):
+    # every letter happens to look Latin, but under .рф / .москва it is an ordinary Russian name
+    assert kinds(scan_domain(host, "link")) == {"punycode"}
+
+
+def test_lookalike_spelling_brand_under_cyrillic_tld_still_flagged():
+    assert "whole_script_confusable" in kinds(scan_domain("аррӏе.рф", "link"))
+    assert "whole_script_confusable" in kinds(scan_domain("сосо.com", "link"))
+
+
+@pytest.mark.parametrize("text", [
+    "Bсе хорошо",       # Russian "Все" typed with a Latin B
+    "Kayıt işlemi, ılık su, Iğdır",  # Turkish dotless i
+    "\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f flag, 1️⃣, ❤️",
+    "فاطمة‏ Fatima‎ (ID)",
+])
+def test_regression_ordinary_text_still_clean(text):
+    assert scan_text(text, "body") == [], text
+
+
+def test_fullwidth_or_math_domain_spelling_a_brand():
+    assert "whole_script_confusable" in kinds(scan_domain("ｐａｙｐａｌ.com", "from.domain"))
+    assert "whole_script_confusable" in kinds(scan_domain("\U0001d429\U0001d41a\U0001d432\U0001d429\U0001d41a\U0001d425.com", "link"))
+
+
+def test_punycode_url_written_as_link_text():
+    f = scan_text("https://xn--pypal-4ve.com/signin", "body")
+    assert ("mixed_script", "paypal.com") in {(x["kind"], x["skeleton"]) for x in f}
