@@ -1,3 +1,6 @@
+# NOTE: The site now runs on Render (https://saqr-intel-api.onrender.com). Running this script switches
+# saqr-intel.vercel.app back to a LAPTOP tunnel. Only use it if Render is unavailable.
+#
 # One-click: expose the local backend through a Cloudflare quick tunnel and redeploy the
 # citizen site to Vercel (https://saqr-intel.vercel.app) pointing at it.
 #
