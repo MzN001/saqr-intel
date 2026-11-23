@@ -27,6 +27,12 @@ router = APIRouter(prefix="/api", tags=["Telecom DNS feed"])
 
 HOSTNAME = re.compile(r"^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:xn--[a-z0-9-]{1,59}|[a-z]{2,63})$")
 ZONE = "rpz.saqr-intel.ae"
+# Shared hosting roots: one scam sub-domain (x.vercel.app) is blocked on its own, never the whole platform.
+SHARED_HOSTING_ROOTS = frozenset({
+    "vercel.app", "onrender.com", "trycloudflare.com", "github.io", "netlify.app", "pages.dev",
+    "workers.dev", "herokuapp.com", "web.app", "firebaseapp.com", "azurewebsites.net", "ngrok.io",
+    "ngrok-free.app", "glitch.me", "replit.app", "fly.dev", "railway.app",
+})
 
 
 def _publishable(domain: str | None) -> str | None:
@@ -37,7 +43,7 @@ def _publishable(domain: str | None) -> str | None:
         d = d[4:]
     if not HOSTNAME.match(d) or d.endswith((".localhost", ".local", ".internal")):
         return None
-    if analyze_lexical(d).is_whitelisted:  # never block official / trusted UAE sites
+    if d in SHARED_HOSTING_ROOTS or analyze_lexical(d).is_whitelisted:  # never block official / trusted UAE sites
         return None
     return d
 

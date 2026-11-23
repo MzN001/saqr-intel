@@ -49,7 +49,7 @@ def test_blocklist_json_and_rpz(client):
 
 @pytest.mark.parametrize("domain", [
     "adpolice.gov.ae", "www.tamm.abudhabi", "u.ae", "emirates.com",   # official / trusted
-    "127.0.0.1", "localhost", "printer.local", "bad domain.com", "x.com\nevil CNAME .", None,
+    "vercel.app", "onrender.com", "127.0.0.1", "localhost", "printer.local", "bad domain.com", "x.com\nevil CNAME .", None,
 ])
 def test_never_published(domain):
     assert _publishable(domain) is None
@@ -57,6 +57,7 @@ def test_never_published(domain):
 
 def test_published_domain_normalised():
     assert _publishable("WWW.Tamm-Smart-Pay.NET.") == "tamm-smart-pay.net"
+    assert _publishable("saqr-demo-scam.vercel.app") == "saqr-demo-scam.vercel.app"
 
 
 def test_keepalive_only_on_render(monkeypatch):
