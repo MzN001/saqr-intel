@@ -73,6 +73,19 @@ const REASON_BY_FLAG: Record<string, { en: string; ar: string }> = {
   YOUNG_DOMAIN: { en: "a very new website", ar: "موقع حديث جداً" },
   URGENCY_PRESSURE: { en: "fake deadlines and threats", ar: "مهل وتهديدات مزيفة" },
   SUSPICIOUS_TLD: { en: "an unusual web address", ar: "عنوان موقع غير مألوف" },
+  // Email scans (POST /api/analyze-email)
+  KNOWN_PHISHING_LINK: { en: "it links to a known phishing website", ar: "يحتوي على رابط لموقع تصيّد معروف" },
+  LINK_HIGH_RISK: { en: "it links to a scam website", ar: "يحتوي على رابط لموقع احتيالي" },
+  CAMPAIGN_IOC_MATCH: { en: "it is part of a scam wave spreading now", ar: "جزء من موجة احتيال منتشرة الآن" },
+  IDN_MIXED_SCRIPT: { en: "look-alike letters in the sender's address", ar: "أحرف مشابهة في عنوان المرسل" },
+  DISPLAY_NAME_CONFUSABLE: { en: "look-alike letters hiding a fake brand name", ar: "أحرف مشابهة تخفي اسماً تجارياً مزيفاً" },
+  BIDI_OVERRIDE: { en: "a hidden text-direction trick", ar: "خدعة مخفية في اتجاه النص" },
+  DANGEROUS_ATTACHMENT: { en: "a dangerous attached file", ar: "ملف مرفق خطير" },
+  SENDER_LOOKALIKE: { en: "a fake copy of the official sender address", ar: "نسخة مزيفة من عنوان المرسل الرسمي" },
+  FREEMAIL_BRAND_SENDER: { en: "it comes from a free email account, not the company", ar: "أُرسل من حساب بريد مجاني وليس من الجهة نفسها" },
+  DISPLAY_NAME_BRAND_SPOOF: { en: "a fake sender name", ar: "اسم مرسل مزيف" },
+  LINK_TEXT_MISMATCH: { en: "links that open a different website than shown", ar: "روابط تفتح موقعاً غير الظاهر" },
+  DMARC_FAIL: { en: "the sender's address is forged", ar: "عنوان المرسل مزوّر" },
 };
 const DEFAULT_REASON = { en: "it fails official verification", ar: "لم يجتز التحقق الرسمي" };
 
@@ -89,6 +102,8 @@ export interface WarningInfo {
   flagsAr: string[];
   channel: InterceptionChannel | null;
   detectedAt: Date;
+  /** "email" words the community post as fake emails instead of fake links. */
+  kind?: "url" | "maps" | "email";
 }
 
 function reasonFor(codes: { code: string; points: number }[]) {
@@ -112,12 +127,13 @@ export function warningFromVerdict(r: ScanVerdict): WarningInfo {
     flagsAr: top.map((f) => f.ar),
     channel: r.interception,
     detectedAt: new Date(),
+    kind: r.kind,
   };
 }
 
 export interface LiveBlock {
   id: string;
-  kind: "url" | "maps";
+  kind: "url" | "maps" | "email";
   verdict: string;
   riskScore: number;
   entity: string | null;
@@ -150,20 +166,23 @@ export function warningFromLive(b: LiveBlock, entityAr: string | null): WarningI
     flagsAr: [reason.ar],
     channel: b.channel,
     detectedAt: b.at,
+    kind: b.kind,
   };
 }
 
 export function buildXDraft(w: WarningInfo, lang: Lang): string {
   const masked = w.domain ? defang(w.domain) : null;
   if (lang === "ar") {
-    const who = w.entityAr ? `روابط مزيفة تنتحل صفة ${w.entityAr}` : "روابط مزيفة";
+    const what = w.kind === "email" ? "رسائل بريد مزيفة" : "روابط مزيفة";
+    const who = w.entityAr ? `${what} تنتحل صفة ${w.entityAr}` : what;
     return (
       `⚠️ تحذير احتيال في أبوظبي: احذروا ${who}${masked ? ` (${masked})` : ""}. ` +
       `علامة الخطر: ${w.reasonAr}. تحقّقوا قبل الضغط وأبلغوا أمان 8002626 / رسالة 2828. ` +
       `#أبوظبي #الأمن_السيبراني #Aman8002626`
     );
   }
-  const who = w.entityEn ? `fake ${w.entityEn} links` : "fake links";
+  const noun = w.kind === "email" ? "emails" : "links";
+  const who = w.entityEn ? `fake ${w.entityEn} ${noun}` : `fake ${noun}`;
   return (
     `⚠️ Fraud Alert in Abu Dhabi: Watch out for ${who}${masked ? ` (${masked})` : ""}. ` +
     `Red flag: ${w.reasonEn}. Verify before clicking & report to Aman 8002626 / SMS 2828. ` +

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { MapPinned, MessageSquareWarning, Monitor, Radio, ScanSearch, Share2, ShieldBan, TriangleAlert, Wifi } from "lucide-react";
+import { Mail, MapPinned, MessageSquareWarning, Monitor, Radio, ScanSearch, Share2, ShieldBan, TriangleAlert, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 import { API_BASE_URL, getWsUrl, type InterceptionChannel, type VerdictLabel } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
@@ -27,23 +27,27 @@ const CHANNEL_ICON: Record<InterceptionChannel, typeof Wifi> = {
   MANUAL: ScanSearch,
 };
 
+const LIVE_EVENTS = new Set(["url_scan.completed", "maps_scan.completed", "email_scan.completed"]);
+
 function toBlock(msg: LiveMessage): LiveBlock | null {
-  if (msg.event !== "url_scan.completed" && msg.event !== "maps_scan.completed") return null;
+  if (!LIVE_EVENTS.has(msg.event)) return null;
   const d = msg.data;
+  const kind: LiveBlock["kind"] = msg.event.startsWith("maps") ? "maps" : msg.event.startsWith("email") ? "email" : "url";
   const verdict = d.verdict as VerdictLabel | undefined;
   if (!verdict || verdict === "SAFE" || typeof d.scan_id !== "string") return null;
   const listing = (d.listing ?? {}) as { website_domain?: string | null };
   const channel = d.interception_channel as InterceptionChannel | null | undefined;
   return {
     id: d.scan_id,
-    kind: msg.event.startsWith("maps") ? "maps" : "url",
+    kind,
     verdict,
     riskScore: Number(d.risk_score ?? 0),
     entity: (d.impersonated_entity as string | null) ?? null,
-    domain: (msg.event.startsWith("maps") ? listing.website_domain : (d.domain as string | null)) ?? null,
+    // Email events never carry a domain: the sender's (often gmail.com) must not appear as "the scam site".
+    domain: kind === "email" ? null : ((kind === "maps" ? listing.website_domain : (d.domain as string | null)) ?? null),
     channel: channel && channel in CHANNEL_DICT_KEY ? channel : null,
     harvested: Array.isArray(d.harvested_fields) ? (d.harvested_fields as string[]) : [],
-    flagCodes: Array.isArray(d.red_flags) ? (d.red_flags as string[]) : [],
+    flagCodes: Array.isArray(d.red_flags) ? (d.red_flags as string[]) : Array.isArray(d.top_flags) ? (d.top_flags as string[]) : [],
     at: new Date(typeof d.created_at === "string" ? d.created_at : msg.ts),
   };
 }
@@ -56,7 +60,7 @@ function merge(list: LiveBlock[], incoming: LiveBlock[]): LiveBlock[] {
 
 /** getWsUrl() (NEXT_PUBLIC_API_URL or same-origin proxy), then the backend port directly on plain http. */
 function socketUrls(): string[] {
-  const query = "?topics=url_scan,maps_scan";
+  const query = "?topics=url_scan,maps_scan,email_scan";
   const urls = [`${getWsUrl()}${query}`];
   if (!API_BASE_URL && window.location.protocol === "http:") urls.push(`ws://${window.location.hostname}:8000/ws/live${query}`);
   return urls;
@@ -175,7 +179,7 @@ export function LiveCrowdShield() {
       <ul className="mt-4 space-y-2">
         <AnimatePresence initial={false}>
           {items.map((b) => {
-            const Icon = b.kind === "maps" ? MapPinned : b.channel ? CHANNEL_ICON[b.channel] : ShieldBan;
+            const Icon = b.kind === "email" ? Mail : b.kind === "maps" ? MapPinned : b.channel ? CHANNEL_ICON[b.channel] : ShieldBan;
             const entityAr = b.entity ? ENTITY_AR[b.entity] ?? b.entity : null;
             const entity = lang === "ar" ? entityAr : b.entity;
             const blocked = b.verdict === "HIGH-RISK SCAM";
@@ -205,7 +209,8 @@ export function LiveCrowdShield() {
                         {defang(b.domain)}
                       </span>
                     )}
-                    {b.domain && " · "}
+                    {!b.domain && b.kind === "email" && <span>{t(blocked ? "emLiveScamEmail" : "emLiveSuspiciousEmail")}</span>}
+                    {(b.domain || b.kind === "email") && " · "}
                     {b.channel ? t(CHANNEL_DICT_KEY[b.channel]) : null}
                     {b.channel && " · "}
                     {timeAgo(b.at, now, lang)}

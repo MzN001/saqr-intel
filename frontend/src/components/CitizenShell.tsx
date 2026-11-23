@@ -1,29 +1,38 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Cpu, Globe, MessageSquareWarning, Network, Radar, ScanSearch, ShieldCheck, Smartphone } from "lucide-react";
+import { AtSign, Cpu, Globe, Link2Off, Mail, MessageSquareWarning, Network, Radar, ScanSearch, ShieldCheck, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { analyzeUrl, getAlertVerdict, scanMaps, type InterceptionChannel, type ScanVerdict } from "@/lib/api";
+import { analyzeEmail, analyzeUrl, getAlertVerdict, scanMaps, type EmailScanInput, type InterceptionChannel, type ScanVerdict } from "@/lib/api";
 import { useLang, type DictKey } from "@/lib/i18n";
 import { hostOf, isMapsUrl } from "@/lib/url";
 import { AwarenessRadar } from "./AwarenessRadar";
 import { BackgroundShieldCard } from "./BackgroundShieldCard";
 import { Header, StatusBanner } from "./Chrome";
+import { EmailGuard } from "./EmailGuard";
 import { LinkChecker } from "./LinkChecker";
 import { ScamAlertsCard } from "./ScamAlertsCard";
 import { SearchMapsShield } from "./SearchMapsShield";
 import { SmsGuard } from "./SmsGuard";
 import { VerdictScreen, type ScanState } from "./VerdictScreen";
 
-type Tab = "search" | "sms" | "radar";
+type Tab = "search" | "sms" | "email" | "radar";
+type DemoTab = Exclude<Tab, "radar">;
 
 const TABS: { id: Tab; label: DictKey; short: DictKey; icon: typeof Globe }[] = [
   { id: "search", label: "tabSearch", short: "tabSearchShort", icon: Globe },
   { id: "sms", label: "tabSms", short: "tabSmsShort", icon: MessageSquareWarning },
+  { id: "email", label: "emTab", short: "emTabShort", icon: Mail },
   { id: "radar", label: "tabRadar", short: "tabRadarShort", icon: Radar },
 ];
 
-const STEP_COPY: Record<Exclude<Tab, "radar">, { icon: typeof Globe; en: string; ar: string }[]> = {
+const SIDE_COPY: Record<DemoTab, { title: DictKey; intro: DictKey }> = {
+  search: { title: "tabSearch", intro: "searchIntro" },
+  sms: { title: "tabSms", intro: "smsIntro" },
+  email: { title: "emTab", intro: "emIntro" },
+};
+
+const STEP_COPY: Record<DemoTab, { icon: typeof Globe; en: string; ar: string }[]> = {
   search: [
     { icon: Smartphone, en: "Resident taps a search ad or a Maps “Visit Website” button.", ar: "يضغط المقيم على إعلان بحث أو زر «زيارة الموقع» في الخرائط." },
     { icon: Network, en: "e& / du DNS shield holds the request and asks SAQR-INTEL.", ar: "يحتجز درع DNS لدى اتصالات ودو الطلب ويستعلم من صقر." },
@@ -36,19 +45,25 @@ const STEP_COPY: Record<Exclude<Tab, "radar">, { icon: typeof Globe; en: string;
     { icon: ShieldCheck, en: "Scam messages move to Quarantine with the link disabled.", ar: "تُنقل الرسائل الاحتيالية إلى العزل مع تعطيل الرابط." },
     { icon: Network, en: "Police receive the report — the citizen never had to tap.", ar: "تتلقى الشرطة البلاغ دون أن يضغط المواطن على أي شيء." },
   ],
+  email: [
+    { icon: Mail, en: "Paste the email, its full source, or drop the .eml / .msg file.", ar: "الصق الرسالة أو مصدرها الكامل أو اسحب ملف .eml / .msg." },
+    { icon: AtSign, en: "SAQR checks the real sender: SPF, DKIM, DMARC and lookalike letters.", ar: "يتحقق صقر من المرسل الحقيقي: SPF وDKIM وDMARC والأحرف المتشابهة." },
+    { icon: Link2Off, en: "Every link and attachment is checked in the cloud, never on your phone.", ar: "يُفحص كل رابط ومرفق سحابياً، وليس على هاتفك أبداً." },
+    { icon: ShieldCheck, en: "Matches against scam waves spreading now and your personal filter.", ar: "مطابقة مع موجات الاحتيال المنتشرة الآن ومع مرشّحك الشخصي." },
+  ],
 };
 
 const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 
-function SidePanel({ tab }: { tab: Exclude<Tab, "radar"> }) {
+function SidePanel({ tab }: { tab: DemoTab }) {
   const { t, lang } = useLang();
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
-          {t(tab === "search" ? "tabSearch" : "tabSms")}
+          {t(SIDE_COPY[tab].title)}
         </h1>
-        <p className="mt-3 text-base leading-relaxed text-ink-soft">{t(tab === "search" ? "searchIntro" : "smsIntro")}</p>
+        <p className="mt-3 text-base leading-relaxed text-ink-soft">{t(SIDE_COPY[tab].intro)}</p>
       </div>
       <ol className="space-y-3">
         {STEP_COPY[tab].map((s, i) => (
@@ -91,20 +106,29 @@ export function CitizenShell({
   const { t } = useLang();
   const [tab, setTab] = useState<Tab>("search");
   const [scan, setScan] = useState<ScanState>({ status: "idle" });
-  const lastJob = useRef<{ target: string; interception: InterceptionChannel; job: () => Promise<ScanVerdict> } | null>(null);
+  const lastJob = useRef<{
+    target: string;
+    interception: InterceptionChannel;
+    job: () => Promise<ScanVerdict>;
+    kind?: ScanVerdict["kind"];
+  } | null>(null);
   const sharedHandled = useRef<string | null>(null);
   const fromShare = useRef(false);
 
-  const execute = useCallback(async (target: string, interception: InterceptionChannel, job: () => Promise<ScanVerdict>) => {
-    lastJob.current = { target, interception, job };
-    setScan({ status: "scanning", target, interception });
-    try {
-      const [result] = await Promise.all([job(), sleep(2600)]);
-      setScan({ status: "done", result });
-    } catch (e) {
-      setScan({ status: "error", target, interception, message: e instanceof Error ? e.message : String(e) });
-    }
-  }, []);
+  /** `kind` only changes the scanning animation's steps (e.g. "email" shows SPF/DKIM/link steps). */
+  const execute = useCallback(
+    async (target: string, interception: InterceptionChannel, job: () => Promise<ScanVerdict>, kind?: ScanVerdict["kind"]) => {
+      lastJob.current = { target, interception, job, kind };
+      setScan({ status: "scanning", target, interception, kind });
+      try {
+        const [result] = await Promise.all([job(), sleep(2600)]);
+        setScan({ status: "done", result });
+      } catch (e) {
+        setScan({ status: "error", target, interception, message: e instanceof Error ? e.message : String(e) });
+      }
+    },
+    [],
+  );
 
   const runDnsScan = useCallback(
     (target: string, job: () => Promise<ScanVerdict>) => void execute(target, "AUTO_TELECOM_DNS", job),
@@ -122,6 +146,12 @@ export function CitizenShell({
     [execute],
   );
 
+  const runEmailScan = useCallback(
+    (input: EmailScanInput, target: string) =>
+      void execute(target, "CITIZEN_MANUAL_CHECK", () => analyzeEmail(input, "CITIZEN_MANUAL_CHECK"), "email"),
+    [execute],
+  );
+
   const showVerdict = useCallback((result: ScanVerdict) => setScan({ status: "done", result }), []);
 
   const close = useCallback(() => {
@@ -134,7 +164,7 @@ export function CitizenShell({
 
   const retry = useCallback(() => {
     const j = lastJob.current;
-    if (j) void execute(j.target, j.interception, j.job);
+    if (j) void execute(j.target, j.interception, j.job, j.kind);
   }, [execute]);
 
   useEffect(() => {
@@ -208,6 +238,13 @@ export function CitizenShell({
             {tab === "sms" && (
               <Stage side={<SidePanel tab="sms" />}>
                 <SmsGuard onVerdict={showVerdict} />
+              </Stage>
+            )}
+            {tab === "email" && (
+              <Stage side={<SidePanel tab="email" />}>
+                <div className="px-4 sm:px-0">
+                  <EmailGuard onScan={runEmailScan} />
+                </div>
               </Stage>
             )}
             {tab === "radar" && (
