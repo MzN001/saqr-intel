@@ -80,6 +80,12 @@ CREATE TABLE IF NOT EXISTS dossiers (
     created_at TEXT NOT NULL,
     dossier_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS user_models (      -- personal email model per citizen: bucket COUNTS only, never mail text
+    reporter_hash TEXT PRIMARY KEY,            -- SHA-256 of the browser's random reporter_id (raw id is not stored here)
+    model_json TEXT NOT NULL,                  -- saqr-user-model JSON (contract section 4)
+    labelled_json TEXT NOT NULL DEFAULT '{}',  -- {scan_id: "scam"|"ham"} so relabelling a scan replaces its label
+    updated_at TEXT NOT NULL
+);
 """
 
 
