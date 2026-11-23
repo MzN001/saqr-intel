@@ -179,7 +179,7 @@ def _private_allowed() -> bool:
     USER_LLM_ALLOW_PRIVATE=true to allow it for the personal AI model only. Both default to false,
     which is what the cloud (Render) uses.
     """
-    if settings.allow_private_targets or bool(getattr(settings, "user_llm_allow_private", False)):
+    if settings.allow_private_targets or settings.user_llm_allow_private:
         return True
     return os.getenv("USER_LLM_ALLOW_PRIVATE", "").strip().lower() in {"1", "true", "yes", "on"}
 

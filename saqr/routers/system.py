@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from .. import __version__, keepalive
 from ..config import settings
 from ..db import db, iso, utcnow
+from ..intel.campaigns import campaign_feed
 from ..intel.ct_monitor import ct_monitor
 from ..intel.registry import ENTITIES
 from ..intel.sandbox import sandbox
@@ -41,7 +42,7 @@ async def health():
             "playwright_enabled": settings.sandbox_enabled, "keep_awake": bool(keepalive.public_url()),
             "offline_mode": settings.offline_mode,
             "ct_mode": ct_monitor.mode, "url_model": url_model.available(), "llm": ai_inspector.llm_status,
-            "threat_feeds": threat_feeds.status()}
+            "threat_feeds": threat_feeds.status(), "campaigns": campaign_feed.status()}
 
 
 @router.get("/api/stats")

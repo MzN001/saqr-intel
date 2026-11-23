@@ -53,8 +53,8 @@ SPF_RESULTS = {"pass", "fail", "softfail", "neutral", "none", "temperror", "perm
 
 def _extra_trusted() -> tuple[str, ...]:
     """EMAIL_TRUSTED_AUTHSERV="mail.example.ae,mx.myisp.ae" (env) or settings.email_trusted_authserv."""
-    raw = getattr(settings, "email_trusted_authserv", None)
-    items = list(raw) if isinstance(raw, (list, tuple)) else []
+    items = list(settings.email_trusted_authserv)
+    # Also read at call time so a changed environment (tests, a reloaded shell) is honoured.
     items += [x for x in os.getenv("EMAIL_TRUSTED_AUTHSERV", "").split(",")]
     return tuple(x.strip().lower().lstrip(".") for x in items if x and x.strip())
 

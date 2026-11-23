@@ -1,6 +1,6 @@
 // SAQR-INTEL toolbar popup: backend status, API address, scan-this-tab and 1-click demo buttons.
 
-const DEFAULT_API = "https://saqr-intel-api.onrender.com";
+const DEFAULT_API = globalThis.SaqrConfig.DEFAULT_API; // lib/config.js (loaded first by popup.html)
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
 

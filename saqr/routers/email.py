@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import os
 from typing import Any, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -67,10 +66,7 @@ router = APIRouter(prefix="/api", tags=["Email analysis"], route_class=CappedJSO
 
 
 def _per_minute() -> int:
-    try:
-        return int(os.getenv("EMAIL_RATE_LIMIT_PER_MINUTE", settings.rate_limit_per_minute))
-    except ValueError:
-        return settings.rate_limit_per_minute
+    return settings.email_rate_limit_per_minute
 
 
 def rate_limit_bucket(limiter: RateLimiter) -> Callable:

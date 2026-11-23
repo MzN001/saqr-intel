@@ -19,7 +19,7 @@ const REPO = path.resolve(EXT, "..");
 function load() {
   const ctx = vm.createContext({ console, URL, URLSearchParams, TextEncoder, TextDecoder, crypto: globalThis.crypto, setTimeout, clearTimeout });
   ctx.globalThis = ctx;
-  for (const f of ["lib/email_features.js", "lib/campaign_match.js", "content/common.js", "content/gmail.js", "content/outlook.js", "content/wip.js"]) {
+  for (const f of ["lib/config.js", "lib/email_features.js", "lib/campaign_match.js", "content/common.js", "content/gmail.js", "content/outlook.js", "content/wip.js"]) {
     const file = path.join(EXT, f);
     if (!fs.existsSync(file)) continue; // lib/* belongs to another workstream; tolerate absence
     vm.runInContext(fs.readFileSync(file, "utf8"), ctx, { filename: file });

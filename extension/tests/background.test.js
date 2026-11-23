@@ -103,6 +103,18 @@ test("buildEmailRequest: limits, raw vs .eml, channel, provider from the sender"
   assert.equal(Buffer.from(big.body.file_base64, "base64").toString("utf8").slice(0, 12), "Subject: é\r\n");
   assert.equal(big.provider, "outlook");
   assert.deepEqual(big.body.llm, { base_url: "https://llm.example.com/v1", api_key: "k", model: "m" });
+
+  // A cut original (content script capRaw) is not byte-exact: it goes as pasted source, never as a file.
+  const cut = bg.ctx.buildEmailRequest(
+    { type: "emailScan", message_key: KEY, meta: meta(), raw: "Subject: x\r\n\r\n" + "y".repeat(300_000), truncated: true },
+    SENDERS.gmail,
+    false,
+    { reporter: null, llm: null },
+  );
+  assert.equal(cut.body.source, "raw");
+  assert.equal(cut.body.file_base64, null);
+  assert.equal(cut.body.text.length, 200_000);
+  assert.ok(cut.body.text.startsWith("Subject: x\r\n"));
 });
 
 test("emailScan: summarised verdict, cache, in-flight dedupe, no auto-training", { skip: !RESPONSE && "contract fixture missing" }, async () => {

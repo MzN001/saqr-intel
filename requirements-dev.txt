@@ -5,3 +5,4 @@
 -r requirements.txt
 playwright==1.65.2
 pytest==9.2.0
+authres==1.2.0  # test-only: builds Authentication-Results headers in tests/test_email_auth.py

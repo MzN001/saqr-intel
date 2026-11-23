@@ -471,8 +471,13 @@ export interface EmailScanVerdict {
     confidence: number | null;
     user_llm_host: string | null;
     user_llm_error: string | null;
+    /** Allowed extra: which optional engines were unavailable ("auth_unavailable", ...). */
+    notes?: string[];
   };
   timings: Record<string, number>;
+  /** Present only when a scam email's links joined a known scam network (same as URL scans). */
+  syndicate?: SyndicateBrief | null;
+  graph_delta?: unknown;
 }
 
 /** A user-supplied OpenAI-compatible endpoint. Sent with one request only; the server never stores it. */
@@ -524,8 +529,8 @@ export function fromEmailScan(r: EmailScanVerdict, interception: InterceptionCha
     domainAgeHours: null,
     cloaking: false,
     screenshot: null,
-    syndicateEn: null,
-    syndicateAr: null,
+    syndicateEn: r.syndicate?.name ?? null,
+    syndicateAr: r.syndicate?.name_ar ?? null,
     engine: r.analyzer?.engine ?? "rules",
     interception,
     email: {

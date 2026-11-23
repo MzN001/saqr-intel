@@ -20,7 +20,10 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function (root) {
   "use strict";
 
-  const APP_URL = "https://saqr-intel.vercel.app/citizen"; // the citizen web app (paste an email there)
+  // The citizen web app (paste an email there): lib/config.js, loaded before this file by manifest.json.
+  const config = root.SaqrConfig || (typeof require === "function" ? require("../lib/config.js") : null);
+  if (!config) throw new Error("load lib/config.js before content/wip.js");
+  const APP_URL = config.APP_URL;
   const PROVIDERS = [
     { host: "mail.yahoo.com", name: "Yahoo Mail" },
     { host: "mail.proton.me", name: "Proton Mail" },

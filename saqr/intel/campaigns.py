@@ -39,7 +39,6 @@ import hashlib
 import html
 import json
 import logging
-import os
 import re
 import unicodedata
 from datetime import datetime, timedelta, timezone
@@ -60,22 +59,9 @@ FORMAT, VERSION, TTL_HOURS = "saqr-campaigns", 1, 6
 IOC_POINTS, LURE_POINTS = 65, 20
 
 
-def _env_bool(name: str, default: bool) -> bool:
-    raw = os.environ.get(name)
-    if raw is None or not raw.strip():
-        return default
-    return raw.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _env_float(name: str, default: float) -> float:
-    try:
-        return float(os.environ.get(name, default))
-    except (TypeError, ValueError):
-        return default
-
-
-FEEDS_ENABLED = _env_bool("CAMPAIGN_FEEDS", True)
-REFRESH_SECONDS = max(0.25, _env_float("CAMPAIGN_REFRESH_HOURS", 6.0)) * 3600
+# CAMPAIGN_FEEDS / CAMPAIGN_REFRESH_HOURS (saqr/config.py).
+FEEDS_ENABLED = settings.campaign_feeds_enabled
+REFRESH_SECONDS = max(0.25, settings.campaign_refresh_hours) * 3600
 
 
 # =============================================================================================

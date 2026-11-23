@@ -76,6 +76,7 @@
         "https://mail.zoho.com/*"
       ],
       "js": [
+        "lib/config.js",
         "content/wip.js"
       ],
       "run_at": "document_idle"

@@ -12,9 +12,9 @@
 
 // Shared with the content scripts and node tests (no build step): feature hashing, personal
 // model and campaign matching. Must be loaded synchronously at the top of an MV3 worker.
-importScripts("lib/email_features.js", "lib/user_model.js", "lib/campaign_match.js");
+importScripts("lib/config.js", "lib/email_features.js", "lib/user_model.js", "lib/campaign_match.js");
 
-const DEFAULT_API = "https://saqr-intel-api.onrender.com";
+const DEFAULT_API = SaqrConfig.DEFAULT_API;
 const OLD_LOCAL_DEFAULT = "http://127.0.0.1:8000";
 const CHANNEL = "PC_BROWSER_EXTENSION";
 const BLOCK_SCORE = 70;
@@ -32,7 +32,7 @@ const MAIL_HOSTS = {
   outlook: ["outlook.live.com", "outlook.office.com", "outlook.office365.com", "outlook.cloud.microsoft"],
   wip: ["mail.yahoo.com", "mail.proton.me", "www.icloud.com", "mail.aol.com", "mail.zoho.com"],
 };
-const SKIP_DOMAINS = ["x.com", "twitter.com", "saqr-intel.vercel.app", ...MAIL_HOSTS.gmail, ...MAIL_HOSTS.outlook, ...MAIL_HOSTS.wip];
+const SKIP_DOMAINS = ["x.com", "twitter.com", new URL(SaqrConfig.APP_ORIGIN).hostname, ...MAIL_HOSTS.gmail, ...MAIL_HOSTS.outlook, ...MAIL_HOSTS.wip];
 const SKIP_HOSTPORTS = ["localhost:3000", "127.0.0.1:3000"];
 
 const BADGE = {
@@ -634,7 +634,10 @@ function buildEmailRequest(msg, sender, trusted, { reporter, llm, useUserModel =
   if (msg.raw != null && typeof msg.raw !== "string") bad("raw must be text");
   if (msg.html != null && typeof msg.html !== "string") bad("html must be text");
   const meta = sanitizeMeta(msg.meta, provider, messageKey);
-  const raw = msg.raw || "";
+  let raw = msg.raw || "";
+  // A cut original (content script capRaw: truncated) is no longer byte-exact: never send it as an
+  // .eml file, where the server would verify DKIM over the missing part and report a false failure.
+  if (msg.truncated === true && raw.length > LIMITS.raw) raw = clip(raw, LIMITS.raw, "raw");
   const body = {
     source: "text",
     text: null,

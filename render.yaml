@@ -40,3 +40,7 @@ services:
         sync: false
       - key: VAPID_PRIVATE_KEY          # keep scam-alert push keys stable across restarts (PEM, \n escaped)
         sync: false
+      - key: CAMPAIGN_FEEDS             # live phishing-campaign feeds for email scanning (refreshed every 6 h)
+        value: "true"
+      - key: USER_LLM_ALLOW_PRIVATE     # a citizen's own AI must never be a private address on the cloud
+        value: "false"

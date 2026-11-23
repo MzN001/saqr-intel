@@ -42,6 +42,7 @@ test("Gmail / Outlook content scripts: libs, then common.js, then the provider f
     assert.ok(outlook.matches.includes("https://" + h + "/*"), h);
   }
   const wip = manifest.content_scripts.find((c) => c.js.includes("content/wip.js"));
+  assert.deepEqual(wip.js, ["lib/config.js", "content/wip.js"]); // shared app address first
   for (const m of ["https://mail.yahoo.com/*", "https://mail.proton.me/*", "https://www.icloud.com/mail*", "https://mail.aol.com/*", "https://mail.zoho.com/*"]) {
     assert.ok(wip.matches.includes(m), m);
   }
@@ -51,5 +52,5 @@ test("background importScripts the same libs in the same order", () => {
   const src = fs.readFileSync(path.join(EXT, "background.js"), "utf8");
   const m = src.match(/importScripts\(([^)]*)\)/);
   assert.ok(m);
-  assert.deepEqual(JSON.parse("[" + m[1] + "]"), LIBS);
+  assert.deepEqual(JSON.parse("[" + m[1] + "]"), ["lib/config.js", ...LIBS]);
 });
