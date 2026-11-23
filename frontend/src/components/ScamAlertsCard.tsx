@@ -133,6 +133,27 @@ export function ScamAlertsCard() {
     };
   }, [ready, lang]);
 
+  // An iPhone home-screen app resumes from the background without reloading, so also re-register
+  // whenever SAQR comes back to the front (the cloud backend may have restarted meanwhile).
+  useEffect(() => {
+    if (!ready || state !== "on") return;
+    const onVisible = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const sub = await (await registration()).pushManager.getSubscription();
+        if (sub) await savePushSubscription(sub.toJSON(), lang);
+      } catch {
+        /* offline or waking up: the next resume tries again */
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onVisible);
+    };
+  }, [ready, state, lang]);
+
   const enable = async () => {
     setState("busy");
     try {

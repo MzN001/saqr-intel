@@ -16,6 +16,11 @@ services:
         - frontend/**
         - extension/**
         - demo-scam-site/**
+        - tests/**
+        - '**/*.md'
+        - '*.ps1'
+        - '*.bat'
+        - '*.sh'
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"

@@ -70,3 +70,9 @@ def test_keepalive_only_on_render(monkeypatch):
     assert keepalive.public_url() == "https://saqr-intel-api.onrender.com"
     monkeypatch.setenv("KEEP_AWAKE", "false")
     assert keepalive.public_url() is None
+
+
+def test_demo_scam_page_always_flagged(client):
+    names = {d["domain"]: d for d in client.get("/api/dns-blocklist").json()["domains"]}
+    assert names["saqr-demo-scam.vercel.app"]["impersonated_entity"] == "TAMM Abu Dhabi"
+    assert "vercel.app" not in names

@@ -9,6 +9,7 @@ import time
 from datetime import timedelta
 from typing import Any
 
+from .config import settings
 from .db import db, iso, utcnow
 from .intel import ai_inspector, graph_engine
 from .intel.domain_intel import (
@@ -165,8 +166,25 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
     return result
 
 
+async def scan_demo_pages() -> None:
+    """The phone-demo scam page lives on the real internet: scan it once per start (Render wipes the
+    disk) so tapping its scam alert opens a full verdict. Skipped offline (tests)."""
+    if settings.offline_mode:
+        return
+    for i, domain in enumerate(settings.demo_scam_domains, start=1):
+        sid = f"SCN-DEMO-{i:04d}"
+        if await db.fetchone("SELECT 1 FROM scans WHERE id=?", (sid,)):
+            continue
+        try:
+            await analyze_url(f"https://{domain}/", scan_id=sid, channel="web", reporter="demo-seed",
+                              use_llm=False, ingest=False, interception_channel="AUTO_TELECOM_DNS")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("demo page scan %s failed: %s", domain, exc)
+
+
 async def seed_historical_scans() -> None:
     """Run the real pipeline over seeded domains (no LLM, no live network) so dossiers work instantly."""
+    await scan_demo_pages()  # first: the live phone demo must not wait behind the seeded domains
     for i, domain in enumerate(DEMO_INTEL, start=1):
         sid = f"SCN-SEED-{i:04d}"
         if await db.fetchone("SELECT 1 FROM scans WHERE id=?", (sid,)):
@@ -177,3 +195,4 @@ async def seed_historical_scans() -> None:
                               use_llm=False, ingest=False, created_at=iso(utcnow() - timedelta(hours=hrs)))
         except Exception as exc:  # noqa: BLE001
             log.warning("seed scan %s failed: %s", domain, exc)
+
