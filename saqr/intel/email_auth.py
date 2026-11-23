@@ -567,6 +567,8 @@ def _verify_dkim_sync(raw: bytes, count: int, dnsfunc: Optional[DnsFunc]) -> lis
             d = dkim.DKIM(raw, logger=_DKIM_LOG, timeout=settings.dns_timeout_s)
             ok = d.verify(idx=idx, dnsfunc=_dkim_dnsfunc(dnsfunc, state))
             results.append("pass" if ok else ("not_checked" if state["temp"] else "fail"))
+        except dkim.NaClNotFoundError:
+            results.append("not_checked")  # ed25519 signature but PyNaCl is not installed: cannot check
         except dkim.DKIMException:
             results.append("not_checked" if state["temp"] else "fail")  # malformed signature / key
         except Exception:  # noqa: BLE001

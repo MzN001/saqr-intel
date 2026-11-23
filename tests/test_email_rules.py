@@ -201,12 +201,18 @@ def test_official_sender_unauthenticated():
     (dict(), auth(spf="none", dkim=[("adpolice.gov.ae", "pass", "auth_results")], align=True)),  # aligned DKIM
     (dict(), auth(spf="pass", align=True)),                                                 # aligned SPF
     (dict(has_headers=False), AuthReport.not_checked()),                                     # pasted visible text
-    (dict(list_id="list.example.org"), auth(spf="none")),                                    # mailing list
     (dict(), auth(spf="none", arc="pass")),                                                  # ARC-vouched forward
 ])
 def test_official_sender_unauthenticated_false_positives(kw, a):
     rr = run(mail(from_name="Abu Dhabi Police", from_addr="fines@adpolice.gov.ae", **kw), a)
     assert "OFFICIAL_SENDER_UNAUTHENTICATED" not in codes(rr, False)
+
+
+def test_forged_list_id_does_not_hide_unauthenticated_official_sender():
+    """E2E regression: "List-Id:" is a plain header anyone can type; it hid a spoofed adpolice.gov.ae (score 60 -> 0)."""
+    rr = run(mail(from_name="Abu Dhabi Police", from_addr="fines@adpolice.gov.ae", list_id="news.adpolice.gov.ae"),
+             auth(spf="none"))
+    assert "OFFICIAL_SENDER_UNAUTHENTICATED" in codes(rr)
 
 
 def test_unauthenticated_freemail_or_ordinary_sender_not_flagged():
@@ -349,3 +355,45 @@ def test_template_explanations_bilingual():
     assert "PayPal" in en and "paypal.com" in en and ar and "8002626" in ar
     en, ar = R.template_explanations(run(mail()))
     assert "No major red flags" in en and ar
+
+
+# -- personal model as a weak signal (USER_MODEL_SCAM) ------------------------------------------------------
+def _model(p):
+    return {"available": True, "p_scam": p, "labels": 80, "spec": "email-v1"}
+
+
+PAY_BODY = "Please send the wire transfer today to our new account."
+
+
+def test_personal_model_plus_scam_request_is_suspicious_at_most():
+    rr = run(mail(from_addr="accounts.dept77@outlook.com", body=PAY_BODY), model=_model(0.999))
+    assert rr.verdict == "SUSPICIOUS" and 30 <= rr.score <= 64, (rr.score, codes(rr, False))
+    assert {"USER_MODEL_SCAM", "PAYMENT_REQUEST"} <= codes(rr) and not rr.strong_present and rr.entity is None
+    # every corroborating weak flag at once still never reaches HIGH-RISK on the model's word
+    rr = run(mail(from_addr="accounts.dept77@outlook.com", reply_to=("", "pay@another-place.test"),
+                  body=PAY_BODY + " Confirm your identity and enter your password. Your account will be suspended."),
+             auth(spf="fail", dmarc="fail", policy="none"), model=_model(1.0),
+             campaigns=WEAK_CASES["CAMPAIGN_LURE_MATCH"]["campaigns"])
+    assert rr.verdict == "SUSPICIOUS" and rr.score == 64
+
+
+@pytest.mark.parametrize("kw", [
+    dict(p=mail(from_addr="friend.person@outlook.com", body="See you on Friday."), model=_model(0.999)),  # model alone
+    dict(p=mail(from_addr="friend.person@outlook.com", body=PAY_BODY), model=_model(0.95)),  # below MODEL_FLOOR_P
+    dict(p=mail(from_addr="friend.person@outlook.com", body=PAY_BODY), model=None),  # no model
+    dict(p=mail(from_addr="friend.person@outlook.com", body="Urgent: reply within 24 hours."), model=_model(0.999)),
+    dict(p=mail(from_addr="noreply@github.com", body="Use the link to reset your password. Sign in to confirm your account."),
+         model=_model(0.999)),  # top-10k sender: authentication rules judge it, not the personal model
+])
+def test_personal_model_never_lifts_without_corroboration(kw):
+    rr = run(kw["p"], model=kw["model"])
+    assert rr.verdict == "SAFE" and rr.score == 0, (rr.score, codes(rr, False))
+
+
+def test_regression_plain_text_punycode_in_body_is_high_risk_once():
+    """'Go to xn--pypal-4ve.com' as plain text: look-alike domain in the body (HIGH-RISK), not also
+    counted a second time as PUNYCODE_DOMAIN."""
+    body = "Your account is limited. Go to xn--pypal-4ve.com and log in."
+    rr = run(mail(body=body), findings=scan_text(body, "body"))
+    assert "DISPLAY_NAME_CONFUSABLE" in codes(rr) and "PUNYCODE_DOMAIN" not in codes(rr), codes(rr)
+    assert rr.verdict == "HIGH-RISK SCAM"

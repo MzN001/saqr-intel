@@ -567,3 +567,13 @@ def test_msg_fixture_authentication():
     assert (r.spf.result, r.spf.domain) == ("pass", "fines-portal.test")
     assert r.dmarc.to_dict() == {"result": "fail", "policy": "reject", "alignment": {"spf": False, "dkim": False},
                                  "source": "auth_results"}
+
+
+def test_ed25519_signature_without_pynacl_is_not_checked(monkeypatch):
+    """E2E regression (real suse.de list mail): dkimpy raises NaClNotFoundError for ed25519 signatures when
+    PyNaCl is missing; that was reported as DKIM "fail" on a genuine message."""
+    def no_nacl(self, *a, **k):
+        raise dkim.NaClNotFoundError("PyNaCl not installed")
+
+    monkeypatch.setattr(dkim.DKIM, "verify", no_nacl)
+    assert ea._verify_dkim_sync(b"From: a@example.com\r\n\r\nhi\r\n", 1, lambda name, timeout=5: None) == ["not_checked"]

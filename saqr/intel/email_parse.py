@@ -37,7 +37,7 @@ from email.message import EmailMessage, Message
 from email.parser import BytesParser, HeaderParser
 from email.utils import getaddresses, parseaddr
 from typing import Any, Iterable, Optional
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from .email_types import Address, Attachment, Link, ParsedEmail
 
@@ -130,6 +130,8 @@ def link_host(href: str) -> tuple[str, str]:
         host = host.split("]")[0] + "]"
     else:
         host = host.split(":")[0]
+    if "%" in host and not re.search(r"[/@?#\\\s%:]", unquote(host)):
+        host = unquote(host)  # browsers decode a percent-encoded host ("p%D0%B0ypal.com" opens pаypal.com)
     host = host.strip().rstrip(".")
     return (ascii_host(host), host) if host else ("", "")
 
@@ -444,6 +446,22 @@ def _looks_like_headers(text: str) -> bool:
             return False
         count += 1
     return count >= 2
+
+
+_MBOX_FROM = re.compile(rb"^From [^\r\n]*\r?\n")
+
+
+def _strip_mbox_from(data: bytes) -> bytes:
+    """Drop a leading mbox "From sender date" line (Thunderbird .eml, public-inbox /raw): it is not a header."""
+    m = _MBOX_FROM.match(data)
+    if not m:
+        return data
+    rest = data[m.end():]
+    if not _looks_like_headers(rest[:65536].decode("utf-8", "replace")):
+        return data  # a plain-text file that merely starts with "From ..."
+    if m.group(0).startswith(b"From mboxrd@z"):
+        rest = re.sub(rb"(?m)^>(>*From )", rb"\1", rest)  # undo mboxrd ">From " quoting (DKIM needs the original)
+    return rest
 
 
 def _parse_rfc822(data: bytes, *, source: str, byte_exact: bool, notes: list[str]) -> ParsedEmail:
@@ -868,6 +886,7 @@ def parse(*, source: str, text: Optional[str] = None, file_bytes: Optional[bytes
         if file_bytes.startswith(_OLE_MAGIC) or source == "msg":
             parsed = _from_msg(file_bytes, notes=notes)
     if parsed is None and file_bytes and source in ("eml", "msg"):
+        file_bytes = _strip_mbox_from(file_bytes)
         head = file_bytes[:65536].decode("utf-8", "replace").lstrip("﻿")
         if _looks_like_headers(head):
             parsed = _parse_rfc822(file_bytes, source=source, byte_exact=True, notes=notes)
@@ -876,6 +895,8 @@ def parse(*, source: str, text: Optional[str] = None, file_bytes: Optional[bytes
             parsed = _from_visible_text(file_bytes.decode("utf-8", "replace"), source=source, notes=notes)
     elif parsed is None and source in ("raw", "text") and text and text.strip():
         stripped = text.lstrip("﻿ \t\r\n")
+        if stripped.startswith("From ") and _looks_like_headers(stripped.partition("\n")[2]):
+            stripped = stripped.partition("\n")[2]  # mbox "From sender date" line before the headers
         is_raw = _looks_like_headers(stripped) and (
             source == "raw" or _TRANSPORT_HEADERS.match(stripped) is not None)
         if is_raw:

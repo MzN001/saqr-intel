@@ -26,7 +26,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from .ai_inspector import STRONG_LEXICAL, URGENCY, RuleResult, _entity_in_text, verdict_for
 from .domain_intel import _EXTRACT, RedFlag, analyze_lexical, to_unicode_host
 from .email_types import Address, AuthReport, ParsedEmail
-from .email_unicode import ADDRESS_WHERES, TEXT_WHERES, deconfuse, strip_invisible
+from .email_unicode import ADDRESS_WHERES, TEXT_WHERES, deconfuse, strip_invisible, unescape
 from .registry import ALL_BRANDS, Entity
 from .threat_feeds import popularity_rank, threat_feeds
 
@@ -68,6 +68,7 @@ BRAND_MAIL_DOMAINS: dict[str, tuple[str, ...]] = {
     "whatsapp": ("facebookmail.com",), "microsoft": ("microsoftstoreemail.com", "microsoftonline.com"),
     "amazon": ("amazon.ae", "amazon.com", "amazon.sa"), "google": ("youtube.com",),
     "linkedin": ("linkedin.com",), "apple": ("apple.com", "icloud.com"),
+    "dhl": ("dhl.co.uk", "dhlparcel.co.uk", "dhlparcel.nl", "dpdhl.com"),
 }
 DANGEROUS_EXTS = frozenset({
     # contract list
@@ -95,6 +96,14 @@ WEAK_CODES = {
     "FANCY_UNICODE", "BRAND_MENTION", "SPF_SOFTFAIL", "RETURN_PATH_MISMATCH", "ATTACHMENT_ARCHIVE",
 }
 BRAND_CLAIM = {"DISPLAY_NAME_BRAND_SPOOF", "FREEMAIL_BRAND_SENDER", "SENDER_LOOKALIKE", "OFFICIAL_SENDER_UNAUTHENTICATED"}
+# Weak flags that, next to a confident personal-model scam opinion (USER_MODEL_SCAM), may lift a mail
+# from an untrusted sender to SUSPICIOUS (never higher). NO_AUTHENTICATION / URGENCY / BRAND_MENTION are
+# too common in real mail to count here.
+MODEL_CORROBORATION = {"PAYMENT_REQUEST", "CREDENTIAL_REQUEST", "CAMPAIGN_LURE_MATCH", "REPLY_TO_MISMATCH",
+                       "SPF_FAIL", "DKIM_FAIL", "DMARC_FAIL_P_NONE", "FANCY_UNICODE"}
+# Naive Bayes saturates: with ~40 labels per class it gave p >= 0.9 to 15 of 20 tricky legit mails in
+# testing, so the verdict lift needs a much surer opinion than the 0.9 that shows USER_MODEL_SCAM.
+MODEL_FLOOR_P = 0.99
 # Strong evidence that an authenticated official sender cannot "vouch away" (no cap at 20).
 CAP_BLOCKERS = {
     "LINK_HIGH_RISK", "LINK_SUSPICIOUS", "KNOWN_PHISHING_LINK", "LINK_TEXT_MISMATCH", "IDN_MIXED_SCRIPT",
@@ -324,6 +333,32 @@ def _domain_of(addr: Address | None) -> str:
     return (addr.domain or (addr.address.rpartition("@")[2] if "@" in (addr.address or "") else "")).lower()
 
 
+# Short global brands that ai_inspector._entity_in_text skips (DHL, UPS: under 4 letters). EMAIL display
+# name / subject only (website scanning is unchanged): a whole word next to courier wording ("DHL Express",
+# "UPS: package on hold") or the whole display name. A brand that is also an ordinary word (ups) must be in
+# capitals, so "ups and downs", "follow-ups" or a UPS battery offer never count as a brand claim.
+SHORT_BRANDS = tuple(e for e in ALL_BRANDS if e.category == "global" and e.name_en.isalpha() and len(e.name_en) < 4)
+COURIER_CONTEXT_RE = re.compile(
+    r"\b(express|deliver(y|ies|ed)?|redelivery|shipping|shipment|parcel|package|courier|tracking|waybill|"
+    r"customs|duties|clearance|logistics|e-?commerce|freight|my choice)\b|شحن|طرد|توصيل|جمارك|جمرك", re.I)
+NOT_COURIER_RE = re.compile(r"\b(battery|batteries|backup|power supply|uninterruptible|inverter|kva)\b", re.I)
+# A subject ABOUT a scam ("Be careful: fake DHL customs emails") is someone warning you, not a brand claim.
+ABOUT_SCAM_RE = re.compile(r"\b(scams?|scammers?|beware|watch out|be careful)\b|احتيال", re.I)
+
+
+def short_brand_claim(text: str, context: str) -> Entity | None:
+    """DHL / UPS named as the sender in a display name or subject (see SHORT_BRANDS)."""
+    for ent in SHORT_BRANDS:
+        flags = 0 if ent.name_en.lower() in ent.common_keywords else re.I
+        name = re.escape(ent.name_en)
+        if re.fullmatch(rf"\W*{name}\W*", text or "", flags):
+            return ent
+        if (re.search(rf"(?<![\w&@.-]){name}(?![\w&@])", text or "", flags)
+                and COURIER_CONTEXT_RE.search(context or "") and not NOT_COURIER_RE.search(context or "")):
+            return ent
+    return None
+
+
 def sender_is_brand(ent: Entity, domain: str) -> bool:
     """Is this sending domain one the brand really uses?"""
     rd = regdom(domain)
@@ -396,7 +431,7 @@ def _unicode_flags(findings: list[dict[str, Any]], add) -> None:
     text = [f for f in findings if f["where"] in TEXT_WHERES and f["kind"] in ("mixed_script", "whole_script_confusable")]
     bidi = [f for f in findings if f["kind"] == "bidi"]
     invis = [f for f in findings if f["kind"] == "invisible"]
-    idn_keys = {(f["where"], f["skeleton"]) for f in idn}
+    idn_keys = {(f["where"], f["skeleton"]) for f in idn + text}  # a look-alike domain is not counted twice
     puny = [f for f in findings if f["kind"] == "punycode" and (f["where"], f["skeleton"]) not in idn_keys]
     fancy = [f for f in findings if f["kind"] == "fancy"]
     if idn:
@@ -423,9 +458,9 @@ def _unicode_flags(findings: list[dict[str, Any]], add) -> None:
             "توجد أحرف غير مرئية مخفية داخل الكلمات أو العناوين أو الروابط لخداع أنظمة الحماية.", _samples(invis))
     if puny:
         add("PUNYCODE_DOMAIN", "high", 40,
-            f"An address or link uses an international (encoded) domain name: {puny[0]['skeleton']}. "
+            f"An address or link uses an international (encoded) domain name: {unescape(puny[0]['sample_escaped'])}. "
             "Check carefully that it is the real website before you trust it.",
-            f"يستخدم عنوان أو رابط اسم نطاق دولياً مُرمّزاً: {puny[0]['skeleton']}. "
+            f"يستخدم عنوان أو رابط اسم نطاق دولياً مُرمّزاً: {unescape(puny[0]['sample_escaped'])}. "
             "تحقّق جيداً من أنه الموقع الحقيقي قبل أن تثق به.", _samples(puny))
     if fancy:
         add("FANCY_UNICODE", "low", 10,
@@ -472,8 +507,10 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
     forwarded = bool(FORWARDED_RE.match(subject))
 
     # -- brand claims -------------------------------------------------------------------
-    ent_display = _entity_in_text(display) if display else None
-    ent_subject = _entity_in_text(subject) if subject and not forwarded else None
+    ent_display = (_entity_in_text(display) or short_brand_claim(display, f"{display}\n{subject}\n{body[:3000]}")
+                   if display else None)
+    ent_subject = (_entity_in_text(subject) or short_brand_claim(subject, subject)
+                   if subject and not forwarded and not ABOUT_SCAM_RE.search(subject) else None)
     claimed: Entity | None = None
     for ent in (ent_display, ent_subject):
         if ent and not (from_dom and sender_is_brand(ent, from_dom)):
@@ -500,7 +537,7 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
         if not dom:
             continue
         lex = from_lex if dom == from_dom else _lex(dom)
-        if not lex or lex.is_whitelisted:
+        if not lex or lex.is_whitelisted or (lex.impersonated and sender_is_brand(lex.impersonated, dom)):
             continue
         r = popularity_rank(lex.registered_domain)
         if r and r <= 10_000:
@@ -556,11 +593,12 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
 
     # An exact official address (adpolice.gov.ae, paypal.com ...) is only proof when the mail passed
     # an aligned check: anyone can type any From address, and forged Authentication-Results headers
-    # are ignored by email_auth. Not for pasted visible text (no headers) or list / ARC forwards.
+    # are ignored by email_auth. Not for pasted visible text (no headers) or ARC-vouched forwards.
     aligned_pass = (dmarc_pass
                     or any(d.result == "pass" and d.aligned for d in auth.dkim)
                     or (auth.spf.result == "pass" and bool(auth.dmarc.alignment.get("spf"))))
-    if is_official and parsed.has_headers and not aligned_pass and not is_list:
+    # A List-Id header alone is no proof (anyone can type one); a list forward must carry an ARC pass.
+    if is_official and parsed.has_headers and not aligned_pass and not arc_pass:
         if official_entity and not claimed:
             claimed = official_entity
         add("OFFICIAL_SENDER_UNAUTHENTICATED", "high", 40,
@@ -738,11 +776,19 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
     # -- score ---------------------------------------------------------------------------------------
     rule_codes = sorted({f.code for f in flags})
     strong = [f for f in flags if f.strength == "strong" and f.points > 0]
-    if not strong:  # weak signals alone are normal in real mail: keep them as notes, 0 points
+    # The personal model is a weak signal: alone it changes nothing. With a scam-typical request the rules
+    # also saw (money, credentials, campaign wording, failed checks) it can make an untrusted sender's mail
+    # SUSPICIOUS — capped at 64, so it never makes HIGH-RISK on its own.
+    personal = (not strong and not trusted and (p or 0) >= MODEL_FLOOR_P
+                and any(f.code == "USER_MODEL_SCAM" for f in flags)
+                and any(f.code in MODEL_CORROBORATION for f in flags))
+    if not strong and not personal:  # weak signals alone are normal in real mail: keep them as notes, 0 points
         flags = [EmailFlag(f.code, "info", 0, f.en, f.ar, strength=f.strength, evidence=f.evidence)
                  if f.strength == "weak" else f for f in flags]
     total = sum(f.points for f in flags if f.strength in ("strong", "weak"))
     score = min(100, max(total, max_link))
+    if personal:
+        score = min(64, max(30, score))
     codes = {f.code for f in flags if f.points > 0}
     if codes & BRAND_CLAIM and (codes & {"DMARC_FAIL", "CREDENTIAL_REQUEST", "PAYMENT_REQUEST"} or max_link >= 30):
         score = max(score, 70)

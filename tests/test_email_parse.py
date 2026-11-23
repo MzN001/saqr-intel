@@ -522,6 +522,22 @@ def test_eml_without_header_block_is_read_as_text():
     assert not p.has_headers and not p.byte_exact and p.links[0].href == "https://a.test/x"
 
 
+def test_mbox_from_line_is_not_a_header_block():
+    """E2E regression: Thunderbird .eml and public-inbox /raw start with an mbox "From " line; the file was read
+    as visible text (no headers, no DKIM). mboxrd ">From " quoting is undone so DKIM sees the original body."""
+    msg = (b"From: Sara <sara@example.com>\nTo: a@example.org\nSubject: Hi\nMessage-ID: <1@example.com>\n\n"
+           b"Line one\n>From the start\n>>From two\n")
+    p = ep.parse(source="eml", file_bytes=b"From - Mon Nov 23 10:00:00 2026\n" + msg)
+    assert p.has_headers and p.byte_exact and p.from_.address == "sara@example.com" and p.raw_bytes == msg
+    rd = ep.parse(source="eml", file_bytes=b"From mboxrd@z Thu Jan  1 00:00:00 1970\n"
+                  + msg.replace(b">From", b">>From"))  # mboxrd adds one ">"
+    assert rd.has_headers and rd.raw_bytes == msg
+    r = ep.parse(source="raw", text="From mboxrd@z Thu Jan  1 00:00:00 1970\n" + msg.decode())
+    assert r.has_headers and r.subject == "Hi"
+    plain = ep.parse(source="eml", file_bytes=b"From Sara, about lunch\nSee you at 1 pm.\n")
+    assert not plain.has_headers and "From Sara" in plain.text_body
+
+
 def test_undeclared_8bit_body_is_utf8():
     raw = "From: a@b.test\r\nSubject: x\r\n\r\nمرحبا https://مثال.test/\r\n".encode()
     p = ep.parse(source="eml", file_bytes=raw)
