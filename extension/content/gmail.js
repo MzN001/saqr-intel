@@ -278,7 +278,11 @@
         const permId = permMsgId(c.getAttribute("data-message-id"), c.getAttribute("data-legacy-message-id"));
         if (!permId) continue;
         const wrapEl = body.closest(SELECTORS.msgBodyWrap.join(",")) || body;
-        const item = { el: c, id: permId, permId, body, bannerAnchor: { parent: wrapEl.parentNode, before: wrapEl } };
+        // id = the legacy hex id as "msg-f:<decimal>", the same id its inbox row gets (a message you
+        // sent yourself has data-message-id "msg-a:r…", which would never match its row); the fetch
+        // of the original keeps the page's own permId.
+        const id = legacyHexToMsgId(c.getAttribute("data-legacy-message-id")) || permId;
+        const item = { el: c, id, permId, body, bannerAnchor: { parent: wrapEl.parentNode, before: wrapEl } };
         // meta (body text, links, attachments) is only read when a scan actually needs it.
         M.lazy(item, "meta", () => messageMeta(m, c, body));
         out.push(item);

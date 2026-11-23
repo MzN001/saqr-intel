@@ -37,11 +37,19 @@
 
   const SELECTORS = {
     version: "outlook-2026-11",
+    // [role=main] is the READING PANE only; the message list is a sibling [role=complementary].
     main: ["[role=main]", "#MainModule", "#app"],
-    rows: ["[role=main] [role=option][data-convid]", "[role=option][data-convid]", "[role=listitem][data-convid]"],
+    app: ["#MainModule", "#mainApp", "#app", "body"], // observed for SPA changes: list + reading pane
+    rows: ["[role=listbox] [role=option][data-convid]", "[role=option][data-convid]", "[role=listitem][data-convid]"],
     selectedRow: ["[role=option][data-convid][aria-selected=true]", "[data-convid][aria-selected=true]"],
-    body: ["[role=main] [role=document]", "[role=document]", "[role=main] .allowTextSelection"],
+    // Live DOM 2026-11: div#UniqueMessageBody_N[role=document]; the role is added late, so the id is the
+    // fallback. (.allowTextSelection also matches the SUBJECT container: never use it.)
+    body: ["[role=main] [role=document]", "[role=document]", "[role=main] [id^='UniqueMessageBody']"],
     heading: ["[role=heading][aria-level='2']", "[role=heading][aria-level='1']", "[role=heading]"],
+    // Live DOM 2026-11: span#CONV_<id>_SUBJECT[role=heading] above the thread, span#MSG_<id>_FROM[role=heading]
+    // per message whose text is "Name<address>" (or only "Name" for contacts / yourself).
+    subject: ["[role=heading][id$='_SUBJECT']", "[role=heading][aria-level='2']", "[role=heading][aria-level='1']"],
+    fromHeading: ["[role=heading][id$='_FROM']"],
     titled: ["[title]"],
     attachmentTitles: ["[role=listbox] [title]", "[role=list] [title]", "[role=option] [title]"],
   };
@@ -97,6 +105,25 @@
     return FILE_NAME.test(String(s || "").trim());
   }
 
+  /**
+   * Inbox row: which text leaf is the subject? leaves = [{text, title, sender}] in document order.
+   * Live DOM: sender span has title=<address>, the date span has a title (full date, words in any
+   * language), the subject and preview spans have NO title. Subject = first untitled leaf after the sender.
+   */
+  function rowSubjectIndex(leaves) {
+    const list = leaves || [];
+    let after = !list.some((l) => l && l.sender);
+    for (let i = 0; i < list.length; i++) {
+      const l = list[i] || {};
+      if (l.sender) {
+        after = true;
+        continue;
+      }
+      if (after && String(l.text || "").trim() && !String(l.title || "").trim()) return i;
+    }
+    return -1;
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Adapter (browser only)
   // ---------------------------------------------------------------------------------------------
@@ -105,6 +132,7 @@
     const hits = {};
     const counts = { rows: 0, messages: 0 };
     const main = () => M.pick(document, SELECTORS.main, hits, "main");
+    const app = () => M.pick(document, SELECTORS.app, hits, "app");
 
     function senderIn(scope) {
       for (const n of M.pickAll(scope, SELECTORS.titled)) {
@@ -114,10 +142,23 @@
       return { el: null, from_name: "", from_address: "" };
     }
 
+    /** Text-bearing elements of a row in document order (no buttons, avatars, checkboxes). */
+    function rowLeaves(row, senderEl) {
+      const out = [];
+      for (const n of row.querySelectorAll("span, div")) {
+        if (n.closest("button, [role=button], [role=img], [role=checkbox], [aria-hidden=true]")) continue;
+        let own = "";
+        for (const c of n.childNodes) if (c.nodeType === 3) own += c.nodeValue;
+        if (!own.trim()) continue;
+        out.push({ el: n, text: own.trim(), title: n.getAttribute("title") || "", sender: n === senderEl || (!!senderEl && senderEl.contains(n)) });
+      }
+      return out;
+    }
+
     function listRows() {
-      const m = main();
-      if (!m) return [];
-      const rows = M.pickAll(m, SELECTORS.rows, hits, "rows").filter(M.isVisible);
+      const scope = app() || main();
+      if (!scope) return [];
+      const rows = M.pickAll(scope, SELECTORS.rows, hits, "rows").filter(M.isVisible);
       counts.rows = rows.length;
       const out = [];
       for (const row of rows) {
@@ -125,26 +166,17 @@
         if (!convid) continue;
         const sender = senderIn(row);
         hits.rowSender = sender.el ? 0 : -1;
-        // Subject: the first titled element after the sender that is not an address or a time.
-        let subjectEl = null;
-        let after = !sender.el;
-        for (const n of M.pickAll(row, SELECTORS.titled)) {
-          if (n === sender.el) {
-            after = true;
-            continue;
-          }
-          const title = (n.getAttribute("title") || "").trim();
-          if (!after || !title || addressFromTitle(title, "") || /^[\d\s/:.,\-APMapm]+$/.test(title)) continue;
-          subjectEl = n;
-          break;
-        }
+        const leaves = rowLeaves(row, sender.el);
+        const si = rowSubjectIndex(leaves);
+        const subjectEl = si >= 0 ? leaves[si].el : null;
+        hits.rowSubject = subjectEl ? 0 : -1;
         const text = String(row.innerText || row.textContent || "").replace(/\s+/g, " ").trim();
         const meta = {
           provider: "outlook",
           from_name: sender.from_name,
           from_address: sender.from_address,
           reply_to: null,
-          subject: subjectEl ? subjectEl.getAttribute("title").trim() : "",
+          subject: subjectEl ? String(subjectEl.textContent || "").trim().slice(0, 500) : "",
           date: null,
           body_text: text.slice(0, 2000),
           links: [],
@@ -194,10 +226,28 @@
       return out;
     }
 
+    /** Sender of an open message: a titled address, else the FROM heading text "Name<address>",
+     *  else (contacts / yourself show only a name) the selected inbox row's sender if the name matches. */
+    function messageSender(rootEl) {
+      const s = senderIn(rootEl);
+      if (s.el) return Object.assign(s, { how: 0 });
+      const fh = M.pick(rootEl, SELECTORS.fromHeading);
+      const text = fh ? String(fh.textContent || "").replace(/\s+/g, " ").trim() : "";
+      const a = text ? addressFromTitle("", text) : null;
+      if (a) return { el: fh, from_name: a.name, from_address: a.address, how: 1 };
+      const sel = M.pick(document, SELECTORS.selectedRow);
+      const rs = sel ? senderIn(sel) : null;
+      if (rs && rs.el && (!text || text === rs.from_name || text === String(rs.el.textContent || "").trim())) {
+        return { el: rs.el, from_name: text || rs.from_name, from_address: rs.from_address, how: 2 };
+      }
+      return { el: null, from_name: text, from_address: "", how: -1 };
+    }
+
     function messageMeta(rootEl, body) {
-      const heading = M.pick(rootEl, SELECTORS.heading, hits, "heading");
-      const sender = senderIn(rootEl);
-      hits.msgSender = sender.el ? 0 : -1;
+      const m = main();
+      const heading = M.pick(m || rootEl, SELECTORS.subject, hits, "subject") || M.pick(rootEl, SELECTORS.heading, hits, "heading");
+      const sender = messageSender(rootEl);
+      hits.msgSender = sender.how;
       const attachments = [];
       for (const n of M.pickAll(rootEl, SELECTORS.attachmentTitles)) {
         if (body.contains(n)) continue;
@@ -222,7 +272,7 @@
       label: "Outlook",
       selectorsVersion: SELECTORS.version,
       canFetchRaw: false,
-      observeRoot: main,
+      observeRoot: () => app() || main(),
       listRows,
       openMessages,
       selectedRowId,
@@ -231,5 +281,5 @@
     };
   }
 
-  return { SELECTORS, HOSTS, isOutlookHost, itemIdFromUrl, isJunkPath, addressFromTitle, looksLikeFileName, adapter };
+  return { SELECTORS, HOSTS, isOutlookHost, itemIdFromUrl, isJunkPath, addressFromTitle, looksLikeFileName, rowSubjectIndex, adapter };
 });

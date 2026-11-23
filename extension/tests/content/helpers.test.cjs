@@ -138,6 +138,27 @@ test("Outlook ItemId, junk folder, sender titles, hosts", () => {
   assert.equal(Ol.looksLikeFileName("someone@x.com"), false);
 });
 
+test("Outlook live DOM (2026-11): row subject leaf, FROM heading text", () => {
+  // Row leaves in document order: avatar initials are skipped by the adapter; sender has title=address,
+  // the date has a title in the UI language (words, not only digits), subject + preview have none.
+  const leaves = [
+    { text: "Microsoft", title: "msa@communication.microsoft.com", sender: true },
+    { text: "Updates to our terms of use", title: "" },
+    { text: "8/15/2026", title: "Sat 8/15/2026 4:34 AM" },
+    { text: "Hello, you are receiving this", title: "" },
+  ];
+  assert.equal(Ol.rowSubjectIndex(leaves), 1);
+  const ar = [{ text: "x", title: "x@y.com", sender: true }, { text: "١٥/٨/٢٠٢٦", title: "السبت ١٥/٨/٢٠٢٦" }, { text: "فاتورة", title: "" }];
+  assert.equal(Ol.rowSubjectIndex(ar), 2);
+  assert.equal(Ol.rowSubjectIndex([{ text: "Lunch?", title: "" }]), 0); // sender not found: first untitled leaf
+  assert.equal(Ol.rowSubjectIndex([]), -1);
+  // Reading pane FROM heading: external sender = "Name<address>" (no space), yourself/contacts = name only.
+  assert.deepEqual(plain(Ol.addressFromTitle("", "Microsoft<msa@communication.microsoft.com>")), { name: "Microsoft", address: "msa@communication.microsoft.com" });
+  assert.equal(Ol.addressFromTitle("", "kenan 1099"), null);
+  assert.equal(Ol.SELECTORS.rows[0].includes("[role=main]"), false); // the list is NOT inside [role=main]
+  assert.equal(Ol.SELECTORS.body.some((s) => s.includes("allowTextSelection")), false); // matched the subject
+});
+
 // ------------------------------------------------------------------------------------- language/theme
 test("pickLang follows the page, then the browser", () => {
   assert.equal(U.pickLang("ar", ["en-US"]), "ar");

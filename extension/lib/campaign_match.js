@@ -46,7 +46,8 @@
   }
 
   function escapeRe(s) {
-    return s.replace(/[.*+?^$\{}()|[\]\\\/-]/g, "\\$&");
+    // "u" flag: only syntax characters may be escaped ("\-" is a SyntaxError); "-" is literal here anyway.
+    return s.replace(/[.*+?^$\{}()|[\]\\\/]/g, "\\$&");
   }
 
   /** Does the (already normalised) phrase occur in the (normalised) text as whole words? */

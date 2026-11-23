@@ -76,3 +76,17 @@ test("campaign_vectors.json parity", { skip: !vectors && "tests/fixtures/campaig
     }
   }
 });
+
+test("regex-special terms never throw (u flag: \"\\-\" was a SyntaxError that silently disabled ALL local matching)", () => {
+  // Live seed feed has "black-friday-angebote", "$5,000 a month", "agreement_review.pdf", "90% off" ...
+  const seed = JSON.parse(require("node:fs").readFileSync(require("node:path").join(__dirname, "../../saqr/intel/data/campaigns_seed.json"), "utf8"));
+  const input = { sender_domain: "x.com", link_domains: [], subject: "Mailbox outage notification", body_text: "some of your messages are held. pending messages" };
+  assert.doesNotThrow(() => C.matchFeed(seed, input));
+  for (const p of ["black-friday-angebote", "a/b", "c++", "(x)", "[y]", "{z}", "a|b", "1.5$", "^~"]) {
+    assert.doesNotThrow(() => C.hasPhrase("t", p), p);
+    assert.ok(C.hasPhrase("see " + p + " now", p), p);
+  }
+  const hy = { id: "cmp-hyphen", terms: ["black-friday-angebote", "copy code"], min_terms: 2, brands: [], indicators: {} };
+  const got = C.matchCampaign(hy, { sender_domain: "", link_domains: [], subject: "Black-Friday-Angebote", body_text: "copy code" });
+  assert.equal(got && got.match, "lure");
+});

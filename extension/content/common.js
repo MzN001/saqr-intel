@@ -114,6 +114,7 @@
     tDangerous: ["Danger: this email looks like a scam", "خطر: هذه الرسالة تبدو احتيالية"],
     tError: ["SAQR could not check this email", "تعذّر على صقر فحص هذه الرسالة"],
     errHint: ["Check your internet connection or the SAQR extension settings, then press Rescan.", "تحقّق من الاتصال بالإنترنت أو من إعدادات إضافة صقر، ثم اضغط «إعادة الفحص»."],
+    errReload: ["SAQR was updated. Reload this page to keep checking your emails.", "تم تحديث صقر. أعد تحميل هذه الصفحة لمتابعة فحص رسائلك."],
     safeHint: ["Still be careful with links and never share codes (OTP) or card details.", "ومع ذلك كن حذراً مع الروابط ولا تشارك رموز التحقق أو بيانات البطاقة أبداً."],
     score: ["Risk {0}/100", "الخطورة {0}/100"],
     headersNotVerified: ["Sender not verified (headers not available)", "لم يتم التحقق من المرسل (الترويسات غير متاحة)"],
@@ -784,6 +785,7 @@
       keys: new Map(), // provider id -> sha256 message_key
       results: new Map(), // message_key -> {status:"scanning"|"done"|"error", result, error, local}
       rowLocal: new Map(), // message_key -> {level, findings, campaigns, model}
+      rowChecked: new Set(), // provider row ids that already had their automatic quick local check
       inflight: new Map(),
       labelled: new Set(),
       scanAll: null, // {total, done, cancelled, counts}
@@ -1001,7 +1003,9 @@
       wrap.appendChild(top);
 
       if (tone === "error") {
-        wrap.appendChild(el("p", { text: t("errHint", L) }));
+        // The extension was reloaded/updated: this old content script can no longer reach it.
+        const stale = !!(rec && /context invalidated/i.test(String(rec.error || "")));
+        wrap.appendChild(el("p", { text: t(stale ? "errReload" : "errHint", L) }));
         if (rec && rec.error) wrap.appendChild(el("div", { cls: "note", text: rec.error }));
       }
 
@@ -1020,7 +1024,8 @@
       for (const c of campaigns.slice(0, 2)) {
         wrap.appendChild(el("div", { cls: "note", text: t("campaign", L, L === "ar" ? c.title_ar || c.title_en : c.title_en || c.title_ar) }));
       }
-      const uni = r ? r.unicode : [];
+      // One line per sample: the backend can report the same look-alike twice (mixed_script + punycode).
+      const uni = r ? r.unicode.filter((u, i, a) => a.findIndex((x) => x.sample_escaped === u.sample_escaped && x.skeleton === u.skeleton) === i) : [];
       if (uni.length) {
         for (const u of uni.slice(0, 2)) {
           // The sample is shown escaped (PаyPal) and always left-to-right, even in Arabic.
@@ -1196,6 +1201,19 @@
       }
     }
 
+    /** Outlook: the open message's inbox row gets its full verdict once the list has loaded. */
+    async function linkSelectedRow(msg, key) {
+      const rec = state.results.get(key);
+      const selId = adapter.selectedRowId && adapter.selectedRowId();
+      if (!selId || !rec || rec.status !== "done") return;
+      const rowKey = await keyFor(selId, {});
+      if (rowKey === key || state.results.get(rowKey) === rec) return;
+      const norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
+      const row = safe(() => adapter.listRows(), []).find((r) => r.id === selId);
+      if (!row || !norm(row.meta.subject) || norm(row.meta.subject) !== norm(msg.meta.subject)) return; // pane not switched yet
+      state.results.set(rowKey, rec);
+    }
+
     async function maybeLearnSpam(msg, key) {
       if (state.labelled.has(key) || !adapter.isSpamView || !adapter.isSpamView()) return;
       const s = await settings();
@@ -1319,6 +1337,33 @@
       tick();
     }
 
+    /**
+     * Automatic quick local check of inbox rows (campaign feed, personal model, look-alike letters):
+     * no backend call, one row at a time, each row once. Only a row with a finding gets a badge.
+     */
+    function checkRowsLocally(rows) {
+      if (state.scanAll) return; // "Scan all" runs the same check itself
+      for (const row of rows) {
+        const base = adapter.provider + ":" + row.id;
+        if (!row.id || state.rowChecked.has(base)) continue;
+        if (state.rowChecked.size > 5000) state.rowChecked.clear();
+        state.rowChecked.add(base);
+        state.rowQueue = (state.rowQueue || Promise.resolve()).then(async () => {
+          try {
+            const key = await keyFor(row.id, row.meta);
+            if (state.rowLocal.has(key) || state.results.has(key)) return;
+            const local = await localFor(row.meta);
+            if (!local.level || state.rowLocal.has(key)) return;
+            state.rowLocal.set(key, local);
+            const live = liveRow(row);
+            if (live) paintBadge(live, key);
+          } catch {
+            /* a row we could not read: no badge */
+          }
+        });
+      }
+    }
+
     /** Gmail re-renders rows; find the current element for the same message. */
     function liveRow(row) {
       if (row.el && row.el.isConnected) return row;
@@ -1360,6 +1405,7 @@
           const key = state.keys.get(adapter.provider + ":" + row.id);
           if (key && (state.rowLocal.has(key) || state.results.has(key))) paintBadge(row, key);
         }
+        checkRowsLocally(rows);
 
         // Opened messages: banner + automatic scan (at most the last 3 expanded ones in a thread).
         for (const m of msgs.slice(-3)) {
@@ -1368,6 +1414,7 @@
           const existing = state.banners.get(key);
           if (existing && existing.isConnected) {
             if (m.body) markLinks(m.body, key);
+            await linkSelectedRow(m, key); // Outlook: the list can load after the reading pane
             continue;
           }
           if (state.results.has(key) || state.inflight.has(key)) {
