@@ -265,7 +265,7 @@ const dict = {
   broadcastAt: { en: "Broadcast", ar: "تم البث" },
   refresh: { en: "Refresh", ar: "تحديث" },
   noWaves: { en: "No active scam waves right now. Stay alert.", ar: "لا توجد موجات احتيال نشطة حالياً. ابقَ يقظاً." },
-  backendOffline: { en: "Can't reach SAQR-INTEL backend. Start it on port 8000.", ar: "تعذّر الاتصال بخادم صقر. شغّله على المنفذ 8000." },
+  backendOffline: { en: "Can't reach the SAQR-INTEL server right now (it may be waking up). Try again in 30 seconds.", ar: "تعذّر الاتصال بخادم صقر حالياً (قد يكون قيد التشغيل). حاول مرة أخرى بعد 30 ثانية." },
   high: { en: "HIGH", ar: "مرتفع" },
   medium: { en: "MEDIUM", ar: "متوسط" },
   low: { en: "LOW", ar: "منخفض" },
