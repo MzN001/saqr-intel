@@ -139,6 +139,8 @@ async def nextdns_status():
         "alerts": {
             "subscribed_phones": await push.count_subscriptions(),
             "alerts_sent": block_watcher.alerts_sent,
+            "alerts_failed": block_watcher.alerts_failed,
+            "last_push_error": push.last_error,
             "last_alert": block_watcher.last_alert,
             "watcher_error": block_watcher.last_error,
             "watcher_mode": block_watcher.mode,

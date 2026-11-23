@@ -165,10 +165,16 @@ class BlockWatcher:
     POLL_SECONDS = 2.5
     STREAM_RETRY_SECONDS = 60.0
     REPEAT_AFTER_SECONDS = 120
+    RETRY_DELAYS = (2.0, 5.0, 15.0)
 
     def __init__(self) -> None:
         self._task: asyncio.Task | None = None
-        self._last_ts: str | None = None
+        self._last_ts: str | None = None  # None until the first look at the logs
+        # Every blocked log line already handled (stream or poll). A timestamp "high-water mark"
+        # alone skipped lines that NextDNS wrote a moment late, so each line is matched by its key.
+        self._seen: dict[str, None] = {}
+        self._retrying: set[str] = set()
+        self.alerts_failed = 0
         self._recent: dict[str, float] = {}
         self.alerts_sent = 0
         self.last_alert: str | None = None
@@ -249,7 +255,7 @@ class BlockWatcher:
                 ts = item.get("timestamp", "")
                 if ts and (self._last_ts is None or ts > self._last_ts):
                     self._last_ts = ts  # so polling afterwards doesn't re-process stream entries
-                if item.get("status") == "blocked":
+                if item.get("status") == "blocked" and self._first_time(item):
                     await self.handle([item])
 
     async def _flagged(self) -> dict[str, dict[str, Any]]:
@@ -261,6 +267,55 @@ class BlockWatcher:
             self._flagged_cache = {e["domain"]: e for e in await collect(settings.nextdns_min_score)}
             self._flagged_at = now
         return self._flagged_cache
+
+    @staticmethod
+    def _key(item: dict[str, Any]) -> str:
+        device = item.get("device")
+        device_id = device.get("id", "") if isinstance(device, dict) else ""
+        domain = (item.get("domain") or "").lower().rstrip(".")
+        return "|".join(str(x) for x in (item.get("timestamp", ""), domain, device_id, item.get("clientIp", "")))
+
+    def _first_time(self, item: dict[str, Any]) -> bool:
+        """True the first time a log line is seen (the stream and the poll can both deliver it)."""
+        key = self._key(item)
+        if key in self._seen:
+            return False
+        self._seen[key] = None
+        if len(self._seen) > 2000:  # keep the newest keys only
+            for old in list(self._seen)[:1000]:
+                del self._seen[old]
+        return True
+
+    async def _deliver(self, domain: str, entity: str | None) -> bool:
+        """Send the alert; if no phone got it, keep retrying in the background. The phone caches the
+        block for ~5 minutes, so it will not ask NextDNS again (and give us a second chance) soon."""
+        from .. import push
+
+        if await push.alert_all(domain, entity):
+            return True
+        self.alerts_failed += 1
+        if domain not in self._retrying and await push.count_subscriptions():
+            self._retrying.add(domain)
+            asyncio.create_task(self._retry(domain, entity), name=f"alert-retry-{domain}")
+        return False
+
+    async def _retry(self, domain: str, entity: str | None) -> None:
+        from .. import push
+
+        try:
+            for delay in self.RETRY_DELAYS:
+                await asyncio.sleep(delay)
+                if await push.alert_all(domain, entity):
+                    self._mark_alerted(domain)
+                    return
+                self.alerts_failed += 1
+        finally:
+            self._retrying.discard(domain)
+
+    def _mark_alerted(self, domain: str) -> None:
+        self._recent[domain] = time.monotonic()
+        self.alerts_sent += 1
+        self.last_alert = iso()
 
     async def handle(self, items: list[dict[str, Any]]) -> list[str]:
         from .. import push
@@ -278,14 +333,13 @@ class BlockWatcher:
                 self._flagged_at = -1e9
                 flagged = await self._flagged()
                 hit = next((n for n in names if n in flagged), None)
-            if not hit or now - self._recent.get(hit, -1e9) < self.REPEAT_AFTER_SECONDS or hit in alerted:
+            if (not hit or now - self._recent.get(hit, -1e9) < self.REPEAT_AFTER_SECONDS or hit in alerted
+                    or hit in self._retrying):
                 continue
-            if not await push.alert_all(hit, flagged[hit].get("impersonated_entity")):
-                continue  # nothing delivered: allow a retry on the next blocked attempt
-            self._recent[hit] = now
+            if not await self._deliver(hit, flagged[hit].get("impersonated_entity")):
+                continue  # retried in the background; a later blocked attempt may also retry
+            self._mark_alerted(hit)
             alerted.append(hit)
-            self.alerts_sent += 1
-            self.last_alert = iso()
         return alerted
 
     async def poll_once(self, client: httpx.AsyncClient) -> list[str]:
@@ -293,12 +347,14 @@ class BlockWatcher:
         r = await client.get(url, params={"status": "blocked", "limit": 50})
         r.raise_for_status()
         items = r.json().get("data", [])
-        newest = max((i.get("timestamp", "") for i in items), default=self._last_ts)
-        if self._last_ts is None:  # first look: remember where we are, don't alert on old history
-            self._last_ts = newest or ""
+        newest = max((i.get("timestamp", "") for i in items), default=self._last_ts or "")
+        if self._last_ts is None:  # first look: remember what is there, don't alert on old history
+            for i in items:
+                self._first_time(i)
+            self._last_ts = newest
             return []
-        fresh = [i for i in items if i.get("timestamp", "") > self._last_ts]
-        self._last_ts = newest or self._last_ts
+        self._last_ts = max(self._last_ts, newest)
+        fresh = [i for i in items if self._first_time(i)]
         return await self.handle(fresh) if fresh else []
 
 

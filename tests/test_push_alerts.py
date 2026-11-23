@@ -154,3 +154,55 @@ def test_block_watcher_alerts_only_for_saqr_flagged_domains(client, sent):
     assert second == ["tamm-smart-pay.net"]  # once, despite two log lines; ad block ignored
     new = sent[before:]
     assert len(new) == 1 and "TAMM" in new[0][1]["body"] and json.dumps(new[0][1])
+
+
+def test_late_written_block_is_not_skipped(client, sent):
+    """The 15:01:10 miss: a blocked line that shows up after newer lines were already seen."""
+    client.post("/api/push/subscribe", json={"subscription": SUB, "lang": "en"})
+    logs = {"data": [{"timestamp": "2026-11-23T15:00:00.000Z", "domain": "old.example", "status": "blocked"}]}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=logs)
+
+    async def go():
+        watcher = BlockWatcher()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+            await watcher.poll_once(c)  # baseline
+            logs["data"] = [{"timestamp": "2026-11-23T15:01:20.000Z", "domain": "ads.example", "status": "blocked"}]
+            await watcher.poll_once(c)
+            # NextDNS writes the phone's 15:01:10 block a moment late, behind a newer line:
+            logs["data"] = [{"timestamp": "2026-11-23T15:01:20.000Z", "domain": "ads.example", "status": "blocked"},
+                            {"timestamp": "2026-11-23T15:01:10.000Z", "domain": "saqr-demo-scam.vercel.app",
+                             "status": "blocked"}]
+            return await watcher.poll_once(c), await watcher.poll_once(c)
+
+    before = len(sent)
+    late, again = client.portal.call(go)
+    assert late == ["saqr-demo-scam.vercel.app"] and again == []
+    assert len(sent[before:]) == 1
+
+
+def test_failed_alert_is_retried(client, monkeypatch):
+    client.post("/api/push/subscribe", json={"subscription": SUB, "lang": "en"})
+    calls = []
+
+    def flaky(sub, payload, *_):
+        calls.append(payload["body"])
+        if len(calls) <= 2:  # first alert and its fresh-connection retry both fail
+            raise push.requests.ConnectionError("apple hiccup")
+        return 201
+
+    monkeypatch.setattr(push, "_send_sync", flaky)
+
+    async def go():
+        import asyncio
+        watcher = BlockWatcher()
+        watcher.RETRY_DELAYS = (0.05,)
+        first = await watcher.handle([{"timestamp": "t", "domain": "aed-refund-claim.vercel.app", "status": "blocked"}])
+        await asyncio.sleep(0.5)
+        return first, watcher
+
+    first, watcher = client.portal.call(go)
+    assert first == [] and watcher.alerts_failed == 1 and watcher.alerts_sent == 1
+    assert len(calls) == 3 and push.last_error and "ConnectionError" in push.last_error
+    assert client.get("/api/nextdns-status").json()["alerts"]["last_push_error"]

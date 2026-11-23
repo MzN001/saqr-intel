@@ -106,6 +106,12 @@ def _new_session() -> requests.Session:
 
 
 _session = _new_session()
+last_error: str | None = None  # last failed delivery, shown in /api/nextdns-status (no secrets)
+
+
+def _note_error(text: str) -> None:
+    global last_error
+    last_error = f"{iso()} {text}"
 
 
 def _send_sync(sub: dict[str, Any], payload: dict[str, Any], session: requests.Session) -> int:
@@ -137,10 +143,13 @@ async def send(row: dict[str, Any], payload: dict[str, Any]) -> bool:
                 log.info("Removed expired push subscription")
                 return False
             log.warning("Push failed (HTTP %s): %s", status, str(exc)[:200])
+            _note_error(f"push service HTTP {status}")
         except requests.RequestException as exc:  # stale/broken connection: retry once on a fresh one
             log.info("Push connection problem (%s), retrying fresh", type(exc).__name__)
-        except Exception:  # noqa: BLE001
+            _note_error(f"connection: {type(exc).__name__}")
+        except Exception as exc:  # noqa: BLE001
             log.exception("Unexpected push error")
+            _note_error(f"unexpected: {type(exc).__name__}")
             return False
         if attempt == 1:
             _session.close()
