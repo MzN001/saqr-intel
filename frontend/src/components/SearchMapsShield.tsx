@@ -139,7 +139,7 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
                   href={link(SCAM_POST_URL)}
                   onClick={interceptMaps}
                   animate={{ boxShadow: ["0 0 0 0 rgba(11,87,208,0.45)", "0 0 0 8px rgba(11,87,208,0)"] }}
-                  transition={{ duration: 1.6, repeat: Infinity }}
+                  transition={{ duration: 1.6, repeat: 3 }}
                   className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[#0b57d0] bg-[#e8f0fe] px-3.5 py-2 text-[13px] font-semibold text-[#0b57d0] dark:border-[#a8c7fa] dark:bg-[#0b57d0]/35 dark:text-[#d3e3fd]"
                 >
                   <Globe className="size-3.5" /> {t("visitWebsite")}

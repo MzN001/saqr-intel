@@ -11,6 +11,8 @@ const dict = {
     en: "Agentless Cloud Shield Active • Zero App Install • Zero Phone Battery or RAM Usage",
     ar: "الدرع السحابي نشط بدون تطبيق • لا حاجة لتثبيت أي تطبيق • لا استهلاك لبطارية الهاتف أو ذاكرته",
   },
+  // Phones: the first claim of `banner` only, so the strip stays on one line.
+  bannerShort: { en: "Agentless Cloud Shield Active", ar: "الدرع السحابي نشط بدون تطبيق" },
   aman: { en: "Aman", ar: "أمان" },
   sms: { en: "SMS", ar: "رسالة" },
   checkTitle: { en: "Check any link", ar: "افحص أي رابط" },

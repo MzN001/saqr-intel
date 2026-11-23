@@ -49,7 +49,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
           <ScanSearch className="size-5" />
         </span>
         <div className="min-w-0">
-          <h2 id="link-checker-title" className="text-lg font-extrabold leading-tight text-ink">
+          <h2 id="link-checker-title" className="text-balance text-base font-extrabold leading-snug text-ink sm:text-lg sm:leading-tight">
             {t("checkTitle")}
           </h2>
           <p className="mt-0.5 text-sm text-ink-soft">{t("checkHint")}</p>
@@ -65,7 +65,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
             invalid ? "ring-crimson-600" : "ring-line focus-within:ring-emerald-600"
           }`}
         >
-          <Link2 className="size-4 shrink-0 text-ink-soft/70" />
+          <Link2 className="size-4 shrink-0 text-ink-soft/80" />
           <input
             ref={input}
             id="link-checker-input"
@@ -85,7 +85,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
             placeholder={t("checkPlaceholder")}
             aria-invalid={invalid}
             aria-describedby={invalid ? "link-checker-error" : undefined}
-            className="min-w-0 flex-1 bg-transparent py-3 text-[15px] text-ink outline-none placeholder:text-ink-soft/50"
+            className="min-w-0 flex-1 bg-transparent py-3 text-[15px] text-ink outline-none placeholder:text-ink-soft/80"
           />
           {value && (
             <button
@@ -96,7 +96,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
                 input.current?.focus();
               }}
               aria-label={t("checkClear")}
-              className="rounded-full p-1 text-ink-soft/70 hover:bg-line hover:text-ink"
+              className="rounded-full p-1 text-ink-soft/80 hover:bg-line hover:text-ink"
             >
               <X className="size-4" />
             </button>
@@ -104,7 +104,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
         </div>
         <button
           type="submit"
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.97] sm:px-5 sm:py-0"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 active:scale-[0.97] sm:px-5 sm:py-0"
         >
           <ShieldCheck className="size-4" />
           {t("checkButton")}
@@ -127,7 +127,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
       </AnimatePresence>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-semibold text-ink-soft/70">{t("checkTry")}</span>
+        <span className="font-semibold text-ink-soft/80">{t("checkTry")}</span>
         <button
           type="button"
           onClick={() => tryExample(SCAM_FINE_URL)}
@@ -138,7 +138,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
         <button
           type="button"
           onClick={() => tryExample(OFFICIAL_EXAMPLE)}
-          className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-600/20 hover:bg-emerald-600/15 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/25"
+          className="press rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-600/20 hover:bg-emerald-600/15 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/25"
         >
           {t("exampleSafe")}
         </button>

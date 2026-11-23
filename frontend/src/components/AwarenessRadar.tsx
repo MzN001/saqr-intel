@@ -146,7 +146,7 @@ function AlertCard({ card, index }: { card: AlertCardData; index: number }) {
           <BellRing className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-ink-soft/70">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-ink-soft/80">
             <span>{lang === "ar" ? "شرطة أبوظبي" : "Abu Dhabi Police"}</span>·
             <span>
               {t("broadcastAt")} {new Date(card.generatedAt).toLocaleTimeString(lang === "ar" ? "ar-AE" : "en-AE", { hour: "2-digit", minute: "2-digit" })}
@@ -164,7 +164,7 @@ function AlertCard({ card, index }: { card: AlertCardData; index: number }) {
         <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink">{post}</p>
 
         <div>
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-soft/70">{t("targetAreas")}</p>
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-soft/80">{t("targetAreas")}</p>
           <div className="flex flex-wrap gap-1.5">
             {areas.map((a, i) => (
               <motion.span
@@ -189,7 +189,7 @@ function AlertCard({ card, index }: { card: AlertCardData; index: number }) {
             <div key={label} className="rounded-2xl bg-muted p-2.5">
               <Icon className="mx-auto size-4 text-ink-soft" />
               <p className="mt-1 text-lg font-extrabold tabular-nums text-ink">{value}</p>
-              <p className="text-[10px] font-medium leading-tight text-ink-soft/70">{label}</p>
+              <p className="text-[10px] font-medium leading-tight text-ink-soft/80">{label}</p>
             </div>
           ))}
         </div>

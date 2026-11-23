@@ -99,13 +99,18 @@ html[lang="ar"] body {
   font-family: var(--font-arabic);
 }
 
+/* "Scanning…" heading: solid text that breathes while the scan runs (in-progress, not decoration). */
 .shimmer-text {
-  background: linear-gradient(90deg, currentColor 25%, rgba(255, 255, 255, 0.95) 50%, currentColor 75%);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: var(--animate-shimmer);
+  animation: saqr-breathe 1.6s ease-in-out infinite;
+}
+@keyframes saqr-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 .map-grid {
@@ -192,4 +197,38 @@ html.theme-fading *::after {
 }
 .leaflet-container {
   background: #060f1c;
+}
+
+/* ---- Browser surfaces in the SAQR palette (selection, caret, focus, form accents, scrollbars) ---- */
+::selection {
+  background: color-mix(in oklab, var(--color-emerald-brand) 28%, transparent);
+  color: inherit;
+}
+:root {
+  caret-color: var(--color-emerald-brand);
+  accent-color: var(--color-emerald-brand);
+  scrollbar-color: color-mix(in oklab, var(--color-navy-700) 45%, transparent) transparent;
+}
+:focus-visible {
+  outline: 2px solid var(--color-emerald-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Phone tab bar: fade the trailing edge so a cut-off tab reads as "scroll for more". */
+@media (max-width: 639px) {
+  .tab-scroller {
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  [dir="rtl"] .tab-scroller {
+    mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  }
+}
+
+/* Press feedback on primary actions: a short squeeze that confirms the tap. */
+.press {
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease, box-shadow 150ms ease;
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
 }

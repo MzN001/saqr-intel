@@ -167,7 +167,7 @@ function Card({ title, icon: Icon, children, delay = 0.3 }: { title: string; ico
       transition={{ delay }}
       className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line"
     >
-      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">
+      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/80">
         <Icon className="size-4" /> {title}
       </p>
       <div className="mt-2">{children}</div>
@@ -837,12 +837,12 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
             className="grid gap-3 sm:grid-cols-2"
           >
             <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t("impersonating")}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("impersonating")}</p>
               <p className="mt-1 text-lg font-bold text-crimson-700 dark:text-red-300">{entity}</p>
             </div>
             {official && (
               <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-                <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t("officialSite")}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("officialSite")}</p>
                 <p className="mt-1 flex items-center gap-2 text-lg font-bold text-emerald-700 dark:text-emerald-400" dir="ltr">
                   <ShieldCheck className="size-5" /> {official}
                 </p>
@@ -884,7 +884,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
             className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line"
           >
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t(tone === "safe" ? "whySafe" : "whyDangerous")}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t(tone === "safe" ? "whySafe" : "whyDangerous")}</p>
               <button
                 onClick={() => setShowOther((s) => !s)}
                 className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:bg-line"
@@ -914,7 +914,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
 
         {result.redFlags.length > 0 && (
           <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t("redFlags")}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("redFlags")}</p>
             <ul className="mt-2 space-y-2">
               {[...result.redFlags]
                 .sort((a, b) => b.points - a.points)
@@ -970,7 +970,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
               <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
                 <Clock className="size-5 text-crimson-600" />
                 <div>
-                  <p className="text-xs text-ink-soft/70">{t("registered")}</p>
+                  <p className="text-xs text-ink-soft/80">{t("registered")}</p>
                   <p className="font-bold">
                     {Math.round(result.domainAgeHours)} {t("hoursAgo")}
                   </p>
@@ -981,7 +981,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
               <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
                 <Server className="size-5 text-ink-soft" />
                 <div>
-                  <p className="text-xs text-ink-soft/70">{t("hostedOn")}</p>
+                  <p className="text-xs text-ink-soft/80">{t("hostedOn")}</p>
                   <p className="font-mono font-bold" dir="ltr">
                     {result.ip}
                   </p>
@@ -999,7 +999,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
 
         {result.screenshot && (
           <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t("evidence")}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("evidence")}</p>
             <div className="relative mt-2 overflow-hidden rounded-xl ring-1 ring-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -1030,7 +1030,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                   href={`https://${official}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
+                  className="press col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
                 >
                   <ShieldCheck className="size-4" /> {t("goOfficial")}
                 </a>
@@ -1040,7 +1040,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                 href={official ? `https://${official}` : "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
+                className="press col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
               >
                 <ExternalLink className="size-4" /> {t("continueSite")}
               </a>
@@ -1051,7 +1051,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                     href={`https://${official}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
+                    className="press flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
                   >
                     <ShieldCheck className="size-4" /> {t("goOfficial")}
                   </a>
@@ -1081,7 +1081,7 @@ function ErrorView({ message, onRetry, onClose }: { message: string; onRetry: ()
       <h2 className="mt-4 text-2xl font-bold">{t("scanFailed")}</h2>
       <p className="mt-2 max-w-sm text-sm text-white/70">{message}</p>
       <div className="mt-6 flex gap-3">
-        <button onClick={onRetry} className="rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold">
+        <button onClick={onRetry} className="press rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold">
           {t("retry")}
         </button>
         <button onClick={onClose} className="rounded-xl bg-white/10 px-5 py-2.5 font-semibold">

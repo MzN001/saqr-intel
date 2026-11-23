@@ -85,7 +85,7 @@ export function BackgroundShieldCard() {
           <ShieldCheck className="size-5" />
         </span>
         <div className="min-w-0">
-          <h2 id="bg-shield-title" className="text-lg font-extrabold leading-tight text-ink">
+          <h2 id="bg-shield-title" className="text-balance text-base font-extrabold leading-snug text-ink sm:text-lg sm:leading-tight">
             {t("bgTitle")}
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-ink-soft">{t("bgIntro")}</p>
@@ -93,7 +93,7 @@ export function BackgroundShieldCard() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t("bgPlatform")}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("bgPlatform")}</span>
         <div role="tablist" aria-label={t("bgPlatform")} className="flex rounded-full bg-muted p-1 ring-1 ring-line">
           {tabs.map(({ id: tabId, label, icon: Icon }) => (
             <button
@@ -127,7 +127,7 @@ export function BackgroundShieldCard() {
           }`}
         >
           <span className="relative mt-1 flex size-2 shrink-0">
-            {!feed.last_error && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-70" />}
+            {!feed.last_error && <span className="absolute inline-flex size-full animate-[ping_1.4s_cubic-bezier(0,0,0.2,1)_3] rounded-full bg-emerald-500 opacity-70" />}
             <span className={`relative inline-flex size-2 rounded-full ${feed.last_error ? "bg-amber-500" : "bg-emerald-500"}`} />
           </span>
           <span>
@@ -171,7 +171,7 @@ export function BackgroundShieldCard() {
             className="mt-4 space-y-4"
           >
             <div className="rounded-2xl bg-muted p-3 ring-1 ring-line">
-              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t("bgAndroidHost")}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("bgAndroidHost")}</p>
               <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <code dir="ltr" className="min-w-0 flex-1 truncate rounded-xl bg-surface px-3 py-2.5 text-sm font-bold text-ink ring-1 ring-line">
                   {dotHost}
@@ -179,7 +179,7 @@ export function BackgroundShieldCard() {
                 <button
                   type="button"
                   onClick={copyHost}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 active:scale-[0.98]"
                 >
                   {copied === "ok" ? <Check className="size-4" /> : <Copy className="size-4" />}
                   {t("bgCopyAndroid")}
@@ -227,7 +227,7 @@ export function BackgroundShieldCard() {
         )}
       </AnimatePresence>
 
-      <p className="mt-4 border-t border-line pt-3 text-[11px] leading-relaxed text-ink-soft/75">{t("bgFootnote")}</p>
+      <p className="mt-4 border-t border-line pt-3 text-xs leading-relaxed text-ink-soft/80">{t("bgFootnote")}</p>
     </section>
   );
 }

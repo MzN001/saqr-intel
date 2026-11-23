@@ -11,17 +11,17 @@ export function Header() {
   const { t, lang, setLang } = useLang();
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
-        <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-navy-900 shadow-md ring-2 ring-gold-500/60">
+      <div className="mx-auto flex max-w-7xl items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6">
+        <div className="relative grid size-10 shrink-0 place-items-center rounded-2xl bg-navy-900 shadow-md ring-2 ring-gold-500/60 sm:size-11">
           <ShieldCheck className="size-6 text-gold-500" />
           <span className="absolute -bottom-0.5 -end-0.5 size-3 rounded-full border-2 border-surface bg-emerald-500" />
         </div>
         <div className="min-w-0">
           <p className="whitespace-nowrap text-lg font-extrabold leading-none tracking-tight text-ink">{t("appName")}</p>
-          <p className="mt-1 truncate text-xs font-medium text-ink-soft/70">{t("appTagline")}</p>
+          <p className="mt-1 whitespace-nowrap text-xs font-medium text-ink-soft/80">{t("appTagline")}</p>
         </div>
 
-        <div className="ms-auto flex items-center gap-2">
+        <div className="ms-auto flex items-center gap-1.5 sm:gap-2">
           <a
             href="tel:8002626"
             className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-ink ring-1 ring-line hover:bg-line md:inline-flex"
@@ -76,13 +76,14 @@ export function StatusBanner() {
   const { t } = useLang();
   return (
     <div className="relative overflow-hidden bg-navy-900 text-white dark:border-b dark:border-white/5 dark:bg-navy-950">
-      <div className="pointer-events-none absolute inset-0 animate-[shimmer_7s_linear_infinite] bg-[linear-gradient(90deg,transparent_30%,rgba(52,211,153,0.16)_50%,transparent_70%)] bg-[length:200%_100%]" />
+      <div className="pointer-events-none absolute inset-0 animate-[shimmer_3.5s_ease-out_1] bg-[linear-gradient(90deg,transparent_30%,rgba(52,211,153,0.16)_50%,transparent_70%)] bg-[length:200%_100%]" />
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-2.5 text-center text-xs font-semibold sm:text-sm">
         <span className="relative flex size-2.5 shrink-0">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="absolute inline-flex size-full animate-[ping_1.4s_cubic-bezier(0,0,0.2,1)_3] rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400" />
         </span>
-        <span>{t("banner")}</span>
+        <span className="sm:hidden">{t("bannerShort")}</span>
+        <span className="hidden sm:inline">{t("banner")}</span>
         <span className="hidden items-center gap-2 text-emerald-300 sm:flex">
           <Cloud className="size-4" />
           <Zap className="size-4" />
