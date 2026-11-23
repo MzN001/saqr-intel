@@ -105,7 +105,7 @@ export function XWarningModal({
     <Modal open={open} onClose={onClose} title={t("xModalTitle")}>
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-ink-soft/70">{t("xDraftLang")}</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("xDraftLang")}</span>
           <div role="radiogroup" aria-label={t("xDraftLang")} className="flex rounded-full bg-muted p-1 text-xs font-bold ring-1 ring-line" dir="ltr">
             {(["en", "ar"] as const).map((l) => (
               <button
@@ -163,7 +163,7 @@ export function XWarningModal({
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => logXAlert(warning.domain, warning.entityEn)} // live counter on /police
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-navy-800 dark:bg-white dark:text-navy-900 dark:hover:bg-white/90"
+              className="press inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-navy-800 dark:bg-white dark:text-navy-900 dark:hover:bg-white/90"
             >
               <XLogo className="size-4" /> {t("xApprove")}
             </a>
@@ -241,7 +241,7 @@ export function XAlertPrompt({ warning }: { warning: WarningInfo }) {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-navy-800 dark:bg-white dark:text-navy-900 dark:hover:bg-white/90"
+              className="press inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-navy-800 dark:bg-white dark:text-navy-900 dark:hover:bg-white/90"
             >
               <XLogo className="size-4" /> {t("xYes")}
             </button>

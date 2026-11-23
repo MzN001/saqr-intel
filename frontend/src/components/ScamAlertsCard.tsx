@@ -30,6 +30,23 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/** Resolve `p`, or reject after `ms` so a stalled browser API can't leave the card loading forever. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = window.setTimeout(() => reject(new Error("timeout")), ms);
+    p.then(
+      (v) => {
+        window.clearTimeout(id);
+        resolve(v);
+      },
+      (e) => {
+        window.clearTimeout(id);
+        reject(e);
+      },
+    );
+  });
+}
+
 async function registration(): Promise<ServiceWorkerRegistration> {
   const existing = await navigator.serviceWorker.getRegistration("/");
   return existing ?? navigator.serviceWorker.register("/sw.js");
@@ -77,7 +94,7 @@ function IosSteps() {
               <Icon className="size-4.5" />
             </span>
             <span className="text-sm font-medium text-ink">
-              <span className="me-1.5 font-extrabold text-ink-soft/60">{i + 1}.</span>
+              <span className="me-1.5 font-extrabold text-ink-soft/80">{i + 1}.</span>
               {text}
             </span>
           </li>
@@ -113,7 +130,7 @@ export function ScamAlertsCard() {
       else if (Notification.permission === "denied") next = "denied";
       else {
         try {
-          const sub = await (await registration()).pushManager.getSubscription();
+          const sub = await withTimeout(registration().then((r) => r.pushManager.getSubscription()), 5000);
           ep = sub?.endpoint ?? null;
           next = sub ? "on" : "off";
           // Cloud backends can restart with an empty phone list (Render free tier): re-register
@@ -214,12 +231,12 @@ export function ScamAlertsCard() {
           <motion.span
             className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25"
             animate={on ? { rotate: [0, -14, 12, -8, 6, 0] } : { rotate: 0 }}
-            transition={on ? { duration: 1.1, repeat: Infinity, repeatDelay: 3.5 } : undefined}
+            transition={on ? { duration: 1.1, repeat: 1, repeatDelay: 1.5 } : undefined}
           >
             {on ? <BellRing className="size-5.5" /> : <BellRing className="size-5.5 text-gold-500" />}
           </motion.span>
           <div className="min-w-0">
-            <h2 id="alerts-title" className="text-lg font-extrabold leading-tight">
+            <h2 id="alerts-title" className="text-balance text-base font-extrabold leading-snug sm:text-lg sm:leading-tight">
               {t("alTitle")}
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-white/80">{on ? t("alOnSub") : t("alIntro")}</p>
@@ -258,9 +275,9 @@ export function ScamAlertsCard() {
                 type="button"
                 onClick={enable}
                 disabled={state === "busy"}
-                className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-emerald-600 px-5 py-4 text-base font-extrabold text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.8)] transition hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-80"
+                className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-emerald-700 px-5 py-4 text-base font-extrabold text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.8)] transition hover:bg-emerald-800 active:scale-[0.98] disabled:opacity-80"
               >
-                <span className="pointer-events-none absolute inset-0 animate-[shimmer_3s_linear_infinite] bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.25)_50%,transparent_65%)] bg-[length:200%_100%]" />
+                <span className="pointer-events-none absolute inset-0 animate-[shimmer_2.5s_ease-out_1] bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.25)_50%,transparent_65%)] bg-[length:200%_100%]" />
                 {state === "busy" ? <Loader2 className="relative size-5 animate-spin" /> : <BellRing className="relative size-5" />}
                 <span className="relative">{state === "busy" ? t("alEnabling") : t("alEnable")}</span>
               </button>
@@ -314,7 +331,7 @@ export function ScamAlertsCard() {
           )}
         </AnimatePresence>
 
-        <p className="text-[11px] leading-relaxed text-ink-soft/75">{t("alHow")}</p>
+        <p className="text-xs leading-relaxed text-ink-soft/80">{t("alHow")}</p>
       </div>
     </section>
   );

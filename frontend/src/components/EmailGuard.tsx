@@ -151,7 +151,7 @@ function LlmPanel({ open, onToggle, error }: { open: boolean; onToggle: () => vo
         autoCorrect="off"
         spellCheck={false}
         dir="ltr"
-        className="mt-1 w-full rounded-xl bg-muted px-3 py-2.5 font-mono text-sm text-ink outline-none ring-1 ring-line placeholder:text-ink-soft/50 focus:ring-2 focus:ring-emerald-600"
+        className="mt-1 w-full rounded-xl bg-muted px-3 py-2.5 font-mono text-sm text-ink outline-none ring-1 ring-line placeholder:text-ink-soft/80 focus:ring-2 focus:ring-emerald-600"
       />
     </label>
   );
@@ -379,7 +379,7 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
                 placeholder={t(mode === "raw" ? "emRawPlaceholder" : "emTextPlaceholder")}
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? "email-guard-error" : undefined}
-                className={`block w-full resize-y rounded-2xl bg-transparent p-3.5 text-ink outline-none placeholder:text-ink-soft/50 ${
+                className={`block w-full resize-y rounded-2xl bg-transparent p-3.5 text-ink outline-none placeholder:text-ink-soft/80 ${
                   mode === "raw" ? "font-mono text-xs leading-relaxed" : "text-[15px] leading-relaxed"
                 }`}
               />
@@ -388,7 +388,7 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
                   type="button"
                   onClick={() => (mode === "raw" ? setRaw : setText)("")}
                   aria-label={t("checkClear")}
-                  className="absolute end-2 top-2 rounded-full bg-surface/80 p-1 text-ink-soft/70 ring-1 ring-line hover:text-ink"
+                  className="absolute end-2 top-2 rounded-full bg-surface/80 p-1 text-ink-soft/80 ring-1 ring-line hover:text-ink"
                 >
                   <X className="size-4" />
                 </button>
@@ -420,7 +420,7 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
                     if (picker.current) picker.current.value = "";
                   }}
                   aria-label={t("emFileRemove")}
-                  className="shrink-0 rounded-full p-1 text-ink-soft/70 hover:bg-line hover:text-ink"
+                  className="shrink-0 rounded-full p-1 text-ink-soft/80 hover:bg-line hover:text-ink"
                 >
                   <X className="size-4" />
                 </button>
@@ -487,7 +487,7 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
         <button
           type="submit"
           disabled={busy}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 active:scale-[0.98] disabled:opacity-60"
         >
           <ShieldCheck className="size-4" />
           {t("emScan")}
@@ -495,7 +495,7 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
       </form>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-semibold text-ink-soft/70">{t("checkTry")}</span>
+        <span className="font-semibold text-ink-soft/80">{t("checkTry")}</span>
         <button
           type="button"
           onClick={() => {
