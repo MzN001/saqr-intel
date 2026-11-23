@@ -1,7 +1,7 @@
 {
  "format": "saqr-campaigns",
  "version": 1,
- "generated_at": "2026-11-23T17:31:41Z",
+ "generated_at": "2026-11-23T18:12:48Z",
  "ttl_hours": 6,
  "sources": [
   {
@@ -10,8 +10,8 @@
    "url": "https://saqr-intel-api.onrender.com/api/campaigns",
    "license": "Summaries CC BY 4.0; facts from the cited sources",
    "ok": true,
-   "fetched_at": "2026-11-23T17:31:41Z",
-   "items": 29
+   "fetched_at": "2026-11-23T18:12:48Z",
+   "items": 37
   },
   {
    "id": "bleepingcomputer",
@@ -105,6 +105,137 @@
    "indicators": {
     "sender_domains": [],
     "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-28d49192",
+   "title_en": "Fake 'secure voicemail' HTML attachment (LUMEN portal): any click redirects",
+   "title_ar": "مرفق HTML لبريد صوتي «آمن» مزيف (بوابة LUMEN): أي نقرة تعيد التوجيه",
+   "summary_en": "A calm, routine-looking email about an encrypted voicemail asks you to open an HTML attachment showing a fake LUMEN secure voicemail portal. The whole page is one link, so a click anywhere sends you to the attacker's 'identity verification' site.",
+   "summary_ar": "رسالة هادئة تبدو روتينية عن بريد صوتي مشفّر تطلب فتح مرفق HTML يعرض بوابة بريد صوتي مزيفة باسم LUMEN. الصفحة كلها رابط واحد، فأي نقرة تنقلك إلى موقع «تحقق من الهوية» يديره المهاجم.",
+   "brands": [
+    "lumen"
+   ],
+   "terms": [
+    "secure voicemail",
+    "encrypted voicemail",
+    "voicemail portal",
+    "secure delivery",
+    "authenticated communication",
+    "identity verification",
+    "بريد صوتي آمن",
+    "رسالة صوتية مشفرة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-20T00:00:00Z",
+   "last_seen": "2026-11-20T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://blog.barracuda.com/2026/11/23/html-voicemail-phishing-trap",
+     "title": "Barracuda: Any click will do - the HTML voicemail scam where the entire page is a phishing trap"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "coachjosuecosta.com"
+    ]
+   }
+  },
+  {
+   "id": "cmp-56dcb5b5",
+   "title_en": "Device-code phishing: \"enter this code\" to see a document or voicemail",
+   "title_ar": "تصيّد «رمز الجهاز»: «أدخل هذا الرمز» لعرض مستند أو بريد صوتي",
+   "summary_en": "Emails about password expiry, documents to sign or new voicemails send you to the real Microsoft sign-in page and ask you to enter a short code. The code logs the attacker into your Microsoft 365 account - no password needed. Kits like EvilTokens and Tycoon 2FA spread it.",
+   "summary_ar": "رسائل عن انتهاء كلمة المرور أو مستندات للتوقيع أو بريد صوتي جديد ترسلك إلى صفحة تسجيل دخول مايكروسوفت الحقيقية وتطلب إدخال رمز قصير. هذا الرمز يُدخل المحتال إلى حسابك في Microsoft 365 دون كلمة مرور.",
+   "brands": [
+    "microsoft",
+    "microsoft 365",
+    "office 365",
+    "office365",
+    "microsoft teams",
+    "docusign",
+    "mimecast",
+    "مايكروسوفت"
+   ],
+   "terms": [
+    "action required: password expiration",
+    "password expiration",
+    "devicelogin",
+    "device login",
+    "get authentication code",
+    "authentication code",
+    "enter the code",
+    "new voicemail",
+    "missed call - new voicemail message",
+    "voicemail notification",
+    "new voice message",
+    "review document",
+    "signature required",
+    "agreement_review.pdf",
+    "document pending your electronic signature",
+    "contract awaiting your signature",
+    "scheduled electronic payment",
+    "remittance reports"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "critical",
+   "first_seen": "2026-04-06T00:00:00Z",
+   "last_seen": "2026-11-19T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.microsoft.com/en-us/security/blog/2026/04/06/ai-enabled-device-code-phishing-campaign/",
+     "title": "Microsoft Security: AI-enabled device code phishing campaign"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.mimecast.com/threat-intelligence-hub/oauth-device-code-phishing-campaigns/",
+     "title": "Mimecast: OAuth device code phishing campaigns surge with EvilTokens toolkit"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://cofense.com/blog/beyond-passwords-how-attackers-abuse-device-code-authentication",
+     "title": "Cofense: Beyond passwords - how attackers abuse device code authentication"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.okta.com/blog/threat-intelligence/tycoon_2fa_phishing_actors_scatter/",
+     "title": "Okta: Tycoon 2FA phishing actors disperse, branch into new attacks"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.hornetsecurity.com/en/blog/microsoft-365-device-code-phishing/",
+     "title": "Hornetsecurity: Device code phishing resurges in November through fake SharePoint payment documents"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "graph-microsoft.com",
+     "portal-azure.com",
+     "office365-login.com",
+     "office-verify.net",
+     "00a7af15-a112-4457-86c2-5c56751f0f47-endpoint.com",
+     "sso-nodeconnect.icu",
+     "synerghylnksloads.cfd",
+     "promtateusachorloadscorp.sbs",
+     "krointechbillpaycheckingusalexingto.sbs"
+    ]
    }
   },
   {
@@ -428,8 +559,8 @@
    "id": "cmp-ca016168",
    "title_en": "Fake \"email outage: your messages are held\" notices",
    "title_ar": "إشعارات مزيفة: «عطل في البريد ورسائلك محتجزة»",
-   "summary_en": "Riding on the November 2026 Microsoft 365 outage, emails styled as an \"Outage Notification\" from your own organisation say messages are held and \"will be deleted within 24 hours unless released\", with a \"RESTORE MESSAGES\" button that steals your password.",
-   "summary_ar": "استغلالاً لعطل Microsoft 365 في نوفمبر 2026، تصل رسائل بشكل «إشعار انقطاع» من جهة عملك تزعم أن رسائلك محتجزة «وستُحذف خلال 24 ساعة ما لم يتم الإفراج عنها» مع زر «استعادة الرسائل» يسرق كلمة المرور.",
+   "summary_en": "Riding on the November 2026 Microsoft 365 outage, emails styled as an \"Outage Notification\" from your own organisation say messages are held and \"will be deleted within 24 hours unless released\", with a \"RESTORE MESSAGES\" button that steals your password. Microsoft, Mimecast and Kaspersky saw the same wave, including \"Outlook is disconnected\" reconnect lures and a French version.",
+   "summary_ar": "استغلالاً لعطل Microsoft 365 في نوفمبر 2026، تصل رسائل بشكل «إشعار انقطاع» من جهة عملك تزعم أن رسائلك محتجزة «وستُحذف خلال 24 ساعة ما لم يتم الإفراج عنها» مع زر «استعادة الرسائل» يسرق كلمة المرور. رصدت مايكروسوفت وMimecast وكاسبرسكي الموجة نفسها، ومنها رسائل «Outlook غير متصل» لإعادة الربط ونسخة بالفرنسية.",
    "brands": [],
    "terms": [
     "outage notification",
@@ -441,7 +572,13 @@
     "release messages",
     "pending messages",
     "رسائل محتجزة",
-    "استعادة الرسائل"
+    "استعادة الرسائل",
+    "messages held after the outage",
+    "ex1550543",
+    "1 security issue found on your account",
+    "outlook is disconnected after the microsoft 365 outage",
+    "reconnectez vos services",
+    "reconnecter maintenant"
    ],
    "min_terms": 2,
    "channels": [
@@ -451,18 +588,93 @@
     "global"
    ],
    "severity": "high",
-   "first_seen": "2026-11-16T00:00:00Z",
-   "last_seen": "2026-11-16T00:00:00Z",
+   "first_seen": "2026-11-12T00:00:00Z",
+   "last_seen": "2026-11-17T00:00:00Z",
    "references": [
     {
      "source_id": "saqr-research",
      "url": "https://cofense.com/blog/flash-alert-weaponizing-the-november-2026-microsoft-outage",
      "title": "Cofense: Flash alert - weaponizing the November 2026 Microsoft outage"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.microsoft.com/en-us/security/blog/2026/11/16/high-volume-phishing-campaign-uses-microsoft-365-outage-lures-target-multiple-industry-sectors-2/",
+     "title": "Microsoft Security: High-volume phishing campaign uses Microsoft 365 outage lures"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.mimecast.com/blog/attackers-exploit-the-microsoft-365-outage-with-fake-held-messages-lures/",
+     "title": "Mimecast: Attackers exploit the Microsoft 365 outage with fake \"held messages\" lures"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.kaspersky.com/blog/microsoft-365-outage-phishing/56724/",
+     "title": "Kaspersky: Phishing scheme exploiting the Microsoft outage"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [
+     "moments-notice.com",
+     "planetmaison.com",
+     "newbooker.com"
+    ],
+    "url_domains": [
+     "reallifeaccounting.com",
+     "outagefixed.sbs",
+     "outagerestored.sbs"
+    ]
+   }
+  },
+  {
+   "id": "cmp-14a5ee34",
+   "title_en": "Fake 'Tell us about your MyChart experience' survey with a $10.55 'processing fee'",
+   "title_ar": "استبيان MyChart مزيف بمناسبة عيد الشكر يطلب «رسوم معالجة» 10.55 دولار",
+   "summary_en": "An image-only email in the name of MyChart offers a Thanksgiving survey and a discount on a medical monitoring kit. It collects name, email, phone and home address, then asks for a $10.55 processing fee.",
+   "summary_ar": "رسالة على شكل صورة باسم MyChart تعرض استبياناً بمناسبة عيد الشكر وخصماً على جهاز مراقبة طبي. تجمع الاسم والبريد والهاتف والعنوان، ثم تطلب «رسوم معالجة» قدرها 10.55 دولار.",
+   "brands": [
+    "mychart",
+    "my chart"
+   ],
+   "terms": [
+    "tell us about your mychart experience",
+    "my chart — customer survey",
+    "medical monitoring kit",
+    "processing fee",
+    "$10.55",
+    "slide to verify",
+    "جهاز مراقبة طبي",
+    "رسوم معالجة"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "US"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-03T00:00:00Z",
+   "last_seen": "2026-11-17T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://malware.news/t/holiday-lures-real-threats-5-thanksgiving-and-black-friday-campaigns-from-2026/127571",
+     "title": "ANY.RUN (via Malware News): Holiday lures, real threats - 5 Thanksgiving and Black Friday campaigns from 2026"
     }
    ],
    "indicators": {
     "sender_domains": [],
-    "url_domains": []
+    "url_domains": [
+     "ni03hfph.com",
+     "trustedaftermark.com",
+     "solidfairhubhost.com",
+     "awakeserver.com",
+     "exploredomainpole.com",
+     "specialhostdense.com",
+     "xcxfi08q.com",
+     "naverio.boats",
+     "commercialbuygroup.com"
+    ]
    }
   },
   {
@@ -521,6 +733,61 @@
    }
   },
   {
+   "id": "cmp-3f41c199",
+   "title_en": "Binance-breach emails: fake 'wallet-verification fee' and Trust Wallet checks",
+   "title_ar": "رسائل تستغل اختراق بينانس: «رسوم تحقق من المحفظة» وتحقق وهمي من Trust Wallet",
+   "summary_en": "After the late-October Binance breach, emails posing as a Binance 'SAFU Reconciliation Desk', Trust Wallet or Bitcoin wallets say your address is 'UNCLAIMED' or your wallet will be suspended. They ask for a Bitcoin 'wallet-verification fee' or a login, and steal crypto, credentials and recovery phrases.",
+   "summary_ar": "بعد اختراق بينانس، تصل رسائل بريد إلكتروني تنتحل صفة بينانس أو Trust Wallet أو محافظ بيتكوين. تزعم أن عنوان محفظتك «غير مُطالَب به» أو أن حسابك سيُعلَّق، وتطلب دفع «رسوم تحقق» بالبيتكوين أو تسجيل الدخول. الهدف سرقة العملات الرقمية وبيانات الدخول وعبارات الاسترداد.",
+   "brands": [
+    "binance",
+    "trust wallet",
+    "bitcoin",
+    "بينانس"
+   ],
+   "terms": [
+    "binance hack also impacts trust wallet users",
+    "please verify your trust wallet",
+    "due to the ongoing situation involving binance",
+    "safu reconciliation desk",
+    "returned as unclaimed in the reconciliation index",
+    "wallet-verification fee",
+    "settlement address",
+    "no seed phrase. no exchange login",
+    "bitcoin deposit confirmation",
+    "funds added to your bitcoin wallet",
+    "secure your bitcoin wallet fast",
+    "update your bitcoin details now",
+    "رسوم التحقق من المحفظة",
+    "اختراق بينانس"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-10-30T00:00:00Z",
+   "last_seen": "2026-11-13T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.bitdefender.com/en-us/blog/hotforsecurity/binance-breach-crypto-phishing-scams",
+     "title": "Bitdefender: Binance breach news is already being used in crypto phishing emails"
+    },
+    {
+     "source_id": "saqr-research",
+     "url": "https://blog.knowbe4.com/binance-heist-fallout-crypto-impersonation-phishing-scams",
+     "title": "KnowBe4: The Binance aftershocks - nearly 130% spike in crypto impersonation scams"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
    "id": "cmp-3065f8b1",
    "title_en": "Fake White Friday and holiday deals in the UAE",
    "title_ar": "عروض مزيفة للجمعة البيضاء وموسم الأعياد في الإمارات",
@@ -566,6 +833,205 @@
      "source_id": "saqr-research",
      "url": "https://gulfnews.com/uae/dubai-bank-warning-holiday-scams-surge-as-travel-and-shopping-peak-in-december-1.500394209",
      "title": "Gulf News: Dubai bank warning - holiday scams surge as travel and shopping peak"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-b82add26",
+   "title_en": "'Black Friday $5,000! Secret Link Access' fake celebrity reward",
+   "title_ar": "«بلاك فرايدي 5000 دولار! رابط سري»: جائزة وهمية باسم كانييه ويست",
+   "summary_en": "Emails say you were randomly selected for a $5,000 Black Friday reward linked to Kanye West and must enter a 'secret' promo code on a rewards platform. The site makes you create an account with your email and password and steals them.",
+   "summary_ar": "رسائل تزعم أنك اختِرت عشوائياً لجائزة بلاك فرايدي قيمتها 5000 دولار مرتبطة بكانييه ويست، وتطلب إدخال كود «سري» على منصة مكافآت. يطلب الموقع إنشاء حساب ببريدك وكلمة مرورك فيسرقهما.",
+   "brands": [
+    "kanye west",
+    "kanye"
+   ],
+   "terms": [
+    "black friday $5,000",
+    "secret link access",
+    "randomly selected",
+    "promo code",
+    "rewards platform",
+    "رابط سري",
+    "تم اختيارك عشوائياً"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "US"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-10-30T00:00:00Z",
+   "last_seen": "2026-11-10T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.bitdefender.com/en-au/blog/hotforsecurity/black-friday-scam-report-2026",
+     "title": "Bitdefender: Black Friday scam report 2026"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-3a416f33",
+   "title_en": "Fake Lloyds email: 'update your details because Halifax and Lloyds are integrating'",
+   "title_ar": "رسالة مزيفة من Lloyds: «حدّث بياناتك لأن Halifax وLloyds تندمجان»",
+   "summary_en": "Uses the real phase-out of the Halifax brand. The email, from an unofficial address, says your details need updating because Halifax and Lloyds Bank are integrating, and harvests personal information.",
+   "summary_ar": "تستغل الانتقال الحقيقي لعملاء Halifax إلى Lloyds. تقول الرسالة، المرسلة من عنوان غير رسمي، إن بياناتك تحتاج إلى تحديث بسبب اندماج Halifax وLloyds Bank، وتسرق بياناتك الشخصية.",
+   "brands": [
+    "lloyds bank",
+    "lloyds",
+    "halifax"
+   ],
+   "terms": [
+    "halifax and lloyds bank are integrating",
+    "your details need updating",
+    "halifax customers",
+    "update your details",
+    "تحديث بياناتك"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "GB"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-09T00:00:00Z",
+   "last_seen": "2026-11-09T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.which.co.uk/news/article/the-latest-scam-alerts-from-which-aBRLy2b02WkC",
+     "title": "Which?: The latest scam alerts"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-c72711ee",
+   "title_en": "Fake 'RSVP to Thanksgiving Potluck' invitation steals Google Workspace logins",
+   "title_ar": "دعوة مزيفة لحفلة عيد الشكر «Potluck» لسرقة حسابات Google Workspace",
+   "summary_en": "An office-style invitation ('Thanksgiving Potluck') asks you to RSVP before November 16 via a 'View & RSVP' button. After a fake 'I'm not a robot' check it shows a fake Google Workspace login that steals work passwords.",
+   "summary_ar": "دعوة بأسلوب رسائل العمل («حفلة عيد الشكر») تطلب تأكيد الحضور قبل 16 نوفمبر عبر زر «View & RSVP». بعد فحص مزيف «لست روبوتاً» تظهر صفحة دخول مزيفة لـ Google Workspace تسرق كلمة مرور العمل.",
+   "brands": [],
+   "terms": [
+    "rsvp to thanksgiving potluck",
+    "thanksgiving potluck",
+    "view & rsvp",
+    "rsvp before november 16",
+    "دعوة عيد الشكر",
+    "تأكيد الحضور"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-04T00:00:00Z",
+   "last_seen": "2026-11-05T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://malware.news/t/holiday-lures-real-threats-5-thanksgiving-and-black-friday-campaigns-from-2026/127571",
+     "title": "ANY.RUN (via Malware News): Holiday lures, real threats - 5 Thanksgiving and Black Friday campaigns from 2026"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": [
+     "trident-ww.com",
+     "anthonnyfry.com"
+    ]
+   }
+  },
+  {
+   "id": "cmp-6cb2941e",
+   "title_en": "Fake British Gas email: 'you have credit available, submit a refund request'",
+   "title_ar": "رسالة مزيفة من British Gas: «لديك رصيد متاح، قدّم طلب استرداد»",
+   "summary_en": "Carries an accurate British Gas logo, but the sender name gives it away. It says you have credit available, and a 'submit a refund request' button leads to a fake British Gas site that collects your personal details.",
+   "summary_ar": "تحمل شعار British Gas الصحيح، لكن اسم المرسل يكشفها. تزعم أن لديك رصيداً متاحاً، وزر «submit a refund request» يقود إلى موقع British Gas مزيف يجمع بياناتك الشخصية.",
+   "brands": [
+    "british gas"
+   ],
+   "terms": [
+    "you have credit available",
+    "credit available",
+    "submit a refund request",
+    "refund request",
+    "رصيد متاح",
+    "طلب استرداد"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "GB"
+   ],
+   "severity": "medium",
+   "first_seen": "2026-11-03T00:00:00Z",
+   "last_seen": "2026-11-03T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://www.which.co.uk/news/article/the-latest-scam-alerts-from-which-aBRLy2b02WkC",
+     "title": "Which?: The latest scam alerts"
+    }
+   ],
+   "indicators": {
+    "sender_domains": [],
+    "url_domains": []
+   }
+  },
+  {
+   "id": "cmp-d25e2692",
+   "title_en": "Fake Thanksgiving e-card 'Invitation RSVP.pdf' installs a remote-control tool",
+   "title_ar": "بطاقة تهنئة مزيفة بعيد الشكر «Invitation RSVP.pdf» تثبّت أداة تحكم عن بُعد",
+   "summary_en": "An e-card email carries 'Invitation RSVP.pdf' with a 'VIEW INVITATION' button. The 'Special ThanksGiving Invitation' page downloads a ScreenConnect installer that gives criminals remote control of the computer.",
+   "summary_ar": "رسالة بطاقة تهنئة تحمل ملف «Invitation RSVP.pdf» وزر «VIEW INVITATION». تنزّل الصفحة برنامج ScreenConnect الذي يمنح المحتالين تحكماً كاملاً بالجهاز عن بُعد.",
+   "brands": [],
+   "terms": [
+    "invitation rsvp.pdf",
+    "view invitation",
+    "special thanksgiving invitation",
+    "thanksgiving invitation",
+    "thanksgiving e-card",
+    "screenconnect.clientsetup.msi",
+    "بطاقة تهنئة",
+    "دعوة خاصة بعيد الشكر"
+   ],
+   "min_terms": 2,
+   "channels": [
+    "email"
+   ],
+   "regions": [
+    "global"
+   ],
+   "severity": "high",
+   "first_seen": "2026-10-30T00:00:00Z",
+   "last_seen": "2026-10-30T00:00:00Z",
+   "references": [
+    {
+     "source_id": "saqr-research",
+     "url": "https://malware.news/t/holiday-lures-real-threats-5-thanksgiving-and-black-friday-campaigns-from-2026/127571",
+     "title": "ANY.RUN (via Malware News): Holiday lures, real threats - 5 Thanksgiving and Black Friday campaigns from 2026"
     }
    ],
    "indicators": {
@@ -663,84 +1129,6 @@
     "url_domains": [
      "slotpastimaxwin50jt.online",
      "lastingonlineexperiences.de"
-    ]
-   }
-  },
-  {
-   "id": "cmp-56dcb5b5",
-   "title_en": "Device-code phishing: \"enter this code\" to see a document or voicemail",
-   "title_ar": "تصيّد «رمز الجهاز»: «أدخل هذا الرمز» لعرض مستند أو بريد صوتي",
-   "summary_en": "Emails about password expiry, documents to sign or new voicemails send you to the real Microsoft sign-in page and ask you to enter a short code. The code logs the attacker into your Microsoft 365 account - no password needed. Kits like EvilTokens and Tycoon 2FA spread it.",
-   "summary_ar": "رسائل عن انتهاء كلمة المرور أو مستندات للتوقيع أو بريد صوتي جديد ترسلك إلى صفحة تسجيل دخول مايكروسوفت الحقيقية وتطلب إدخال رمز قصير. هذا الرمز يُدخل المحتال إلى حسابك في Microsoft 365 دون كلمة مرور.",
-   "brands": [
-    "microsoft",
-    "microsoft 365",
-    "office 365",
-    "office365",
-    "microsoft teams",
-    "docusign",
-    "mimecast",
-    "مايكروسوفت"
-   ],
-   "terms": [
-    "action required: password expiration",
-    "password expiration",
-    "devicelogin",
-    "device login",
-    "get authentication code",
-    "authentication code",
-    "enter the code",
-    "new voicemail",
-    "missed call - new voicemail message",
-    "voicemail notification",
-    "new voice message",
-    "review document",
-    "signature required",
-    "agreement_review.pdf",
-    "document pending your electronic signature",
-    "contract awaiting your signature"
-   ],
-   "min_terms": 2,
-   "channels": [
-    "email"
-   ],
-   "regions": [
-    "global"
-   ],
-   "severity": "critical",
-   "first_seen": "2026-04-06T00:00:00Z",
-   "last_seen": "2026-10-20T00:00:00Z",
-   "references": [
-    {
-     "source_id": "saqr-research",
-     "url": "https://www.microsoft.com/en-us/security/blog/2026/04/06/ai-enabled-device-code-phishing-campaign/",
-     "title": "Microsoft Security: AI-enabled device code phishing campaign"
-    },
-    {
-     "source_id": "saqr-research",
-     "url": "https://www.mimecast.com/threat-intelligence-hub/oauth-device-code-phishing-campaigns/",
-     "title": "Mimecast: OAuth device code phishing campaigns surge with EvilTokens toolkit"
-    },
-    {
-     "source_id": "saqr-research",
-     "url": "https://cofense.com/blog/beyond-passwords-how-attackers-abuse-device-code-authentication",
-     "title": "Cofense: Beyond passwords - how attackers abuse device code authentication"
-    },
-    {
-     "source_id": "saqr-research",
-     "url": "https://www.okta.com/blog/threat-intelligence/tycoon_2fa_phishing_actors_scatter/",
-     "title": "Okta: Tycoon 2FA phishing actors disperse, branch into new attacks"
-    }
-   ],
-   "indicators": {
-    "sender_domains": [],
-    "url_domains": [
-     "graph-microsoft.com",
-     "portal-azure.com",
-     "office365-login.com",
-     "office-verify.net",
-     "00a7af15-a112-4457-86c2-5c56751f0f47-endpoint.com",
-     "sso-nodeconnect.icu"
     ]
    }
   },

@@ -143,7 +143,8 @@ async def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     n_ioc = sum(1 for c in ordered if c["indicators"]["url_domains"] or c["indicators"]["sender_domains"])
-    print(f"Wrote {args.out.relative_to(ROOT)}: {len(ordered)} campaigns ({len(research)} researched, "
+    shown = args.out.resolve().relative_to(ROOT) if args.out.resolve().is_relative_to(ROOT) else args.out
+    print(f"Wrote {shown}: {len(ordered)} campaigns ({len(research)} researched, "
           f"{len(ordered) - len(research)} from live feeds, {n_ioc} with indicators)")
     return 0
 
