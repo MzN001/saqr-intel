@@ -10,6 +10,7 @@ from ..db import db
 from ..intel import awareness, takedown
 from ..schemas import TakedownRequest
 from ..security import require_police
+from ..police_state import police_state
 from ..ws_hub import hub
 
 router = APIRouter(prefix="/api", tags=["Takedown & awareness"], dependencies=[Depends(require_police)])
@@ -45,6 +46,7 @@ async def get_dossier(dossier_id: str, format: str = Query("json", pattern="^(js
 async def awareness_alert(hours: int = Query(72, ge=1, le=720), entity: str | None = None, use_llm: bool = True):
     """Detect the trending scam wave and draft a bilingual AD Police public warning."""
     alert = await awareness.generate_alert(hours, entity, use_llm)
+    alert["official_police_warning"] = police_state.warnings[0] if police_state.warnings else None
     if alert.get("status") == "active_wave":
         await hub.broadcast("awareness.drafted", {"entity": alert["trending_entity"], "severity": alert["severity"],
                                                   "title_en": alert["title_en"], "title_ar": alert["title_ar"]})

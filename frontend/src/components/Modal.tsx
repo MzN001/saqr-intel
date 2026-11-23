@@ -12,11 +12,13 @@ export function Modal({
   onClose,
   title,
   children,
+  wide = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: ReactNode;
   children: ReactNode;
+  wide?: boolean;
 }) {
   const { t, dir } = useLang();
   const hydrated = useHydrated();
@@ -87,7 +89,7 @@ export function Modal({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 40, opacity: 0, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl bg-surface p-5 text-ink shadow-2xl ring-1 ring-line sm:max-w-lg sm:rounded-3xl"
+            className={`relative max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl bg-surface p-5 text-ink shadow-2xl ring-1 ring-line sm:rounded-3xl ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"}`}
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <h2 id={titleId} className="text-lg font-extrabold leading-snug">

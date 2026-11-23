@@ -9,6 +9,7 @@ from ..config import settings
 from ..db import db, iso
 from ..intel.nextdns_sync import nextdns_sync
 from ..pipeline import analyze_url, extract_url, new_scan_id
+from ..police_state import police_state
 from ..schemas import AnalyzeURLRequest
 from ..security import rate_limit, require_police
 from ..ws_hub import hub
@@ -50,6 +51,8 @@ async def analyze_url_endpoint(req: AnalyzeURLRequest):
         raise HTTPException(422, str(exc)) from exc
     # 2) Completed verdict + graph delta
     await hub.broadcast("url_scan.completed", _summary(result))
+    if ev := police_state.record_scan(result):
+        await hub.broadcast("police.event", ev)
     if result["risk_score"] >= settings.nextdns_min_score:
         nextdns_sync.kick()  # push to phones' DNS shield within seconds
     if result.get("graph_delta", {}).get("new_nodes") or result.get("graph_delta", {}).get("new_edges"):

@@ -121,7 +121,7 @@ def test_shared_fixtures_offline(name):
 def test_contract_sample_matches():
     import json
 
-    sample = json.loads((Path(__file__).parent / "fixtures" / "contract" / "analyze_email_response.json").read_text())
+    sample = json.loads((Path(__file__).parent / "fixtures" / "contract" / "analyze_email_response.json").read_text(encoding="utf-8"))
     r = verify_eml((FIXTURES / "phish_paypal_cyrillic.eml").read_bytes(), offline=True)
     assert r.to_dict() == sample["authentication"]
 

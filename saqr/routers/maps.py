@@ -8,6 +8,7 @@ from ..db import db, iso
 from ..intel import graph_engine, maps_sentinel
 from ..intel.nextdns_sync import nextdns_sync
 from ..pipeline import new_scan_id
+from ..police_state import police_state
 from ..schemas import ScanMapsRequest
 from ..security import rate_limit
 from ..ws_hub import hub
@@ -49,6 +50,8 @@ async def scan_maps(req: ScanMapsRequest):
         "red_flags": [f["code"] for f in scan["red_flags"]],
         "citizen_explanation_en": scan["citizen_explanation_en"], "citizen_explanation_ar": scan["citizen_explanation_ar"],
     })
+    if ev := police_state.record_scan(scan):
+        await hub.broadcast("police.event", ev)
     if scan["risk_score"] >= settings.nextdns_min_score:
         nextdns_sync.kick()
     return scan
