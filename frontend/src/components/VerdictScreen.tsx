@@ -185,9 +185,15 @@ function SenderCard({ email }: { email: EmailDetails }) {
                   {t("emFreemail")}
                 </span>
               )}
-              {from.is_official && (
+              {/* Green only when DMARC proves it: a spoofed From: noreply@tamm.abudhabi must not get a green badge. */}
+              {from.is_official && email.auth?.dmarc?.result === "pass" && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
                   <BadgeCheck className="size-3" /> {t("emOfficial")}
+                </span>
+              )}
+              {from.is_official && email.auth?.dmarc?.result !== "pass" && (
+                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                  {t("emOfficialUnproven")}
                 </span>
               )}
             </span>

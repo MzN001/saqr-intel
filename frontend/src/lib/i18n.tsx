@@ -396,6 +396,7 @@ const dict = {
   emRealLetters: { en: "In its real letters", ar: "بأحرفه الحقيقية" },
   emFreemail: { en: "Free email account", ar: "حساب بريد مجاني" },
   emOfficial: { en: "Official sender", ar: "مرسل رسمي" },
+  emOfficialUnproven: { en: "Official address, not proven", ar: "عنوان رسمي غير مُثبت" },
   emReplyTo: { en: "Replies go to", ar: "الردود تذهب إلى" },
   emSubject: { en: "Subject", ar: "العنوان" },
   emNoSender: { en: "No sender found in what you pasted.", ar: "لم يتم العثور على مرسل في النص الملصق." },

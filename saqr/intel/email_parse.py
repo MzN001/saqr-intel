@@ -899,7 +899,7 @@ def parse(*, source: str, text: Optional[str] = None, file_bytes: Optional[bytes
             # A picture / PDF / zip renamed to .eml: its random bytes must not be scanned as text (they
             # contain stray Cyrillic/Greek letters and came back as a HIGH-RISK look-alike scam).
             raise ValueError("This file is not an email. Choose an .eml or .msg file. / "
-                             "هذا الملف ليس رسالة بريد إلكتروني. اختر ملف ‎.eml‎ أو ‎.msg‎.")
+                             "هذا الملف ليس رسالة بريد إلكتروني")
         else:
             notes.append("The file has no email header block; it was read as plain text.")
             parsed = _from_visible_text(file_bytes.decode("utf-8", "replace"), source=source, notes=notes)

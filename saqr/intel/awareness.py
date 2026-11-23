@@ -43,7 +43,8 @@ async def trending_waves(hours: int = 72) -> list[dict[str, Any]]:
     for s in scans:
         x = w(s["impersonated_entity"])
         x["scans"] += 1
-        x["domains"].add(s["domain"])
+        if s["domain"]:  # email scans are saved with domain NULL (they still count towards the wave)
+            x["domains"].add(s["domain"])
         if s["channel"]:
             x["channels"][s["channel"]] += 1
     for c in cts:
