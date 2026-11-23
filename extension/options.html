@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SAQR-INTEL Email Shield settings</title>
+    <link rel="stylesheet" href="shield.css" />
+    <style>
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 16px;
+        display: grid;
+        gap: 14px;
+      }
+      .sub {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--ink-soft);
+      }
+      .switch {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+      .switch input {
+        width: 20px;
+        height: 20px;
+        margin: 2px 0 0;
+        flex: none;
+        accent-color: var(--emerald-700);
+      }
+      .switch strong {
+        display: block;
+        font-size: 14px;
+      }
+      .grid {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .grid label {
+        font-size: 12.5px;
+        font-weight: 700;
+      }
+      .grid .input {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 4px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .row .btn {
+        width: auto;
+        padding: 9px 14px;
+        font-size: 13px;
+      }
+      .note {
+        margin: 10px 0 0;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--muted);
+        font-size: 12.5px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+        text-align: center;
+      }
+      .stats div {
+        padding: 10px;
+        border-radius: 12px;
+        background: var(--muted);
+      }
+      .stats b {
+        display: block;
+        font-size: 22px;
+      }
+      .stats span {
+        font-size: 12px;
+        color: var(--ink-soft);
+      }
+      footer {
+        padding: 0 16px 16px;
+        font-size: 11px;
+        color: var(--ink-soft);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="brand-bar">
+      <img class="brand-logo" src="icons/icon48.png" alt="" />
+      <div>
+        <p class="brand-name">SAQR-INTEL</p>
+        <p class="brand-tag">Email Shield settings · إعدادات درع البريد</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="card" aria-labelledby="scan-title">
+        <p class="card-title" id="scan-title">Checking emails · فحص الرسائل</p>
+        <label class="switch">
+          <input type="checkbox" id="auto-scan" />
+          <span>
+            <strong>Check each email when I open it · افحص كل رسالة عند فتحها</strong>
+            <span class="sub">Works in Gmail and Outlook. Turn it off to check emails only when you press the SAQR button.</span>
+            <span class="sub ar" dir="rtl" lang="ar">يعمل في Gmail و Outlook. أوقفه إذا أردت الفحص فقط عند الضغط على زر صقر.</span>
+          </span>
+        </label>
+        <div id="scan-msg" class="toast hidden" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="card" aria-labelledby="llm-title">
+        <p class="card-title" id="llm-title">Use my own AI (optional) · استخدم الذكاء الاصطناعي الخاص بي (اختياري)</p>
+        <p class="sub">
+          If you have an account with an AI service that works like OpenAI (OpenAI, Groq, OpenRouter, Mistral…), SAQR can ask
+          it for a second opinion on each email.
+        </p>
+        <p class="sub ar" dir="rtl" lang="ar">إذا كان لديك حساب في خدمة ذكاء اصطناعي متوافقة مع OpenAI، يمكن لصقر أن يطلب منها رأياً ثانياً في كل رسالة.</p>
+        <form class="grid" id="llm-form" autocomplete="off">
+          <div>
+            <label for="llm-base">AI address · عنوان الخدمة</label>
+            <input class="input" id="llm-base" type="url" dir="ltr" spellcheck="false" placeholder="https://api.openai.com/v1" />
+          </div>
+          <div>
+            <label for="llm-key">API key · مفتاح الخدمة</label>
+            <input class="input" id="llm-key" type="password" dir="ltr" spellcheck="false" autocomplete="new-password" placeholder="sk-..." />
+          </div>
+          <div>
+            <label for="llm-model">Model name · اسم النموذج</label>
+            <input class="input" id="llm-model" type="text" dir="ltr" spellcheck="false" placeholder="gpt-4o-mini" />
+          </div>
+          <div class="row" style="margin-top: 0">
+            <button class="btn btn-primary" type="submit">Save · حفظ</button>
+            <button class="btn btn-ghost" type="button" id="llm-clear">Stop using my AI · إيقاف</button>
+          </div>
+        </form>
+        <p class="note">
+          Your key is kept only in this browser. It is sent to the SAQR server together with each email check, used for that
+          one check, and never stored there.
+          <br />
+          <span class="ar" dir="rtl" lang="ar">يُحفظ مفتاحك في هذا المتصفح فقط. يُرسل إلى خادم صقر مع كل فحص، ويُستخدم لذلك الفحص فقط، ولا يُخزَّن هناك أبداً.</span>
+        </p>
+        <div id="llm-msg" class="toast hidden" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="card" aria-labelledby="model-title">
+        <p class="card-title" id="model-title">My personal scam filter · فلتر الاحتيال الشخصي</p>
+        <p class="sub">
+          When you mark an email as "scam" or "not a scam", SAQR learns what scams look like for you. It starts helping after
+          <b id="min-docs">10</b> emails of each kind.
+        </p>
+        <p class="sub ar" dir="rtl" lang="ar">عندما تضع علامة «احتيال» أو «ليست احتيالاً» على رسالة، يتعلم صقر شكل الاحتيال بالنسبة لك. يبدأ بالمساعدة بعد 10 رسائل من كل نوع.</p>
+        <div class="stats" aria-live="polite">
+          <div><b id="n-scam">0</b><span>Scam · احتيال</span></div>
+          <div><b id="n-ham">0</b><span>Not a scam · سليمة</span></div>
+          <div><b id="n-state">–</b><span>Status · الحالة</span></div>
+        </div>
+        <div class="row">
+          <button class="btn btn-primary" type="button" id="export">Download my filter · تنزيل</button>
+          <button class="btn btn-ghost" type="button" id="import-btn">Load a filter file · تحميل ملف</button>
+          <input type="file" id="import-file" accept="application/json,.json" class="hidden" />
+          <button class="btn btn-danger" type="button" id="reset">Erase my filter · مسح</button>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="learn-spam" />
+          <span>
+            <strong>Learn from my Spam folder · تعلّم من مجلد البريد المزعج</strong>
+            <span class="sub">Off by default. When on, emails you open in your Spam / Junk folder are learned as "scam".</span>
+            <span class="sub ar" dir="rtl" lang="ar">متوقف افتراضياً. عند تشغيله، تُعتبر الرسائل التي تفتحها في مجلد البريد المزعج «احتيالاً».</span>
+          </span>
+        </label>
+        <p class="note">
+          The filter is stored in this browser. Emails you mark after a SAQR check also teach the copy kept for this browser on
+          the SAQR server (only number codes, never the email text). "Erase" deletes both.
+          <br />
+          <span class="ar" dir="rtl" lang="ar">يُحفظ الفلتر في هذا المتصفح. الرسائل التي تضع عليها علامة بعد فحص صقر تُعلّم أيضاً النسخة المحفوظة لهذا المتصفح على خادم صقر (أرقام فقط، وليس نص الرسالة). «مسح» يحذف النسختين.</span>
+        </p>
+        <div id="model-msg" class="toast hidden" role="status" aria-live="polite"></div>
+      </section>
+    </main>
+    <footer>Report fraud: Aman 8002626 · SMS 2828 · Emergency 999</footer>
+    <script src="options.js"></script>
+  </body>
+</html>
