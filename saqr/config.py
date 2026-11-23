@@ -111,7 +111,7 @@ class Settings:
     threat_feeds_enabled: bool = _bool("THREAT_FEEDS", True)
     # Fake scam pages built for the phone demo (demo-scam-site/). Always flagged, so a Render restart
     # (which wipes the scan history) never stops the phone alert for them.
-    demo_scam_domains: list[str] = field(default_factory=lambda: _list("DEMO_SCAM_DOMAINS") or ["saqr-demo-scam.vercel.app", "aed-refund-claim.vercel.app"])
+    demo_scam_domains: list[str] = field(default_factory=lambda: _list("DEMO_SCAM_DOMAINS") or ["saqr-demo-scam.vercel.app", "aed-refund-claim.vercel.app", "uae-fines-refund-portal.onrender.com"])
     # Domains seen ONLY by the certificate-transparency feed are not auto-pushed unless enabled.
     nextdns_include_ct: bool = _bool("NEXTDNS_INCLUDE_CT", False)
 
