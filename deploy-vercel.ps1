@@ -45,6 +45,9 @@ for ($i = 0; $i -lt 30; $i++) {
 
 # NEXT_PUBLIC_API_URL: the browser calls the tunnel directly for /api and the /ws/live feed
 # (the backend's CORS allows saqr-intel*.vercel.app); next.config also proxies /api to it.
+# The Vercel CLI writes normal progress to stderr; Windows PowerShell would treat that as a fatal
+# error under "Stop", so let native commands run in "Continue" mode from here on.
+$ErrorActionPreference = "Continue"
 Push-Location (Join-Path $root "frontend")
 try {
     # Save it as the project's environment variable too (Vercel Dashboard -> Settings -> Environment
