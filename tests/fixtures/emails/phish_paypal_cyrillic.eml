@@ -1,0 +1,70 @@
+Delivered-To: victim@example.com
+Received: by 2002:a05:6a10:8c12:b0:5f1:aa01:2c4e with SMTP id k18csp1042331pxy;
+        Mon, 23 Nov 2026 01:14:29 -0800 (PST)
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20230601 header.b=Q2xlYW5G;
+       spf=pass (google.com: domain of paypal.support.team2026@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=paypal.support.team2026@gmail.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com
+Return-Path: <paypal.support.team2026@gmail.com>
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])
+        by mx.google.com with SMTPS id 5b1f17b1804b1-47a1c2d3e4fsor881234f8f.12.2026.11.23.01.14.27
+        for <victim@example.com>
+        (Google Transport Security);
+        Mon, 23 Nov 2026 01:14:27 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20230601; t=1795252467; x=1795857267;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=FAKEbodyHashForFixtureOnlyAAAAAAAAAAAAAAAAAA=;
+        b=FAKEsignatureForFixtureOnlyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+MIME-Version: 1.0
+From: "PayPal Support" <paypal.support.team2026@gmail.com>
+Date: Mon, 23 Nov 2026 09:14:27 +0000
+Message-ID: <CAFx3Lr0PaYpAl48213fixture@mail.gmail.com>
+Subject: =?UTF-8?B?WW91ciBQ0LB5UGFsIGFjY291bnQgaGFzIGJlZW4gbGltaXRlZCDigJMgYWN0aW9uIHJlcXVpcmVk?=
+To: victim@example.com
+Content-Type: multipart/mixed; boundary="000000000000mixed48213"
+
+--000000000000mixed48213
+Content-Type: multipart/alternative; boundary="000000000000alt48213"
+
+--000000000000alt48213
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+Dear Customer,
+
+We noticed unusual sign-in activity and your account has been limited.
+To restore access, please confirm your identity within 24 hours or your
+account will be permanently suspended. You will be asked for your password
+and card details.
+
+Log in here: https://www.paypal.com/signin
+
+Case ID: PP-48213
+
+Thank you,
+PayPal Security Team
+
+--000000000000alt48213
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+<html><body style="font-family:Arial,sans-serif">
+<p>Dear Customer,</p>
+<p>We noticed unusual sign-in activity and your account has been limited.
+To restore access, please confirm your identity within 24 hours or your
+account will be permanently suspended. You will be asked for your password
+and card details.</p>
+<p>Log in here: <a href="https://www.google.com/url?q=https%3A%2F%2Fpaypal-account-review.test%2Fsignin%3Fcase%3DPP-48213&sa=D&usg=AOvVaw0fake">https://www.paypal.com/signin</a></p>
+<p>Case ID: PP-48213</p>
+<p>Thank you,<br>PayPal Security Team</p>
+</body></html>
+
+--000000000000alt48213--
+
+--000000000000mixed48213
+Content-Type: application/pdf; name="PayPal_Case_PP-48213.pdf"
+Content-Disposition: attachment; filename="PayPal_Case_PP-48213.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJWZha2UK
+--000000000000mixed48213--

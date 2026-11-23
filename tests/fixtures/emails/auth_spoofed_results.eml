@@ -1,0 +1,29 @@
+Received: from smtp.fast-relay.test (smtp.fast-relay.test [198.51.100.66])
+        by mx1.mail.example.com (Postfix) with ESMTPS id 9Zx8Yw7Vu6
+        for <resident@example.com>; Mon, 23 Nov 2026 08:15:02 +0400 (+04)
+Authentication-Results: mx1.mail.example.com;
+       spf=fail smtp.mailfrom=noreply@adpolice.gov.ae;
+       dkim=none;
+       dmarc=fail (p=REJECT) header.from=adpolice.gov.ae
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@adpolice.gov.ae header.s=google header.b=FoRgEd01;
+       spf=pass (google.com: domain of noreply@adpolice.gov.ae designates 192.0.2.10 as permitted sender) smtp.mailfrom=noreply@adpolice.gov.ae;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=adpolice.gov.ae
+Received: from mail-forged.google.com (mail-forged.google.com. [192.0.2.10])
+        by mx.google.com with ESMTPS id forged123;
+        Mon, 23 Nov 2026 08:15:00 +0400 (+04)
+From: "Abu Dhabi Police" <noreply@adpolice.gov.ae>
+To: resident@example.com
+Subject: Traffic fine 4471 - pay today to avoid a court case
+Date: Mon, 23 Nov 2026 08:14:58 +0400
+Message-ID: <fine4471.20261123081458@fast-relay.test>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+Dear resident,
+
+You have an unpaid traffic fine of AED 500. Pay today at
+https://adpolice-fines-ae.info/pay to avoid a court case.
+
+Abu Dhabi Police
