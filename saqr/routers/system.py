@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter
 
-from .. import __version__
+from .. import __version__, keepalive
 from ..config import settings
 from ..db import db, iso, utcnow
 from ..intel.ct_monitor import ct_monitor
@@ -36,7 +36,8 @@ async def collect_stats() -> dict:
 @router.get("/health")
 async def health():
     return {"status": "ok", "app": settings.app_name, "version": __version__, "llm_engine": settings.active_llm,
-            "playwright_enabled": settings.sandbox_enabled, "offline_mode": settings.offline_mode,
+            "playwright_enabled": settings.sandbox_enabled, "keep_awake": bool(keepalive.public_url()),
+            "offline_mode": settings.offline_mode,
             "ct_mode": ct_monitor.mode}
 
 

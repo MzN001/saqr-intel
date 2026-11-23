@@ -116,6 +116,9 @@ export function ScamAlertsCard() {
           const sub = await (await registration()).pushManager.getSubscription();
           ep = sub?.endpoint ?? null;
           next = sub ? "on" : "off";
+          // Cloud backends can restart with an empty phone list (Render free tier): re-register
+          // silently every time SAQR opens, so alerts keep working without tapping Enable again.
+          if (sub) void savePushSubscription(sub.toJSON(), lang).catch(() => undefined);
         } catch {
           next = "off";
         }
@@ -128,7 +131,7 @@ export function ScamAlertsCard() {
     return () => {
       alive = false;
     };
-  }, [ready]);
+  }, [ready, lang]);
 
   const enable = async () => {
     setState("busy");

@@ -6,7 +6,7 @@ type a password or card number. Every block also appears live on the `/citizen` 
 
 ## Install (unpacked)
 
-1. Start the backend (`start-windows.bat`, or `uvicorn main:app --port 8000`).
+1. Nothing to start: the extension uses the cloud backend at `https://saqr-intel-api.onrender.com`.
 2. Chrome: open `chrome://extensions` · Edge: open `edge://extensions`.
 3. Turn on **Developer mode**.
 4. Click **Load unpacked** and choose this `extension/` folder.
@@ -47,5 +47,5 @@ is replaced by the block page within about a second. The block also shows up on 
 
 - A brand-new scam on an innocent-looking address can load for a few seconds while the deep scan
   runs. The fast check stops the typical look-alike scam almost instantly.
-- The backend address defaults to `http://127.0.0.1:8000`; change it in the popup for a deployed
-  backend.
+- The backend address defaults to the cloud backend `https://saqr-intel-api.onrender.com` (older installs
+  pointing at `http://127.0.0.1:8000` are switched automatically). For a laptop backend, set it in the popup.

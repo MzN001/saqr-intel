@@ -14,7 +14,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
-from saqr import __version__, self_hosts
+from saqr import __version__, keepalive, self_hosts
 from saqr.config import settings
 from saqr.db import db, seed_if_empty
 from saqr.intel.ct_monitor import ct_monitor
@@ -38,11 +38,13 @@ async def lifespan(_: FastAPI):
     ct_monitor.start()
     nextdns_sync.start()
     block_watcher.start()
+    keepalive_task = asyncio.create_task(keepalive.run(), name="keep-awake")
     log.info("SAQR-INTEL %s ready — LLM engine: %s, CT mode: %s", __version__, settings.active_llm, settings.ct_mode)
     try:
         yield
     finally:
         seed_task.cancel()
+        keepalive_task.cancel()
         await ct_monitor.stop()
         await nextdns_sync.stop()
         await block_watcher.stop()

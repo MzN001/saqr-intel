@@ -1,6 +1,6 @@
 // SAQR-INTEL toolbar popup: backend status, API address, scan-this-tab and 1-click demo buttons.
 
-const DEFAULT_API = "http://127.0.0.1:8000";
+const DEFAULT_API = "https://saqr-intel-api.onrender.com";
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
 
@@ -69,7 +69,7 @@ async function refreshStatus() {
     $("status-text").textContent = `Connected to SAQR-INTEL · متصل · ${res.health?.llm_engine === "rules" ? "rules engine" : `AI: ${res.health?.llm_engine}`}`;
   } else {
     dot.className = "dot off";
-    $("status-text").textContent = "Backend offline: start it on port 8000 · الخادم غير متصل";
+    $("status-text").textContent = "Backend waking up or offline. Try again in 30 s · الخادم غير متصل";
   }
   return res;
 }

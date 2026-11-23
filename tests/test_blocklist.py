@@ -57,3 +57,15 @@ def test_never_published(domain):
 
 def test_published_domain_normalised():
     assert _publishable("WWW.Tamm-Smart-Pay.NET.") == "tamm-smart-pay.net"
+
+
+def test_keepalive_only_on_render(monkeypatch):
+    from saqr import keepalive
+
+    monkeypatch.delenv("RENDER_EXTERNAL_URL", raising=False)
+    monkeypatch.delenv("KEEP_AWAKE_URL", raising=False)
+    assert keepalive.public_url() is None
+    monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://saqr-intel-api.onrender.com/")
+    assert keepalive.public_url() == "https://saqr-intel-api.onrender.com"
+    monkeypatch.setenv("KEEP_AWAKE", "false")
+    assert keepalive.public_url() is None

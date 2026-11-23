@@ -4,7 +4,8 @@
 // by blocked.html before the user can type anything. Results are cached per site so normal
 // browsing stays fast and the backend's rate limit (30 scans / minute) is respected.
 
-const DEFAULT_API = "http://127.0.0.1:8000";
+const DEFAULT_API = "https://saqr-intel-api.onrender.com";
+const OLD_LOCAL_DEFAULT = "http://127.0.0.1:8000";
 const CHANNEL = "PC_BROWSER_EXTENSION";
 const BLOCK_SCORE = 70;
 const SUSPICIOUS_SCORE = 30;
@@ -41,7 +42,8 @@ chrome.runtime.onMessage.addListener(onMessage);
 
 async function setup() {
   const { apiBaseUrl } = await chrome.storage.local.get("apiBaseUrl");
-  if (!apiBaseUrl) await chrome.storage.local.set({ apiBaseUrl: DEFAULT_API });
+  // First install, or an older install still pointing at the laptop backend: use the cloud backend.
+  if (!apiBaseUrl || apiBaseUrl === OLD_LOCAL_DEFAULT) await chrome.storage.local.set({ apiBaseUrl: DEFAULT_API });
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
