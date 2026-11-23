@@ -103,6 +103,10 @@ class Settings:
     nextdns_api_base: str = os.getenv("NEXTDNS_API_BASE", "https://api.nextdns.io")
     nextdns_sync_interval_s: float = _float("NEXTDNS_SYNC_INTERVAL_SECONDS", 60.0)
     nextdns_min_score: int = _int("NEXTDNS_MIN_SCORE", 65)
+    # SAQR's own public addresses: always SAFE, never published to DNS blocklists / NextDNS, never
+    # linked to a scam network (the website shares Vercel servers with the demo scam pages).
+    own_hosts: list[str] = field(default_factory=lambda: _list(
+        "OWN_HOSTS", "saqr-intel.vercel.app,saqr-intel-api.onrender.com"))
     # Global phishing feeds (Phishing Army + OpenPhish), refreshed every 6 h. THREAT_FEEDS=false to disable.
     threat_feeds_enabled: bool = _bool("THREAT_FEEDS", True)
     # Fake scam pages built for the phone demo (demo-scam-site/). Always flagged, so a Render restart

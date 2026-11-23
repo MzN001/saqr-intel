@@ -227,7 +227,7 @@ TRUSTED_UAE_DOMAINS: tuple[str, ...] = (
 )
 
 OFFICIAL_DOMAINS: dict[str, Entity | None] = {d: e for e in ALL_BRANDS for d in e.domains}
-for _d in (*TRUSTED_UAE_DOMAINS, *settings.extra_whitelist):
+for _d in (*TRUSTED_UAE_DOMAINS, *settings.extra_whitelist, *settings.own_hosts):
     OFFICIAL_DOMAINS.setdefault(_d.lower(), None)
 
 # Phone number -> entity

@@ -16,7 +16,7 @@ const DEEP_TIMEOUT_MS = 75_000;
 const MENU_ID = "saqr-verify";
 
 const OFFICIAL_DOMAINS = ["adpolice.gov.ae", "tamm.abudhabi", "uaepass.ae", "emiratespost.ae"];
-const SKIP_DOMAINS = ["x.com", "twitter.com"];
+const SKIP_DOMAINS = ["x.com", "twitter.com", "saqr-intel.vercel.app"]; // + SAQR's own website
 const SKIP_HOSTPORTS = ["localhost:3000", "127.0.0.1:3000"];
 
 const BADGE = {

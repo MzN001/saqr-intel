@@ -85,3 +85,16 @@ def test_llm_cannot_lower_hard_evidence():
     rr = rules("secure.paypa1.com")  # homoglyph spoof
     lv = LLMVerdict(risk_score=0, verdict="SAFE", confidence=1.0)
     assert blend(rr, lv) == rr.score
+
+
+@pytest.mark.parametrize("url", ["https://saqr-intel.vercel.app/citizen", "https://saqr-intel-api.onrender.com/docs"])
+def test_saqr_own_website_is_always_safe(url):
+    """The SAQR site lives on vercel.app next to the demo scam pages: it must never be flagged."""
+    r = rules(url)
+    assert r.verdict == "SAFE" and r.score == 0
+
+
+def test_own_hosts_never_published():
+    from saqr import self_hosts
+    assert {"saqr-intel.vercel.app", "saqr-intel-api.onrender.com"} <= self_hosts.known_hosts()
+    assert "saqr-demo-scam.vercel.app" not in self_hosts.known_hosts()  # the demo scam page still is

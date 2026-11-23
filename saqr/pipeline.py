@@ -23,6 +23,7 @@ from .intel.domain_intel import (
     whois_lookup,
 )
 from .intel.sandbox import sandbox
+from .intel.threat_feeds import on_free_hosting
 from .seed_data import DEMO_INTEL, resolve_mock_scam
 
 log = logging.getLogger("saqr.pipeline")
@@ -90,6 +91,10 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
 
     t = time.perf_counter()
     net = {"evidence_source": "skipped", "ip_addresses": []} if lex.is_whitelisted else await gather_network(lex)
+    if on_free_hosting(lex.host):
+        # Thousands of unrelated sites share a hosting platform's servers: never link them by IP
+        # (SAQR's own website shares Vercel IPs with the demo scam pages).
+        net["shared_infrastructure"] = True
     timings["network_ms"] = int((time.perf_counter() - t) * 1000)
 
     # Known-syndicate infrastructure check (before graph ingestion)
