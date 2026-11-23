@@ -6,6 +6,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { apiUrl, getNextDnsStatus, type NextDnsStatus } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
 import { copyText } from "@/lib/share";
+import { SetupVideoButton } from "./SetupVideo";
 
 type Platform = "android" | "ios";
 
@@ -193,6 +194,7 @@ export function BackgroundShieldCard() {
                 )}
               </p>
             </div>
+            <SetupVideoButton platform="android" host={dotHost} />
             <Steps items={[t("bgA1"), t("bgA2"), t("bgA3")]} />
             <p className="flex items-start gap-2 rounded-2xl bg-gold-100 p-3 text-xs font-medium text-navy-900 ring-1 ring-gold-500/40 dark:bg-gold-500/10 dark:text-gold-100">
               <Info className="mt-0.5 size-4 shrink-0 text-gold-500" />
@@ -218,6 +220,7 @@ export function BackgroundShieldCard() {
             >
               <Download className="size-4" /> {t("bgDownloadIos")}
             </a>
+            <SetupVideoButton platform="ios" host={dotHost} />
             <Steps items={[t("bgI1"), t("bgI2"), t("bgI3")]} />
             <p className="flex items-start gap-2 text-xs text-ink-soft">
               <Info className="mt-0.5 size-4 shrink-0" />
