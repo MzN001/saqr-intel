@@ -352,7 +352,7 @@ python tools/eval_uae.py [--json out.json]           # the 100-case UAE suite, o
 
 **Evidence and takedown.** `POST /api/generate-takedown/{scan_id}` (JSON or Markdown), `GET /api/dossiers/{id}`, `GET /api/dossiers/{id}/evidence-pack` (zip with a SHA-256 manifest), `GET /api/police/detections/{id}/dossier`. A dossier holds the defanged URL, every reason (EN / AR), WHOIS (registrar, creation date, abuse contacts), hosting / ASN, TLS certificate, redirect chain, UTC timestamps, SHA-256 of screenshot, DOM text and scan record, hunter lead time, and drafted registrar and hosting abuse notices plus suggested actions (registrar suspension, ISP-level block request to TDRA). Notices are drafted, not sent.
 
-There is no police screenshot in this README; see it live or in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
+A walk-through of the dashboard is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
 <br>
 

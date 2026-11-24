@@ -8,6 +8,7 @@ import type { View } from "@/lib/view";
 import { AwarenessRadar } from "./AwarenessRadar";
 import { PhoneShieldPanel, type Platform } from "./BackgroundShieldCard";
 import { ScamAlertsPanel } from "./ScamAlertsCard";
+import { ApkDownloadRow } from "./SetupDrawer";
 import { markSetupStep } from "./SetupSteps";
 import { EmailGuard } from "./EmailGuard";
 import { MapsListingCheck } from "./MapsListingCheck";
@@ -154,6 +155,7 @@ function ShieldWindow() {
       <section className="rounded-tile border border-line bg-surface p-5 sm:p-6" aria-label={t(p2title(platform))}>
         <h2 className="mb-4 text-[17px] font-semibold text-ink">{t(p2title(platform))}</h2>
         <PhoneShieldPanel key={platform} platform={platform} />
+        {platform === "android" && <ApkDownloadRow />}
       </section>
     </div>
   );

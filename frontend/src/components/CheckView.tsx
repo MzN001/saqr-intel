@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Mail, MapPinned, MessageSquareText, Radio } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Mail, MapPinned, MessageSquareText, Radio } from "lucide-react";
 import { useState } from "react";
 import { useLang, type DictKey } from "@/lib/i18n";
 import type { View } from "@/lib/view";
@@ -11,7 +11,7 @@ import { LinkChecker } from "./LinkChecker";
 import { MobileResult } from "./MobileResult";
 import { ScamAlertsPanel, useScamAlertsOn } from "./ScamAlertsCard";
 import { SetupCards, SetupRows, markSetupStep, useSetupProgress } from "./SetupSteps";
-import { SetupDrawer } from "./SetupDrawer";
+import { APK_URL, ApkDownloadRow, SetupDrawer } from "./SetupDrawer";
 import { VerdictCard } from "./VerdictCard";
 import type { ScanState } from "./VerdictScreen";
 
@@ -128,6 +128,18 @@ export function CheckView({
                       <button type="button" onClick={() => openShield("android")} className="btn-secondary px-4 text-[14px]" data-testid="step-shield-android">
                         {t("android")}
                       </button>
+                      <a
+                        href={APK_URL}
+                        download
+                        rel="noopener"
+                        title={t("apkAria")}
+                        aria-label={t("apkAria")}
+                        className="inline-flex min-h-12 items-center gap-1.5 rounded-control px-3 text-[14px] font-semibold text-ink-soft hover:bg-muted hover:text-ink"
+                        data-testid="apk-download-step"
+                      >
+                        <Download className="size-4" aria-hidden />
+                        {t("apkShort")}
+                      </a>
                     </>
                   ),
                 },
@@ -179,6 +191,7 @@ export function CheckView({
             testId={`drawer-shield-${platform}`}
           >
             <PhoneShieldPanel key={platform} platform={platform} />
+            {platform === "android" && <ApkDownloadRow />}
           </SetupDrawer>
           <SetupDrawer open={drawer === "alerts"} onClose={close} title={t("alertsDrawerTitle")} testId="drawer-alerts">
             <ScamAlertsPanel />

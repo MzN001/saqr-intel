@@ -1,11 +1,34 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { Download, Smartphone, X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useLang } from "@/lib/i18n";
 import { useHydrated } from "@/lib/useHydrated";
+
+/** The published Saqr Android app (native message guard + web blocker). The one place for this URL. */
+export const APK_URL = "https://github.com/MzN001/saqr-intel/releases/download/android-v0.1.0/Saqr-Shield.apk";
+
+/** Android setup only: one row offering the native app, under the DNS setup. Hairline top border, no card. */
+export function ApkDownloadRow() {
+  const { t } = useLang();
+  return (
+    <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line pt-5">
+      <span className="grid size-10 shrink-0 place-items-center rounded-control bg-muted text-ink" aria-hidden>
+        <Smartphone className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1 basis-48">
+        <p className="text-[15px] font-semibold text-ink">{t("apkTitle")}</p>
+        <p className="mt-0.5 text-[13px] leading-snug text-ink-soft">{t("apkBody")}</p>
+      </div>
+      <a href={APK_URL} download rel="noopener" className="btn-secondary shrink-0 px-4 text-[14px]" data-testid="apk-download">
+        <Download className="size-4" aria-hidden />
+        {t("apkDownload")}
+      </a>
+    </div>
+  );
+}
 
 const FOCUSABLE = "a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex='-1'])";
 const EASE = [0.16, 1, 0.3, 1] as const;

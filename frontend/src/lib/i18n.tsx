@@ -692,6 +692,14 @@ const dict = {
   android: { en: "Android", ar: "أندرويد" },
   shieldIosTitle: { en: "Phone shield for iPhone", ar: "درع الهاتف للآيفون" },
   shieldAndroidTitle: { en: "Phone shield for Android", ar: "درع الهاتف لأندرويد" },
+  apkShort: { en: "APK", ar: "APK" },
+  apkAria: { en: "Download the Saqr Android app (APK)", ar: "نزّل تطبيق صقر لأندرويد (APK)" },
+  apkTitle: { en: "Saqr Android app", ar: "تطبيق صقر لأندرويد" },
+  apkBody: {
+    en: "Message guard and web blocker. Android 8 or newer, installs outside the Play Store.",
+    ar: "حارس الرسائل وحاجب المواقع. أندرويد 8 أو أحدث، يُثبَّت من خارج متجر Play.",
+  },
+  apkDownload: { en: "Download APK", ar: "نزّل APK" },
   shieldIntro: {
     en: "One-time setup. Your phone then checks every website in every app through a secure DNS that blocks scam sites.",
     ar: "إعداد لمرة واحدة. بعدها يفحص هاتفك كل موقع في كل التطبيقات عبر DNS آمن يحظر مواقع الاحتيال.",
