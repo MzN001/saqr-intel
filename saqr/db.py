@@ -14,7 +14,7 @@ SCHEMA = """
 PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS scans (
     id TEXT PRIMARY KEY,
-    kind TEXT NOT NULL,                -- url | maps
+    kind TEXT NOT NULL,                -- url | maps | email | message
     target TEXT NOT NULL,
     domain TEXT,
     created_at TEXT NOT NULL,

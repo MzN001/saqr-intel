@@ -3,7 +3,17 @@
 import { AnimatePresence, MotionConfig, motion, type Variants } from "framer-motion";
 import { AtSign, Cpu, Globe, Link2Off, Mail, MessageSquareWarning, Network, Radar, ScanSearch, ShieldCheck, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { analyzeEmail, analyzeUrl, getAlertVerdict, scanMaps, type EmailScanInput, type InterceptionChannel, type ScanVerdict } from "@/lib/api";
+import {
+  analyzeEmail,
+  analyzeMessage,
+  analyzeUrl,
+  getAlertVerdict,
+  scanMaps,
+  type EmailScanInput,
+  type InterceptionChannel,
+  type MapsScanInput,
+  type ScanVerdict,
+} from "@/lib/api";
 import { Disclosure } from "./Disclosure";
 import { useLang, type DictKey } from "@/lib/i18n";
 import { hostOf, isMapsUrl } from "@/lib/url";
@@ -15,6 +25,7 @@ import { OfficialWarningBanner } from "./OfficialWarningBanner";
 import { PrivacyNote } from "./PrivacyNote";
 import { LinkChecker } from "./LinkChecker";
 import { ScamAlertsCard } from "./ScamAlertsCard";
+import { MapsListingCheck } from "./MapsListingCheck";
 import { SearchMapsShield, isDemoScamUrl } from "./SearchMapsShield";
 import { SmsGuard } from "./SmsGuard";
 import { VerdictScreen, type ScanState } from "./VerdictScreen";
@@ -196,6 +207,20 @@ export function CitizenShell({
     [execute, t],
   );
 
+  const runMessageScan = useCallback(
+    (text: string, sender?: string) =>
+      void execute(t("msgTarget"), "CITIZEN_MANUAL_CHECK", () => analyzeMessage(text, "CITIZEN_MANUAL_CHECK", sender), "message"),
+    [execute, t],
+  );
+
+  const runListingScan = useCallback(
+    (input: MapsScanInput) =>
+      void execute(input.business_name ?? "Google Maps listing", "CITIZEN_MANUAL_CHECK", () =>
+        scanMaps(input, "CITIZEN_MANUAL_CHECK"),
+      ),
+    [execute],
+  );
+
   const runEmailScan = useCallback(
     (input: EmailScanInput, target: string) =>
       void execute(target, "CITIZEN_MANUAL_CHECK", () => analyzeEmail(input, "CITIZEN_MANUAL_CHECK"), "email"),
@@ -284,7 +309,7 @@ export function CitizenShell({
 
       <main className="mx-auto max-w-7xl overflow-x-clip px-4 py-8 sm:px-6 lg:py-12">
         <div className="mb-8 grid gap-4 lg:mb-10">
-          <LinkChecker onCheck={runManualScan} />
+          <LinkChecker onCheck={runManualScan} onCheckMessage={runMessageScan} />
           <div className="grid items-start gap-4 lg:grid-cols-2">
             <BackgroundShieldCard />
             <ScamAlertsCard />
@@ -294,7 +319,14 @@ export function CitizenShell({
         <AnimatePresence mode="wait" custom={travel} initial={false}>
           <motion.div key={tab} custom={travel} variants={panelVariants} initial="enter" animate="center" exit="exit">
             {tab === "search" && (
-              <Stage side={<SidePanel tab="search" />}>
+              <Stage
+                side={
+                  <div>
+                    <SidePanel tab="search" />
+                    <MapsListingCheck onCheck={runListingScan} />
+                  </div>
+                }
+              >
                 <SearchMapsShield runScan={runDnsScan} />
               </Stage>
             )}

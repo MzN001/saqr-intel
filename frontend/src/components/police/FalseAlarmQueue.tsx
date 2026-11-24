@@ -10,6 +10,7 @@ const POLL_MS = 15_000;
 
 function shownLabel(a: FalseAlarm, lang: "en" | "ar"): string {
   if (a.kind === "email") return lang === "ar" ? "رسالة بريد" : "Email message";
+  if (a.kind === "message") return lang === "ar" ? "رسالة نصية" : "Text message";
   if (a.label === "maps listing") return lang === "ar" ? "إدراج خرائط" : "Maps listing";
   return a.label.replace(/\./g, "[.]");
 }

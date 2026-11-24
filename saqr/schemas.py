@@ -30,6 +30,25 @@ class AnalyzeURLRequest(BaseModel):
         return self
 
 
+class AnalyzeMessageRequest(BaseModel):
+    """An SMS / WhatsApp message a citizen pasted (POST /api/analyze-message)."""
+    text: str = Field(..., min_length=1, max_length=4000,
+                      examples=["TAMM: You have an unpaid fine of AED 350. Pay today at tamm-smart-pay.net/fine"])
+    sender: str | None = Field(None, max_length=64, description="Sender phone number or alphanumeric sender id.",
+                               examples=["+971 50 000 7781", "ADPolice"])
+    channel: Channel | None = "sms"
+    reporter_id: str | None = Field(None, max_length=128, description="Pseudonymous citizen id (no PII).")
+    use_llm: bool = True
+    follow_links: bool = True
+    interception_channel: Interception = "DIRECT_API"
+
+    @model_validator(mode="after")
+    def _need_text(self) -> "AnalyzeMessageRequest":
+        if not self.text.strip():
+            raise ValueError("Provide the message `text`")
+        return self
+
+
 class ScanMapsRequest(BaseModel):
     maps_url: str | None = Field(None, max_length=2048,
                                  examples=["https://www.google.com/maps/place/Abu+Dhabi+Police+Fines/@24.3489,54.5052,17z"])

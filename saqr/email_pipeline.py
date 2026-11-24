@@ -24,7 +24,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from .config import settings
 from .db import db, iso
-from .intel import graph_engine
+from .intel import graph_engine, phone_intel
 from .intel.domain_intel import age_hours, analyze_lexical, whois_lookup
 from .intel.email_rules import (
     EmailRuleResult,
@@ -189,6 +189,27 @@ async def _scan_links(cands: list[dict[str, Any]], *, reporter: str | None,
 
     results = await asyncio.gather(*(one(l) for l in cands))
     return {h: r for h, r in results if r}
+
+
+def _collect_phones(parsed: ParsedEmail, body: str) -> list[phone_intel.PhoneInfo]:
+    """Phone numbers in tel: links and in the body text (strict: no OTP codes, amounts or references)."""
+    tel = " ".join(f"tel:{(l.href or '').split(':', 1)[1]}" for l in parsed.links[:100]
+                   if re.match(r"^\s*(?:tel|callto)\s*:", l.href or "", re.I))
+    no_links = URL_IN_BODY.sub(" ", body[:20_000])
+    return phone_intel.find_phones(tel + "\n" + no_links)
+
+
+async def _sender_mx(domain: str, *, skip: bool) -> str | None:
+    """Does the sender's (registered) domain have a mail server? Skipped like the domain-age check."""
+    rd = regdom(domain)
+    if skip or not rd or rd in DEMO_INTEL:
+        return None
+    try:
+        from .intel import email_auth
+
+        return await email_auth.lookup_mx(rd)
+    except ImportError:
+        return None
 
 
 async def _sender_age(domain: str, *, skip: bool) -> float | None:
@@ -357,9 +378,10 @@ async def analyze_email(*, source: str = "text", text: str | None = None, file_b
     except ValueError:
         official_from = False
     skip_age = not from_rd or is_freemail(from_dom) or bool(popularity_rank(from_rd)) or official_from
-    scans, sender_age = await asyncio.gather(
+    scans, sender_age, sender_mx = await asyncio.gather(
         _scan_links(cands, reporter=reporter_saved, interception_channel=interception_channel),
-        _sender_age(from_dom, skip=skip_age))
+        _sender_age(from_dom, skip=skip_age), _sender_mx(from_dom, skip=skip_age))
+    phones = _collect_phones(parsed, body)
     for l in links:
         r = scans.get(l["domain"])
         if r:
@@ -385,7 +407,7 @@ async def analyze_email(*, source: str = "text", text: str | None = None, file_b
 
     # 6. rules (first pass gives the flag codes the personal model's features use) ---------------------
     rule_args = dict(unicode_findings=findings, link_results=links, campaign_matches=campaigns,
-                     sender_age_hours=sender_age)
+                     sender_age_hours=sender_age, phone_numbers=phones, sender_mx=sender_mx)
     rr = run_email_rules(parsed, auth, user_model=None, **rule_args)
 
     # 7. personal model: features always (so the citizen can label this mail later), opinion on request.
@@ -477,7 +499,10 @@ async def analyze_email(*, source: str = "text", text: str | None = None, file_b
             "return_path": address_info(parsed.return_path), "sender": address_info(parsed.sender),
             "body_excerpt": body[:BODY_EXCERPT],
         },
-        "authentication": auth.to_dict(),
+        "authentication": {**auth.to_dict(), "mx": sender_mx},
+        "verified_official": rr.verified_official and final_verdict == "SAFE",
+        "phones": [{"masked": phone_intel.mask(p), "line_type": p.line_type, "region": p.region,
+                    "is_uae_mobile": p.is_uae_mobile} for p in phones],
         "unicode": {"findings": findings},
         "links": links,
         "attachments": attachments,

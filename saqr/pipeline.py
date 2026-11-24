@@ -187,6 +187,7 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
         "impersonated_entity_ar": ent.name_ar if ent else None,
         "official_domains": list(ent.domains) if ent else [],
         "is_official_domain": lex.is_whitelisted,
+        "verified_official": lex.is_whitelisted,  # alias of is_official_domain (same name as maps / message scans)
         "citizen_explanation_en": fv.explanation_en, "citizen_explanation_ar": fv.explanation_ar,
         "red_flags": [{"code": f.code, "severity": f.severity, "points": f.points, "en": f.en, "ar": f.ar}
                       for f in fv.flags],
@@ -214,7 +215,7 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
             "dom_text_sha256": sha256_text(page_text) if page_text else None,
         },
         "syndicate": graph_engine._syn_brief(syndicate),  # noqa: SLF001
-        "analyzer": {"engine": fv.engine, "confidence": fv.confidence},
+        "analyzer": {"engine": fv.engine, "confidence": fv.confidence, **fv.llm_extra},
         "timings": timings,
     }
     # scans.domain feeds the DNS blocklist / NextDNS: a shortener whose destination could not be

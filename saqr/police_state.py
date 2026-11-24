@@ -92,15 +92,19 @@ class PoliceState:
                 "title": title, "seeded": seeded}
 
     def record_scan(self, result: dict[str, Any]) -> dict[str, Any] | None:
-        """A citizen interception finished (URL or Maps). Returns the stream event, or None if SAFE."""
+        """A citizen interception finished (URL, Maps or a text message). Returns the stream event, or None if SAFE."""
         if result.get("verdict") == "SAFE":
             return None
         self.protected += 1
         ch = result.get("interception_channel") or _CHANNEL_OF.get(result.get("channel") or "", "CITIZEN_MANUAL_CHECK")
         listing = result.get("listing") or {}
         domain = result.get("domain") or listing.get("website_domain")
+        title = listing.get("name")
+        if result.get("kind") == "message":  # no domain and never the text: a neutral title for the stream
+            ent = result.get("impersonated_entity")
+            title = f"Text message · {ent}" if ent else "Text message"
         ev = self._event(ch, domain, result.get("risk_score", 0), result["verdict"], result.get("impersonated_entity"),
-                         result.get("created_at") or iso(), kind=result.get("kind", "url"), title=listing.get("name"))
+                         result.get("created_at") or iso(), kind=result.get("kind", "url"), title=title)
         self.events.appendleft(ev)
         if listing.get("lat") is not None and listing.get("lng") is not None:
             self.live_pins[listing.get("pin_id") or ev["id"]] = {

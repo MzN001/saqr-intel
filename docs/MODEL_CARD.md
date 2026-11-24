@@ -169,9 +169,32 @@ Each step measured on the four fixed sets (system, address-only) and on the live
 - Free-hosting legit pages remain the hardest legit group; dataset "legit" labels there are noisy (several "legit" PhreshPhish SharePoint / GitHub Pages rows look like phishing lures).
 - PhiUSIIL / ealvaradob / kmack are older crawls; the Hannousse holdout (2020) is older than the fresh feeds (2026). Numbers on the judges' hidden set may differ.
 
+## UAE regression suite (synthetic, 2026-11-24)
+
+`tests/uae_suite/cases.json`: 50 cases written by the team (25 scams, 25 legitimate; 10 each for website links,
+emails, Maps listings, phone numbers and SMS / WhatsApp texts; Arabic included). All scam domains are invented.
+Legitimate cases include deliberately hard ones (genuine-style bank email about OTP + urgency, official link with a
+long tracking query, "Dubai Fabrics", a restaurant with a WhatsApp website). Emails are pasted Gmail "Show original"
+sources: offline, sender authentication comes only from Gmail's own `Authentication-Results` header (a trusted
+authserv sitting above every unknown `Received` header), so both "authenticated official" and "official domain,
+DMARC fail" are represented without DNS.
+
+Offline, rules only (`tools/eval_uae.py`, also asserted by `tests/test_uae_suite.py`: 0 false positives, >= 24 / 25
+detected): **25 / 25 detected, 0 / 25 legitimate flagged** (precision 1.00, recall 1.00, FPR 0, F1 1.00); every
+official legitimate case returns `verified_official: true`. Detected = verdict not SAFE (phone: level caution or
+danger).
+
+Caveats: a regression check, not an accuracy estimate. The authors know the rules, the cases are clean
+single-message examples, and none needs WHOIS / page evidence; real-world numbers are the holdout and live
+results above. The weakest true positives are close to the line: the Darb look-alike (31, no brand token), the
+ADCB / Abu Dhabi Police Maps listings with only a mobile or foreign number (30). While writing the suite, one general
+gap was fixed: Arabic polite requests with a verbal noun ("يرجى إرسال رمز التحقق", "الرجاء مشاركة الرقم السري") were not
+recognised as asking for a code (a request word is required, so "تم إرسال رمز التحقق إلى هاتفك" stays a notice).
+
 ## Tools
 
 - `tools/evaluate.py <file> [--url-col --label-col --positive --label] [--mode model|system|live] [--threshold] [--out report.json]`: any dataset; precision / recall / F1 / FPR / accuracy, confusion matrix, PR points, 20 worst false positives / negatives with reasons.
 - Live mode: `--mode live [--records run.jsonl] [--concurrency 20] [--timeout 45] [--feeds] [--llm] [--browser] [--live-metrics]`: full pipeline, throw-away database, NextDNS / push keys blanked, no graph ingestion; prints precision / recall / FPR at block and warn with and without feeds, misses by category, false alarms by source, median / p95 scan time. `--records` is resumable (finished URLs are skipped). `--rescore run.jsonl` re-judges saved evidence with the current rules, offline.
 - `tools/predict.py urls.txt|csv -o predictions.csv [--label-at warn|block] [--mode offline|live] [--records run.jsonl]`: url, label, score, verdict, model_probability, reasons for an unlabelled list (default label cut: warn = score >= 30).
+- `tools/eval_uae.py [--json out.json] [--live]`: the 50-case UAE suite; per-type table, precision / recall / FPR / F1, misses. `--live` uses the network and the LLM keys in the environment (real requests, quota).
 - `GET /api/model/metrics`: the stored metrics JSON (model, datasets, holdout, fresh phishing, FP suite, system v1 / round 1 / now, live, round 2 experiments, thresholds).

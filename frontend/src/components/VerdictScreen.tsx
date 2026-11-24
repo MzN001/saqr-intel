@@ -22,6 +22,7 @@ import {
   Lock,
   Mail,
   Megaphone,
+  MessageSquareText,
   Network,
   Paperclip,
   PhoneCall,
@@ -52,6 +53,8 @@ import {
   type EmailLabel,
   type EmailLink,
   type InterceptionChannel,
+  type MessageDetails,
+  type MessagePhone,
   type RedFlag,
   type ScanVerdict,
   type UnicodeFinding,
@@ -123,6 +126,7 @@ function visible(text: string | null | undefined): string {
 }
 
 const EMAIL_SCAN_STEPS: DictKey[] = ["emStepParse", "emStepAuth", "emStepUnicode", "emStepLinks", "emStepAi", "stepPolice"];
+const MESSAGE_SCAN_STEPS: DictKey[] = ["msgStepLinks", "msgStepPhones", "msgStepWording", "stepPolice"];
 
 const AUTH_LABEL: Record<string, { key: DictKey; style: string }> = {
   pass: { key: "emAuthPass", style: "bg-emerald-600 text-white" },
@@ -357,14 +361,18 @@ function UnicodeCard({ findings }: { findings: UnicodeFinding[] }) {
   );
 }
 
+/** A link row: an email link, or a link found in a pasted message (no shown text, never "unwrapped"). */
+type LinkRow = Pick<EmailLink, "url" | "domain" | "verdict" | "risk_score"> &
+  Partial<Pick<EmailLink, "display_text" | "text_mismatch" | "unwrapped_from">> & { official?: boolean };
+
 /** No link here is ever clickable: the citizen sees where it would go, defanged, and its scan verdict. */
-function LinksCard({ links }: { links: EmailLink[] }) {
+function LinksCard({ links, title = "emLinksTitle" }: { links: LinkRow[]; title?: DictKey }) {
   const { t } = useLang();
   const shown = [...links]
     .sort((a, b) => Number(b.text_mismatch) - Number(a.text_mismatch) || (b.risk_score ?? -1) - (a.risk_score ?? -1))
     .slice(0, MAX_LINKS_SHOWN);
   return (
-    <Card title={t("emLinksTitle")} icon={Link2Off} delay={0.5}>
+    <Card title={t(title)} icon={Link2Off} delay={0.5}>
       <ul className="space-y-2">
         {shown.map((l, i) => (
           <li key={`${l.url}-${i}`} className="rounded-xl bg-muted p-3">
@@ -386,13 +394,16 @@ function LinksCard({ links }: { links: EmailLink[] }) {
                 </div>
               </dl>
               <span
-                className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${
+                className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${
                   l.verdict ? VERDICT_CHIP[l.verdict] ?? "bg-line text-ink-soft" : "bg-line text-ink-soft"
                 }`}
               >
-                {l.verdict
-                  ? `${VERDICT_LABEL[l.verdict] ? t(VERDICT_LABEL[l.verdict]) : l.verdict}${l.risk_score !== null ? ` · ${l.risk_score}` : ""}`
-                  : t("emLinkNotScanned")}
+                {l.official && <BadgeCheck className="size-3" aria-hidden />}
+                {l.official
+                  ? t("officialSite")
+                  : l.verdict
+                    ? `${VERDICT_LABEL[l.verdict] ? t(VERDICT_LABEL[l.verdict]) : l.verdict}${l.risk_score !== null ? ` · ${l.risk_score}` : ""}`
+                    : t("emLinkNotScanned")}
               </span>
             </div>
             {(l.text_mismatch || l.unwrapped_from) && (
@@ -421,6 +432,61 @@ function LinksCard({ links }: { links: EmailLink[] }) {
           </span>
         )}
       </p>
+    </Card>
+  );
+}
+
+const PHONE_STATUS: Record<MessagePhone["status"], { key: DictKey; style: string }> = {
+  official: { key: "phOfficial", style: "bg-emerald-600 text-white" },
+  unofficial: { key: "phUnofficial", style: "bg-amber-500 text-white" },
+  mobile_for_institution: { key: "phMobile", style: "bg-crimson-600 text-white" },
+  foreign_for_institution: { key: "phForeign", style: "bg-crimson-600 text-white" },
+  linked_to_scam: { key: "phLinked", style: "bg-crimson-600 text-white" },
+  unknown: { key: "phUnknown", style: "bg-line text-ink-soft" },
+};
+
+/** The sender and every phone number found in a pasted message, each with its official-number check. */
+function MessageNumbersCard({ message }: { message: MessageDetails }) {
+  const { t } = useLang();
+  const sender = message.sender;
+  const rows = message.phones;
+  if (!sender && rows.length === 0) return null;
+  const senderStatus = sender?.status ? PHONE_STATUS[sender.status] : null;
+  return (
+    <Card title={t("msgNumbersTitle")} icon={PhoneCall} delay={0.45}>
+      <ul className="space-y-2">
+        {sender && (
+          <li className="flex items-center justify-between gap-2 rounded-xl bg-muted p-3 text-xs">
+            <span className="min-w-0">
+              <span className="font-semibold text-ink-soft">{t("msgSenderRow")}: </span>
+              <span dir="ltr" className="font-mono font-bold text-ink">
+                {visible(sender.value)}
+              </span>
+            </span>
+            {senderStatus && (
+              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${senderStatus.style}`}>
+                {t(senderStatus.key)}
+              </span>
+            )}
+          </li>
+        )}
+        {rows.map((p, i) => {
+          const st = PHONE_STATUS[p.status] ?? PHONE_STATUS.unknown;
+          return (
+            <li key={`${p.masked}-${i}`} className="flex items-center justify-between gap-2 rounded-xl bg-muted p-3 text-xs">
+              <span dir="ltr" className="min-w-0 truncate font-mono font-bold text-ink">
+                {p.e164 ?? p.masked}
+              </span>
+              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${st.style}`}>{t(st.key)}</span>
+            </li>
+          );
+        })}
+      </ul>
+      {sender?.type === "alphanumeric" && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-ink-soft">
+          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {t("msgSenderIdNote")}
+        </p>
+      )}
     </Card>
   );
 }
@@ -702,7 +768,8 @@ function ScanningView({ target, interception, kind }: { target: string; intercep
   const { t } = useLang();
   const [step, setStep] = useState(0);
   const isEmail = kind === "email";
-  const steps = isEmail ? EMAIL_SCAN_STEPS : SCAN_STEPS;
+  const isMessage = kind === "message";
+  const steps = isEmail ? EMAIL_SCAN_STEPS : isMessage ? MESSAGE_SCAN_STEPS : SCAN_STEPS;
   useEffect(() => {
     const id = window.setInterval(() => setStep((s) => Math.min(s + 1, steps.length - 1)), isEmail ? 520 : 650);
     return () => window.clearInterval(id);
@@ -717,13 +784,19 @@ function ScanningView({ target, interception, kind }: { target: string; intercep
         <span className="absolute inset-0 animate-sweep rounded-full bg-[conic-gradient(from_0deg,rgba(16,185,129,0.55),transparent_28%)]" />
         <span className="absolute size-20 animate-ping-slow rounded-full bg-emerald-400/30" />
         <div className="relative grid size-20 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/20 backdrop-blur">
-          {isEmail ? <Mail className="size-10 text-emerald-300" /> : <ShieldCheck className="size-10 text-emerald-300" />}
+          {isEmail ? (
+            <Mail className="size-10 text-emerald-300" />
+          ) : isMessage ? (
+            <MessageSquareText className="size-10 text-emerald-300" />
+          ) : (
+            <ShieldCheck className="size-10 text-emerald-300" />
+          )}
         </div>
       </div>
       <p className="mt-6 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-300">
         {t(CHANNEL_KEY[interception])}
       </p>
-      <h2 className="shimmer-text mt-3 text-center text-2xl font-bold">{t(isEmail ? "emScanningTitle" : "scanningTitle")}</h2>
+      <h2 className="shimmer-text mt-3 text-center text-2xl font-bold">{t(isEmail ? "emScanningTitle" : isMessage ? "msgScanningTitle" : "scanningTitle")}</h2>
       <p className="mt-2 max-w-xs truncate text-center font-mono text-sm text-white/60" dir="ltr">
         {visible(target)}
       </p>
@@ -866,9 +939,12 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
   const official = result.officialDomains[0];
   const syndicate = lang === "ar" ? result.syndicateAr ?? result.syndicateEn : result.syndicateEn;
   const email = result.kind === "email" ? result.email ?? null : null;
+  const message = result.kind === "message" ? result.message ?? null : null;
   const title = email
     ? t(tone === "danger" ? "emBlockedTitle" : tone === "warn" ? "emSuspiciousTitle" : "emSafeTitle")
-    : t(tone === "danger" ? "blockedTitle" : tone === "warn" ? "suspiciousTitle" : "safeTitle");
+    : message
+      ? t(tone === "danger" ? "msgBlockedTitle" : tone === "warn" ? "msgSuspiciousTitle" : "msgSafeTitle")
+      : t(tone === "danger" ? "blockedTitle" : tone === "warn" ? "suspiciousTitle" : "safeTitle");
   const HeaderIcon = tone === "safe" ? ShieldCheck : tone === "warn" ? TriangleAlert : ShieldAlert;
 
   return (
@@ -901,8 +977,8 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                 <HeaderIcon className="size-4" /> {VERDICT_LABEL[result.verdict] ? t(VERDICT_LABEL[result.verdict]) : result.verdict}
               </motion.div>
               <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl">{title}</h2>
-              {email ? (
-                <p className="mt-1 text-sm text-white/80">{t("emCheckedBy")}</p>
+              {email || message ? (
+                <p className="mt-1 text-sm text-white/80">{t(email ? "emCheckedBy" : "msgCheckedBy")}</p>
               ) : (
                 tone !== "safe" && <p className="mt-1 text-sm text-white/80">{t("blockedBy")}</p>
               )}
@@ -956,6 +1032,12 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
         )}
 
         {email && <SenderCard email={email} />}
+
+        {message?.verifiedOfficial && tone === "safe" && (
+          <p className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-sm font-semibold text-emerald-700 ring-1 ring-line dark:text-emerald-400">
+            <BadgeCheck className="size-4 shrink-0" aria-hidden /> {t("msgVerified")}
+          </p>
+        )}
 
         {result.harvested.length > 0 && (
           <motion.div
@@ -1050,13 +1132,20 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
           </>
         )}
 
+        {message && (
+          <>
+            {message.links.length > 0 && <LinksCard links={message.links} title="msgLinksTitle" />}
+            <MessageNumbersCard message={message} />
+          </>
+        )}
+
         {tone !== "safe" && result.riskScore >= 60 && <XAlertPrompt warning={warningFromVerdict(result)} />}
 
         {email && <PersonalModelCard scanId={result.scanId} model={email.userModel} />}
 
-        {email && tone === "safe" && (
+        {(email || message) && tone === "safe" && (
           <p className="flex items-start gap-2 rounded-2xl bg-surface p-3 text-sm text-ink-soft ring-1 ring-line">
-            <Info className="mt-0.5 size-4 shrink-0" /> {t("emSafeNote")}
+            <Info className="mt-0.5 size-4 shrink-0" /> {t(email ? "emSafeNote" : "msgSafeNote")}
           </p>
         )}
 
@@ -1130,7 +1219,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
             <ArrowLeft className="size-5 rtl:rotate-180" /> {t("backToSafety")}
           </button>
           <div className="grid grid-cols-2 gap-2">
-            {tone === "safe" && email ? (
+            {tone === "safe" && (email || message) ? (
               official ? (
                 <a
                   href={`https://${official}`}

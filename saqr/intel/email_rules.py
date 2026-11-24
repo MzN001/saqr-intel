@@ -89,11 +89,14 @@ STRONG_CODES = {
     "PUNYCODE_DOMAIN", "DISPLAY_NAME_ADDRESS_SPOOF", "DMARC_FAIL", "DISPLAY_NAME_BRAND_SPOOF",
     "FREEMAIL_BRAND_SENDER", "LINK_TEXT_MISMATCH", "SENDER_NEW_DOMAIN", "LINK_SUSPICIOUS",
     "REPLY_TO_FREEMAIL_BRAND", "OFFICIAL_SENDER_UNAUTHENTICATED",
+    # a call-back number in a mail that claims a UAE institution: personal mobile / foreign number
+    "CALLBACK_MOBILE_FOR_INSTITUTION", "CALLBACK_FOREIGN_FOR_INSTITUTION",
 }
 WEAK_CODES = {
     "SPF_FAIL", "DKIM_FAIL", "CREDENTIAL_REQUEST", "USER_MODEL_SCAM", "CAMPAIGN_LURE_MATCH",
     "DMARC_FAIL_P_NONE", "NO_AUTHENTICATION", "REPLY_TO_MISMATCH", "URGENCY_LANGUAGE", "PAYMENT_REQUEST",
     "FANCY_UNICODE", "BRAND_MENTION", "SPF_SOFTFAIL", "RETURN_PATH_MISMATCH", "ATTACHMENT_ARCHIVE",
+    "SENDER_NO_MX",
 }
 BRAND_CLAIM = {"DISPLAY_NAME_BRAND_SPOOF", "FREEMAIL_BRAND_SENDER", "SENDER_LOOKALIKE", "OFFICIAL_SENDER_UNAUTHENTICATED"}
 # Weak flags that, next to a confident personal-model scam opinion (USER_MODEL_SCAM), may lift a mail
@@ -108,7 +111,7 @@ MODEL_FLOOR_P = 0.99
 CAP_BLOCKERS = {
     "LINK_HIGH_RISK", "LINK_SUSPICIOUS", "KNOWN_PHISHING_LINK", "LINK_TEXT_MISMATCH", "IDN_MIXED_SCRIPT",
     "DISPLAY_NAME_CONFUSABLE", "BIDI_OVERRIDE", "INVISIBLE_IN_TOKEN", "PUNYCODE_DOMAIN",
-    "DANGEROUS_ATTACHMENT", "CAMPAIGN_IOC_MATCH",
+    "DANGEROUS_ATTACHMENT", "CAMPAIGN_IOC_MATCH", "CALLBACK_MOBILE_FOR_INSTITUTION", "CALLBACK_FOREIGN_FOR_INSTITUTION",
 }
 UNICODE_CODES = {"IDN_MIXED_SCRIPT", "DISPLAY_NAME_CONFUSABLE", "BIDI_OVERRIDE", "INVISIBLE_IN_TOKEN",
                  "PUNYCODE_DOMAIN", "FANCY_UNICODE"}
@@ -534,6 +537,7 @@ class EmailRuleResult(RuleResult):
     is_list: bool = False
     is_bulk: bool = False
     capped: bool = False
+    verified_official: bool = False   # authenticated official sender, nothing contradicting it
     max_link_score: int = 0
     rule_codes: list[str] = field(default_factory=list)  # every code produced (for model features)
 
@@ -598,8 +602,12 @@ def _unicode_flags(findings: list[dict[str, Any]], add) -> None:
 
 def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_findings: list[dict[str, Any]] | None,
                     link_results: list[dict[str, Any]] | None, campaign_matches: list[dict[str, Any]] | None,
-                    user_model: dict[str, Any] | None, sender_age_hours: float | None = None) -> EmailRuleResult:
-    """Score one email. Pure and offline (threat_feeds.lookup is an in-memory lookup)."""
+                    user_model: dict[str, Any] | None, sender_age_hours: float | None = None,
+                    phone_numbers: list[Any] | None = None, sender_mx: str | None = None) -> EmailRuleResult:
+    """Score one email. Pure and offline (threat_feeds.lookup is an in-memory lookup).
+
+    phone_numbers = phone_intel.PhoneInfo of the numbers in the body / tel: links; sender_mx = "found",
+    "none" (the sender domain has no mail server at all) or None (not looked up / lookup failed)."""
     auth = auth or AuthReport.not_checked()
     findings = unicode_findings or []
     links = link_results or []
@@ -920,6 +928,34 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
         add("BRAND_MENTION", "low", 10, f"The email talks about {mention.name_en}.",
             f"تتحدث الرسالة عن {mention.name_ar}.", mention.name_en)
 
+    # -- call-back numbers (only next to a claimed UAE institution) --------------------------------
+    if claimed and phone_numbers:
+        from .maps_sentinel import classify_phone
+        from .phone_intel import mask
+
+        for info in phone_numbers[:5]:
+            status, _ = classify_phone(info, claimed)
+            if status == "mobile_for_institution":
+                add("CALLBACK_MOBILE_FOR_INSTITUTION", "high", 35,
+                    f"The email asks you to contact {claimed.name_en} on a personal mobile number. Institutions "
+                    "never use personal mobiles.",
+                    f"تطلب الرسالة التواصل مع {claimed.name_ar} على رقم هاتف متحرك شخصي. الجهات الرسمية لا تستخدم "
+                    "أرقاماً شخصية.", mask(info))
+            elif status == "foreign_for_institution":
+                add("CALLBACK_FOREIGN_FOR_INSTITUTION", "high", 35,
+                    f"The email gives a foreign phone number ({info.region or 'abroad'}) for {claimed.name_en}, a UAE "
+                    "institution that only uses UAE numbers.",
+                    f"تذكر الرسالة رقم هاتف أجنبياً ({info.region or 'خارج الدولة'}) باسم {claimed.name_ar}، وهي جهة "
+                    "إماراتية تستخدم أرقاماً إماراتية فقط.", mask(info))
+
+    # -- sender domain has no mail server --------------------------------------------------------------
+    if sender_mx == "none" and from_rd and not from_free and not is_official and not trusted:
+        add("SENDER_NO_MX", "low", 10,
+            f"The sender's domain ({from_rd}) has no mail server: replies cannot reach it, which is common for "
+            "throw-away scam domains.",
+            f"نطاق المرسل ({from_rd}) لا يملك خادم بريد: لا يمكن أن تصل الردود إليه، وهذا شائع في نطاقات الاحتيال "
+            "المؤقتة.", f"{from_rd}: no MX")
+
     # -- personal model ----------------------------------------------------------------------------
     um = user_model or {}
     p = um.get("p_scam")
@@ -951,12 +987,14 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
     if codes & BRAND_CLAIM and (codes & {"DMARC_FAIL", "CREDENTIAL_REQUEST", "PAYMENT_REQUEST"} or max_link >= 30):
         score = max(score, 70)
     capped = False
-    if dmarc_pass and trusted and not (codes & CAP_BLOCKERS) and max_link < 30 and score > 20:
+    uncontradicted = dmarc_pass and trusted and not (codes & CAP_BLOCKERS) and max_link < 30
+    if uncontradicted and score > 20:
         score, capped = 20, True
     entity = claimed if strong else None
     return EmailRuleResult(score, verdict_for(score), entity, flags, [], official_entity=official_entity,
                            is_official_sender=is_official, trusted_sender=trusted, is_list=is_list, is_bulk=is_bulk,
-                           capped=capped, max_link_score=max_link, rule_codes=rule_codes)
+                           capped=capped, verified_official=uncontradicted and is_official and score < 30,
+                           max_link_score=max_link, rule_codes=rule_codes)
 
 
 # ---------------------------------------------------------------------------

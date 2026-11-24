@@ -93,14 +93,19 @@ interface MapsScanResponse {
     name: string | null;
     address: string | null;
     website_domain: string | null;
+    /** Set (and website_domain null) when the website is a WhatsApp / social / short link / free builder. */
+    website_host?: string | null;
+    website_platform?: "messaging" | "social" | "shortener" | "builder" | null;
     phone: string | null;
     lat: number | null;
     lng: number | null;
   };
+  /** The website is an official UAE site and no contact detail on the listing contradicts it. */
+  verified_official?: boolean;
 }
 
 export interface ScanVerdict {
-  kind: "url" | "maps" | "email";
+  kind: "url" | "maps" | "email" | "message";
   scanId: string;
   target: string;
   /** The website domain behind the scam (used, defanged, in community warnings). */
@@ -126,6 +131,8 @@ export interface ScanVerdict {
   interception: InterceptionChannel;
   /** Only for kind "email": sender, authentication, links, attachments, campaigns, personal model. */
   email?: EmailDetails;
+  /** Only for kind "message": the links and phone numbers found in a pasted SMS / WhatsApp text. */
+  message?: MessageDetails;
 }
 
 export interface AwarenessWave {
@@ -232,7 +239,7 @@ function fromMapsScan(r: MapsScanResponse, interception: InterceptionChannel): S
   return {
     kind: "maps",
     scanId: r.scan_id,
-    target: r.listing.name ?? r.listing.website_domain ?? "Google Maps listing",
+    target: r.listing.name ?? r.listing.website_domain ?? r.listing.website_host ?? "Google Maps listing",
     scamDomain: r.listing.website_domain,
     riskScore: r.risk_score,
     verdict: r.verdict,
@@ -735,11 +742,24 @@ export type PhoneContext = "ad" | "maps" | "panel" | "result";
 export interface PhoneCheck {
   phone: string;
   normalized: string;
-  status: "official" | "unofficial" | "mobile_for_institution" | "linked_to_scam" | "unknown";
+  status:
+    | "official"
+    | "unofficial"
+    | "mobile_for_institution"
+    | "foreign_for_institution"
+    | "linked_to_scam"
+    | "unknown";
   level: "danger" | "caution" | "official" | "none";
   claimed_entity: string | null;
   entity: PreClickEntity | null;
   reasons: PreClickReason[];
+  e164?: string | null;
+  country_code?: number | null;
+  /** ISO 3166 region of the number, e.g. "AE", "GB". */
+  region?: string | null;
+  line_type?: string | null;
+  /** An official number checked on the entity's own website (registry.VERIFIED_PHONES). */
+  verified_official?: boolean;
 }
 
 /** Is this the claimed institution's official number? */
@@ -748,4 +768,144 @@ export async function checkPhone(phone: string, claimedEntity?: string, context?
     method: "POST",
     body: JSON.stringify({ phone, claimed_entity: claimedEntity ?? null, context: context ?? null }),
   });
+}
+
+// ---------------------------------------------------------------- message scanning (POST /api/analyze-message)
+
+export type PhoneStatus =
+  | "official"
+  | "unofficial"
+  | "mobile_for_institution"
+  | "foreign_for_institution"
+  | "linked_to_scam"
+  | "unknown";
+
+export interface MessageLink {
+  url: string;
+  domain: string;
+  /** A verified official UAE website. */
+  official: boolean;
+  scanned: boolean;
+  scan_id: string | null;
+  verdict: VerdictLabel | null;
+  risk_score: number | null;
+}
+
+export interface MessagePhone {
+  source: "text" | "sender";
+  e164: string | null;
+  masked: string;
+  country_code: number | null;
+  region: string | null;
+  line_type: string;
+  is_uae_mobile: boolean;
+  status: PhoneStatus;
+  level: "danger" | "caution" | "official" | "none";
+  verified_official: boolean;
+}
+
+export interface MessageSender {
+  type: "phone" | "alphanumeric";
+  value: string;
+  masked: string;
+  status: PhoneStatus | null;
+  line_type: string | null;
+  region: string | null;
+  claims_institution: boolean;
+}
+
+/** The server response of POST /api/analyze-message. */
+export interface MessageScanVerdict {
+  scan_id: string;
+  kind: "message";
+  target: string;
+  verdict: VerdictLabel;
+  risk_score: number;
+  impersonated_entity: string | null;
+  impersonated_entity_ar: string | null;
+  claimed_entity: string | null;
+  claimed_entity_ar: string | null;
+  official_domains: string[];
+  citizen_explanation_en: string;
+  citizen_explanation_ar: string;
+  red_flags: RedFlag[];
+  verified_official: boolean;
+  message: {
+    excerpt: string | null;
+    length: number;
+    credential_requests: string[];
+    sender: MessageSender | null;
+  };
+  links: MessageLink[];
+  phones: MessagePhone[];
+  analyzer?: { engine: string };
+  syndicate?: SyndicateBrief | null;
+}
+
+/** Everything the message verdict screen shows. */
+export interface MessageDetails {
+  links: MessageLink[];
+  phones: MessagePhone[];
+  sender: MessageSender | null;
+  verifiedOfficial: boolean;
+  claimedEn: string | null;
+  claimedAr: string | null;
+}
+
+export function fromMessageScan(r: MessageScanVerdict, interception: InterceptionChannel): ScanVerdict {
+  const scamLink = r.links.find((l) => l.verdict && l.verdict !== "SAFE")?.domain ?? null;
+  return {
+    kind: "message",
+    scanId: r.scan_id,
+    target: r.claimed_entity ?? r.message?.sender?.value ?? "Text message",
+    scamDomain: scamLink,
+    riskScore: r.risk_score,
+    verdict: r.verdict,
+    entityEn: r.impersonated_entity,
+    entityAr: r.impersonated_entity_ar,
+    officialDomains: r.official_domains ?? [],
+    officialPhones: [],
+    explanationEn: r.citizen_explanation_en,
+    explanationAr: r.citizen_explanation_ar,
+    redFlags: (r.red_flags ?? []).filter((f) => f.points > 0),
+    harvested: [],
+    ip: null,
+    sslIssuer: null,
+    domainAgeHours: null,
+    cloaking: false,
+    screenshot: null,
+    syndicateEn: r.syndicate?.name ?? null,
+    syndicateAr: r.syndicate?.name_ar ?? null,
+    engine: r.analyzer?.engine ?? "rules",
+    interception,
+    message: {
+      links: r.links ?? [],
+      phones: r.phones ?? [],
+      sender: r.message?.sender ?? null,
+      verifiedOfficial: Boolean(r.verified_official),
+      claimedEn: r.claimed_entity,
+      claimedAr: r.claimed_entity_ar,
+    },
+  };
+}
+
+export const MESSAGE_MAX_CHARS = 4000;
+
+/** Scan a pasted SMS / WhatsApp text (with or without a link). `sender` = the number or sender name shown. */
+export async function analyzeMessage(
+  text: string,
+  interception: InterceptionChannel,
+  sender?: string,
+  channel: "sms" | "whatsapp" = "sms",
+): Promise<ScanVerdict> {
+  const r = await request<MessageScanVerdict>("/api/analyze-message", {
+    method: "POST",
+    body: JSON.stringify({
+      text: text.slice(0, MESSAGE_MAX_CHARS),
+      channel,
+      interception_channel: interception,
+      ...(sender && sender.trim() ? { sender: sender.trim().slice(0, 64) } : {}),
+    }),
+  });
+  return fromMessageScan(r, interception);
 }

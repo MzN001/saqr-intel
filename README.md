@@ -36,7 +36,8 @@ notices.
  email, Maps listing      Outlook, search + Maps badges          ^
           \                    |                                 |
            v                   v                                 |
-   FastAPI  POST /api/analyze-url · /api/batch-verdict · /api/analyze-email · /api/scan-maps
+   FastAPI  POST /api/analyze-url · /api/batch-verdict · /api/analyze-email · /api/analyze-message
+            · /api/scan-maps · /api/check-phone
    pipeline.analyze_url:
      1 redirect resolver (30x, meta refresh, JS stubs, ?url= wrappers, 100+ shorteners; SSRF guard per hop)
      2 look-alike rules (typosquat, homoglyph / punycode, TLD swap, brand + lure words)
@@ -120,6 +121,24 @@ Measured on 2026-11-24 (offline system = look-alike rules + URL model only: no n
 - 0 false alarms on the 224 UAE official / bank / government / brand-official pages. Median scan 8.6 s, 95th percentile 16.5 s (20 scans in parallel). Of the 100 phishing URLs missed at warn, 53 were already offline or blocked when scanned and 45 showed the fetcher an ordinary-looking page.
 - Full details, thresholds, per-set tables and what was tried and dropped: [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 
+**UAE regression suite** (`tests/uae_suite/cases.json`, `tools/eval_uae.py`, also run by `pytest`): 50 cases
+the team wrote by hand, 25 scams and 25 legitimate, 10 per input type (website link, email, Google Maps listing,
+phone number, SMS / WhatsApp text), several in Arabic. Every scam domain is invented. The legitimate side includes
+hard cases on purpose: a real-style bank email that talks about OTP and urgency, an official link with a long
+tracking query, a shop called "Dubai Fabrics", a restaurant whose Maps "website" is WhatsApp. Run offline with
+rules only (no LLM, no WHOIS / DNS / page fetch, no feeds). "Detected" = verdict not SAFE (phone: a caution /
+danger level).
+
+| Measured 2026-11-24, offline | Scams detected | Legitimate flagged | Precision | Recall | False-alarm rate |
+|---|---:|---:|---:|---:|---:|
+| 50 cases (5 types x 10) | 25 / 25 | 0 / 25 | 1.00 | 1.00 | 0% |
+
+What this shows: the engine does not flag these common legitimate UAE cases and catches these common scam
+patterns, and every official legitimate case comes back `verified_official`. What it does not show: accuracy on
+real-world scams. The cases were written by people who know the rules, so a perfect score here is expected; the
+real-data numbers are the ones above and in the model card. One engine gap was found while writing it and fixed
+in general (Arabic polite requests such as "يرجى إرسال رمز التحقق" were not seen as asking for the code).
+
 Commands (runtime venv, standard library only):
 
 ```bash
@@ -130,6 +149,7 @@ python tools/evaluate.py sample.csv --mode live --records live.jsonl     # full 
 python tools/evaluate.py sample.csv --rescore live.jsonl                 # re-judge saved live evidence
 python tools/evaluate.py --suite                     # the fixed holdout sets -> model_metrics.json
 python tools/predict.py hidden_urls.csv -o predictions.csv [--url-col link] [--label-at block|warn] [--mode live]
+python tools/eval_uae.py [--json out.json]           # the 50-case UAE suite, offline (--live: real network + LLM keys)
 ```
 
 `--mode model` = URL model alone, `system` = the offline engine a scan runs first (rules + model, 65 = block,
@@ -153,7 +173,15 @@ to every open `/citizen` page.
 ## 7. Arabic and UAE specifics
 
 - Registry of 8 UAE entities (Abu Dhabi Police, TAMM, Emirates Post, e&, du, UAE PASS, FAB, ADCB) with Arabic
-  names, aliases and official domains, plus 13 other trusted UAE sites (`saqr/intel/registry.py`).
+  names, aliases and official domains, plus 15 other trusted UAE sites (`saqr/intel/registry.py`). Any registered
+  domain under `gov.ae` counts as official (TDRA only gives `gov.ae` names to government bodies; `gov.ae.evil.com`
+  does not count).
+- Phone numbers are parsed with `phonenumbers` (`saqr/intel/phone_intel.py`): UAE mobile / landline / 800 / 600 /
+  short codes, foreign numbers. A personal `+971 5x` mobile or a foreign number shown for a UAE institution is a
+  strong scam sign (banks and telecoms are left out of the foreign-number rule: they have real numbers abroad). Numbers in
+  `registry.VERIFIED_PHONES` were checked on the entity's own website; the other registry numbers are demo data.
+- SMS / WhatsApp text: `POST /api/analyze-message` (links, sender, call-back numbers, "send us the OTP" requests in
+  English and Arabic). Wording such as "fine", "urgent" or "Emirates ID" never scores on its own.
 - Short brand names (du, fab, tamm, adcb) match only as whole tokens (no alarms on dubai, fabric, tammy).
 - Arabic form-field detection (OTP, card, CVV, Emirates ID, password, IBAN) and Arabic-first sandbox headers.
 - All reasons, explanations, awareness alerts and the UI exist in English and Arabic (RTL).
@@ -206,7 +234,14 @@ Cloud: `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=fals
 |---|---|
 | Rules, URL model, redirect resolver, WHOIS / DNS / TLS, HTTP page fetch | Real, on every scan |
 | Threat feeds (Phishing Army, OpenPhish) | Real, refreshed every 6 h (`THREAT_FEEDS=false` disables) |
-| LLM judge | Real when `GEMINI_API_KEY` / `OPENAI_API_KEY` is set; free-tier quotas; off for hunter scans |
+| LLM judge | Real when `GEMINI_API_KEY` / `OPENAI_API_KEY` is set; free-tier quotas; off for hunter scans. The prompt carries 6 invented UAE calibration examples (few-shot). An unsure first answer (score 40-69 or confidence < 0.8) gets one second opinion from another model; the default second-opinion model `gemini-4-argon` is not on the free tier, so on a free key the next model in `GEMINI_MODEL` answers. No second opinion for email scans yet |
+| Phone checks (`/api/check-phone`, numbers in SMS, emails and Maps listings) | Real parsing (`phonenumbers`, offline). Only the numbers in `registry.VERIFIED_PHONES` are checked against the entities' own websites; the rest of the registry numbers are demo data |
+| `verified_official` field (URL, email, Maps, message, phone responses) | Real: official domain / `gov.ae` domain, authenticated official sender (DMARC pass), or registry number, with nothing contradicting it |
+| SMS / WhatsApp check (`/api/analyze-message`) | Real rules on the pasted text; its links are scanned as normal URL scans (they can reach the blocklist); the message itself is saved without a domain and with a short excerpt only |
+| Email call-back numbers and MX check | Real: a mobile / foreign call-back number for a claimed institution is strong; "sender domain has no mail server" (MX) is weak and needs the network (skipped offline) |
+| TLS certificate problem | Real but weak: counts (+10) only next to a strong signal such as a look-alike domain |
+| Maps "website" that is WhatsApp / link-in-bio / a short link | Real: flagged only when the listing uses a UAE institution's name (a restaurant using WhatsApp is normal); these hosts never enter the blocklist or the graph |
+| UAE regression suite (50 cases) | Hand-written synthetic cases, run offline with rules only (section 5); not real-world accuracy |
 | Phone DNS block and push alert | Real (NextDNS denylist), tested on the owner's iPhone; one shared NextDNS profile |
 | "Sync to e& / du Telecom Blocklist" | Adds the domain to SAQR's own blocklist + NextDNS. No telecom consumes the RPZ feed yet |
 | Proactive Hunter | `HUNTER_MODE=live` by default: real DNS sweep, whoisds list and crt.sh. crt.sh answered HTTP 502 when tested on 2026-11-24 (the source backs off). `OFFLINE_MODE` or `HUNTER_MODE=simulated` = synthetic leads, labelled "simulated", never published |
@@ -215,11 +250,11 @@ Cloud: `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=fals
 | Police command center counters, campaigns, warnings | In memory, reset on every restart. "Citizens Protected Today" and "Community X Alerts Dispatched" start from a fixed demo baseline (1,284 and 37); the tile shows "Includes 1,284 demo baseline · N live" and the API returns `demo_baseline` and `live_counts` separately. Pre-loaded stream rows are tagged "Demo" |
 | `/police` sign-in | Real: one shared passcode, signed httpOnly cookie, police key added on the web server (see section 10). Not per-officer accounts |
 | "Report a false alarm" | Real: stored in SQLite, reviewed in the `/police` queue; the officer's decision is recorded only (nothing is unblocked or whitelisted automatically) |
-| Official phone numbers and branch coordinates | Demo reference data; must be checked against official sources |
+| Official phone numbers and branch coordinates | Branch coordinates: demo data. Phone numbers: 9 checked on the entities' own websites (`registry.VERIFIED_PHONES`, source URL per number, `verified_official: true`); the rest are demo data that must be checked against official sources |
 | Maps listing lookup | Google Places only with `GOOGLE_MAPS_API_KEY` (not set in `render.yaml`); otherwise seeded listings + OSM reverse geocoding |
 | Screenshots | Only with Playwright (laptop). Render has no browser: no screenshots, cloaking check = two HTTP views |
 | Search & Maps badges (extension) | Tested on saved HTML fixtures of Google, Bing and Maps, not yet against live Google markup |
-| SMS guard tab on `/citizen` | A simulated phone screen with a demo SMS; real messages are pasted or shared to the PWA (Android share target) |
+| SMS guard tab on `/citizen` | A simulated phone screen with a demo SMS (checked by `/api/analyze-message`); real messages are pasted or shared to the PWA (Android share target). SAQR cannot read a phone's SMS inbox |
 | Demo scam sites (saqr-demo-scam.vercel.app, aed-refund-claim.vercel.app) | Harmless training replicas with an inert form |
 
 ## 10. Limitations and route to a police pilot
@@ -241,8 +276,15 @@ Security and privacy today:
   confirms or dismisses them.
 
 Limitations (known, not hidden):
-- Measured accuracy is on public international datasets; there is no labelled UAE scam set yet, so the hidden
-  test set may behave differently. A brand-new scam on an innocent-looking, aged domain needs page evidence.
+- Measured accuracy is on public international datasets. The only UAE set is the team's own 50-case synthetic
+  regression suite (section 5): it checks common UAE cases, not real-world accuracy, so the hidden test set may
+  behave differently. A brand-new scam on an innocent-looking, aged domain needs page evidence.
+- Most registry phone numbers and all branch coordinates are demo data; only `registry.VERIFIED_PHONES` was
+  checked on the entities' websites. A scam SMS that uses a spoofed alphanumeric sender id ("ADCB") and asks for
+  nothing (no link, no number, no code) cannot be told apart from a real one by its text.
+- Brands outside the registry (for example Darb tolls) are caught only by generic signals (URL model, lure
+  words): `darb` is not a brand token, so a Darb look-alike scores lower (SUSPICIOUS 31 in the suite).
+- The LLM second opinion is not used for email scans. The email MX check needs DNS (skipped offline).
 - The cloud runs without a browser: JavaScript-built scam pages, IP / geo cloaking and screenshot evidence need
   Playwright workers with a UAE egress (`SANDBOX_PROXY_SERVER` exists but is not configured).
 - WHOIS is often redacted or rate-limited; crt.sh is unreliable; whoisds covers only domains it publishes.

@@ -21,12 +21,15 @@ MAX_ITEMS = 200
 MAX_NOTE = 280
 STATUSES = ("open", "confirmed", "dismissed")
 EMAIL_LABEL = "email message"
+MESSAGE_LABEL = "text message"
 MAPS_LABEL = "maps listing"
 
 
 def _label(scan: dict[str, Any]) -> str:
     if scan.get("kind") == "email":
         return EMAIL_LABEL
+    if scan.get("kind") == "message":
+        return MESSAGE_LABEL
     domain = (scan.get("domain") or "").strip().lower()
     if domain:
         return domain[:253]

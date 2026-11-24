@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, Inbox, MessageCircle, RefreshCw, ShieldAlert, ShieldBan, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
-import { analyzeUrl, type ScanVerdict } from "@/lib/api";
+import { analyzeMessage, type ScanVerdict } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
 import { useHydrated } from "@/lib/useHydrated";
 import { PhoneFrame } from "./Chrome";
@@ -65,7 +65,7 @@ export function SmsGuard({ onVerdict }: { onVerdict: (v: ScanVerdict) => void })
     setToast(false);
     setPhase("scanning");
     try {
-      const [verdict] = await Promise.all([analyzeUrl(SCAM_POST_URL, "AUTO_SMS_GUARD", "sms"), sleep(2200)]);
+      const [verdict] = await Promise.all([analyzeMessage(SCAM_TEXT_EN, "AUTO_SMS_GUARD", "EmiratesPost"), sleep(2200)]);
       if (!alive()) return;
       setResult(verdict);
       if (verdict.verdict === "SAFE") {

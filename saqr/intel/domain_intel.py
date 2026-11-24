@@ -28,6 +28,7 @@ from rapidfuzz import fuzz
 from ..config import settings
 from .registry import (
     ALL_BRANDS,
+    GOV_AE_SUFFIX,
     LURE_KEYWORDS,
     OFFICIAL_DOMAINS,
     SHARED_INFRA_ASNS,
@@ -161,7 +162,20 @@ def official_match(host: str) -> str | None:
     for d in OFFICIAL_DOMAINS:
         if host == d or host.endswith("." + d):
             return d
-    return None
+    return gov_ae_domain(host)
+
+
+def gov_ae_domain(host: str) -> str | None:
+    """The registered domain when `host` is under the gov.ae public suffix (restricted to UAE government
+    entities, see registry.GOV_AE_SUFFIX). Only a true registration counts: adpolice-gov.ae.evil.com,
+    gov.ae.example.com and the bare suffix "gov.ae" do not."""
+    h = (host or "").lower().rstrip(".")
+    if not h.endswith("." + GOV_AE_SUFFIX):
+        return None
+    ext = _EXTRACT(h)
+    if ext.suffix != GOV_AE_SUFFIX or not ext.domain:
+        return None
+    return f"{ext.domain}.{ext.suffix}"
 
 
 def _tokens(label: str) -> list[str]:

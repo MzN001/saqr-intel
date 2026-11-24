@@ -5,7 +5,10 @@ API if a key is configured, else the seeded intel store, else caller-supplied fi
 then cross-verifies it against the official UAE registry:
 
 * government / courier / bank name attached to an unofficial website
-* phone number not on the entity's official list, or a mobile number for an institution
+* an institution whose "website" is a WhatsApp / Telegram chat, social page, link-in-bio, short link or
+  free site / form builder (institutions never use one as their official site)
+* phone number not on the entity's official list, a mobile number for an institution, or a foreign
+  number for a UAE body that only publishes UAE numbers
 * the same phone number reused across multiple unrelated pins
 * coordinates on a residential plot / empty lot / far from any official branch
 """
@@ -25,9 +28,12 @@ from ..config import settings
 from ..db import db
 from ..security import host_is_safe_target
 from ..seed_data import MAP_PINS, resolve_mock_scam
+from . import page_signals, phone_intel
 from .ai_inspector import intel_flags, verdict_for
-from .domain_intel import RedFlag, analyze_lexical
-from .registry import ABU_DHABI_BBOX, ALL_BRANDS, Entity, normalise_phone
+from .domain_intel import LexicalReport, RedFlag
+from .redirects import is_shortener
+from .registry import (ABU_DHABI_BBOX, ALL_BRANDS, ENTITIES, ENTITY_EXTRA_DOMAINS, TRUSTED_UAE_DOMAINS, Entity,
+                       normalise_phone)
 
 log = logging.getLogger("saqr.maps")
 
@@ -36,8 +42,90 @@ SUSPICIOUS_PLACE_TYPES = {
     "vacant", "vacant_lot", "grass", "farmland", "sand", "scrub", "parking", "road", "track",
 }
 STRONG_FLAGS = {"UNOFFICIAL_DOMAIN_ON_LISTING", "PHISHING_WEBSITE_ON_LISTING", "LOOKALIKE_WEBSITE", "PHONE_REUSED_ACROSS_PINS",
-                "KNOWN_SYNDICATE_INFRA", "MOBILE_FOR_INSTITUTION", "UNVERIFIED_LOCATION"}
+                "KNOWN_SYNDICATE_INFRA", "MOBILE_FOR_INSTITUTION", "UNVERIFIED_LOCATION", "INSTITUTION_MESSAGING_LINK",
+                "FOREIGN_NUMBER_FOR_INSTITUTION"}
+# A listing's phone contradicts an official website when one of these is raised.
+CONTACT_CONTRADICTIONS = {"UNOFFICIAL_PHONE", "MOBILE_FOR_INSTITUTION", "FOREIGN_NUMBER_FOR_INSTITUTION",
+                          "PHONE_REUSED_ACROSS_PINS"}
 MAPS_HOSTS = ("google.", "goo.gl", "maps.app.goo.gl", "g.co")
+INSTITUTION_CATEGORIES = {"government", "bank", "courier", "identity"}
+
+# Big UAE banks / authorities that the registry lists with the global brands.
+UAE_BRAND_IDS = {"emiratesnbd", "mashreq", "adib", "dubaipolice", "rta", "dewa", "emiratesair", "rakbank"}
+# UAE institutions that never publish a foreign phone number. Banks are left out on purpose (FAB, Emirates NBD,
+# Mashreq, ADIB run branches abroad, so a +44 / +966 number on a Maps card can be real), and so are telecoms
+# and the airline.
+UAE_DOMESTIC_ONLY_IDS = {"dubaipolice", "rta", "dewa"}
+
+# "Websites" that are really a chat, a profile or a page anyone can make. Normal for a cafe or a salon in the UAE
+# (and never flagged for one); an official institution never lists one as its website.
+MESSAGING_HOSTS = ("wa.me", "whatsapp.com", "t.me", "telegram.me", "telegram.dog")
+SOCIAL_HOSTS = ("linktr.ee", "lnk.bio", "beacons.ai", "bio.link", "linkin.bio", "taplink.cc", "solo.to",
+                "instagram.com", "facebook.com", "fb.com", "m.me", "tiktok.com", "snapchat.com")
+FORM_HOSTS = ("forms.gle", "forms.office.com", "forms.microsoft.com", "jotform.com", "typeform.com", "tally.so")
+PLATFORM_LABELS = {
+    "messaging": ("a WhatsApp / Telegram chat link", "رابط محادثة واتساب أو تيليجرام"),
+    "social": ("a social-media or link-in-bio page", "صفحة تواصل اجتماعي أو صفحة روابط شخصية"),
+    "shortener": ("a short link that hides the real address", "رابط مختصر يخفي العنوان الحقيقي"),
+    "builder": ("a free page or form that anyone can create", "صفحة أو نموذج مجاني يستطيع أي شخص إنشاءه"),
+}
+
+
+def _on(host: str, roots: tuple[str, ...]) -> bool:
+    return any(host == r or host.endswith("." + r) for r in roots)
+
+
+def platform_kind(host: str | None, path: str = "") -> str | None:
+    """messaging / social / shortener / builder when the "website" is not a site the listing owner runs."""
+    h = (host or "").lower().rstrip(".")
+    h = h[4:] if h.startswith("www.") else h
+    if not h:
+        return None
+    if _on(h, MESSAGING_HOSTS):
+        return "messaging"
+    if _on(h, SOCIAL_HOSTS):
+        return "social"
+    if is_shortener(h):
+        return "shortener"
+    if _on(h, FORM_HOSTS) or (h == "docs.google.com" and path.startswith("/forms")) or page_signals.user_content(h):
+        return "builder"
+    return None
+
+
+def is_uae_brand(e: Entity | None) -> bool:
+    """An official UAE government / courier / identity / bank / telecom body (registry ENTITIES + big UAE brands)."""
+    return e is not None and (e in ENTITIES or e.id in UAE_BRAND_IDS)
+
+
+def is_official_uae(lex: LexicalReport) -> bool:
+    """A verified official UAE website (the only case that gets a green tick)."""
+    if not lex.is_whitelisted or lex.official_match in settings.own_hosts:
+        return False
+    match = lex.official_match or ""
+    ent = lex.impersonated
+    return (match.endswith((".ae", ".abudhabi")) or match in TRUSTED_UAE_DOMAINS or match in ENTITY_EXTRA_DOMAINS
+            or match in settings.extra_whitelist or ent in ENTITIES or (ent is not None and ent.id in UAE_BRAND_IDS))
+
+
+def is_uae_institution(e: Entity | None) -> bool:
+    """A UAE government / courier / identity body (or Dubai Police, RTA, DEWA): its official channels are UAE
+    numbers only. Banks, telecoms and global brands are not (they have real numbers abroad)."""
+    if e is None:
+        return False
+    if e.id in UAE_DOMESTIC_ONLY_IDS:
+        return True
+    return e in ENTITIES and e.category in INSTITUTION_CATEGORIES and e.category != "bank"
+
+
+def foreign_number_flag(entity: Entity | None, info: phone_intel.PhoneInfo) -> RedFlag | None:
+    """A valid foreign number for a UAE body that only publishes UAE numbers (shared with /api/check-phone)."""
+    if not (info.is_valid and not info.is_uae and is_uae_institution(entity)):
+        return None
+    return RedFlag(
+        "FOREIGN_NUMBER_FOR_INSTITUTION", "high", 20,
+        f"{entity.name_en} is a UAE institution, but this is a foreign number (+{info.country_code}, "
+        f"{info.region or 'abroad'}).",
+        f"{entity.name_ar} جهة إماراتية، لكن هذا رقم أجنبي (+{info.country_code}، {info.region or 'خارج الدولة'}).")
 
 
 def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -177,9 +265,6 @@ def match_entity(name: str | None) -> tuple[Entity | None, float]:
     return best if best[1] >= 85 else (None, best[1])
 
 
-INSTITUTION_CATEGORIES = {"government", "bank", "courier", "identity"}
-
-
 def phone_flags(entity: Entity | None, phone: str | None) -> list[RedFlag]:
     """Is the phone shown next to an institution's name (Maps card, search ad) one of its official
     numbers? A personal mobile number for a bank or government office is a strong scam sign."""
@@ -194,10 +279,35 @@ def phone_flags(entity: Entity | None, phone: str | None) -> list[RedFlag]:
         f"الرقم {phone} ليس رقماً رسمياً لـ{entity.name_ar} (الرسمي: {'، '.join(entity.phones)}).",
     )]
     if norm_phone.startswith("9715") and entity.category in INSTITUTION_CATEGORIES:
-        flags.append(RedFlag("MOBILE_FOR_INSTITUTION", "high", 15,
+        flags.append(RedFlag("MOBILE_FOR_INSTITUTION", "high", 20,
                              "Institutions don't use personal mobile numbers on official listings.",
                              "المؤسسات الرسمية لا تستخدم أرقام هواتف متحركة شخصية في إدراجاتها."))
     return flags
+
+
+def classify_phone(info: phone_intel.PhoneInfo, claimed: Entity | None) -> tuple[str, list[RedFlag]]:
+    """(status, flags) for a number next to a claimed institution (or none). Shared by /api/check-phone,
+    message scans and email call-back numbers. Status: official | unofficial | mobile_for_institution |
+    foreign_for_institution | unknown (linked_to_scam needs the graph: see routers/batch.check_phone)."""
+    from .registry import OFFICIAL_PHONES
+
+    raw = info.raw or info.key
+    norm = info.key or normalise_phone(raw)
+    owner = OFFICIAL_PHONES.get(norm)
+    flags = phone_flags(claimed, raw) if claimed and claimed.phones else []
+    foreign_flag = foreign_number_flag(claimed, info)
+    if foreign_flag:
+        flags.append(foreign_flag)
+    codes = {f.code for f in flags}
+    if claimed and claimed.phones:
+        status = ("mobile_for_institution" if "MOBILE_FOR_INSTITUTION" in codes
+                  else "foreign_for_institution" if foreign_flag
+                  else "unofficial" if "UNOFFICIAL_PHONE" in codes else "official")
+    elif foreign_flag:
+        status = "foreign_for_institution"
+    else:
+        status = "official" if owner and not claimed else "unknown"
+    return status, flags
 
 
 async def pins_sharing_phone(norm_phone: str, exclude_pin: str = "") -> list[dict[str, Any]]:
@@ -245,15 +355,26 @@ async def scan_listing(*, maps_url: str | None, business_name: str | None, query
     website_domain = None
     website_risk = 0
     site_lex = None
+    platform = None
     if listing.get("website"):
         try:
-            site_lex = analyze_lexical(resolve_mock_scam(listing["website"])[0])
+            site_url = resolve_mock_scam(listing["website"])[0]
+            site_lex = page_signals.lexical(site_url)
             website_domain = site_lex.host
             website_risk = site_lex.score
+            path = urlsplit(site_url if "://" in site_url else "https://" + site_url).path or ""
+            platform = platform_kind(website_domain, path)
         except ValueError:
             pass
-    listing["website_domain"] = website_domain
-    if site_lex and site_lex.impersonated and not entity:
+    if platform:
+        # wa.me / linktr.ee / bit.ly ... is never the scam site itself: it must not enter the graph, the DNS
+        # blocklist or a takedown notice (and must not link every cafe using WhatsApp into one "network").
+        listing["website_host"] = website_domain
+        listing["website_platform"] = platform
+        listing["website_domain"] = None
+    else:
+        listing["website_domain"] = website_domain
+    if site_lex and site_lex.impersonated and not entity and not platform:
         entity = site_lex.impersonated
 
     # 0) The linked website is a known (threat feeds) or AI-detected phishing site
@@ -268,7 +389,18 @@ async def scan_listing(*, maps_url: str | None, business_name: str | None, query
         ))
 
     # 1) Official name + unofficial domain
-    if entity and site_lex and not site_lex.is_whitelisted:
+    if entity and platform and is_uae_brand(entity):
+        kind_en, kind_ar = PLATFORM_LABELS[platform]
+        flags.append(RedFlag(
+            "INSTITUTION_MESSAGING_LINK", "critical", 55,
+            f"The listing uses the name '{entity.name_en}' but its website is {website_domain}, {kind_en}. "
+            f"{entity.name_en} never uses one as its official website ({', '.join(entity.domains)}).",
+            f"الإدراج يستخدم اسم «{entity.name_ar}» لكن موقعه {website_domain}، وهو {kind_ar}. "
+            f"لا تستخدم {entity.name_ar} ذلك أبداً موقعاً رسمياً (الرسمي: {'، '.join(entity.domains)}).",
+        ))
+    elif entity and platform:
+        pass  # a global brand's local partner / agent may well use WhatsApp: no verdict from the website
+    elif entity and site_lex and not site_lex.is_whitelisted:
         flags.append(RedFlag(
             "UNOFFICIAL_DOMAIN_ON_LISTING", "critical", 30 if entity.category == "global" else 40,
             f"The listing uses the name '{entity.name_en}' but links to {website_domain}, which is NOT an official "
@@ -291,6 +423,8 @@ async def scan_listing(*, maps_url: str | None, business_name: str | None, query
     # 2) Phone checks
     norm_phone = normalise_phone(listing.get("phone"))
     flags += phone_flags(entity, listing.get("phone"))
+    if listing.get("phone") and (foreign := foreign_number_flag(entity, phone_intel.analyze(listing["phone"]))):
+        flags.append(foreign)
     if norm_phone:
         rows = await pins_sharing_phone(norm_phone, exclude_pin=listing["pin_id"])
         if rows:
@@ -352,10 +486,21 @@ async def scan_listing(*, maps_url: str | None, business_name: str | None, query
     if not any(f.code in STRONG_FLAGS for f in flags):
         score = min(score, 29)
     verdict = verdict_for(score)
+    codes = {f.code for f in flags}
+    # Green tick only when the website is an official UAE site of this entity (or any official UAE site when no
+    # entity is named) AND nothing on the listing contradicts it.
+    website_official = bool(
+        site_lex and not platform and is_official_uae(site_lex)
+        and (entity is None or site_lex.impersonated in (None, entity)))
+    verified_official = (website_official and verdict == "SAFE" and not (codes & STRONG_FLAGS)
+                         and not (codes & CONTACT_CONTRADICTIONS))
     ent_en = entity.name_en if entity else "an institution"
     ent_ar = entity.name_ar if entity else "جهة رسمية"
     top = sorted((f for f in flags if f.points), key=lambda f: -f.points)[:4]
-    if verdict == "SAFE":
+    if verdict == "SAFE" and verified_official:
+        en = f"Verified: this listing's website {website_domain} is an official site and its contact details match."
+        ar = f"تم التحقق: موقع هذا الإدراج {website_domain} موقع رسمي وبيانات التواصل مطابقة."
+    elif verdict == "SAFE":
         en = "No geo-spoofing indicators found for this listing."
         ar = "لم يتم العثور على مؤشرات تزييف جغرافي لهذا الإدراج."
     else:
@@ -375,4 +520,5 @@ async def scan_listing(*, maps_url: str | None, business_name: str | None, query
         "red_flags": [{"code": f.code, "severity": f.severity, "points": f.points, "en": f.en, "ar": f.ar} for f in flags],
         "citizen_explanation_en": en, "citizen_explanation_ar": ar,
         "syndicate_hint": syn["id"] if syn else None,
+        "verified_official": verified_official,
     }

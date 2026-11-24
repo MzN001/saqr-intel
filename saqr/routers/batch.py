@@ -11,7 +11,10 @@ POST /api/batch-verdict  {urls: [...<=200], expand: false}
 
 POST /api/check-phone  {phone, claimed_entity?, context?}
     Is a number shown in an ad / Maps card / knowledge panel one of the claimed institution's
-    official numbers? Same rules as the Maps sentinel (maps_sentinel.phone_flags).
+    official numbers? Same rules as the Maps sentinel (maps_sentinel.phone_flags), plus: a valid
+    FOREIGN number for a claimed UAE government / courier / identity body -> foreign_for_institution.
+    Response also carries phone_intel facts (e164, country_code, region, line_type) and
+    verified_official (an official number checked on the entity's own website, registry.VERIFIED_PHONES).
 
 Own rate-limit bucket: one search page sends a few batches, which must not use up the citizen's
 URL-scan allowance (4 x RATE_LIMIT_PER_MINUTE, at least 120; 0 = off).
@@ -27,13 +30,14 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from ..config import settings
 from ..db import db
-from ..intel import graph_engine, page_signals, redirects
+from ..intel import graph_engine, page_signals, phone_intel, redirects
 from ..intel.ai_inspector import run_rules, verdict_for
 from ..intel.domain_intel import RedFlag, normalize_url
 from ..intel.email_rules import host_of, unwrap_url
-from ..intel.maps_sentinel import match_entity, phone_flags, pins_sharing_phone
-from ..intel.registry import (ENTITIES, ENTITY_BY_ID, ENTITY_EXTRA_DOMAINS, OFFICIAL_PHONES, TRUSTED_UAE_DOMAINS,
-                              Entity, normalise_phone)
+from ..intel.maps_sentinel import (UAE_BRAND_IDS, UAE_DOMESTIC_ONLY_IDS,  # noqa: F401  (re-exported)
+                                   classify_phone, foreign_number_flag, is_official_uae, is_uae_institution,
+                                   match_entity, phone_flags, pins_sharing_phone)
+from ..intel.registry import ENTITY_BY_ID, OFFICIAL_PHONES, VERIFIED_PHONES, Entity, normalise_phone
 from ..pipeline import gather_network
 from ..schemas import BatchVerdictRequest, CheckPhoneRequest
 from ..security import RateLimiter
@@ -58,8 +62,8 @@ EXPAND_MAX = 10          # shorteners expanded per request
 EXPAND_HOP_TIMEOUT_S = 1.5
 EXPAND_BUDGET_S = 3.0    # the whole request never waits longer than this for the network
 MAX_REASONS = 4
-# Big UAE banks / authorities that the registry lists with the global brands.
-UAE_BRAND_IDS = {"emiratesnbd", "mashreq", "adib", "dubaipolice", "rta", "dewa", "emiratesair"}
+# UAE_BRAND_IDS / UAE_DOMESTIC_ONLY_IDS, is_official_uae and is_uae_institution live in maps_sentinel (shared
+# with the Maps sentinel) and are re-exported here.
 
 
 @dataclass
@@ -78,15 +82,6 @@ class HostVerdict:
 
 
 _cache: OrderedDict[str, tuple[float, HostVerdict]] = OrderedDict()
-
-
-def is_official_uae(lex) -> bool:
-    if not lex.is_whitelisted or lex.official_match in settings.own_hosts:
-        return False
-    match = lex.official_match or ""
-    ent = lex.impersonated
-    return (match.endswith((".ae", ".abudhabi")) or match in TRUSTED_UAE_DOMAINS or match in ENTITY_EXTRA_DOMAINS
-            or match in settings.extra_whitelist or ent in ENTITIES or (ent is not None and ent.id in UAE_BRAND_IDS))
 
 
 async def assess_host(url: str) -> HostVerdict:
@@ -306,18 +301,19 @@ def format_phone(digits: str) -> str:
 
 
 async def check_phone(phone: str, claimed_entity: str | None = None, context: str | None = None) -> dict[str, Any]:
-    norm = normalise_phone(phone)
+    info = phone_intel.analyze(phone)
+    norm = info.key or normalise_phone(phone)
     if len(norm) < 3:
         raise ValueError("Not a phone number")
     claimed = match_entity(claimed_entity)[0] if claimed_entity else None
+    return await check_phone_info(info, phone, norm, claimed, claimed_entity, context)
+
+
+async def check_phone_info(info: phone_intel.PhoneInfo, phone: str, norm: str, claimed: Entity | None,
+                           claimed_entity: str | None = None, context: str | None = None) -> dict[str, Any]:
+    """check_phone for an already parsed number and an already matched claimed entity (message scans)."""
     owner = OFFICIAL_PHONES.get(norm)
-    flags = phone_flags(claimed, phone) if claimed and claimed.phones else []
-    codes = {f.code for f in flags}
-    if claimed and claimed.phones:
-        status = ("mobile_for_institution" if "MOBILE_FOR_INSTITUTION" in codes
-                  else "unofficial" if "UNOFFICIAL_PHONE" in codes else "official")
-    else:
-        status = "official" if owner and not claimed else "unknown"
+    status, flags = classify_phone(info, claimed)
     linked = [] if status == "official" else await pins_sharing_phone(norm)
     if linked:
         names = "; ".join(r["label"] for r in linked[:3])
@@ -326,7 +322,8 @@ async def check_phone(phone: str, claimed_entity: str | None = None, context: st
             f"This number is attached to {len(linked)} fake map listing(s) SAQR linked to fraud: {names}.",
             f"هذا الرقم مرتبط بـ{len(linked)} إدراج(ات) مزيفة على الخريطة ربطها صقر بالاحتيال."))
         status = "linked_to_scam" if status == "unknown" else status
-    if status in {"mobile_for_institution", "linked_to_scam"} or (linked and status == "unofficial"):
+    if status in {"mobile_for_institution", "foreign_for_institution", "linked_to_scam"} or (
+            linked and status == "unofficial"):
         level = "danger"
     elif status == "unofficial":
         level = "danger" if context == "ad" else "caution"
@@ -338,7 +335,9 @@ async def check_phone(phone: str, claimed_entity: str | None = None, context: st
     flags.sort(key=lambda f: -f.points)
     return {"phone": phone, "normalized": norm, "status": status, "level": level,
             "claimed_entity": claimed_entity, "entity": _entity_json(entity),
-            "reasons": [{"code": f.code, "en": f.en, "ar": f.ar} for f in flags][:MAX_REASONS]}
+            "reasons": [{"code": f.code, "en": f.en, "ar": f.ar} for f in flags][:MAX_REASONS],
+            "e164": info.e164, "country_code": info.country_code, "region": info.region,
+            "line_type": info.line_type, "verified_official": status == "official" and norm in VERIFIED_PHONES}
 
 
 @router.post("/check-phone", dependencies=[Depends(batch_rate_limit)])

@@ -63,6 +63,13 @@ class Settings:
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     llm_timeout_s: float = _float("LLM_TIMEOUT_SECONDS", 20.0)
+    # Second opinion: an unsure first answer (score 40-69 or confidence < 0.8) gets ONE more call on
+    # this model (comma list, same parsing as GEMINI_MODEL). Empty = the next healthy GEMINI_MODEL that
+    # did not give the first answer. gemini-4-argon is documented (ai.google.dev, Oct 2026) but not on
+    # the free tier: the circuit breaker then rests it for a day and the GEMINI_MODEL chain is used.
+    gemini_second_opinion_models: list[str] = field(default_factory=lambda: _list(
+        "GEMINI_SECOND_OPINION_MODEL", "gemini-4-argon"))
+    llm_second_opinion: bool = _bool("LLM_SECOND_OPINION", True)
 
     # --- Network intelligence ------------------------------------------------
     offline_mode: bool = _bool("OFFLINE_MODE", False)  # skip every outbound lookup

@@ -7,10 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from ..config import settings
 from ..db import db, iso
+from ..message_pipeline import analyze_message
 from ..intel.nextdns_sync import nextdns_sync
 from ..pipeline import analyze_url, extract_url, new_scan_id
 from ..police_state import police_state
-from ..schemas import AnalyzeURLRequest
+from ..schemas import AnalyzeMessageRequest, AnalyzeURLRequest
 from ..security import rate_limit, require_police
 from ..ws_hub import hub
 
@@ -62,8 +63,44 @@ async def analyze_url_endpoint(req: AnalyzeURLRequest):
     return result
 
 
+def _message_summary(r: dict) -> dict:
+    """WebSocket summary of a message scan: police-only topic, and never the text, excerpt or numbers."""
+    top = sorted((f for f in r.get("red_flags", []) if f.get("points", 0) > 0), key=lambda f: -f["points"])
+    return {"scan_id": r["scan_id"], "kind": "message", "target": r["target"], "risk_score": r["risk_score"],
+            "verdict": r["verdict"], "channel": r.get("channel"), "interception_channel": r.get("interception_channel"),
+            "impersonated_entity": r.get("impersonated_entity"), "created_at": r["created_at"],
+            "top_flags": [f["code"] for f in top[:5]],
+            "link_domains": sorted({l["domain"] for l in r.get("links", [])
+                                    if l.get("verdict") in ("SUSPICIOUS", "HIGH-RISK SCAM")})}
+
+
+@router.post("/analyze-message", dependencies=[Depends(rate_limit)])
+async def analyze_message_endpoint(req: AnalyzeMessageRequest):
+    """Scan a pasted SMS / WhatsApp message: its links, phone numbers, sender and wording."""
+    scan_id = new_scan_id("MSG")
+    await hub.broadcast("citizen_report.received", {
+        "scan_id": scan_id, "kind": "message", "target": "text message", "channel": req.channel,
+        "interception_channel": req.interception_channel, "received_at": iso()})
+    try:
+        result = await analyze_message(req.text, sender=req.sender, channel=req.channel, reporter=req.reporter_id,
+                                       interception_channel=req.interception_channel, use_llm=req.use_llm,
+                                       follow_links=req.follow_links, scan_id=scan_id)
+    except ValueError as exc:
+        await hub.broadcast("message_scan.failed", {"scan_id": scan_id, "error": str(exc)[:300]})
+        raise HTTPException(422, str(exc)[:300]) from exc
+    await hub.broadcast("message_scan.completed", _message_summary(result))
+    if ev := police_state.record_scan(result):
+        await hub.broadcast("police.event", ev)
+    if any((l.get("risk_score") or 0) >= settings.nextdns_min_score for l in result.get("links", [])):
+        nextdns_sync.kick()  # a scam LINK (saved as its own URL scan) reaches phones' DNS shield fast
+    delta = result.get("graph_delta") or {}
+    if delta.get("new_nodes") or delta.get("new_edges"):
+        await hub.broadcast("graph.updated", {"scan_id": scan_id, **delta})
+    return result
+
+
 @router.get("/scans", dependencies=[Depends(require_police)])
-async def list_scans(limit: int = Query(50, ge=1, le=500), kind: str | None = Query(None, pattern="^(url|maps|email)$")):
+async def list_scans(limit: int = Query(50, ge=1, le=500), kind: str | None = Query(None, pattern="^(url|maps|email|message)$")):
     return {"scans": await db.list_scans(limit, kind)}
 
 

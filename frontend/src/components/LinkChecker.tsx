@@ -1,11 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CircleAlert, Link2, ScanSearch, ShieldCheck, X } from "lucide-react";
-import { useRef, useState, type FormEvent } from "react";
+import { CircleAlert, Link2, MessageSquareText, ScanSearch, ShieldCheck, UserRound, X } from "lucide-react";
+import { useRef, useState, type ClipboardEvent, type FormEvent } from "react";
 import { CityGridBackdrop, MAP_ASPECT } from "./CityGrid";
+import { MESSAGE_MAX_CHARS } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
-import { extractUrl } from "@/lib/url";
+import { extractUrl, isMapsUrl } from "@/lib/url";
 import { SCAM_FINE_URL, isDemoScamUrl } from "./SearchMapsShield";
 
 const OFFICIAL_EXAMPLE = "https://www.adpolice.gov.ae/";
@@ -17,13 +18,29 @@ function toUrl(input: string): string | null {
   return /^https?:\/\//i.test(found) ? found : `https://${found}`;
 }
 
-/** `rawText` is what the citizen pasted when it was more than a bare link (e.g. a whole SMS). */
-export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: string) => void }) {
+/** Free text (anything with a space: a whole SMS, with or without a link) is checked as a message. */
+function isMessageText(input: string): boolean {
+  return /\s/.test(input.trim());
+}
+
+/**
+ * A bare link goes to `onCheck` (website / Maps scan). Pasted text (a whole SMS or WhatsApp message) goes to
+ * `onCheckMessage` with the optional sender; a Maps link pasted with text is still checked as a Maps listing.
+ */
+export function LinkChecker({
+  onCheck,
+  onCheckMessage,
+}: {
+  onCheck: (url: string, rawText?: string) => void;
+  onCheckMessage: (text: string, sender?: string) => void;
+}) {
   const { t, lang } = useLang();
   const [value, setValue] = useState("");
+  const [sender, setSender] = useState("");
   const [invalid, setInvalid] = useState(false);
   // The demo scam example shows a friendly label in the box; the real (replica) address stays here.
   const [example, setExample] = useState<string | null>(null);
+  const textMode = !example && isMessageText(value);
   const input = useRef<HTMLInputElement>(null);
 
   const submit = (e: FormEvent) => {
@@ -32,15 +49,34 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
       onCheck(example);
       return;
     }
-    const url = toUrl(value);
+    const raw = value.trim();
+    const url = toUrl(raw);
+    if (isMessageText(raw) && !(url && isMapsUrl(url))) {
+      setInvalid(false);
+      onCheckMessage(raw, sender.trim() || undefined);
+      return;
+    }
     if (!url) {
       setInvalid(true);
       input.current?.focus();
       return;
     }
     setInvalid(false);
-    const raw = value.trim();
-    onCheck(url, /\s/.test(raw) ? raw : undefined);
+    onCheck(url, isMessageText(raw) ? raw : undefined);
+  };
+
+  /** A one-line box drops line breaks, gluing "fine.\nPay" into a fake domain: paste them as spaces. */
+  const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData("text");
+    if (!/[\r\n]/.test(pasted)) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    const start = el.selectionStart ?? value.length;
+    const end = el.selectionEnd ?? value.length;
+    const flat = pasted.replace(/\s*[\r\n]+\s*/g, " ");
+    setValue((value.slice(0, start) + flat + value.slice(end)).slice(0, MESSAGE_MAX_CHARS));
+    setExample(null);
+    if (invalid) setInvalid(false);
   };
 
   const tryExample = (url: string) => {
@@ -66,7 +102,7 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
         </div>
       </div>
 
-      <form onSubmit={submit} noValidate className="mt-4 flex flex-col gap-2 sm:flex-row">
+      <form id="link-checker-form" onSubmit={submit} noValidate className="mt-4 flex flex-col gap-2 sm:flex-row">
         <label htmlFor="link-checker-input" className="sr-only">
           {t("checkTitle")}
         </label>
@@ -75,7 +111,11 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
             invalid ? "ring-crimson-600" : "ring-line focus-within:ring-emerald-600"
           }`}
         >
-          <Link2 className="size-4 shrink-0 text-ink-soft/80" />
+          {textMode ? (
+            <MessageSquareText className="size-4 shrink-0 text-ink-soft/80" aria-hidden />
+          ) : (
+            <Link2 className="size-4 shrink-0 text-ink-soft/80" aria-hidden />
+          )}
           <input
             ref={input}
             id="link-checker-input"
@@ -86,8 +126,10 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
             autoCorrect="off"
             spellCheck={false}
             enterKeyHint="go"
-            dir="ltr"
+            dir={textMode ? "auto" : "ltr"}
+            maxLength={MESSAGE_MAX_CHARS}
             value={value}
+            onPaste={onPaste}
             onChange={(e) => {
               setValue(e.target.value);
               setExample(null);
@@ -124,6 +166,41 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
       </form>
 
       <AnimatePresence initial={false}>
+        {textMode && (
+          <motion.div
+            key="sender"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <p className="flex items-center gap-1.5 pt-2 text-xs font-medium text-ink-soft">
+              <MessageSquareText className="size-3.5 shrink-0" aria-hidden /> {t("msgModeNote")}
+            </p>
+            <label htmlFor="link-checker-sender" className="mt-2 block text-xs font-semibold text-ink">
+              {t("msgSenderLabel")} <span className="font-medium text-ink-soft">({t("msgSenderOptional")})</span>
+            </label>
+            <div className="mt-1 flex items-center gap-2 rounded-2xl bg-muted px-3.5 ring-1 ring-line transition-shadow focus-within:ring-2 focus-within:ring-emerald-600 sm:max-w-sm">
+              <UserRound className="size-4 shrink-0 text-ink-soft/80" aria-hidden />
+              <input
+                id="link-checker-sender"
+                form="link-checker-form"
+                type="text"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="go"
+                dir="ltr"
+                maxLength={64}
+                value={sender}
+                onChange={(e) => setSender(e.target.value)}
+                placeholder={t("msgSenderPlaceholder")}
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-ink outline-hidden placeholder:text-ink-soft/80"
+              />
+            </div>
+          </motion.div>
+        )}
         {invalid && (
           <motion.p
             id="link-checker-error"

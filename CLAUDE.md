@@ -8,7 +8,7 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
   - `saqr/intel/` — domain_intel (lookalike/homoglyph/WHOIS/DNS/TLS), sandbox (Playwright anti-cloaking), ai_inspector (rules engine + Gemini/OpenAI, rules are a floor), maps_sentinel, graph_engine (syndicate clustering), takedown, awareness, ct_monitor, registry (official UAE entities).
   - `saqr/seed_data.py` — fictitious demo syndicates (Sand Viper, Desert Mirage), replica scam pages, `MOCK_SCAM_SLUGS` (`/mock-scam/<slug>` on localhost resolves to a seeded scam domain).
   - `saqr/static/index.html` — simple built-in demo console at `http://localhost:8000/`.
-  - `tests/` — run `pytest -q` (whole suite offline, ~940 tests; `tests/test_api.py` = core API).
+  - `tests/` — run `pytest -q` (whole suite offline, ~1170 tests; `tests/test_api.py` = core API).
 - `frontend/` — Next.js 16 App Router + TS + Tailwind v4 + framer-motion + lucide-react, **port 3000**, main page `/citizen`.
   - `next.config.mjs` proxies `/api/*` to the backend; Tailwind needs the `turbopack.rules` entry there.
   - `src/components/` — CitizenShell (tabs + scan runner), SearchMapsShield, SmsGuard, AwarenessRadar, VerdictScreen (full-screen block page), Chrome (header/banner/phone frame).
@@ -54,14 +54,44 @@ Owner is new to coding and runs this on Windows (Python + VS Code + Node.js). Ex
 - Scam links in the frontend only get an `href` after hydration so an early tap can't open the replica page.
 - When restarting `next start`, kill `next-server` too or a stale build serves 500s for JS chunks.
 - `next dev` (Turbopack) sometimes keeps serving an old `globals.css` after an edit; restart `npm run dev` if new CSS rules don't appear.
-- Phone numbers / branch coordinates in `registry.py` are demo data; seed IPs are documentation addresses (`203.0.113.44` Sand Viper, `203.0.113.77` Desert Mirage, RFC 5737): never put real IP space in seed data.
+- Branch coordinates in `registry.py` are demo data; phone numbers are demo data unless listed in `registry.VERIFIED_PHONES` (checked on the entity's own site, source URL per number; `/api/check-phone` returns `verified_official`). Phones are keyed by `registry.normalise_phone` = `intel/phone_intel.py` (`phonenumbers` core only, never carrier/geocoder/timezone): 800/600 numbers and short codes keep national digits (`+971 800 555` → `800555`). Any registered domain under `gov.ae` is official (`domain_intel.gov_ae_domain`, TDRA restricted zone). Seed IPs are documentation addresses (`203.0.113.44` Sand Viper, `203.0.113.77` Desert Mirage, RFC 5737): never put real IP space in seed data.
 
 ## Detection upgrade (2026-11-23) — any fraud site, not only UAE brands
 - `registry.GLOBAL_BRANDS` (~50 most-phished brands: PayPal, Microsoft, Apple, banks, couriers, crypto…) + `ALL_BRANDS`. Global brands match whole tokens only; `common_keywords` (apple, chase, amazon, noon, wise) need a lure word; no TLD_SWAP for them (they own many ccTLDs); typosquat only for labels ≥7 chars at ≥88%. Maps/CT/awareness still use the UAE `ENTITIES`.
 - `intel/url_model.py` + `url_model.bin` (1 MB): logistic regression on hashed char n-grams of the HOSTNAME only, pure Python at runtime. Retrain: `tools/train_url_model.py` (needs scikit-learn; data: PhiUSIIL, Phishing Army, Tranco). PhiUSIIL legit URLs are all bare homepages → never train on paths. Never judges Tranco top-100k sites (`intel/data/popular_domains.txt.gz`) unless on free hosting. Flags: ≥0.98 AI_PHISHING_URL 65 (45 on free hosting), ≥0.92 45, ≥0.80 AI_SUSPICIOUS_URL 20; AI_PHISHING_URL + any `ML_CORROBORATION` clue → 70.
 - `intel/threat_feeds.py`: Phishing Army + OpenPhish, refreshed every 6 h, in memory; never lists platforms/official/top-10k sites. Hit = KNOWN_PHISHING_FEED 70. `THREAT_FEEDS=false` disables.
 - LLM: `GEMINI_MODEL` is a comma list tried in order with a circuit breaker (busy 30 s, quota 10 min, retired 24 h). gemini-2.5-flash was retired for this key in Nov 2026 and the AI judge had been silently failing — `/health` now shows `llm.last_ok/last_error`. `ai_inspector.blend`: confident LLM scam verdict + corroboration → 0.25 rules + 0.75 LLM; confident SAFE halves a classifier-only warning; hard evidence is never lowered.
+  - Second opinion (2026-11-24): first answer 40-69 or confidence < 0.8 → ONE extra call on `GEMINI_SECOND_OPINION_MODEL` (default `gemini-4-argon`, documented at ai.google.dev but NOT on the free tier), else the next healthy `GEMINI_MODEL`; never the model that answered, never a resting one. Same evidence + `SECOND_OPINION_NOTE` (first verdict not shown, to avoid anchoring). `combine_opinions`: same band → average; across a band → higher confidence wins (tie: riskier), a less-risky winner is capped at 0.79 confidence; then `blend()`. Failure keeps the first answer. `LLM_SECOND_OPINION=false` disables. Skipped wherever the LLM is skipped (official domains, mock-scam, seeded, email link sub-scans, hunter default, OFFLINE_MODE); email scans do not get it. Breaker: 403 / PERMISSION_DENIED / "limit: 0" rest a model 24 h. Response `analyzer` adds `second_opinion`, `models`, optional `red_flags_ar`, `citizen_advice_en/ar`; `/health` `llm.second_opinion`.
+  - `SYSTEM_PROMPT` carries 6 fictitious UAE calibration examples (3 scams on `.example` domains, 3 legit < 20); tests cap the prompt at 4500 chars.
 - Live evaluation (300 OpenPhish phishing vs 340 legit incl. login/bank pages and Tranco long tail), no LLM, no feeds: before 0% HIGH-RISK / 4% any warning; after: see commit message. 0 false alarms. Harness kept outside the repo (scratch `saqr-eval/`).
+
+## Detection upgrade (2026-11-24, branch feature/detection-upgrade)
+- New: `intel/phone_intel.py` (`phonenumbers` core only), `intel/message_intel.py` + `POST /api/analyze-message`
+  (`{text, sender?, channel?}`; links scanned as URL scans, call-back numbers, OTP / code requests EN + AR),
+  `registry.VERIFIED_PHONES`, `domain_intel.gov_ae_domain` (any registered `gov.ae` domain is official), Maps
+  `INSTITUTION_MESSAGING_LINK` (UAE institution name + wa.me / link-in-bio / short link), email call-back numbers
+  (`CALLBACK_MOBILE/FOREIGN_FOR_INSTITUTION`, strong) + `SENDER_NO_MX` (weak), `TLS_INVALID` (weak, +10 only next to a
+  strong signal), LLM few-shot + second opinion (see above), `verified_official` on url / email / maps / message /
+  phone responses. Phone `level`: official | none | caution | danger.
+- UAE suite: `tests/uae_suite/cases.json` (50 cases, 25/25, all scam domains invented), runner + the ONE
+  "detected" rule in `tests/uae_suite/suite.py` (verdict != SAFE; phone level caution/danger), `tests/test_uae_suite.py`
+  (0 FP, >= 24/25), `.venv\Scripts\python tools\eval_uae.py [--json out.json]` (offline; `--live` = real network + LLM
+  keys, never in tests). Offline 2026-11-24: 25/25, 0 FP. It is a synthetic regression set, not real-world accuracy:
+  never tune rules to a case; a miss stays in and shows in the metric.
+- Gotchas learned:
+  - `901` is not an Abu Dhabi Police number (Dubai / Sharjah / RAK police); keep it out of `adpolice.phones`.
+  - Banks and telecoms are excluded from the foreign-number rule (`maps_sentinel.is_uae_institution`): they have
+    real numbers abroad. A personal `+971 5x` mobile still counts for banks.
+  - Messaging / link-in-bio hosts (wa.me, linktr.ee, bit.ly ...) never go in a listing's `website_domain`
+    (graph, blocklist, takedown); they are kept as `website_host` + `website_platform`.
+  - Message scans are stored with `domain = NULL` and a <= 300-char masked excerpt (digits hidden); only their
+    links, saved as URL scans, reach the blocklist.
+  - Only non-SAFE Maps scans are ingested into the graph; a phone on a flagged listing makes later checks of that
+    number `linked_to_scam`. Suite cases use distinct numbers so they do not influence each other.
+  - Arabic code requests: hand-over verbs ("أرسل لنا") AND request word + verbal noun ("يرجى إرسال رمز التحقق");
+    without the request word "تم إرسال رمز التحقق" is a delivery notice.
+  - Offline email auth comes only from a trusted provider's `Authentication-Results` (pasted raw source, e.g.
+    Gmail "Show original"); suite emails are built that way.
 
 ## Email scanning (2026-11-23, branch feature/email-scanning)
 - Backend: `saqr/email_pipeline.py` + `saqr/intel/`: `email_types.py` (shared dataclasses), `email_parse.py` (.eml, .msg via olefile, pasted text, pasted raw source), `email_auth.py` (SPF pyspf, DKIM dkimpy, DMARC, ARC; Authentication-Results believed only from trusted hosts: Gmail/Outlook/Yahoo/iCloud/Zoho/Proton + `EMAIL_TRUSTED_AUTHSERV`), `email_unicode.py` (look-alike letters, bidi, invisible chars), `email_rules.py` (flags + score), `campaigns.py` (+ `data/campaigns_seed.json`: 37 seed campaigns, live RSS every 6 h), `user_model.py` (personal "email-v1" naive Bayes), `user_llm.py` (citizen's own OpenAI-compatible AI: SSRF-guarded, key never stored/logged/echoed).

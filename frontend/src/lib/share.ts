@@ -65,6 +65,11 @@ const REASON_BY_FLAG: Record<string, { en: string; ar: string }> = {
   NEWLY_REGISTERED: { en: "the site was created only hours ago", ar: "أُنشئ الموقع قبل ساعات فقط" },
   KNOWN_SYNDICATE_INFRA: { en: "it is linked to a known scam network", ar: "مرتبط بشبكة احتيال معروفة" },
   UNOFFICIAL_DOMAIN_ON_LISTING: { en: "a fake Google Maps listing", ar: "إدراج مزيف على خرائط جوجل" },
+  INSTITUTION_MESSAGING_LINK: {
+    en: "a fake Google Maps listing that links to a WhatsApp chat or social page",
+    ar: "إدراج مزيف على خرائط جوجل يربط بمحادثة واتساب أو صفحة تواصل اجتماعي",
+  },
+  FOREIGN_NUMBER_FOR_INSTITUTION: { en: "a foreign phone number for a UAE institution", ar: "رقم هاتف أجنبي لجهة إماراتية" },
   HOMOGLYPH_SPOOF: { en: "look-alike letters in the web address", ar: "أحرف مشابهة في عنوان الموقع" },
   BRAND_IMPERSONATION: { en: "it is not the official website", ar: "ليس الموقع الرسمي" },
   TYPOSQUAT: { en: "a misspelled copy of the official address", ar: "نسخة بأخطاء إملائية من العنوان الرسمي" },
@@ -104,6 +109,17 @@ const REASON_BY_FLAG: Record<string, { en: string; ar: string }> = {
   REPLY_TO_MISMATCH: { en: "replies go to a different address", ar: "الردود تذهب إلى عنوان مختلف" },
   RETURN_PATH_MISMATCH: { en: "its hidden return address belongs to someone else", ar: "عنوان الإرجاع المخفي يتبع جهة أخرى" },
   SENDER_NEW_DOMAIN: { en: "the sender's domain was created days ago", ar: "أُنشئ نطاق المرسل قبل أيام" },
+  CALLBACK_MOBILE_FOR_INSTITUTION: { en: "it gives a personal mobile number for an institution", ar: "يذكر رقم هاتف متحرك شخصي باسم جهة رسمية" },
+  CALLBACK_FOREIGN_FOR_INSTITUTION: { en: "it gives a foreign phone number for a UAE institution", ar: "يذكر رقم هاتف أجنبياً باسم جهة إماراتية" },
+  SENDER_NO_MX: { en: "the sender's domain has no mail server", ar: "نطاق المرسل لا يملك خادم بريد" },
+  TLS_INVALID: { en: "its security certificate is not valid", ar: "شهادة الأمان الخاصة به غير صالحة" },
+  MSG_SCAM_LINK: { en: "its link leads to a scam website", ar: "رابطها يقود إلى موقع احتيالي" },
+  MSG_SUSPICIOUS_LINK: { en: "its link leads to a suspicious website", ar: "رابطها يقود إلى موقع مشبوه" },
+  MSG_LOOKALIKE_LINK: { en: "its link imitates an official website", ar: "رابطها يقلّد موقعاً رسمياً" },
+  MSG_CREDENTIAL_REQUEST: { en: "it asks you to send your OTP, PIN or card details", ar: "تطلب منك إرسال رمز التحقق أو الرقم السري أو بيانات البطاقة" },
+  SENDER_MOBILE_FOR_INSTITUTION: { en: "an institution would never text from a personal mobile", ar: "الجهات الرسمية لا ترسل رسائل من أرقام شخصية" },
+  SENDER_FOREIGN_FOR_INSTITUTION: { en: "a UAE institution would never text from a foreign number", ar: "الجهات الإماراتية لا ترسل رسائل من أرقام أجنبية" },
+  MSG_PHONE_LINKED_TO_SCAM: { en: "its phone number is linked to known fraud", ar: "رقم الهاتف مرتبط باحتيال معروف" },
   OFFICIAL_SENDER_UNAUTHENTICATED: { en: "it pretends to come from an official address", ar: "يدّعي أنه صادر من عنوان رسمي" },
   HEADERS_NOT_AVAILABLE: { en: "only the visible text could be checked", ar: "تم فحص النص الظاهر فقط" },
   DMARC_FAIL_P_NONE: { en: "the sender's address failed the domain check", ar: "فشل عنوان المرسل في فحص النطاق" },
@@ -140,8 +156,8 @@ export interface WarningInfo {
   flagsAr: string[];
   channel: InterceptionChannel | null;
   detectedAt: Date;
-  /** "email" words the community post as fake emails instead of fake links. */
-  kind?: "url" | "maps" | "email";
+  /** "email" / "message" word the community post as fake emails / messages instead of fake links. */
+  kind?: "url" | "maps" | "email" | "message";
 }
 
 function reasonFor(codes: { code: string; points: number }[]) {
@@ -211,7 +227,7 @@ export function warningFromLive(b: LiveBlock, entityAr: string | null): WarningI
 export function buildXDraft(w: WarningInfo, lang: Lang): string {
   const masked = w.domain ? defang(w.domain) : null;
   if (lang === "ar") {
-    const what = w.kind === "email" ? "رسائل بريد مزيفة" : "روابط مزيفة";
+    const what = w.kind === "email" ? "رسائل بريد مزيفة" : w.kind === "message" ? "رسائل نصية مزيفة" : "روابط مزيفة";
     const who = w.entityAr ? `${what} تنتحل صفة ${w.entityAr}` : what;
     return (
       `⚠️ تحذير احتيال في أبوظبي: احذروا ${who}${masked ? ` (${masked})` : ""}. ` +
@@ -219,7 +235,7 @@ export function buildXDraft(w: WarningInfo, lang: Lang): string {
       `#أبوظبي #الأمن_السيبراني #Aman8002626`
     );
   }
-  const noun = w.kind === "email" ? "emails" : "links";
+  const noun = w.kind === "email" ? "emails" : w.kind === "message" ? "text messages" : "links";
   const who = w.entityEn ? `fake ${w.entityEn} ${noun}` : `fake ${noun}`;
   return (
     `⚠️ Fraud Alert in Abu Dhabi: Watch out for ${who}${masked ? ` (${masked})` : ""}. ` +

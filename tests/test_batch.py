@@ -220,3 +220,57 @@ def test_phone_flags_shared_with_maps_sentinel():
                                        ("024444444", "+971 2 444 4444")])
 def test_format_phone(raw, shown):
     assert batch.format_phone(raw) == shown
+
+
+# --- phone intelligence fields, verified numbers, foreign numbers -----------------------------
+@pytest.mark.parametrize("phone", ["+971 800 555", "971800555", "00971 800 555", "tel:800555"])
+def test_check_phone_international_toll_free_is_official(client, phone):
+    body = client.post("/api/check-phone", json={"phone": phone, "claimed_entity": "TAMM", "context": "ad"}).json()
+    assert (body["status"], body["level"], body["normalized"]) == ("official", "official", "800555"), body
+    assert body["verified_official"] is True
+    assert (body["e164"], body["country_code"], body["region"], body["line_type"]) == ("+971800555", 971, "AE",
+                                                                                         "toll_free")
+
+
+def test_check_phone_new_fields_are_additive(client):
+    body = client.post("/api/check-phone", json={"phone": "+971 50 123 4567"}).json()
+    assert {"phone", "normalized", "status", "level", "claimed_entity", "entity", "reasons"} <= set(body)
+    assert (body["line_type"], body["e164"], body["verified_official"]) == ("mobile", "+971501234567", False)
+    short = client.post("/api/check-phone", json={"phone": "999"}).json()
+    assert (short["status"], short["verified_official"], short["e164"], short["line_type"]) == (
+        "official", True, None, "unknown")
+    # official in the registry but not verified on the entity's own site -> official, not verified
+    adcb = client.post("/api/check-phone", json={"phone": "600 50 2030", "claimed_entity": "ADCB"}).json()
+    assert (adcb["status"], adcb["verified_official"]) == ("official", False)
+
+
+@pytest.mark.parametrize("phone,claim,status,level", [
+    ("+44 20 7946 0958", "Abu Dhabi Police", "foreign_for_institution", "danger"),
+    ("+44 20 7946 0958", "Emirates Post Parcel Collection", "foreign_for_institution", "danger"),
+    ("+1 212 555 0100", "Dubai Police", "foreign_for_institution", "danger"),
+    ("+91 98765 43210", "TAMM Abu Dhabi", "foreign_for_institution", "danger"),
+    # a UAE bank can have real branches abroad: unofficial (as before), never "foreign_for_institution"
+    ("+44 20 7946 0958", "First Abu Dhabi Bank", "unofficial", "caution"),
+    # not a UAE institution / no claim / not a valid number: unchanged
+    ("+44 20 7946 0958", "PayPal", "unknown", "none"),
+    ("+44 20 7946 0958", None, "unknown", "none"),
+    ("+1 800 123 4567", "Abu Dhabi Police", "unofficial", "caution"),
+    ("+971 4 555 1234", "Dubai Police", "unknown", "none"),
+])
+def test_check_phone_foreign_number_for_uae_institution(client, phone, claim, status, level):
+    body = client.post("/api/check-phone", json={"phone": phone, "claimed_entity": claim, "context": "maps"}).json()
+    assert (body["status"], body["level"]) == (status, level), body
+    codes = {r["code"] for r in body["reasons"]}
+    assert ("FOREIGN_NUMBER_FOR_INSTITUTION" in codes) == (status == "foreign_for_institution")
+    if level == "danger":
+        assert all(r["en"] and r["ar"] for r in body["reasons"])
+
+
+def test_foreign_mobile_in_an_ad(client):
+    body = client.post("/api/check-phone", json={"phone": "+44 7400 123456", "claimed_entity": "Emirates Post",
+                                                 "context": "ad"}).json()
+    assert (body["status"], body["level"], body["line_type"], body["region"]) == (
+        "foreign_for_institution", "danger", "mobile", "GB")
+    assert batch.is_uae_institution(ENTITY_BY_ID["adpolice"]) and batch.is_uae_institution(ENTITY_BY_ID["rta"])
+    assert not batch.is_uae_institution(ENTITY_BY_ID["fab"]) and not batch.is_uae_institution(ENTITY_BY_ID["paypal"])
+    assert not batch.is_uae_institution(ENTITY_BY_ID["etisalat"]) and not batch.is_uae_institution(None)

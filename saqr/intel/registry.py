@@ -1,13 +1,15 @@
 """Official UAE entity registry: whitelisted domains, brand keywords, phones, branches.
 
-NOTE: Phone numbers and branch coordinates are demo reference data. Verify them
-against the entities' official channels before any operational use.
+NOTE: Branch coordinates are demo reference data. Phone numbers listed in `VERIFIED_PHONES` were
+checked on the entity's own website (source URL next to each); every other number is unverified
+demo data. Verify those against the entities' official channels before any operational use.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
 from ..config import settings
+from .phone_intel import analyze as _analyze_phone
 
 
 @dataclass(frozen=True)
@@ -34,7 +36,7 @@ ENTITIES: tuple[Entity, ...] = (
         category="government",
         domains=("adpolice.gov.ae",),
         keywords=("adpolice", "ad-police", "abudhabipolice", "abudhabi-police", "adp-fines"),
-        phones=("999", "8002626"),
+        phones=("999", "8002626", "8003333", "2828"),
         aliases=("abu dhabi police", "ad police", "adpolice", "traffic fines", "شرطة أبوظبي", "شرطة ابوظبي"),
         lure_en="unpaid traffic fines or a blocked vehicle file",
         lure_ar="مخالفات مرورية غير مدفوعة أو حظر ملف المركبة",
@@ -76,7 +78,7 @@ ENTITIES: tuple[Entity, ...] = (
         category="telecom",
         domains=("etisalat.ae", "eand.com"),
         keywords=("etisalat", "etisalet", "etsalat", "eand"),
-        phones=("101", "800101"),
+        phones=("101", "800101", "8005800"),
         aliases=("etisalat", "e&", "etisalat by e&", "اتصالات"),
         lure_en="expiring reward points or a prize you supposedly won",
         lure_ar="نقاط مكافآت توشك على الانتهاء أو جائزة مزعومة",
@@ -183,7 +185,8 @@ GLOBAL_BRANDS: tuple[Entity, ...] = (
     _g("mashreq", "Mashreq", "بنك المشرق", "mashreq.com", "mashreq mashreqbank"),
     _g("adib", "Abu Dhabi Islamic Bank", "مصرف أبوظبي الإسلامي", "adib.ae", "adib"),
     _g("dubaipolice", "Dubai Police", "شرطة دبي", "dubaipolice.gov.ae", "dubaipolice"),
-    _g("rta", "RTA Dubai", "هيئة الطرق والمواصلات", "rta.ae", "", "rta salik"),
+    # salik.ae: Salik toll accounts; rta.ae's own footer links "RTA Salik page" -> https://www.salik.ae/en (checked 2026-11-24)
+    _g("rta", "RTA Dubai", "هيئة الطرق والمواصلات", "rta.ae salik.ae", "", "rta salik"),
     # "dewa" is also a Balinese title / Indonesian word, so it only counts next to a lure word (dewa-bill-pay)
     # or, in an email display name, next to a role word ("DEWA Customer Care").
     _g("dewa", "DEWA", "هيئة كهرباء ومياه دبي", "dewa.gov.ae", "", "dewa"),
@@ -204,6 +207,8 @@ GLOBAL_BRANDS: tuple[Entity, ...] = (
     _g("ebay", "eBay", "إيباي", "ebay.com", "ebay"),
     _g("wise", "Wise", "وايز", "wise.com transferwise.com", "transferwise", "wise"),
     _g("revolut", "Revolut", "ريفولوت", "revolut.com", "revolut"),
+    # rakbank.ae: "Contact Us - Rakbank" at https://www.rakbank.ae/en/contact-us (checked 2026-11-24)
+    _g("rakbank", "RAKBANK", "بنك رأس الخيمة الوطني", "rakbank.ae", "rakbank"),
 )
 # Every brand scam detection knows: UAE entities first (they win ties), then global brands.
 ALL_BRANDS: tuple[Entity, ...] = ENTITIES + GLOBAL_BRANDS
@@ -227,7 +232,18 @@ TRUSTED_UAE_DOMAINS: tuple[str, ...] = (
     "adnoc.ae",
     "emiratesnbd.com",
     "emiratesrc.ae",         # Emirates Red Crescent (verified 2026-11-23: emiratesrc.ae/en, Wikidata Q7303955)
+    # 3-letter labels: trusted, but never look-alike targets (would make "cbd-oil" / "dibs" typo noise).
+    "dib.ae",                # Dubai Islamic Bank (checked 2026-11-24: https://www.dib.ae/ footer "Dubai Islamic Bank PJSC")
+    "cbd.ae",                # Commercial Bank of Dubai (checked 2026-11-24: https://www.cbd.ae/general/customer-care,
+                             # 600 575 556 / customercare@cbd.ae; direct fetch 403, read via the search index)
 )
+
+# Every registered domain under the gov.ae public suffix is a UAE government site: .aeDA (TDRA) .ae Domain
+# Name Policy AEDA-POL-007 s.15 "Eligibility Requirements for gov.ae Restricted Zone" (registrant must be a
+# UAE government entity, ministry letter required, UAE-accredited registrars only):
+# https://tdra.gov.ae/-/media/aeda/Policies/ae-policies/English/Domain_Name_Policy-EN.ashx (checked 2026-11-24).
+# Used by domain_intel.official_match on the REGISTERED domain only (gov.ae.evil.com is not official).
+GOV_AE_SUFFIX = "gov.ae"
 
 # Extra official domains of an entity that are NOT used for look-alike matching (a 3-letter label such as
 # "epg" would make every 4-letter domain containing it a "typo"). Mail from them is that entity's own mail.
@@ -243,6 +259,22 @@ for _d in (*TRUSTED_UAE_DOMAINS, *settings.extra_whitelist, *settings.own_hosts)
 
 # Phone number -> entity
 OFFICIAL_PHONES: dict[str, Entity] = {p: e for e in ENTITIES for p in e.phones}
+
+# Numbers confirmed on the entity's own website (checked 2026-11-24). The rest of ENTITIES.phones is demo
+# data: 800101 (e& charter lists 101 + 8005800 instead), 155 / 800155 (du.ae unreachable), 600561111 (UAE PASS:
+# only third-party / icp.gov.ae search snippets), 600502030 (ADCB: adcb.com answers 403; its pages also list
+# 600 50 2322).
+VERIFIED_PHONES: dict[str, str] = {
+    "999": "https://www.adpolice.gov.ae/en/contact-us",          # Emergency
+    "8003333": "https://www.adpolice.gov.ae/en/contact-us",      # Abu Dhabi Police call center
+    "8002626": "https://www.adpolice.gov.ae/en/contact-us",      # Aman service
+    "2828": "https://www.adpolice.gov.ae/en/Media-Center/News/2021/06/28/ADP-Calls-on-the-Public-to-Communicate-with-Aman-Service",
+    "800555": "https://www.tamm.abudhabi/en/contact-us",          # Abu Dhabi Contact Center
+    "600599999": "https://www.emiratespost.ae/contact-us",       # "+971 600 599 999" (600599995 is not on the page)
+    "101": "https://www.eand.ae/en/system/wst/assets/docs/consumer/general/customer-service-charter-en.pdf",
+    "8005800": "https://www.eand.ae/en/system/wst/assets/docs/consumer/general/customer-service-charter-en.pdf",
+    "600525500": "https://www.bankfab.com/en-ae/contact-us",     # FAB Service, personal banking
+}
 
 SUSPICIOUS_TLDS = {
     "info", "xyz", "top", "online", "site", "club", "icu", "live", "shop", "vip", "buzz",
@@ -265,17 +297,10 @@ SHARED_INFRA_ASNS = {"13335", "16509", "14618", "15169", "8075", "54113", "20940
 
 
 def normalise_phone(raw: str | None) -> str:
-    """Return digits only, converting +971 / 00971 / leading 0 to a canonical 971 form
-    for mobile/landline numbers; short codes (999, 800xxx, 600xxxxxx) are kept as-is."""
+    """Canonical registry / graph key of a phone number (`phone_intel.PhoneInfo.key`): UAE toll-free and
+    shared-cost numbers and short codes keep their national digits (800555, 600599999, 999), whatever way
+    they were written (+971 800 555, 971800555, ٨٠٠٥٥٥); every other number is its E.164 digits without
+    "+" (971501234567, 18005551234)."""
     if not raw:
         return ""
-    digits = "".join(ch for ch in raw if ch.isdigit())
-    if digits.startswith("00971"):
-        digits = "971" + digits[5:]
-    if digits.startswith("971"):
-        return digits
-    if digits.startswith(("800", "600")) or len(digits) <= 4:
-        return digits
-    if digits.startswith("0") and len(digits) in (9, 10):
-        return "971" + digits[1:]
-    return digits
+    return _analyze_phone(raw).key

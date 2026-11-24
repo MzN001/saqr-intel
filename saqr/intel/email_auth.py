@@ -697,6 +697,41 @@ async def lookup_dmarc(from_domain: str, txt: _TxtLookup) -> tuple[Optional[dict
 
 
 # ---------------------------------------------------------------------------
+# MX (does the sender's domain receive mail at all?)
+# ---------------------------------------------------------------------------
+def _mx_sync(domain: str) -> str | None:
+    import dns.exception
+    import dns.resolver
+
+    try:
+        ans = dns.resolver.resolve(domain, "MX", lifetime=settings.dns_timeout_s)
+    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+        return "none"
+    except (dns.exception.DNSException, OSError):
+        return None  # timeout / SERVFAIL: unknown, never a finding
+    hosts = [str(r.exchange).rstrip(".") for r in ans]
+    return "found" if any(h for h in hosts) else "none"  # RFC 7505 null MX ("0 .") = accepts no mail
+
+
+async def lookup_mx(domain: str | None, *, offline: Optional[bool] = None,
+                    mxfunc: Optional[Callable[[str], Optional[str]]] = None) -> Optional[str]:
+    """"found" | "none" | None (offline, no domain, lookup failed or too slow). Never raises.
+
+    Runs in its own daemon thread with the same hard deadline as SPF (spf_deadline_s): a hanging resolver
+    must not hold the scan. `mxfunc` (tests) replaces the DNS query."""
+    d = (domain or "").strip().lower().rstrip(".")
+    off = settings.offline_mode if offline is None else bool(offline)
+    if not d or (off and mxfunc is None):
+        return None
+    fn = mxfunc or _mx_sync
+    try:
+        res = await _with_deadline(lambda: fn(d), spf_deadline_s())
+    except Exception:  # noqa: BLE001 - timeout / crash: unknown
+        return None
+    return res if res in ("found", "none") else None
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 async def verify(parsed: ParsedEmail, *, offline: Optional[bool] = None,

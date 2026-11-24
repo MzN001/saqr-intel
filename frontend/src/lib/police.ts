@@ -18,7 +18,7 @@ export interface PoliceEvent {
   id: string;
   ts: string;
   channel: PoliceChannel;
-  kind: "url" | "maps";
+  kind: "url" | "maps" | "email" | "message";
   domain: string | null;
   defanged_domain: string;
   risk_score: number;

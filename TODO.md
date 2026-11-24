@@ -104,3 +104,17 @@ The full rehearsable version (with what to say and what to do when something fai
 - [ ] Cloud page checks have no browser: no screenshots in cloud dossiers, no JavaScript rendering. Needs a Playwright worker, ideally behind a UAE egress (`SANDBOX_PROXY_SERVER`).
 - [ ] Training data: confirm the licence of HuggingFace `kmack/Phishing_urls` or drop it; Phishing Army (CC BY-NC) and OpenPhish (non-commercial) need clearing before operational police use.
 - [ ] Replace demo registry phone numbers and branch coordinates with entity-verified data before a pilot.
+
+## Detection upgrade (branch `feature/detection-upgrade`, 2026-11-24)
+- [ ] Verify the registry numbers that are still demo data (listed in the comment above `VERIFIED_PHONES` in
+  `saqr/intel/registry.py`): e& `800101`, du `155` / `800155`, UAE PASS `600561111`, ADCB `600502030` (its pages also
+  list `600 50 2322`). Add each one to `VERIFIED_PHONES` only with the entity's own web page as the source.
+- [ ] LLM second opinion for email scans (today only website scans get it).
+- [ ] Add real, labelled UAE scam examples (e.g. from Aman reports) next to the 50-case synthetic suite in
+  `tests/uae_suite/cases.json`; the synthetic suite is a regression check, not real-world accuracy.
+- [ ] Deploy this branch (nothing is pushed yet):
+  1. Commit, then push / merge to `main` on GitHub. Render deploys the backend by itself; check
+     https://saqr-intel-api.onrender.com/health and that `POST /api/analyze-message` exists in `/docs`.
+  2. Vercel (website) needs a manual deploy. `frontend/src/components/CityGrid.tsx` has local changes that are not
+     part of this branch: stash them first (`git stash push frontend/src/components/CityGrid.tsx`), then
+     `cd frontend` and `npx vercel@latest deploy --prod --yes`, then `git stash pop`.
