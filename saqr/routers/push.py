@@ -35,6 +35,7 @@ class Subscription(BaseModel):
 class SubscribeRequest(BaseModel):
     subscription: Subscription
     lang: Literal["en", "ar"] = "en"
+    device: str | None = Field(None, pattern=r"^[a-z0-9]{6,24}$", description="This phone's SAQR device tag.")
 
 
 class EndpointRequest(BaseModel):
@@ -48,7 +49,7 @@ async def vapid_public_key():
 
 @router.post("/push/subscribe", dependencies=[Depends(rate_limit)])
 async def subscribe(req: SubscribeRequest):
-    await push.save_subscription(req.subscription.model_dump(exclude_none=True), req.lang)
+    await push.save_subscription(req.subscription.model_dump(exclude_none=True), req.lang, req.device)
     return {"ok": True, "subscribers": await push.count_subscriptions()}
 
 

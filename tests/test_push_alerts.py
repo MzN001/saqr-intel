@@ -206,3 +206,52 @@ def test_failed_alert_is_retried(client, monkeypatch):
     assert first == [] and watcher.alerts_failed == 1 and watcher.alerts_sent == 1
     assert len(calls) == 3 and push.last_error and "ConnectionError" in push.last_error
     assert client.get("/api/nextdns-status").json()["alerts"]["last_push_error"]
+
+
+IPHONE = {"endpoint": "https://web.push.apple.com/QK-iphone", "keys": {"p256dh": "BPkey", "auth": "authkey"}}
+ANDROID = {"endpoint": "https://fcm.googleapis.com/fcm/send/android-1", "keys": {"p256dh": "BPkey", "auth": "authkey"}}
+
+
+def test_block_alert_goes_only_to_the_phone_that_tried(client, sent):
+    """Two friends on the same SAQR shield: only the phone that opened the scam gets the alert."""
+    client.post("/api/push/subscribe", json={"subscription": IPHONE, "lang": "en", "device": "saqriphone1"})
+    client.post("/api/push/subscribe", json={"subscription": ANDROID, "lang": "en", "device": "saqrandroid2"})
+
+    async def go():
+        watcher = BlockWatcher()
+        a = await watcher.handle([{"timestamp": "t1", "domain": "tamm-smart-pay.net", "status": "blocked",
+                                   "device": {"id": "X1", "name": "saqriphone1"}}])
+        b = await watcher.handle([{"timestamp": "t2", "domain": "tamm-smart-pay.net", "status": "blocked",
+                                   "device": {"id": "X2", "name": "saqrandroid2"}}])
+        c = await watcher.handle([{"timestamp": "t3", "domain": "tamm-smart-pay.net", "status": "blocked",
+                                   "device": {"id": "X1", "name": "saqriphone1"}}])  # repeat within 2 min
+        return a, b, c
+
+    before = len(sent)
+    a, b, c = client.portal.call(go)
+    targets = [e for e, _ in sent[before:]]
+    assert a == ["tamm-smart-pay.net"] and b == ["tamm-smart-pay.net"] and c == []
+    assert targets == [IPHONE["endpoint"], ANDROID["endpoint"]]  # each phone once, never the other's
+    client.post("/api/push/unsubscribe", json={"endpoint": IPHONE["endpoint"]})
+    client.post("/api/push/unsubscribe", json={"endpoint": ANDROID["endpoint"]})
+
+
+def test_unnamed_block_never_reaches_tagged_phones(client, sent):
+    client.post("/api/push/subscribe", json={"subscription": IPHONE, "lang": "en", "device": "saqriphone1"})
+
+    async def go():
+        return await BlockWatcher().handle([{"timestamp": "t9", "domain": "aed-refund-claim.vercel.app",
+                                             "status": "blocked", "device": {"id": "__UNIDENTIFIED__"}}])
+
+    before = len(sent)
+    client.portal.call(go)
+    assert IPHONE["endpoint"] not in [e for e, _ in sent[before:]]
+    client.post("/api/push/unsubscribe", json={"endpoint": IPHONE["endpoint"]})
+
+
+def test_device_tag_goes_into_the_dns_settings(client):
+    host = client.get("/api/android-dns-config", params={"nextdns_id": "abc123", "device": "saqrandroid2"}).json()
+    assert "saqrandroid2-abc123.dns.nextdns.io" in json.dumps(host)
+    prof = client.get("/api/ios-dns-profile", params={"nextdns_id": "abc123", "device": "saqriphone1"}).text
+    assert "https://dns.nextdns.io/abc123/saqriphone1" in prof
+    assert client.get("/api/android-dns-config", params={"device": "Bad Tag!"}).status_code == 422

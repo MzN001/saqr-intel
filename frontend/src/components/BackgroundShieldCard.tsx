@@ -1,5 +1,7 @@
 "use client";
 
+import { getDeviceTag } from "@/lib/device";
+import { useHydrated } from "@/lib/useHydrated";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Download, Info, ListOrdered, ShieldCheck, SlidersHorizontal, Smartphone, Tablet } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -39,6 +41,7 @@ function Steps({ items }: { items: string[] }) {
 
 export function BackgroundShieldCard() {
   const { t } = useLang();
+  const hydrated = useHydrated();
   const detected = useSyncExternalStore(noopSubscribe, () => detectPlatform(navigator.userAgent), () => null);
   const [choice, setChoice] = useState<Platform | null>(null);
   const platform: Platform = choice ?? detected ?? "android";
@@ -66,8 +69,11 @@ export function BackgroundShieldCard() {
   const feedId = feed?.configured ? feed.profile_id : null;
   const activeId = idValid && id ? id : feedId;
   const usingFeed = Boolean(feedId && activeId === feedId);
-  const dotHost = activeId ? `${activeId}.dns.nextdns.io` : DEFAULT_DOT;
-  const profileHref = apiUrl(`/api/ios-dns-profile${activeId ? `?nextdns_id=${encodeURIComponent(activeId)}` : ""}`);
+  // This phone's tag rides in its DNS setting, so block alerts reach this phone only.
+  const device = hydrated ? getDeviceTag() : null;
+  const dotHost = activeId ? `${device ? `${device}-` : ""}${activeId}.dns.nextdns.io` : DEFAULT_DOT;
+  const profileQuery = new URLSearchParams({ ...(activeId ? { nextdns_id: activeId } : {}), ...(activeId && device ? { device } : {}) }).toString();
+  const profileHref = apiUrl(`/api/ios-dns-profile${profileQuery ? `?${profileQuery}` : ""}`);
 
   const copyHost = async () => {
     const ok = await copyText(dotHost);

@@ -64,6 +64,15 @@ const dict = {
   alEnabling: { en: "Turning on…", ar: "جارٍ التفعيل…" },
   alOn: { en: "Scam alerts are ON for this phone", ar: "تنبيهات الاحتيال مفعّلة على هذا الهاتف" },
   alOnSub: { en: "You'll be notified the moment SAQR blocks a scam.", ar: "سيتم إشعارك فور حظر صقر لأي موقع احتيالي." },
+  alOnlyThis: {
+    en: "Alerts go to this phone only. Set up the shield on this phone (once) so SAQR knows the block was yours:",
+    ar: "تصل التنبيهات إلى هذا الهاتف فقط. فعّل الدرع على هذا الهاتف (مرة واحدة) ليعرف صقر أن الحظر كان لديك:",
+  },
+  alLinkIos: { en: "Install this iPhone's shield", ar: "ثبّت درع هذا الآيفون" },
+  alLinkAndroid: {
+    en: "Android: copy the Private DNS hostname from the shield card again and save it in Settings.",
+    ar: "أندرويد: انسخ اسم مضيف DNS الخاص من بطاقة الدرع مرة أخرى واحفظه في الإعدادات.",
+  },
   alTest: { en: "Send test alert", ar: "إرسال تنبيه تجريبي" },
   alTestSent: { en: "Test alert sent. It should appear in a few seconds.", ar: "تم إرسال التنبيه التجريبي. سيظهر خلال ثوانٍ." },
   alOff: { en: "Turn off", ar: "إيقاف" },

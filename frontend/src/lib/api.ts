@@ -1,3 +1,5 @@
+import { getDeviceTag } from "./device";
+
 /**
  * Where the browser sends API calls. Empty locally (relative `/api/...`, proxied by next.config);
  * on Vercel set NEXT_PUBLIC_API_URL to the public backend (e.g. the Cloudflare tunnel URL).
@@ -309,7 +311,8 @@ export async function getVapidPublicKey(): Promise<string> {
 }
 
 export async function savePushSubscription(subscription: PushSubscriptionJSON, lang: "en" | "ar"): Promise<void> {
-  await request("/api/push/subscribe", { method: "POST", body: JSON.stringify({ subscription, lang }) });
+  const device = getDeviceTag(); // alerts for this phone only
+  await request("/api/push/subscribe", { method: "POST", body: JSON.stringify({ subscription, lang, ...(device ? { device } : {}) }) });
 }
 
 export async function deletePushSubscription(endpoint: string): Promise<void> {

@@ -112,12 +112,15 @@ def build_mobileconfig(doh_url: str, label: str) -> str:
 async def ios_dns_profile(
     doh_url: str = Query(DEFAULT_DOH, description="DNS-over-HTTPS URL (Cloudflare, NextDNS or Quad9 only)."),
     nextdns_id: str | None = Query(None, description="Optional NextDNS configuration ID; overrides doh_url."),
+    device: str | None = Query(None, pattern=r"^[a-z0-9]{6,24}$", description="This phone's SAQR device tag."),
 ):
     # No ID given: use the NextDNS profile SAQR's live threat feed is synced to (if configured),
     # so the "SAQR DNS" profile really blocks what SAQR detects.
     nid = _nextdns_id(nextdns_id) or (settings.nextdns_profile_id if doh_url == DEFAULT_DOH else None) or None
     if nid:
-        doh, label = f"https://dns.nextdns.io/{nid}", f"SAQR live feed via NextDNS {nid}"
+        # The device name in the path makes NextDNS log which phone it was -> alerts reach only that phone.
+        doh = f"https://dns.nextdns.io/{nid}/{device}" if device else f"https://dns.nextdns.io/{nid}"
+        label = f"SAQR live feed via NextDNS {nid}"
     else:
         doh = _checked_doh(doh_url)
         label = urlsplit(doh).hostname or "DoH"
@@ -149,9 +152,12 @@ async def nextdns_status():
 
 
 @router.get("/android-dns-config")
-async def android_dns_config(nextdns_id: str | None = Query(None, description="Optional NextDNS configuration ID.")):
+async def android_dns_config(
+    nextdns_id: str | None = Query(None, description="Optional NextDNS configuration ID."),
+    device: str | None = Query(None, pattern=r"^[a-z0-9]{6,24}$", description="This phone's SAQR device tag."),
+):
     nid = _nextdns_id(nextdns_id) or settings.nextdns_profile_id or None
-    host = f"{nid}.dns.nextdns.io" if nid else DEFAULT_DOT
+    host = (f"{device}-{nid}.dns.nextdns.io" if device else f"{nid}.dns.nextdns.io") if nid else DEFAULT_DOT
     return {
         "dot_hostname": host,
         "provider": "NextDNS" if nid else "Cloudflare 1.1.1.2 (malware & phishing blocking)",

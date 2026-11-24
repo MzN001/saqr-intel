@@ -286,34 +286,44 @@ class BlockWatcher:
                 del self._seen[old]
         return True
 
-    async def _deliver(self, domain: str, entity: str | None) -> bool:
+    @staticmethod
+    def _device(item: dict[str, Any]) -> str | None:
+        """The phone's SAQR device tag, from the device name NextDNS logged (None if unnamed)."""
+        from .. import push
+
+        device = item.get("device")
+        return push.normalise_device(device.get("name")) if isinstance(device, dict) else None
+
+    async def _deliver(self, domain: str, entity: str | None, device: str | None = None) -> bool:
         """Send the alert; if no phone got it, keep retrying in the background. The phone caches the
         block for ~5 minutes, so it will not ask NextDNS again (and give us a second chance) soon."""
         from .. import push
 
-        if await push.alert_all(domain, entity):
+        if await push.alert_device(domain, entity, device):
             return True
         self.alerts_failed += 1
-        if domain not in self._retrying and await push.count_subscriptions():
-            self._retrying.add(domain)
-            asyncio.create_task(self._retry(domain, entity), name=f"alert-retry-{domain}")
+        key = f"{domain}|{device or ''}"
+        if key not in self._retrying and await push.count_subscriptions():
+            self._retrying.add(key)
+            asyncio.create_task(self._retry(domain, entity, device), name=f"alert-retry-{key}")
         return False
 
-    async def _retry(self, domain: str, entity: str | None) -> None:
+    async def _retry(self, domain: str, entity: str | None, device: str | None) -> None:
         from .. import push
 
+        key = f"{domain}|{device or ''}"
         try:
             for delay in self.RETRY_DELAYS:
                 await asyncio.sleep(delay)
-                if await push.alert_all(domain, entity):
-                    self._mark_alerted(domain)
+                if await push.alert_device(domain, entity, device):
+                    self._mark_alerted(key)
                     return
                 self.alerts_failed += 1
         finally:
-            self._retrying.discard(domain)
+            self._retrying.discard(key)
 
-    def _mark_alerted(self, domain: str) -> None:
-        self._recent[domain] = time.monotonic()
+    def _mark_alerted(self, key: str) -> None:
+        self._recent[key] = time.monotonic()
         self.alerts_sent += 1
         self.last_alert = iso()
 
@@ -322,6 +332,7 @@ class BlockWatcher:
 
         flagged = await self._flagged()
         alerted: list[str] = []
+        done: set[str] = set()
         now = time.monotonic()
         for item in items:
             names = [(item.get("domain") or "").lower().rstrip("."), (item.get("root") or "").lower().rstrip(".")]
@@ -333,12 +344,15 @@ class BlockWatcher:
                 self._flagged_at = -1e9
                 flagged = await self._flagged()
                 hit = next((n for n in names if n in flagged), None)
-            if (not hit or now - self._recent.get(hit, -1e9) < self.REPEAT_AFTER_SECONDS or hit in alerted
-                    or hit in self._retrying):
+            device = self._device(item)
+            key = f"{hit}|{device or ''}"  # each phone gets its own alert, and only its own
+            if (not hit or now - self._recent.get(key, -1e9) < self.REPEAT_AFTER_SECONDS or key in done
+                    or key in self._retrying):
                 continue
-            if not await self._deliver(hit, flagged[hit].get("impersonated_entity")):
+            if not await self._deliver(hit, flagged[hit].get("impersonated_entity"), device):
                 continue  # retried in the background; a later blocked attempt may also retry
-            self._mark_alerted(hit)
+            self._mark_alerted(key)
+            done.add(key)
             alerted.append(hit)
         return alerted
 

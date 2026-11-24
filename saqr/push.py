@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import re
 import logging
 import os
 import time
@@ -63,10 +64,10 @@ def public_key_b64() -> str:
 
 
 # -- subscriptions ----------------------------------------------------------------
-async def save_subscription(sub: dict[str, Any], lang: str) -> None:
+async def save_subscription(sub: dict[str, Any], lang: str, device: str | None = None) -> None:
     await db.execute(
-        "INSERT OR REPLACE INTO push_subscriptions (endpoint, sub_json, lang, created_at) VALUES (?,?,?,?)",
-        (sub["endpoint"], json.dumps(sub), "ar" if lang == "ar" else "en", iso()))
+        "INSERT OR REPLACE INTO push_subscriptions (endpoint, sub_json, lang, created_at, device) VALUES (?,?,?,?,?)",
+        (sub["endpoint"], json.dumps(sub), "ar" if lang == "ar" else "en", iso(), normalise_device(device)))
 
 
 async def delete_subscription(endpoint: str) -> None:
@@ -157,8 +158,34 @@ async def send(row: dict[str, Any], payload: dict[str, Any]) -> bool:
     return False
 
 
+def normalise_device(name: Any) -> str | None:
+    """'SAQR 7f3k2a' / 'saqr7f3k2a' -> 'saqr7f3k2a'. NextDNS shows the device name from the DNS setting."""
+    if not isinstance(name, str):
+        return None
+    tag = re.sub(r"[^a-z0-9]", "", name.lower())
+    return tag if 6 <= len(tag) <= 24 else None
+
+
+async def alert_device(domain: str, entity_en: str | None, device: str | None) -> int:
+    """Alert only the phone that tried to open the scam.
+
+    The DNS log names the phone (its SAQR device tag) -> that phone's subscriptions only.
+    No name in the log (a phone set up before device tags) -> only subscriptions without a tag,
+    so a tagged phone never gets another phone's alerts.
+    """
+    tag = normalise_device(device)
+    if tag:
+        rows = await db.fetchall("SELECT * FROM push_subscriptions WHERE device=?", (tag,))
+    else:
+        rows = await db.fetchall("SELECT * FROM push_subscriptions WHERE device IS NULL")
+    return await _alert_rows(rows, domain, entity_en)
+
+
 async def alert_all(domain: str, entity_en: str | None) -> int:
-    rows = await db.fetchall("SELECT * FROM push_subscriptions")
+    return await _alert_rows(await db.fetchall("SELECT * FROM push_subscriptions"), domain, entity_en)
+
+
+async def _alert_rows(rows: list[dict[str, Any]], domain: str, entity_en: str | None) -> int:
     results = await asyncio.gather(*(send(row, alert_payload(domain, entity_en, row["lang"])) for row in rows))
     sent = sum(1 for ok in results if ok)
     if rows:

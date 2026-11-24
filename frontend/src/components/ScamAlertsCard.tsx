@@ -1,9 +1,10 @@
 "use client";
 
+import { getDeviceTag } from "@/lib/device";
 import { AnimatePresence, motion } from "framer-motion";
-import { BellOff, BellRing, Check, CircleAlert, Loader2, PlusSquare, Send, Share, ShieldCheck, Smartphone } from "lucide-react";
+import { BellOff, BellRing, Check, CircleAlert, Loader2, PlusSquare, Send, Share, ShieldCheck, Smartphone, Download } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { deletePushSubscription, getVapidPublicKey, savePushSubscription, sendTestAlert } from "@/lib/api";
+import { apiUrl, deletePushSubscription, getVapidPublicKey, savePushSubscription, sendTestAlert } from "@/lib/api";
 import { Disclosure } from "./Disclosure";
 import { useLang } from "@/lib/i18n";
 
@@ -13,6 +14,27 @@ const noopSubscribe = () => () => {};
 
 function isIos(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+/** Alerts are per phone: the phone's DNS setting must carry its device tag (see lib/device.ts). */
+function ThisPhoneOnly() {
+  const { t } = useLang();
+  const device = getDeviceTag();
+  return (
+    <div className="space-y-2 text-xs leading-relaxed text-ink-soft">
+      <p>{t("alOnlyThis")}</p>
+      {isIos() ? (
+        <a
+          href={apiUrl(`/api/ios-dns-profile${device ? `?device=${device}` : ""}`)}
+          className="press inline-flex items-center gap-2 rounded-xl border border-line bg-canvas px-3 py-2 text-sm font-bold text-ink hover:bg-muted"
+        >
+          <Download className="size-4" /> {t("alLinkIos")}
+        </a>
+      ) : (
+        <p>{t("alLinkAndroid")}</p>
+      )}
+    </div>
+  );
 }
 
 function isStandalone(): boolean {
@@ -291,6 +313,7 @@ export function ScamAlertsCard() {
                   </span>
                   {t("alOn")}
                 </p>
+                <ThisPhoneOnly />
                 <div className="grid grid-cols-[1fr_auto] gap-2">
                   <button
                     type="button"

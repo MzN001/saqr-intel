@@ -89,7 +89,8 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (  -- phones that enabled SAQR sca
     endpoint TEXT PRIMARY KEY,
     sub_json TEXT NOT NULL,
     lang TEXT NOT NULL DEFAULT 'en',
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    device TEXT                              -- the phone's SAQR device tag (also in its DNS setting)
 );
 CREATE TABLE IF NOT EXISTS self_hosts (       -- public hostnames this backend is served from (never blocked)
     host TEXT PRIMARY KEY,
@@ -129,7 +130,15 @@ class Database:
         self.conn = await aiosqlite.connect(self.path)
         self.conn.row_factory = aiosqlite.Row
         await self.conn.executescript(SCHEMA)
+        await self._migrate()
         await self.conn.commit()
+
+    async def _migrate(self) -> None:
+        """Add columns that older databases don't have yet."""
+        async with self.conn.execute("PRAGMA table_info(push_subscriptions)") as cur:
+            cols = {row[1] for row in await cur.fetchall()}
+        if "device" not in cols:
+            await self.conn.execute("ALTER TABLE push_subscriptions ADD COLUMN device TEXT")
 
     async def close(self) -> None:
         if self.conn:
