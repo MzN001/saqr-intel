@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>ScamShield Hackathon</b> · Abu Dhabi Police · Team maze<br>
+  <b>SCAMSHIELD AI Hackathon</b> · 42 Abu Dhabi × Abu Dhabi Police · Team maze<br>
   <sub>Hackathon prototype, not an official police service. Saqr (صقر) means falcon.</sub>
 </p>
 
