@@ -38,11 +38,19 @@ async def collect_stats() -> dict:
 
 @router.api_route("/health", methods=["GET", "HEAD"])  # HEAD: uptime monitors (UptimeRobot's free plan)
 async def health():
+    from ..intel.hunter import hunter, pre_victim_count  # local: hunter -> pipeline -> heavy imports
+
+    last = hunter.last_cycle or {}
     return {"status": "ok", "app": settings.app_name, "version": __version__, "llm_engine": settings.active_llm,
             "playwright_enabled": settings.sandbox_enabled, "keep_awake": bool(keepalive.public_url()),
             "offline_mode": settings.offline_mode,
             "ct_mode": ct_monitor.mode, "url_model": url_model.available(), "llm": ai_inspector.llm_status,
-            "threat_feeds": threat_feeds.status(), "campaigns": campaign_feed.status()}
+            "threat_feeds": threat_feeds.status(), "campaigns": campaign_feed.status(),
+            "hunter": {"mode": hunter.mode, "data": {"live": "real", "simulated": "simulated"}.get(hunter.mode, "none"),
+                       "background_loop": bool(hunter.task and not hunter.task.done()),
+                       "cycle_running": hunter.running, "cycles": hunter.cycles,
+                       "last_cycle_finished_at": last.get("finished_at"), "backlog": len(hunter.backlog),
+                       "pre_victim_detections": await pre_victim_count()}}
 
 
 @router.get("/api/stats")
