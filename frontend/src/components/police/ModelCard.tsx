@@ -22,8 +22,8 @@ function Stat({ label, value, tone }: { label: string; value: string | null; ton
   if (value === null) return null;
   return (
     <div className="border-t border-line pt-2">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">{label}</p>
-      <p className={`text-xl font-black tabular-nums ${tone}`} dir="ltr">{value}</p>
+      <p className="label-caps">{label}</p>
+      <p className={`text-2xl font-semibold tabular-nums ${tone}`} dir="ltr">{value}</p>
     </div>
   );
 }
@@ -63,10 +63,10 @@ export function ModelCard({ metrics, className = "" }: { metrics: ModelMetrics; 
             <span className="normal-case text-ink-soft"> · {L("liveNote")}</span>
           </p>
           <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Stat label={L("precision")} value={pct(live.precision)} tone="text-emerald-700 dark:text-emerald-300" />
-            <Stat label={L("recall")} value={pct(live.recall)} tone="text-sky-700 dark:text-sky-300" />
+            <Stat label={L("precision")} value={pct(live.precision)} tone="text-ink" />
+            <Stat label={L("recall")} value={pct(live.recall)} tone="text-ink" />
             <Stat label={L("f1")} value={pct(live.f1)} tone="text-ink" />
-            <Stat label={L("fpr")} value={pct(live.fpr, 2)} tone="text-amber-700 dark:text-amber-300" />
+            <Stat label={L("fpr")} value={pct(live.fpr, 2)} tone="text-ink" />
           </div>
         </>
       )}
@@ -80,16 +80,16 @@ export function ModelCard({ metrics, className = "" }: { metrics: ModelMetrics; 
             {typeof h.threshold === "number" && <span className="text-ink-soft" dir="ltr"> · {L("threshold")} {h.threshold.toFixed(3)}</span>}
           </p>
           <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Stat label={L("precision")} value={pct(h.precision)} tone="text-emerald-700 dark:text-emerald-300" />
-            <Stat label={L("recall")} value={pct(h.recall)} tone="text-sky-700 dark:text-sky-300" />
+            <Stat label={L("precision")} value={pct(h.precision)} tone="text-ink" />
+            <Stat label={L("recall")} value={pct(h.recall)} tone="text-ink" />
             <Stat label={L("f1")} value={pct(h.f1)} tone="text-ink" />
-            <Stat label={L("fpr")} value={pct(h.fpr, 2)} tone="text-amber-700 dark:text-amber-300" />
+            <Stat label={L("fpr")} value={pct(h.fpr, 2)} tone="text-ink" />
           </div>
         </>
       )}
 
       {fp && typeof fp.rows === "number" && (
-        <p className="mt-3 border-t border-line pt-3 text-xs text-emerald-700 dark:text-emerald-300">
+        <p className="mt-3 border-t border-line pt-3 text-xs text-safe-ink">
           {L("fpSuite")}: <b className="tabular-nums" dir="ltr">{num(fp.false_positives ?? 0)}</b> {L("falseAlarms")} /{" "}
           <b className="tabular-nums" dir="ltr">{num(fp.rows)}</b>
           {officialRows > 0 && (

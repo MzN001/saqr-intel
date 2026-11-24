@@ -15,7 +15,7 @@ import {
   type ProactiveDetection,
   type SweepCycle,
 } from "@/lib/police";
-import { DetectionSummary, DossierActions, EvidenceView, ReasonList } from "./EvidenceDossier";
+import { DetectionSummary, DossierActions, EvidenceView, PrintBrand, ReasonList } from "./EvidenceDossier";
 import { Card, SOURCE_STYLE, fmtHours, riskTone, timeAgo, verdictLabel, type L } from "./ui";
 
 type Sweep = { state: "idle" } | { state: "running" } | { state: "done"; cycle: SweepCycle | null } | { state: "error"; message: string };
@@ -23,14 +23,14 @@ type Sweep = { state: "idle" } | { state: "running" } | { state: "done"; cycle: 
 function CitizenLine({ d, L }: { d: ProactiveDetection; L: L }) {
   if (!d.citizen_visits) {
     return (
-      <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+      <span className="inline-flex items-center gap-1 text-safe-ink">
         <UserCheck className="size-3.5" /> {L("noCitizenYet")}
       </span>
     );
   }
   const blocked = d.citizen_visits_blocked ?? 0;
   return (
-    <span className="inline-flex items-center gap-1 text-sky-700 dark:text-sky-300">
+    <span className="inline-flex items-center gap-1 text-ink">
       <ShieldAlert className="size-3.5" /> {L("citizensMet")}: <b className="tabular-nums" dir="ltr">{d.citizen_visits}</b>
       {" — "}
       {blocked === d.citizen_visits ? L("allBlocked") : <span dir="ltr">{blocked}/{d.citizen_visits} {L("blockedOf")}</span>}
@@ -99,9 +99,9 @@ export function ProactiveHunt({ detections, mode, onSwept, className = "" }: {
   const off = mode === "off";
   const modeBadge =
     mode === "simulated" ? (
-      <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-black tracking-widest text-navy-900">{L("simulated")}</span>
+      <span className="chip-tag">{L("simulated")}</span>
     ) : mode === "live" ? (
-      <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-black tracking-widest text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-400/40">{L("liveHunt")}</span>
+      <span className="chip chip-suspicious uppercase tracking-widest"><span className="size-1.5 rounded-full bg-suspicious" aria-hidden />{L("liveHunt")}</span>
     ) : null;
 
   return (
@@ -113,7 +113,7 @@ export function ProactiveHunt({ detections, mode, onSwept, className = "" }: {
         <span className="flex items-center gap-2">
           {modeBadge}
           <button type="button" disabled={off || sweep.state === "running"} onClick={() => void runSweep()}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3 py-1.5 text-xs font-extrabold text-navy-900 hover:brightness-110 disabled:opacity-60">
+            className="btn-brand">
             {sweep.state === "running" ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
             {sweep.state === "running" ? L("sweeping") : L("runSweep")}
           </button>
@@ -121,9 +121,9 @@ export function ProactiveHunt({ detections, mode, onSwept, className = "" }: {
       }
     >
       <p className="mb-2 text-xs text-ink-soft">{off ? L("hunterOff") : L("huntHint")}</p>
-      {mode === "simulated" && <p className="mb-2 rounded-xl bg-amber-400/10 px-3 py-1.5 text-[11px] text-amber-700 dark:text-amber-300 ring-1 ring-amber-400/30">{L("simulatedHint")}</p>}
+      {mode === "simulated" && <p className="mb-2 rounded-xl bg-suspicious-soft px-3 py-1.5 text-xs text-suspicious-ink">{L("simulatedHint")}</p>}
       {sweep.state === "done" && (
-        <p className="mb-2 flex flex-wrap items-center gap-x-2 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-[11px] text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-400/25" role="status">
+        <p className="mb-2 flex flex-wrap items-center gap-x-2 rounded-xl bg-safe-soft px-3 py-1.5 text-xs text-safe-ink" role="status">
           <CheckCircle2 className="size-3.5" /> {L("sweepDone")}
           {sweep.cycle && !sweep.cycle.skipped && (
             <span dir="ltr" className="tabular-nums">
@@ -133,7 +133,7 @@ export function ProactiveHunt({ detections, mode, onSwept, className = "" }: {
         </p>
       )}
       {sweep.state === "error" && (
-        <p className="mb-2 rounded-xl bg-crimson-600/20 px-3 py-1.5 text-xs text-red-700 dark:text-red-300 ring-1 ring-crimson-600/40" role="alert">
+        <p className="mb-2 rounded-xl bg-scam-soft px-3 py-1.5 text-xs text-scam-ink" role="alert">
           {L("failed")}: {sweep.message}
         </p>
       )}
@@ -152,9 +152,9 @@ export function ProactiveHunt({ detections, mode, onSwept, className = "" }: {
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ring-1 ${src?.tone ?? "bg-muted text-ink ring-line"}`}>
                       {src ? L(src.key) : d.source}
                     </span>
-                    {d.simulated && <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[9px] font-black tracking-widest text-navy-900">{L("simulated")}</span>}
+                    {d.simulated && <span className="chip-tag">{L("simulated")}</span>}
                     <span className="min-w-0 flex-1 truncate font-mono text-sm font-bold text-ink" dir="ltr">{d.defanged_domain}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-black tabular-nums ${riskTone(d.score)}`} dir="ltr">{d.score}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${riskTone(d.score)}`} dir="ltr">{d.score}</span>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-soft">
                     <span className="font-semibold text-ink-soft">{d.entity ?? "—"}</span>
@@ -183,10 +183,11 @@ export function ProactiveHunt({ detections, mode, onSwept, className = "" }: {
         {!dossier && !loadErr && (
           <p className="flex items-center gap-2 text-sm text-ink-soft"><Loader2 className="size-4 animate-spin" /> {L("loadingDossier")}</p>
         )}
-        {loadErr && <p className="rounded-xl bg-crimson-50 px-3 py-2 text-sm text-crimson-700" role="alert">{L("failed")}: {loadErr}</p>}
+        {loadErr && <p className="rounded-xl bg-scam-soft px-3 py-2 text-sm text-scam-ink" role="alert">{L("failed")}: {loadErr}</p>}
         {dossier && (
           <div className="space-y-4">
             <div className="print-area space-y-4 rounded-2xl bg-surface">
+              <PrintBrand L={L} />
               {dossier.evidence ? (
                 <EvidenceView ev={dossier.evidence} lang={lang} L={L} />
               ) : (
@@ -199,7 +200,7 @@ export function ProactiveHunt({ detections, mode, onSwept, className = "" }: {
               )}
               {dossier.triage_reasons.length > 0 && (
                 <section>
-                  <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-soft">{L("triageReasons")}</h4>
+                  <h4 className="label-caps mb-1.5">{L("triageReasons")}</h4>
                   <ReasonList flags={dossier.triage_reasons} lang={lang} L={L} />
                 </section>
               )}

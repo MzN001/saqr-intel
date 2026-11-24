@@ -6,7 +6,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { SESSION_COOKIE, authMode, sessionOk } from "@/lib/officer-session";
 
 export const metadata: Metadata = {
-  title: "SAQR-INTEL · AD Police Cyber-Patrol Command Center",
+  title: "Saqr · AD Police Cyber-Patrol Command Center",
   description: "Abu Dhabi Police Cyber-Patrol Command Center — live citizen interceptions, phishing campaigns and takedowns.",
   robots: { index: false, follow: false },
 };

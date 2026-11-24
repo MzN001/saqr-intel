@@ -408,6 +408,26 @@ html.theme-fading *::after {
     max-height: none !important;
     overflow: visible !important;
   }
+  /* The printed dossier is always ink on white, even when the screen is in dark mode:
+     re-declare the light token values inside the print block (logo, text, chips follow). */
+  .print-area {
+    --color-canvas: #f7f5f0;
+    --color-surface: #ffffff;
+    --color-muted: #f1eee6;
+    --color-line: #e6e2d8;
+    --color-ink: #111315;
+    --color-ink-soft: #475569;
+    --color-primary: #111315;
+    --color-on-primary: #faf8f5;
+    --color-safe-ink: #047857;
+    --color-safe-soft: #e8f6ef;
+    --color-suspicious-ink: #92400e;
+    --color-suspicious-soft: #fdf3e1;
+    --color-scam-ink: #b91c1c;
+    --color-scam-soft: #fcebeb;
+    --color-brand-ink: #057857;
+    --color-meter-track: #dee4e2;
+  }
 }
 
 /* =====================================================================================

@@ -1,8 +1,9 @@
 "use client";
 
-import { KeyRound, Loader2, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { SaqrLogo } from "@/components/SaqrLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { API_BASE_URL } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
@@ -56,37 +57,48 @@ export function LoginForm({ next, configured }: { next: string; configured: bool
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas text-ink">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-[76px] max-w-[1500px] items-center gap-3 px-4 sm:px-6">
-          <button type="button" onClick={() => setLang(lang === "en" ? "ar" : "en")} className="rounded-full px-3 py-2 text-[15px] text-ink-soft hover:text-ink">
-            {lang === "en" ? "العربية" : "English"}
-          </button>
-          <ThemeToggle />
-          <div className="ms-auto flex items-center gap-3">
-            <div className="text-end leading-tight">
-              <p className="whitespace-nowrap text-lg font-bold text-ink sm:text-[22px]" lang="ar" dir="rtl">شرطة أبوظبي</p>
-              <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.06em] text-ink sm:text-[15px]">Abu Dhabi Police</p>
+      <header className="border-b border-line bg-surface/95 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[1500px] items-center gap-3 px-4 sm:px-6">
+          <span className="flex shrink-0 items-center gap-3">
+            <SaqrLogo variant="full" size={26} />
+            <span className="hidden h-6 w-px bg-line sm:block" aria-hidden />
+            <span className="label-caps hidden whitespace-nowrap sm:block">{L("brandLabel")}</span>
+          </span>
+          <div className="ms-auto flex shrink-0 items-center gap-2">
+            <div role="radiogroup" aria-label="Language / اللغة" dir="ltr" className="flex shrink-0 rounded-full border border-line bg-surface p-0.5">
+              {(["en", "ar"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  role="radio"
+                  aria-checked={lang === l}
+                  onClick={() => setLang(l)}
+                  lang={l}
+                  className={`min-h-9 min-w-10 rounded-full px-3 text-[13px] font-semibold transition-colors md:min-w-0 ${lang === l ? "bg-primary text-on-primary" : "text-ink-soft hover:text-ink"}`}
+                >
+                  {l === "en" ? "EN" : "عربي"}
+                </button>
+              ))}
             </div>
-            <span className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-gold-500 bg-navy-900 sm:size-[54px]" aria-hidden>
-              <ShieldCheck className="size-6 text-gold-500" />
-            </span>
+            <ThemeToggle variant="saqr" />
           </div>
         </div>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 py-10">
-        <section className="w-full max-w-md rounded-[20px] border border-line bg-surface p-6" aria-labelledby="officer-login-title">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-soft">{L("subtitle")}</p>
-          <h1 id="officer-login-title" className="mt-1 text-lg font-extrabold leading-tight text-ink">{L("loginTitle")}</h1>
+        <section className="card w-full max-w-md p-6 sm:p-8" aria-labelledby="officer-login-title">
+          <SaqrLogo variant="full" size={36} className="mb-5" />
+          <p className="label-caps">{L("subtitle")}</p>
+          <h1 id="officer-login-title" className="mt-1 text-xl font-semibold leading-tight text-ink">{L("loginTitle")}</h1>
 
           {configured ? (
             <form onSubmit={submit} className="mt-5 space-y-4" noValidate>
               <p className="text-sm text-ink-soft">{L("loginIntro")}</p>
               <div>
-                <label htmlFor="officer-passcode" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-ink-soft">
+                <label htmlFor="officer-passcode" className="label-caps mb-1.5 block">
                   {L("passcode")}
                 </label>
-                <div className="flex items-center gap-2 rounded-2xl bg-muted px-3.5 py-px ring-1 ring-line transition-shadow focus-within:ring-2 focus-within:ring-emerald-600">
+                <div className="flex min-h-12 items-center gap-2 rounded-control border border-line bg-surface px-3.5 transition-shadow focus-within:border-transparent focus-within:outline-2 focus-within:outline-focus">
                   <KeyRound className="size-4 shrink-0 text-ink-soft" aria-hidden />
                   <input
                     id="officer-passcode"
@@ -98,24 +110,24 @@ export function LoginForm({ next, configured }: { next: string; configured: bool
                     onChange={(e) => setPasscode(e.target.value)}
                     aria-invalid={status.state === "error" ? true : undefined}
                     aria-describedby={status.state === "error" ? "officer-login-error" : undefined}
-                    className="h-12 min-w-0 flex-1 bg-transparent text-sm text-ink outline-hidden"
+                    className="h-12 min-w-0 flex-1 bg-transparent text-base text-ink outline-hidden"
                     dir="ltr"
                   />
                 </div>
               </div>
               {status.state === "error" && (
-                <p id="officer-login-error" role="alert" className="text-sm font-semibold text-gold-ink">{L(status.key)}</p>
+                <p id="officer-login-error" role="alert" className="rounded-xl bg-scam-soft px-3 py-2 text-sm font-semibold text-scam-ink">{L(status.key)}</p>
               )}
               <button
                 type="submit"
                 disabled={busy || !passcode}
-                className="press inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gold-500 px-4 py-3 text-sm font-extrabold text-navy-950 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-brand press w-full"
               >
                 {busy && <Loader2 className="size-4 animate-spin" />} {busy ? L("signingIn") : L("signIn")}
               </button>
             </form>
           ) : (
-            <p role="alert" className="mt-5 text-sm font-semibold text-gold-ink">{L("notConfigured")}</p>
+            <p role="alert" className="mt-5 rounded-xl bg-suspicious-soft px-3 py-2 text-sm font-semibold text-suspicious-ink">{L("notConfigured")}</p>
           )}
 
           <p className="mt-6 border-t border-line pt-4 text-xs text-ink-soft">{L("hackathonNote")}</p>

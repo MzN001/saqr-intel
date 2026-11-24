@@ -1,13 +1,5 @@
-import type { Viewport } from "next";
-import { LegacyNightGridScope } from "@/components/LegacyNightGridScope";
-
-// /police (Command Center + login) intentionally stays on the legacy Night Grid design
-// (palette, Barlow + Noto Kufi, dark by default) until the owner supplies its new format.
-// See DESIGN.md "Legacy scope: /police".
-export const viewport: Viewport = {
-  themeColor: "#0B192C",
-};
-
+// /police (Command Center + login) uses the same Saqr tokens as /citizen (light by default,
+// a saved `saqr-theme` choice wins; theme colour comes from the root layout). See DESIGN.md.
 export default function PoliceLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <LegacyNightGridScope>{children}</LegacyNightGridScope>;
+  return children;
 }

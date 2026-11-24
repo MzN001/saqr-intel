@@ -123,7 +123,7 @@ export function FalseAlarmQueue({ className = "" }: { className?: string }) {
                     type="button"
                     disabled={busy === a.id}
                     onClick={() => void decide(a, "confirmed")}
-                    className="press inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3 py-1.5 text-xs font-extrabold text-navy-950 hover:brightness-110 disabled:opacity-60"
+                    className="press btn-secondary"
                   >
                     {busy === a.id ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />} {L("faConfirm")}
                   </button>
@@ -131,7 +131,7 @@ export function FalseAlarmQueue({ className = "" }: { className?: string }) {
                     type="button"
                     disabled={busy === a.id}
                     onClick={() => void decide(a, "dismissed")}
-                    className="press inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-bold text-ink hover:bg-muted disabled:opacity-60"
+                    className="press btn-secondary"
                   >
                     <X className="size-3.5" /> {L("faDismiss")}
                   </button>
@@ -139,7 +139,7 @@ export function FalseAlarmQueue({ className = "" }: { className?: string }) {
               ) : (
                 <span
                   className={`inline-block -rotate-3 rounded-md border-2 border-current px-2 py-1 text-[11px] font-extrabold uppercase leading-none tracking-[0.12em] ${
-                    a.status === "confirmed" ? "text-gold-ink" : "text-ink-soft"
+                    a.status === "confirmed" ? "text-suspicious-ink" : "text-ink-soft"
                   }`}
                 >
                   {a.status === "confirmed" ? L("faConfirmed") : L("faDismissed")}

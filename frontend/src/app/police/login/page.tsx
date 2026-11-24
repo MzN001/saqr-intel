@@ -6,7 +6,7 @@ import { SESSION_COOKIE, authMode, safeNext, verify } from "@/lib/officer-sessio
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
-  title: "SAQR-INTEL · Officer sign-in",
+  title: "Saqr · Officer sign-in",
   description: "Abu Dhabi Police Cyber-Patrol Command Center sign-in.",
   robots: { index: false, follow: false },
 };

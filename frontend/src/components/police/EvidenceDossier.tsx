@@ -3,20 +3,31 @@
 import { Check, Copy, Download, FileArchive, Printer } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { screenshotUrl, evidencePackUrl, type DetectionContext, type DossierFlag, type EvidenceDossier } from "@/lib/police";
+import { SaqrLogo } from "@/components/SaqrLogo";
 import { SOURCE_STYLE, defangUrl, fmtHours, verdictLabel, type L, type Lang } from "./ui";
 
+/** Saqr lockup at the top of a printable dossier (ink on white in print: see globals.css `.print-area`). */
+export function PrintBrand({ L }: { L: L }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
+      <SaqrLogo variant="full" size={28} />
+      <span className="label-caps text-end">{L("brandLabel")}</span>
+    </div>
+  );
+}
+
 const SEVERITY_TONE: Record<string, string> = {
-  critical: "bg-crimson-600 text-white",
-  high: "bg-crimson-600/85 text-white",
-  medium: "bg-amber-500 text-navy-900",
-  low: "bg-navy-700 text-white",
-  info: "bg-navy-700 text-white",
+  critical: "chip-scam",
+  high: "chip-scam",
+  medium: "chip-suspicious",
+  low: "bg-surface text-ink ring-1 ring-line",
+  info: "bg-surface text-ink-soft ring-1 ring-line",
 };
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="break-inside-avoid">
-      <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-soft">{title}</h4>
+      <h4 className="label-caps mb-1.5">{title}</h4>
       {children}
     </section>
   );
@@ -64,13 +75,13 @@ export function DetectionSummary({ det, L }: { det: DetectionContext; L: L }) {
   const src = SOURCE_STYLE[det.source];
   const visits = det.citizen_visits;
   return (
-    <div className="rounded-xl bg-violet-500/10 p-3 ring-1 ring-violet-400/30">
+    <div className="rounded-xl bg-suspicious-soft p-3 ring-1 ring-line">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-white">
+        <span className="chip chip-suspicious uppercase tracking-wide">
           {src ? L(src.key) : det.source}
         </span>
         {det.simulated && (
-          <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-black tracking-widest text-navy-900">{L("simulated")}</span>
+          <span className="chip-tag">{L("simulated")}</span>
         )}
         <span className="text-xs text-ink-soft">{det.source_label}</span>
       </div>
@@ -115,7 +126,7 @@ function CopyBlock({ title, text, L }: { title: string; text: string; L: L }) {
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />} {copied ? L("copied") : L("copy")}
         </button>
       </div>
-      <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl bg-navy-950 p-3 font-mono text-[11px] leading-relaxed text-emerald-100 print:max-h-none" dir="ltr">
+      <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl bg-muted p-3 font-mono text-[11px] leading-relaxed text-ink ring-1 ring-line print:max-h-none" dir="ltr">
         {text}
       </pre>
     </div>
@@ -134,17 +145,17 @@ export function EvidenceView({ ev, lang, L }: { ev: EvidenceDossier; lang: Lang;
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-muted p-3 ring-1 ring-line">
-        <span className={`grid size-14 shrink-0 place-items-center rounded-2xl text-2xl font-black tabular-nums ${s.risk_score >= 65 ? "bg-crimson-600 text-white" : "bg-amber-500 text-navy-900"}`} dir="ltr">
+        <span className={`grid size-14 shrink-0 place-items-center rounded-2xl text-2xl font-black tabular-nums ${s.risk_score >= 65 ? "chip-scam" : s.risk_score >= 30 ? "chip-suspicious" : "bg-surface text-ink ring-1 ring-line"}`} dir="ltr">
           {s.risk_score}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-ink-soft">{L("riskScore")} · {verdictLabel(s.verdict, L)}</p>
+          <p className="label-caps">{L("riskScore")} · {verdictLabel(s.verdict, L)}</p>
           <p className="truncate font-mono text-base font-extrabold text-ink" dir="ltr">{s.target_defanged}</p>
           <p className="text-xs text-ink-soft">{L("impersonated")}: {s.impersonated_entity ?? "—"}</p>
         </div>
         <div className="text-end">
           <p className="text-[11px] font-semibold uppercase text-ink-soft">{L("caseRef")}</p>
-          <p className="font-mono text-sm font-extrabold text-crimson-600" dir="ltr">{ev.case_reference}</p>
+          <p className="font-mono text-sm font-extrabold text-ink" dir="ltr">{ev.case_reference}</p>
           <p className="font-mono text-[11px] text-ink-soft" dir="ltr">{ev.dossier_id} · {ev.scan_id}</p>
         </div>
       </div>
@@ -203,11 +214,11 @@ export function EvidenceView({ ev, lang, L }: { ev: EvidenceDossier; lang: Lang;
           <ol className="space-y-1.5" dir="ltr">
             {hops.map((h, i) => (
               <li key={`${h.url}-${i}`} className="flex flex-wrap items-center gap-2 rounded-xl bg-muted/50 px-3 py-2 text-xs ring-1 ring-line">
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-navy-900 text-[11px] font-black text-white">{i + 1}</span>
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-black text-on-primary">{i + 1}</span>
                 <span className="min-w-0 flex-1 break-all font-mono text-ink">{defangUrl(h.url)}</span>
                 {h.status !== null && <span className="rounded bg-surface px-1.5 py-0.5 font-mono font-bold text-ink ring-1 ring-line">HTTP {h.status}</span>}
                 {h.via && <span className="rounded bg-surface px-1.5 py-0.5 font-mono text-ink-soft ring-1 ring-line">{h.via}</span>}
-                {h.risk && <span className="rounded bg-crimson-600 px-1.5 py-0.5 font-mono font-bold text-white">{h.risk}</span>}
+                {h.risk && <span className="chip-scam rounded px-1.5 py-0.5 font-mono font-bold">{h.risk}</span>}
                 {h.note && <span className="w-full text-ink-soft">{h.note}</span>}
               </li>
             ))}
@@ -275,16 +286,16 @@ export function DossierActions({ data, fileName, dossierId, L }: { data: unknown
   return (
     <div className={`grid gap-2 ${dossierId ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
       <button type="button" onClick={downloadJson}
-        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white hover:bg-navy-800 dark:bg-white dark:text-navy-900">
+        className={dossierId ? "btn-secondary" : "btn-brand"}>
         <Download className="size-4" /> {L("downloadJson")}
       </button>
       <button type="button" onClick={() => window.print()}
-        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm font-bold text-ink ring-1 ring-line hover:bg-line">
+        className="btn-secondary">
         <Printer className="size-4" /> {L("printPdf")}
       </button>
       {dossierId && (
         <a href={evidencePackUrl(dossierId)} download
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-crimson-600 px-4 py-3 text-sm font-bold text-white hover:bg-crimson-700">
+          className="btn-brand">
           <FileArchive className="size-4" /> {L("downloadZip")}
         </a>
       )}

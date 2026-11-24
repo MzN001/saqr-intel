@@ -417,23 +417,25 @@ export function usePoliceLive() {
 
 /* ---------- labels ---------- */
 export const CHANNEL_LABEL: Record<string, { en: string; ar: string; tone: string; short: { en: string; ar: string } }> = {
-  AUTO_TELECOM_DNS: { en: "Telecom DNS", ar: "حظر شبكة الاتصالات", tone: "bg-sky-500/15 text-sky-300 ring-sky-400/30", short: { en: "DNS", ar: "DNS" } },
-  AUTO_SMS_GUARD: { en: "SMS Guard", ar: "حارس الرسائل", tone: "bg-violet-500/15 text-violet-300 ring-violet-400/30", short: { en: "SMS", ar: "رسائل" } },
-  CITIZEN_MANUAL_CHECK: { en: "Citizen Check", ar: "فحص المواطن", tone: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30", short: { en: "Check", ar: "فحص" } },
-  MOBILE_OS_SHARE_SHEET: { en: "Share Sheet", ar: "قائمة المشاركة", tone: "bg-teal-500/15 text-teal-300 ring-teal-400/30", short: { en: "Share", ar: "مشاركة" } },
-  PC_BROWSER_EXTENSION: { en: "PC Extension", ar: "إضافة المتصفح", tone: "bg-amber-500/15 text-amber-300 ring-amber-400/30", short: { en: "Browser", ar: "متصفح" } },
-  ANDROID_APP_GUARD: { en: "Android Shield", ar: "درع أندرويد", tone: "bg-lime-500/15 text-lime-300 ring-lime-400/30", short: { en: "Android", ar: "أندرويد" } },
-  X_COMMUNITY_ALERT: { en: "X Community Alert", ar: "تنبيه مجتمعي على X", tone: "bg-white/10 text-white ring-white/25", short: { en: "X alert", ar: "تنبيه X" } },
+  // Channels are neutral tags (`chip` + a small dot in the UI), not six different tints.
+  AUTO_TELECOM_DNS: { en: "Telecom DNS", ar: "حظر شبكة الاتصالات", tone: "chip", short: { en: "DNS", ar: "DNS" } },
+  AUTO_SMS_GUARD: { en: "SMS Guard", ar: "حارس الرسائل", tone: "chip", short: { en: "SMS", ar: "رسائل" } },
+  CITIZEN_MANUAL_CHECK: { en: "Citizen Check", ar: "فحص المواطن", tone: "chip", short: { en: "Check", ar: "فحص" } },
+  MOBILE_OS_SHARE_SHEET: { en: "Share Sheet", ar: "قائمة المشاركة", tone: "chip", short: { en: "Share", ar: "مشاركة" } },
+  PC_BROWSER_EXTENSION: { en: "PC Extension", ar: "إضافة المتصفح", tone: "chip", short: { en: "Browser", ar: "متصفح" } },
+  ANDROID_APP_GUARD: { en: "Android Shield", ar: "درع أندرويد", tone: "chip", short: { en: "Android", ar: "أندرويد" } },
+  X_COMMUNITY_ALERT: { en: "X Community Alert", ar: "تنبيه مجتمعي على X", tone: "chip", short: { en: "X alert", ar: "تنبيه X" } },
 };
 
 export const STATUS_LABEL: Record<CampaignStatus, { en: string; ar: string; tone: string }> = {
-  ACTIVE: { en: "Active", ar: "نشطة", tone: "bg-crimson-600 text-white" },
-  SYNCED_TO_TELECOM_DNS: { en: "Synced to e& / du DNS", ar: "مُزامنة مع e& / du", tone: "bg-emerald-600 text-white" },
-  COMMUNITY_FLAGGED_X: { en: "Community-flagged on X", ar: "مُبلّغ عنها على X", tone: "bg-white text-navy-900" },
+  ACTIVE: { en: "Active", ar: "نشطة", tone: "chip chip-scam" },
+  SYNCED_TO_TELECOM_DNS: { en: "Synced to e& / du DNS", ar: "مُزامنة مع e& / du", tone: "chip chip-safe" },
+  COMMUNITY_FLAGGED_X: { en: "Community-flagged on X", ar: "مُبلّغ عنها على X", tone: "chip chip-suspicious" },
 };
 
 export const P = {
-  title: { en: "SAQR-INTEL · AD Police Cyber-Patrol", ar: "صقر · الدوريات الإلكترونية لشرطة أبوظبي" },
+  title: { en: "Saqr · AD Police Cyber-Patrol", ar: "صقر · الدوريات الإلكترونية لشرطة أبوظبي" },
+  brandLabel: { en: "AD Police Cyber-Patrol", ar: "دورية شرطة أبوظبي السيبرانية" },
   subtitle: { en: "Cyber-Patrol Command Center", ar: "مركز القيادة للدوريات الإلكترونية" },
   live: { en: "LIVE SYNCED WITH CITIZEN SHIELD", ar: "مُزامن مباشرة مع درع المواطن" },
   polling: { en: "SYNCED (POLLING)", ar: "مُزامن (تحديث دوري)" },

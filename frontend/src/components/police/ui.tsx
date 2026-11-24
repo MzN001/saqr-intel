@@ -15,8 +15,9 @@ export function timeAgo(ts: string, lang: Lang): string {
   return rtf.format(-Math.round(s / 86400), "day");
 }
 
+/** Score badge colours by verdict band: crimson = scam, amber = suspicious, neutral below. */
 export function riskTone(score: number) {
-  return score >= 65 ? "bg-scam text-white" : score >= 30 ? "bg-gold-500 text-navy-950" : "bg-muted text-ink";
+  return score >= 65 ? "chip-scam" : score >= 30 ? "chip-suspicious" : "bg-muted text-ink";
 }
 
 /** "36 h" / "4 d" for an age in hours. */
@@ -30,11 +31,12 @@ export function defangUrl(u: string | null | undefined): string {
   return (u ?? "").replace(/^http/i, "hxxp").replace(/\./g, "[.]");
 }
 
+/** Hunter sources are neutral tags (the word carries the meaning, not a colour). */
 export const SOURCE_STYLE: Record<string, { key: keyof typeof P; tone: string }> = {
-  lookalike_sweep: { key: "srcLookalike", tone: "bg-violet-500/15 text-violet-700 dark:text-violet-300 ring-violet-400/30" },
-  nrd: { key: "srcNrd", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-400/30" },
-  ct: { key: "srcCt", tone: "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-sky-400/30" },
-  crtsh: { key: "srcCrtsh", tone: "bg-teal-500/15 text-teal-700 dark:text-teal-300 ring-teal-400/30" },
+  lookalike_sweep: { key: "srcLookalike", tone: "bg-muted text-ink ring-line" },
+  nrd: { key: "srcNrd", tone: "bg-muted text-ink ring-line" },
+  ct: { key: "srcCt", tone: "bg-muted text-ink ring-line" },
+  crtsh: { key: "srcCrtsh", tone: "bg-muted text-ink ring-line" },
 };
 
 export function verdictLabel(verdict: string | null | undefined, L: L): string {
@@ -46,10 +48,10 @@ export function verdictLabel(verdict: string | null | undefined, L: L): string {
 
 export function Card({ title, icon, children, right, className = "" }: { title: string; icon: ReactNode; children: ReactNode; right?: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-[20px] border border-line bg-surface p-4 ${className}`}>
+    <section className={`card p-4 sm:p-5 ${className}`}>
       <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-ink-soft">{icon}</span>
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-soft">{title}</h2>
+        <h2 className="label-caps">{title}</h2>
         <div className="ms-auto">{right}</div>
       </div>
       {children}

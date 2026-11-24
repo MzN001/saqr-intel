@@ -2,15 +2,14 @@
 
 import { useCallback, useLayoutEffect, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { LEGACY_ROUTE_RE, LEGACY_SCOPE_CLASS, THEME_STORAGE_KEY } from "./theme-script";
+import { THEME_STORAGE_KEY } from "./theme-script";
 
 export type Theme = "light" | "dark";
 
 const listeners = new Set<() => void>();
 
-// Theme used when the visitor has not saved a choice: light (Saqr default), dark on the legacy
-// Night Grid routes (/police). Kept in step on client navigation by useLegacyNightGridScope().
-let routeDefault: Theme = typeof window !== "undefined" && LEGACY_ROUTE_RE.test(window.location.pathname) ? "dark" : "light";
+// Theme used when the visitor has not saved a choice: light everywhere (Saqr default).
+const routeDefault: Theme = "light";
 
 function readStored(): Theme {
   try {
@@ -109,26 +108,4 @@ export function useTheme() {
   );
 
   return { theme, toggle };
-}
-
-/**
- * Keeps a route on the legacy Night Grid scope (/police): puts the scope class on <html>
- * (so portals and the page background are covered too) and makes dark the default while
- * mounted. The <head> script does the same before first paint on a full page load; this
- * covers client-side navigation into and out of the route.
- */
-export function useLegacyNightGridScope() {
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.classList.add(LEGACY_SCOPE_CLASS);
-    routeDefault = "dark";
-    applyToDocument(readStored());
-    listeners.forEach((cb) => cb());
-    return () => {
-      root.classList.remove(LEGACY_SCOPE_CLASS);
-      routeDefault = "light";
-      applyToDocument(readStored());
-      listeners.forEach((cb) => cb());
-    };
-  }, []);
 }

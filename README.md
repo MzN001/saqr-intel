@@ -329,7 +329,20 @@ python tools/eval_uae.py [--json out.json]           # the 100-case UAE suite, o
 
 ## Police Command Center
 
-`/police` (locked; officer passcode provided to judges in the submission document) keeps its earlier dark "Night Grid" look on purpose until a new police design is ready. It refreshes every 4 seconds and shows:
+`/police` (locked; officer passcode provided to judges in the submission document) uses the same Saqr design as the citizen site. It refreshes every 4 seconds and shows:
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme/police-command-center.jpg" alt="The police Command Center: KPI tiles, the Abu Dhabi geo-spoof map with a spoofed Emirates Post pin in Mussafah, the live citizen interception stream and the law-enforcement action buttons"></td>
+    <td width="50%"><img src="docs/readme/police-pipeline.jpg" alt="The pipeline replay card: rows for people, the orchestrator, four pipeline stages and five tools, with the cloaking check highlighted at step 4 of 18 and playback controls"></td>
+  </tr>
+  <tr>
+    <td><sub><b>Command Center.</b> Counters, the geo-spoof map, the live stream and one-click actions. Pre-loaded rows are tagged "Demo".</sub></td>
+    <td><sub><b>Pipeline replay.</b> A step-by-step replay of how the pipeline stages handle one sample case. It is a simulated trace, labelled as such, not a live feed.</sub></td>
+  </tr>
+</table>
+
+- **Pipeline replay** ("Live Autonomous Agents Pipeline" card): an 18-step animated walk-through of one sample case (`tamm-smart-pay[.]net` and a hijacked Maps pin), with a bot-versus-phone view, the 0 to 100 risk meter and the English / Arabic verdict. Simulated trace on demo data.
 
 - **Live Citizen Interception Stream**: every check from the website, extension, Android app and hunter, by channel. Pre-loaded rows are tagged "Demo".
 - **KPIs** such as "Citizens Protected Today", shown as "Includes 1,284 demo baseline · N live" so the live count is visible.
