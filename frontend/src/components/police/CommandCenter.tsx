@@ -105,10 +105,10 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur">
       <div className="mx-auto flex h-[76px] max-w-[1500px] items-center gap-1 px-3 sm:px-6">
-        <button type="button" className={`${iconBtn} lg:hidden`} aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+        <button type="button" className={`${iconBtn} xl:hidden`} aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
           {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
-        <div className="relative hidden lg:block">
+        <div className="relative hidden xl:block">
           <button type="button" className={iconBtn} aria-label={lang === "ar" ? "الإعدادات" : "Settings"} aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
             <Settings className="size-5" />
           </button>
@@ -159,14 +159,14 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
         <button type="button" onClick={() => setLang(lang === "en" ? "ar" : "en")} className="ms-3 hidden rounded-full px-3 py-2 text-[15px] text-ink-soft hover:text-ink sm:block">
           {lang === "en" ? "العربية" : "English"}
         </button>
-        <nav aria-label={lang === "ar" ? "أقسام مركز القيادة" : "Command Center sections"} className="ms-4 hidden h-full items-stretch lg:flex">
+        <nav aria-label={lang === "ar" ? "أقسام مركز القيادة" : "Command Center sections"} className="ms-4 hidden h-full items-stretch xl:flex">
           {NAV.map((n) => (
             <button
               key={n.id}
               type="button"
               onClick={() => go(n.id)}
               aria-current={active === n.id ? "true" : undefined}
-              className={`relative px-3.5 text-[15px] font-bold uppercase tracking-[0.02em] transition-colors ${active === n.id ? "text-ink" : "text-ink-soft hover:text-ink"}`}
+              className={`relative whitespace-nowrap px-3.5 text-[15px] font-bold uppercase tracking-[0.02em] transition-colors ${active === n.id ? "text-ink" : "text-ink-soft hover:text-ink"}`}
             >
               {lang === "ar" ? n.ar : n.en}
               {active === n.id && <motion.span layoutId="adp-nav" className="absolute inset-x-0 bottom-0 h-1 bg-scam" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
@@ -176,13 +176,13 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
 
         <div className="ms-auto flex items-center gap-3">
           <div className="text-end leading-tight">
-            <p className="text-lg font-bold text-ink sm:text-[22px]" lang="ar" dir="rtl">شرطة أبوظبي</p>
-            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-ink sm:text-[15px]">Abu Dhabi Police</p>
+            <p className="whitespace-nowrap text-lg font-bold text-ink sm:text-[22px]" lang="ar" dir="rtl">شرطة أبوظبي</p>
+            <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.06em] text-ink sm:text-[15px]">Abu Dhabi Police</p>
           </div>
           <span className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-gold-500 bg-navy-900 sm:size-[54px]" aria-hidden>
             <ShieldCheck className="size-6 text-gold-500" />
           </span>
-          <span className="lg:hidden"><ThemeToggle /></span>
+          <span className="xl:hidden"><ThemeToggle /></span>
         </div>
       </div>
 
@@ -201,7 +201,7 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
             <button type="button" onClick={() => setQrOpen(true)} className="press inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3 py-1.5 text-xs font-extrabold text-navy-950 hover:brightness-110">
               <QrCode className="size-3.5" /> {L("stageQr")}
             </button>
-            <span className="hidden lg:block"><ThemeToggle /></span>
+            <span className="hidden xl:block"><ThemeToggle /></span>
           </div>
         </div>
       </div>
@@ -213,7 +213,7 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-line bg-surface lg:hidden"
+            className="overflow-hidden border-t border-line bg-surface xl:hidden"
           >
             <div className="flex flex-col p-2">
               {NAV.map((n) => (
