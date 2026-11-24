@@ -301,6 +301,85 @@ block (but on a sample that is 99.35% legitimate, so accuracy mostly reflects th
 FPR 4.13% is above 1%, driven entirely by free-hosting pages; block-level FPR 0.65% is under 1%, but its CI reaches
 1.9%. On sample B (older, see above) warn recall without feeds was 0.75, far below 97.5%.
 
+## Sealed sample D (2026-11-24): 80 phishing URLs reported after 10:00Z + 351 legitimate pages
+
+**Method.** Phishing: PhishTank verified + online submissions made after 2026-11-24T10:00Z; the deployed URL model
+was trained at 08:43Z, so it cannot have trained on a URL reported later. Collected at 22:42Z from feed listings only
+(no URL visited), one URL per site. 7 URLs passed every exclusion (`datasets/live4_phish.csv`, "strict7"). 73 more
+were set aside only because their sites are on `tools/holdout_sites.txt.gz` as rebuilt at 21:21Z for a retrain
+candidate that was rejected; a holdout list is excluded from training, so no model trained on them, and they are
+valid unseen test data for the deployed system ("holdout73"). Both were combined, without adding, dropping or
+swapping a URL, into `datasets/live4_phish_all.csv` (80 URLs on 75 registered domains; SHA-256 `8ce46cd0…6e3cd4`,
+sealed 22:57:16Z, before scoring). Legitimate: `datasets/live4_legit.csv` (351 never-trained pages, SHA-256
+`394f555e…0454d`, sealed 22:55:07Z): 66 UAE official, 45 global-brand official, 44 log-in / bank / government,
+20 UAE + 41 global scam-topic news, 75 Tranco long tail (rank > 100k), 60 legit free-hosting pages. Class balance
+80 : 351 (18.6% phishing), so precision and accuracy are not comparable to a 50 : 50 sample.
+
+Scored ONCE (22:57:28Z-23:00:35Z) with `tools/evaluate.py --mode live --feeds` (HTTP only, no LLM,
+`VISUAL_SCREENSHOTS=false`, concurrency 20, 45 s per URL). Detection code: commit `664ef8b` = `origin/main`,
+`git diff origin/main -- saqr tools` empty. The blocklists-off numbers come from the same saved evidence re-judged
+with an empty feed table (`evaluate.rescore_record`, as `--rescore` does); on the 358 rows without a feed hit it
+reproduces every as-run score exactly. 0 timeouts, 0 errors.
+
+**Limitation: Phishing Army training snapshot.** The deployed model trained on a Phishing Army snapshot from about
+08:43Z that cannot be reconstructed. The 21:10Z Army list lists the host (or a parent) of 68 of the 80 URLs
+(3 of strict7, 65 of holdout73) and the registered domain of 71 (4 / 67). Some of these sites may already have been
+in the 08:43Z snapshot (a site can reach Army before its PhishTank report); how many is unknown.
+
+**System as deployed** (threat feeds on, as in production; 73 of the 80 phishing URLs were already on Phishing Army
+when scanned, so much of the recall below comes from the list):
+
+| cut | TP | FP | FN | TN | accuracy (95% CI) | precision (CI) | recall (CI) | false-alarm rate (CI) | F1 |
+|---|---:|---:|---:|---:|---|---|---|---|---:|
+| warn (>= 30) | 78 | 14 | 2 | 337 | 96.3% (94.1-97.7) | 84.8% (76.1-90.7) | 97.5% (91.3-99.3) | 3.99% (2.39-6.58) | 0.91 |
+| block (>= 65) | 77 | 6 | 3 | 345 | 97.9% (96.1-98.9) | 92.8% (85.1-96.7) | 96.25% (89.6-98.7) | 1.71% (0.79-3.68) | 0.94 |
+
+**Stress test, same 431 links with every blocklist switched off** (no overall accuracy is given for this line):
+
+| cut | TP | FP | FN | TN | caught (recall, CI) | precision (CI) | false-alarm rate (CI) | F1 |
+|---|---:|---:|---:|---:|---|---|---|---:|
+| warn (>= 30) | 68 | 14 | 12 | 337 | 85.0% (75.6-91.2) | 82.9% (73.4-89.6) | 3.99% (2.39-6.58) | 0.84 |
+| block (>= 65) | 64 | 6 | 16 | 345 | 80.0% (70.0-87.3) | 91.4% (82.5-96.0) | 1.71% (0.79-3.68) | 0.85 |
+
+Feed hits: 73 of 80 phishing (all Phishing Army), 0 of 351 legit. The feed is the only reason 10 phishing URLs reach
+warn and 13 reach block. By subset (warn / block recall): strict7 as deployed 6 / 7 and 6 / 7 (85.7%, CI 48.7-97.4),
+blocklists off the same (3 feed hits, all also caught without them); holdout73 as deployed 72 / 73 (98.6%, CI
+92.6-99.8) and 71 / 73 (97.3%, 90.6-99.3), blocklists off 62 / 73 (84.9%, 75.0-91.4) and 58 / 73 (79.5%, 68.8-87.1).
+
+Page state at scan time (phishing): 21 live pages with HTML (HTTP < 400), 21 HTTP 4xx-5xx, 38 dead / unreachable
+(no DNS or no answer). With blocklists off, 50 of the 68 warn-level catches had no usable page and were caught from
+the address and domain evidence (URL model, domain / certificate age). Live pages
+only (21): as deployed 19 / 21 warn (90.5%, CI 71.1-97.4), 18 / 21 block (85.7%, 65.4-95.0); blocklists off 18 / 21
+(85.7%) and 14 / 21 (66.7%, 45.4-82.8).
+
+Phishing misses by category (dead / unreachable, HTTP 4xx-5xx, benign-looking own-domain page, platform-hosted,
+other):
+- as deployed, warn: 0, 0, 2, 0, 0 (`webinartocertificate.com` 10, `citas.sre.gob.mx.requisi.to` 25); block: 0, 0, 2, 1, 0
+  (adds `zedelivery-desconto.vercel.app` at 45).
+- blocklists off, warn: 3, 6, 2, 0, 1 (a password form on `tempoproducts-jp.com`, 20); block: 3, 6, 2, 3, 2.
+
+False alarms by legit category (warn / block, identical in both configurations): UAE official 0 / 0 of 66, brand
+official 0 / 0 of 45, UAE news 0 / 0 of 20, global news 0 / 0 of 41, log-in / bank / government 1 / 1 of 44
+(`www.citibank.ae` at 70: BRAND_IMPERSONATION + AI_SUSPICIOUS_URL + BRAND_CONTENT), Tranco long tail 1 / 0 of 75 (`pharmacyonline.cfd`, 35), **free hosting 12 / 5 of 60** (URL model on
+GitHub Pages / Netlify / Pages / Workers project names; blocks: `microsoft.github.io` 95, `clashbar.sitoi.workers.dev`,
+`mypack.pages.dev`, `f1resh.github.io`, `tekikaito.github.io` 70). Without free hosting: warn 2 / 291 (0.69%).
+
+New signals: `MOBILE_CLOAKING_DETECTED` 0 phishing / 0 legit, `VISUAL_BRAND_CLONE_DETECTED` 0 / 0,
+`VISUAL_BRAND_SIMILARITY` 0 / 1 (fingerprint computed on 36 phishing / 247 legit pages), per-hop page evidence on
+17 phishing / 6 legit (verdict judged from a hop page 0 / 1), JS-redirect hops 0 / 1. Re-judging the same evidence
+without the cloaking / visual inputs changes 0 scores in either configuration, so these signals added nothing here.
+Per-hop evidence decides which page is judged and cannot be switched off by re-judging. Scan time median 8.7 s,
+p95 15.1 s, max 29.5 s.
+
+**Limits.** 80 phishing URLs give wide intervals (recall CI about ±4-9 points). 59 of 80 phishing pages were already
+dead or erroring when scanned (reported 11:02Z-22:03Z, scanned about 23:00Z), so the sample mostly measures the address /
+domain layer, and live-page recall rests on 21 pages. 73 of 80 come from one route (sites later put on a holdout
+list), with many look-alike `allegrolokalnie.*` hosts, so the sample is not a random draw of new phishing. The
+as-deployed line depends on Phishing Army having listed most of these sites within hours; see the training snapshot
+limitation above. Against the targets (accuracy 98%, recall 97.5%, false-alarm rate 1%): as deployed at warn, recall
+97.5% meets the target, accuracy 96.3% and false-alarm rate 3.99% do not; at block, accuracy 97.9%, recall 96.25% and
+false-alarm rate 1.71% are all just short. With every blocklist off, recall (85% / 80%) is below 97.5%.
+
 ## Retrain, calibration, visual similarity (2026-11-24)
 
 - **Retrain rejected (null result).** A candidate trained with hard negatives lost on the pre-agreed rule

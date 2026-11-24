@@ -4679,5 +4679,421 @@
    "phone-mal-fab-one-digit-off",
    "msg-mal-salik-shortener-uk"
   ]
+ },
+ "live_d": {
+  "date": "2026-11-24",
+  "status": "complete; scored once 2026-11-24T22:57:28Z-23:00:35Z",
+  "code": {
+   "commit": "664ef8b (HEAD = origin/main)",
+   "saqr_tree": "67580af4a54ffd86814ab918b0c12d68d9a93c03",
+   "git_diff_origin_main_saqr_tools": "empty at scoring time"
+  },
+  "sample": {
+   "legit_file": "datasets/live4_legit.csv",
+   "legit_sha256": "394f555e9e8fd960865b0b8b641a5ed8c41a69c646904a25ea7a33470ee0454d",
+   "legit_sealed_utc": "2026-11-24T22:55:07Z",
+   "phish_file": "datasets/live4_phish_all.csv",
+   "phish_sha256": "8ce46cd02684e5f608cb5a8381810f5f2697ce6f9a2dc54262054258d36e3cd4",
+   "phish_sealed_utc": "2026-11-24T22:57:16Z",
+   "phish_strict7_sha256": "46d38ed19ba8f63df8b86fbde1e455c79883b1363418fbf83adc6cf6f22efbdc",
+   "phishing": 80,
+   "legit": 351,
+   "class_balance": "80 : 351",
+   "phish_subsets": {
+    "strict7": 7,
+    "holdout73": 73
+   },
+   "legit_by_category": {
+    "brand_official": 45,
+    "free_hosting_legit": 60,
+    "login_bank_gov": 44,
+    "longtail_tranco_100k_plus": 75,
+    "news_scam_global": 41,
+    "news_scam_uae": 20,
+    "uae_official": 66
+   },
+   "how": "phishing: PhishTank verified + online, submitted after 2026-11-24T10:00Z (deployed model trained 08:43Z), one URL per site, collected 22:42Z from feed listings only. strict7 = passed every exclusion; holdout73 = excluded only because their sites are on tools/holdout_sites.txt.gz rebuilt at 21:21Z for a retrain candidate that was rejected (a holdout list means no model trained on them). 80 URLs on 75 registered domains. Legit: never-trained pages (UAE official, brand official, log-in / bank / government, scam news, Tranco long tail >100k, legit free-hosting pages).",
+   "phishing_army_2110Z_overlap": {
+    "host_or_parent_listed": 68,
+    "strict7_host": 3,
+    "holdout73_host": 65,
+    "registered_domain_listed": 71,
+    "strict7_site": 4,
+    "holdout73_site": 67,
+    "note": "the Phishing Army snapshot the deployed model trained on (08:43Z) cannot be reconstructed; the 21:10Z list is a later superset, so this is an upper bound on possible training overlap via that list, not a measured overlap"
+   }
+  },
+  "engine": "tools/evaluate.py --mode live --feeds: pipeline.analyze_url, ENABLE_PLAYWRIGHT=false (HTTP only), no LLM, VISUAL_SCREENSHOTS=false, concurrency 20, 45 s per URL, scored once; feeds off = evaluate.rescore_record on the same saved evidence with an empty feed table (reproduces all 358 no-feed-hit scores exactly)",
+  "as_deployed_feeds_on": {
+   "warn_30": {
+    "threshold": 30.0,
+    "tp": 78,
+    "fp": 14,
+    "fn": 2,
+    "tn": 337,
+    "accuracy": 0.9629,
+    "accuracy_ci95": [
+     0.9406,
+     0.977
+    ],
+    "precision": 0.8478,
+    "precision_ci95": [
+     0.7606,
+     0.9071
+    ],
+    "recall": 0.975,
+    "recall_ci95": [
+     0.9134,
+     0.9931
+    ],
+    "fpr": 0.0399,
+    "fpr_ci95": [
+     0.0239,
+     0.0658
+    ],
+    "f1": 0.907
+   },
+   "block_65": {
+    "threshold": 65.0,
+    "tp": 77,
+    "fp": 6,
+    "fn": 3,
+    "tn": 345,
+    "accuracy": 0.9791,
+    "accuracy_ci95": [
+     0.9608,
+     0.989
+    ],
+    "precision": 0.9277,
+    "precision_ci95": [
+     0.8511,
+     0.9665
+    ],
+    "recall": 0.9625,
+    "recall_ci95": [
+     0.8955,
+     0.9872
+    ],
+    "fpr": 0.0171,
+    "fpr_ci95": [
+     0.0079,
+     0.0368
+    ],
+    "f1": 0.9448
+   }
+  },
+  "feeds_off": {
+   "warn_30": {
+    "threshold": 30.0,
+    "tp": 68,
+    "fp": 14,
+    "fn": 12,
+    "tn": 337,
+    "accuracy": 0.9397,
+    "accuracy_ci95": [
+     0.9131,
+     0.9585
+    ],
+    "precision": 0.8293,
+    "precision_ci95": [
+     0.7336,
+     0.8955
+    ],
+    "recall": 0.85,
+    "recall_ci95": [
+     0.7559,
+     0.9121
+    ],
+    "fpr": 0.0399,
+    "fpr_ci95": [
+     0.0239,
+     0.0658
+    ],
+    "f1": 0.8395
+   },
+   "block_65": {
+    "threshold": 65.0,
+    "tp": 64,
+    "fp": 6,
+    "fn": 16,
+    "tn": 345,
+    "accuracy": 0.949,
+    "accuracy_ci95": [
+     0.9239,
+     0.9661
+    ],
+    "precision": 0.9143,
+    "precision_ci95": [
+     0.8253,
+     0.9601
+    ],
+    "recall": 0.8,
+    "recall_ci95": [
+     0.6995,
+     0.873
+    ],
+    "fpr": 0.0171,
+    "fpr_ci95": [
+     0.0079,
+     0.0368
+    ],
+    "f1": 0.8533
+   }
+  },
+  "subsets": {
+   "phish_strict7": {
+    "n": 7,
+    "feed_hits": 3,
+    "as_deployed": {
+     "warn_30": {
+      "tp": 6,
+      "recall": 0.8571,
+      "recall_ci95": [
+       0.4869,
+       0.9743
+      ]
+     },
+     "block_65": {
+      "tp": 6,
+      "recall": 0.8571,
+      "recall_ci95": [
+       0.4869,
+       0.9743
+      ]
+     }
+    },
+    "feeds_off": {
+     "warn_30": {
+      "tp": 6,
+      "recall": 0.8571,
+      "recall_ci95": [
+       0.4869,
+       0.9743
+      ]
+     },
+     "block_65": {
+      "tp": 6,
+      "recall": 0.8571,
+      "recall_ci95": [
+       0.4869,
+       0.9743
+      ]
+     }
+    }
+   },
+   "phish_holdout73": {
+    "n": 73,
+    "feed_hits": 70,
+    "as_deployed": {
+     "warn_30": {
+      "tp": 72,
+      "recall": 0.9863,
+      "recall_ci95": [
+       0.9264,
+       0.9976
+      ]
+     },
+     "block_65": {
+      "tp": 71,
+      "recall": 0.9726,
+      "recall_ci95": [
+       0.9055,
+       0.9925
+      ]
+     }
+    },
+    "feeds_off": {
+     "warn_30": {
+      "tp": 62,
+      "recall": 0.8493,
+      "recall_ci95": [
+       0.75,
+       0.9137
+      ]
+     },
+     "block_65": {
+      "tp": 58,
+      "recall": 0.7945,
+      "recall_ci95": [
+       0.6883,
+       0.8713
+      ]
+     }
+    }
+   }
+  },
+  "live_only": {
+   "definition": "page answered HTTP < 400 with HTML",
+   "phishing": 21,
+   "feed_hits": 16,
+   "as_deployed": {
+    "warn_30": {
+     "tp": 19,
+     "recall": 0.9048,
+     "recall_ci95": [
+      0.7109,
+      0.9735
+     ]
+    },
+    "block_65": {
+     "tp": 18,
+     "recall": 0.8571,
+     "recall_ci95": [
+      0.6536,
+      0.9502
+     ]
+    }
+   },
+   "feeds_off": {
+    "warn_30": {
+     "tp": 18,
+     "recall": 0.8571,
+     "recall_ci95": [
+      0.6536,
+      0.9502
+     ]
+    },
+    "block_65": {
+     "tp": 14,
+     "recall": 0.6667,
+     "recall_ci95": [
+      0.4537,
+      0.8281
+     ]
+    }
+   }
+  },
+  "phishing_status_at_scan": {
+   "HTTP 4xx-5xx": 21,
+   "dead/unreachable": 38,
+   "live page with HTML (HTTP < 400)": 21
+  },
+  "missed": {
+   "missed_as_deployed_warn_30_by_category": {
+    "benign-looking own-domain page": 2
+   },
+   "missed_as_deployed_block_65_by_category": {
+    "benign-looking own-domain page": 2,
+    "platform-hosted": 1
+   },
+   "missed_feeds_off_warn_30_by_category": {
+    "HTTP 4xx-5xx": 6,
+    "dead/unreachable": 3,
+    "benign-looking own-domain page": 2,
+    "other (own domain, has a form (PASSWORD))": 1
+   },
+   "missed_feeds_off_block_65_by_category": {
+    "HTTP 4xx-5xx": 6,
+    "dead/unreachable": 3,
+    "platform-hosted": 3,
+    "benign-looking own-domain page": 2,
+    "other (own domain, has a form (PASSWORD))": 1,
+    "other (own domain, has a form (EMAIL))": 1
+   }
+  },
+  "missed_urls_as_deployed_warn": [
+   {
+    "url": "https://www.webinartocertificate.com",
+    "score": 10.0,
+    "category": "benign-looking own-domain page"
+   },
+   {
+    "url": "https://citas.sre.gob.mx.requisi.to/",
+    "score": 25.0,
+    "category": "benign-looking own-domain page"
+   }
+  ],
+  "false_alarms_by_category": {
+   "brand_official": {
+    "n": 45,
+    "warn_30": 0,
+    "block_65": 0
+   },
+   "free_hosting_legit": {
+    "n": 60,
+    "warn_30": 12,
+    "block_65": 5
+   },
+   "login_bank_gov": {
+    "n": 44,
+    "warn_30": 1,
+    "block_65": 1
+   },
+   "longtail_tranco_100k_plus": {
+    "n": 75,
+    "warn_30": 1,
+    "block_65": 0
+   },
+   "news_scam_global": {
+    "n": 41,
+    "warn_30": 0,
+    "block_65": 0
+   },
+   "news_scam_uae": {
+    "n": 20,
+    "warn_30": 0,
+    "block_65": 0
+   },
+   "uae_official": {
+    "n": 66,
+    "warn_30": 0,
+    "block_65": 0
+   }
+  },
+  "false_alarms_note": "identical with feeds off (0 feed hits on legit)",
+  "feed_hits": {
+   "phishing": 73,
+   "legit": 0,
+   "phishing_caught_only_because_of_feed_warn": 10,
+   "phishing_caught_only_because_of_feed_block": 13,
+   "feed_hit_but_as_deployed_below_65": [],
+   "sources": {
+    "Phishing Army": 73
+   }
+  },
+  "signals": {
+   "MOBILE_CLOAKING_DETECTED": {
+    "phishing": 0,
+    "legit": 0
+   },
+   "VISUAL_BRAND_CLONE_DETECTED": {
+    "phishing": 0,
+    "legit": 0
+   },
+   "VISUAL_BRAND_SIMILARITY": {
+    "phishing": 0,
+    "legit": 1
+   },
+   "per_hop_page_evidence (any hop with page_notes)": {
+    "phishing": 17,
+    "legit": 6
+   },
+   "judged_page_from_redirect_hop": {
+    "phishing": 0,
+    "legit": 1
+   },
+   "js_redirect_hop": {
+    "phishing": 0,
+    "legit": 1
+   },
+   "visual_similarity_computed": {
+    "phishing": 36,
+    "legit": 247
+   }
+  },
+  "ab_new_signals_off": {
+   "changed_rows": 0,
+   "note": "same saved judged evidence; 'off' drops page.mobile_cloaking + page.visual_similarity. Per-hop page evidence / JS redirects decide WHICH page is judged and cannot be switched off by re-judging."
+  },
+  "scan_ms": {
+   "median": 8730,
+   "p95": 15085,
+   "max": 29478
+  },
+  "errors": {
+   "timeout": 0,
+   "error": 0,
+   "legit_timeouts_or_errors": 0
+  }
  }
 }
