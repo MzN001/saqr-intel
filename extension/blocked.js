@@ -67,6 +67,9 @@ const REASONS = {
   TYPOSQUAT: ["a misspelled copy of the official address", "نسخة بأخطاء إملائية من العنوان الرسمي"],
   TLD_SWAP: ["the official name with the wrong ending", "الاسم الرسمي بامتداد خاطئ"],
   CLOAKING: ["it hides from security scanners", "يتخفّى من أنظمة الفحص الأمني"],
+  REDIRECTS_TO_FLAGGED: ["the link secretly leads to a dangerous website", "الرابط يقود خفيةً إلى موقع خطير"],
+  URL_SHORTENER: ["a shortened link hides the real address", "رابط مختصر يخفي العنوان الحقيقي"],
+  REDIRECT_CHAIN: ["it passes through hidden redirects", "يمر عبر تحويلات مخفية"],
   // Email Shield flag codes (email contract, section 2)
   KNOWN_PHISHING_LINK: ["it links to a known phishing website", "يحتوي على رابط لموقع تصيّد معروف"],
   CAMPAIGN_IOC_MATCH: ["it comes from a known scam campaign", "مرتبط بحملة احتيال معروفة"],

@@ -46,6 +46,9 @@ PROFILES: dict[str, dict[str, Any]] = {
         "device_scale_factor": 1,
     },
 }
+BOT_USER_AGENT = "python-httpx/0.28 (datacenter-probe)"
+# Tests inject an httpx.MockTransport here.
+TRANSPORT: httpx.AsyncBaseTransport | None = None
 STEALTH_JS = """
 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
 Object.defineProperty(navigator, 'languages', {get: () => ['ar-AE', 'ar', 'en-US', 'en']});
@@ -204,21 +207,22 @@ class Sandbox:
         return ctx
 
     # ------------------------------------------------------------------
-    async def _naive_fetch(self, url: str) -> dict[str, Any]:
-        """Fetch with httpx. With a browser available this is the 'datacenter bot' view used for the
-        cloaking diff; without one (ENABLE_PLAYWRIGHT=false) it IS the page evidence, so it presents a
-        realistic mobile browser so phishing kits serve the same page a citizen would see."""
-        user_agent = ("python-httpx/0.28 (datacenter-probe)" if settings.sandbox_enabled
-                      else PROFILES["mobile"]["user_agent"])
+    async def _naive_fetch(self, url: str, view: str = "bot") -> dict[str, Any]:
+        """Fetch with httpx, as one of two visitors. "bot": a bare datacenter crawler, the view used
+        for the cloaking diff. "visitor": a UAE iPhone arriving from a Google search, the view that is
+        the page evidence when there is no browser (ENABLE_PLAYWRIGHT=false), so phishing kits serve
+        the page a citizen would see."""
+        headers = {"User-Agent": BOT_USER_AGENT, "Accept-Language": ACCEPT_LANGUAGE}
+        if view == "visitor":
+            headers |= {"User-Agent": PROFILES["mobile"]["user_agent"], "Referer": "https://www.google.com/"}
         async def guard(request: httpx.Request) -> None:
             ok, _ = await host_is_safe_target(request.url.host)
             if not ok:
                 raise httpx.RequestError("blocked private target", request=request)
 
         try:
-            async with httpx.AsyncClient(follow_redirects=True, timeout=8, verify=False,
-                                         event_hooks={"request": [guard]},
-                                         headers={"User-Agent": user_agent, "Accept-Language": ACCEPT_LANGUAGE}) as c:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8, verify=False, transport=TRANSPORT,
+                                         event_hooks={"request": [guard]}, headers=headers) as c:
                 r = await c.get(url)
                 body = r.text[:200_000]
                 title = re.search(r"<title[^>]*>(.*?)</title>", body, re.I | re.S)
@@ -266,10 +270,13 @@ class Sandbox:
             return {"status": "skipped_offline", "evidence_source": "none"}
 
         browser = await self._ensure_browser()
-        naive_task = asyncio.create_task(self._naive_fetch(url))
         if not browser:
-            naive = await naive_task
-            return self._from_http_only(naive, url, t0)
+            # No browser: fetch as a citizen and as a crawler at the same time and compare the two.
+            visitor, bot = await asyncio.gather(self._naive_fetch(url, "visitor"), self._naive_fetch(url, "bot"))
+            if not visitor.get("status"):
+                return self._from_http_only(bot, url, t0)
+            return self._from_http_only(visitor, url, t0, bot=bot)
+        naive_task = asyncio.create_task(self._naive_fetch(url))
 
         async with self._sem:
             ctx = await self._new_context(browser, profile)
@@ -325,7 +332,10 @@ class Sandbox:
         result["elapsed_ms"] = int((time.perf_counter() - t0) * 1000)
         return result
 
-    def _from_http_only(self, naive: dict[str, Any], url: str, t0: float) -> dict[str, Any]:
+    def _from_http_only(self, naive: dict[str, Any], url: str, t0: float,
+                        bot: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Page evidence from a plain HTTP fetch. With a second, crawler view (bot) the two are
+        compared for cloaking by the same rule as the browser path."""
         if not naive.get("status"):
             return {"status": "unreachable", "evidence_source": "none", "error": naive.get("error"),
                     "elapsed_ms": int((time.perf_counter() - t0) * 1000)}
@@ -338,14 +348,18 @@ class Sandbox:
                              for i in f.find_all(["input", "select", "textarea"])
                              if (i.get("type") or "").lower() not in {"hidden", "submit", "button"}]}
                  for f in soup.find_all("form")]
-        return {"status": "ok", "evidence_source": "http_fallback", "final_url": naive.get("final_url", url),
-                "http_status": naive.get("status"), "redirect_chain": [url, naive.get("final_url", url)],
-                "page_title": naive.get("title", ""), "text": naive.get("text", ""), "forms": forms,
-                "harvested_fields": classify_fields(forms),
-                "external_form_actions": _external_actions(forms, naive.get("final_url", url)),
-                "cloaking": {"detected": False, "reason": "single-view fetch (no headless browser)"},
-                "screenshot_b64": None, "sandbox_note": self.error,
-                "elapsed_ms": int((time.perf_counter() - t0) * 1000)}
+        result = {"status": "ok", "evidence_source": "http_fallback", "final_url": naive.get("final_url", url),
+                  "http_status": naive.get("status"),
+                  "redirect_chain": list(dict.fromkeys([url, naive.get("final_url", url)])),
+                  "page_title": naive.get("title", ""), "text": naive.get("text", ""), "forms": forms,
+                  "harvested_fields": classify_fields(forms),
+                  "external_form_actions": _external_actions(forms, naive.get("final_url", url)),
+                  "cloaking": {"detected": False, "reason": "single-view fetch (no headless browser)"},
+                  "screenshot_b64": None, "sandbox_note": self.error}
+        if bot is not None:
+            result["cloaking"] = self._cloak_verdict(bot, result) | {"method": "two-view HTTP fetch"}
+        result["elapsed_ms"] = int((time.perf_counter() - t0) * 1000)
+        return result
 
     async def _inspect_replica(self, domain: str, url: str, profile: str, t0: float) -> dict[str, Any]:
         d = DEMO_INTEL[domain]
