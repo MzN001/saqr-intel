@@ -27,9 +27,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from ..config import settings
 from ..db import db
-from ..intel import graph_engine, redirects
+from ..intel import graph_engine, page_signals, redirects
 from ..intel.ai_inspector import run_rules, verdict_for
-from ..intel.domain_intel import RedFlag, analyze_lexical, normalize_url
+from ..intel.domain_intel import RedFlag, normalize_url
 from ..intel.email_rules import host_of, unwrap_url
 from ..intel.maps_sentinel import match_entity, phone_flags, pins_sharing_phone
 from ..intel.registry import (ENTITIES, ENTITY_BY_ID, ENTITY_EXTRA_DOMAINS, OFFICIAL_PHONES, TRUSTED_UAE_DOMAINS,
@@ -96,7 +96,7 @@ async def assess_host(url: str) -> HostVerdict:
     if hit and hit[0] > time.monotonic():
         _cache.move_to_end(host)
         return hit[1]
-    lex = analyze_lexical(url)
+    lex = page_signals.lexical(url)
     net: dict[str, Any] = {}
     syndicate = None
     if not lex.is_whitelisted and (lex.registered_domain in DEMO_INTEL or lex.host in DEMO_INTEL):

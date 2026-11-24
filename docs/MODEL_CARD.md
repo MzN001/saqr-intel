@@ -14,7 +14,7 @@ Generated from `saqr/intel/data/model_metrics.json` (trained 2026-11-24T08:43:07
 - Stage 1: logistic regression over hashed character n-grams / tokens with separate host, path and query namespaces (2^19 int16 weights, `saqr/intel/url_model.bin`).
 - Stage 2: LightGBM, 499 trees over 50 named features (`saqr/intel/url_features.py`) + the stage-1 score, exported to `saqr/intel/url_model_trees.json` and walked in Python. Per-feature contributions along the tree paths (Saabas) give the top 2-3 plain-language reasons shown to citizens (EN + AR).
 - Input: the FULL URL. Scheme, `www.` and default ports are dropped (collection artefacts in public datasets).
-- Used by `ai_inspector.intel_flags`: AI_PHISHING_URL / AI_SUSPICIOUS_URL. Official / trusted sites and Tranco top-100k sites off free hosting are never judged by the model.
+- Used by `ai_inspector.intel_flags`: AI_PHISHING_URL / AI_SUSPICIOUS_URL. Official / trusted sites and Tranco top-100k sites are never judged by the model, unless the host is a free-hosting / user-content platform (`url_features.FREE_HOSTING` + `page_signals.USER_CONTENT_HOSTS`), where anyone can publish a page.
 
 ## Training data
 
@@ -92,44 +92,86 @@ Bias handling: PhiUSIIL, Tranco, Phishing Army and Phishing.Database *domains* a
 
 Shipped: **ensemble** (it is shipped only if its holdout F1 at the strong threshold beats the linear stage alone).
 
-## End-to-end offline system, before vs after
+## End-to-end offline system: v1 vs round 1 vs now
 
-`analyze_lexical` + `run_rules(lex, {}, None, None)` (no network, no LLM, no threat feeds): what a scan decides before any page is fetched. Block = HIGH-RISK (>= 65), warn = SUSPICIOUS or worse (>= 30). Before = the v1 host-only model at commit HEAD of this branch.
+`analyze_lexical` + `run_rules(lex, {}, None, None)` (no network, no LLM, no threat feeds): what a scan decides before any page is fetched, and what `tools/predict.py` (default mode) writes. Block = HIGH-RISK (>= 65), warn = SUSPICIOUS or worse (>= 30). v1 = the original host-only model; round 1 = the v2 model as first shipped; now = after round 2 (same model files, rule changes below).
 
-| set | cut | before P | before R | before FPR | after P | after R | after FPR |
-|---|---|---:|---:|---:|---:|---:|---:|
-| fp_suite | block_65 | 0 | n/a | 0.0030 | 0 | n/a | 0.0009 |
-| fp_suite | warn_30 | 0 | n/a | 0.1652 | 0 | n/a | 0.0078 |
-| fresh_phishing | block_65 | 1 | 0.1077 | n/a | 1 | 0.1933 | n/a |
-| fresh_phishing | warn_30 | 1 | 0.3120 | n/a | 1 | 0.4138 | n/a |
-| hannousse | block_65 | 0.9919 | 0.1719 | 0.0014 | 0.9966 | 0.3119 | 0.0010 |
-| hannousse | warn_30 | 0.8783 | 0.3183 | 0.0441 | 0.9871 | 0.5341 | 0.0070 |
-| robustness | block_65 | 0.9955 | 0.1640 | 0.0015 | 0.9988 | 0.3529 | 0.0009 |
-| robustness | warn_30 | 0.9129 | 0.3295 | 0.0642 | 0.9934 | 0.5566 | 0.0075 |
+| set | cut | v1 P | v1 R | v1 FPR | round 1 P | round 1 R | round 1 FPR | now P | now R | now FPR |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| fp_suite | block_65 | 0.0000 | n/a | 0.0030 | 0.0000 | n/a | 0.0009 | 0.0000 | n/a | 0.0009 |
+| fp_suite | warn_30 | 0.0000 | n/a | 0.1652 | 0.0000 | n/a | 0.0078 | 0.0000 | n/a | 0.0063 |
+| fresh_phishing | block_65 | 1.0000 | 0.1077 | n/a | 1.0000 | 0.1933 | n/a | 1.0000 | 0.1936 | n/a |
+| fresh_phishing | warn_30 | 1.0000 | 0.3120 | n/a | 1.0000 | 0.4138 | n/a | 1.0000 | 0.4151 | n/a |
+| hannousse | block_65 | 0.9919 | 0.1719 | 0.0014 | 0.9966 | 0.3119 | 0.0010 | 0.9967 | 0.3138 | 0.0010 |
+| hannousse | warn_30 | 0.8783 | 0.3183 | 0.0441 | 0.9871 | 0.5341 | 0.0070 | 0.9871 | 0.5374 | 0.0070 |
+| robustness | block_65 | 0.9955 | 0.1640 | 0.0015 | 0.9988 | 0.3529 | 0.0009 | 0.9988 | 0.3538 | 0.0009 |
+| robustness | warn_30 | 0.9129 | 0.3295 | 0.0642 | 0.9934 | 0.5566 | 0.0075 | 0.9935 | 0.5585 | 0.0075 |
 
-False-positive suite, after (system), by source:
+False-positive suite by source (system):
 
-| source | rows | warn (>=30) | block (>=65) |
+| source | rows | warn (>=30) now / round 1 / v1 | block (>=65) now / round 1 / v1 |
 |---|---:|---:|---:|
-| harvest_uae_official | 1,046 | 0 (before 0) | 0 (before 0) |
-| harvest_brand_official | 2,081 | 0 (before 0) | 0 (before 0) |
-| harvest_tranco | 2,242 | 0 (before 0) | 0 (before 0) |
-| hf_ealvaradob_free_hosting | 1,977 | 12 (before 1884) | 1 (before 3) |
-| hf_kmack_free_hosting | 220 | 9 (before 212) | 1 (before 2) |
-| hf_phreshphish_free_hosting | 107 | 29 (before 102) | 0 (before 21) |
-| tranco_longtail | 6,000 | 57 (before 69) | 11 (before 15) |
-| fp_extra_bank_gov | 52 | 0 (before 0) | 0 (before 0) |
+| harvest_uae_official | 1,046 | 0 / 0 / 0 | 0 / 0 / 0 |
+| harvest_brand_official | 2,081 | 0 / 0 / 0 | 0 / 0 / 0 |
+| harvest_tranco | 2,242 | 0 / 0 / 0 | 0 / 0 / 0 |
+| hf_ealvaradob_free_hosting | 1,977 | 11 / 12 / 1884 | 1 / 1 / 3 |
+| hf_kmack_free_hosting | 220 | 9 / 9 / 212 | 1 / 1 / 2 |
+| hf_phreshphish_free_hosting | 107 | 10 / 29 / 102 | 0 / 0 / 21 |
+| tranco_longtail | 6,000 | 57 / 57 / 69 | 11 / 11 / 15 |
+| fp_extra_bank_gov | 52 | 0 / 0 / 0 | 0 / 0 / 0 |
+
+## Live pipeline evaluation (2026-11-24)
+
+`tools/evaluate.py <file> --mode live --records run.jsonl`: every URL goes through the full `pipeline.analyze_url` (redirects / shorteners, WHOIS / DNS / TLS, the page fetched over HTTP as a UAE phone and as a bot for the two-view cloaking check; `ENABLE_PLAYWRIGHT=false`, i.e. exactly the Render path; no LLM), 20 at a time, 45 s per URL, throw-away database, `ingest=False`, NextDNS / push / LLM keys blanked in-process. The records file keeps each scan's network and page evidence, so `--rescore` re-judges the same evidence with changed rules (checked: re-judging with the previous code reproduces all 800 as-run scores exactly).
+
+- **Sample B (the headline, never used for tuning rules):** the 400 newest PhishTank online-valid URLs (submitted 2026-11-18 to 24, sites not in training) + 400 legitimate pages from the never-trained FP suite: 100 UAE official deep links, 54 bank / government login pages, 70 global-brand official pages, 120 Tranco long-tail homepages, 56 legit free-hosting pages. Caveat: two false-positive fixes (platform-named brands, renewed certificates) were added after looking at sample B's false alarms; neither changed a sample-B phishing verdict to a miss except one (warn recall 0.7525 -> 0.75 on the same evidence).
+- **Sample A (tuning):** 200 OpenPhish (GitHub community feed, today) + 200 PhishTank (today) + 400 legit of the same mix. Its misses were read to design the page rules, so its "now" numbers are optimistic.
+- **Extra legit (700):** 200 Tranco deep links, 250 Tranco long-tail homepages, 250 legit free-hosting pages, to measure false alarms on pages: warn FPR 3.00% (21) before -> 1.86% (13) now; block 0.14% (1) before and now.
+- **with feeds** = the same scans plus a Phishing Army / OpenPhish lookup of every host on the link's path (a hit scores 70). The phishing URLs come from those same feeds, so it is circular; **no feeds is the honest number**. Feed hits: 387 of 400 phishing, 0 of 400 legit (sample B).
+
+| run | cut | P (no feeds) | R (no feeds) | FPR (no feeds) | TP/FP/FN/TN | P (with feeds) | R (with feeds) | FPR (with feeds) |
+|---|---|---:|---:|---:|---|---:|---:|---:|
+| sample B, before this round | block | 0.9837 | 0.6050 | 1.00% | 242/4/158/396 | 0.9898 | 0.9750 | 1.00% |
+| sample B, before this round | warn | 0.9699 | 0.7250 | 2.25% | 290/9/110/391 | 0.9775 | 0.9775 | 2.25% |
+| **sample B, now (as run)** | block | 0.9844 | 0.6300 | 1.00% | 252/4/148/396 | 0.9898 | 0.9750 | 1.00% |
+| **sample B, now (as run)** | warn | 0.9836 | 0.7500 | 1.25% | 300/5/100/395 | 0.9875 | 0.9850 | 1.25% |
+| sample A, before | block | 1.0000 | 0.6525 | 0.00% | 261/0/139/400 | 1.0000 | 0.9625 | 0.00% |
+| sample A, before | warn | 0.9785 | 0.7950 | 1.75% | 318/7/82/393 | 0.9822 | 0.9650 | 1.75% |
+| sample A, now (re-judged) | block | 1.0000 | 0.7350 | 0.00% | 294/0/106/400 | 1.0000 | 0.9625 | 0.00% |
+| sample A, now (re-judged) | warn | 0.9858 | 0.8700 | 1.25% | 348/5/52/395 | 0.9874 | 0.9800 | 1.25% |
+
+Sample B, scan time per URL (as run, 20 in parallel): median 8.6 s, 95th percentile 16.5 s, max 36.5 s; 0 errors / timeouts. Zero false alarms on the UAE official, bank / government and global-brand official pages in every live sample (224 + 224 pages).
+
+Sample B phishing missed at warn (no feeds), by what the scan saw: own domain, benign-looking page 45; dead / blocked: HTTP 4xx 23; dead: unreachable 19; dead: no DNS 10; own domain, has a form (PASSWORD,PHONE) 1; dead / blocked: HTTP 5xx 1; platform-hosted page 1. "Dead" = the site was already down when scanned (PhishTank keeps listing URLs for days); "benign-looking" = the page served to our fetcher had no form, brand or warning (often a JavaScript shell, a parked page or a bot check).
+
+Sample B false alarms (no feeds, warn): gobabytrade.com (70; an "AI crypto trading" site, model 0.98 + brand / urgency text), rushmoreservicing.com (70; its homepage redirects to an Azure B2C log-in URL with a GUID path that the URL model rates 0.98), officesupportjp.github.io (70; a Microsoft Japan support blog on GitHub Pages, model 0.998 + Microsoft on the page), softgateon.herokuapp.com (70; a "URL to Google Drive" tool with a password field, model 0.998), britishbottleforum.co.uk (35; certificate issued in the last 48 h, WHOIS age unknown, brand + urgency words).
+
+## Round 2 changes (recall without more false alarms)
+
+Each step measured on the four fixed sets (system, address-only) and on the live records; only what helped was kept.
+
+| step | what | fixed sets (system) | live | kept? |
+|---|---|---|---|---|
+| a | combine the linear and tree stages (mean logit, 0.7 / 0.3 mix) at the same validation FPR | on judged rows, recall at the strong cut: ensemble 0.6983 val / 0.7857 fresh / 0.6091 Hannousse; linear 0.6338 / 0.6775 / 0.5368; mean 0.6868 / 0.7523 / 0.5905; mix 0.691 / 0.7665 / 0.6024. The round-1 "linear beats ensemble on fresh" came from different thresholds and from counting rows the model never judges (23,521 of the fresh rows are on popular / official hosts: google.com 5,049, qrco.de 4,591, ead.me 3,290, bit.ly 1,565 ...) | - | no: ensemble alone is best |
+| b | per-segment thresholds (free hosting / own domain / raw IP) | validation has 3 legit free-hosting rows (cannot be tuned there); FP-suite free-hosting FPR at the global strong cut is already 1.22% vs 0.30% for own domains | - | no |
+| c | page evidence in the HTTP-only sandbox (`saqr/intel/page_signals.py`): security-provider phishing interstitial (Cloudflare "Suspected Phishing", 70), shortener that disabled the link (45), password / card / OTP form posting to a form service (Weebly formSubmit, Formspree, Apps Script, Telegram bot ..., 45), registry brand in the page title of a log-in page on user-content hosting or next to a credential form on a non-top-100k site (25, strong); static-HTML field labels (`<label for>`, enclosing label, text before the field) and password words in 8 languages | no effect (address only) | sample A warn R 0.795 -> 0.85, block 0.6525 -> 0.7325; 1 new warn false alarm in 1,100 legit (a real 2FA "Device Verification Code" field) | yes |
+| c2 | address model + page agree: a model flag (>= suspect) plus a brand on the page lets weak page signals count; new domain (< 30 days) + model >= 0.5 (+15, AI_NEW_DOMAIN); domain no longer resolves + model flag (+15, SITE_TAKEN_DOWN) | no effect | sample A warn R 0.85 -> 0.8575 / 0.8625 / 0.8525 one at a time, 0.8725 together; no new false alarm in 1,100 legit | yes |
+| d | the model also judges popular hosts that are user-content platforms (weeblysite.com, gitbook.io, cloudfront.net, storage.googleapis.com, backblazeb2.com ...); an official domain's user-content host (Google Cloud Storage bucket, Google Sites, SharePoint) is no longer whitelisted (`page_signals.lexical`, used by the pipeline, redirect hops, evaluate and predict) | fresh warn 0.4138 -> 0.4152, block 0.1933 -> 0.1936; Hannousse warn 0.5341 -> 0.5383, block 0.3119 -> 0.3140; robustness warn 0.5566 -> 0.5589; FP suite unchanged (107 / 13) | 3 phishing pages on storage.googleapis.com had been judged SAFE as "official Google" | yes |
+| e | false-alarm fixes: a brand named only by its own platform (`tenant.sharepoint.com` -> "Microsoft") no longer counts as impersonation unless the URL model also says phishing; a certificate renewed in the last 48 h on a domain older than a year is not a "zero-hour" signal | FP suite warn 107 -> 87 (free-hosting PhreshPhish rows 29 -> 10), block 13 -> 13; Hannousse warn 0.5383 -> 0.5374, block 0.3140 -> 0.3138; fresh warn 0.4152 -> 0.4151; robustness warn 0.5589 -> 0.5585 | warn false alarms on A + extra legit 29 -> 18; sample A warn R 0.8725 -> 0.87 | yes |
+| f | judge same-site redirect hops by host only (a site's own redirect to an SSO URL with a GUID path) | - | would fix 1 false alarm (rushmoreservicing.com) and lose 1 phishing (a same-site click tracker) | no |
+
 ## Known weaknesses (measured, not fixed)
 
-- Recall is limited by design: thresholds allow at most 0.5% (strong) / 2% (suspect) of judged legitimate URLs to be flagged, so about half of the holdout phishing URLs score below the strong threshold. Most misses are pages on big shared platforms (sites.google.com, blogspot, Google Forms, docs/file shares) and compromised old websites whose address looks ordinary; the page content checks (sandbox), DNS/WHOIS age and threat feeds have to catch those.
-- On today's fresh feeds the linear stage alone recalls more than the ensemble at its own strong threshold (see the model-level tables): the ensemble was chosen on the source-disjoint holdout F1, not on fresh recall.
-- Free-hosting legit pages remain the hardest legit group (the PhreshPhish free-hosting benign rows have the highest false-alarm share in the FP suite); dataset "legit" labels there are also noisy.
-- Tranco long-tail sites on cheap TLDs (.top, .xyz, .cyou ...) account for most remaining system false alarms at the block level (the model's flag + SUSPICIOUS_TLD corroboration).
-- Popular (Tranco top-100k) sites are never judged by the model off free hosting, so phishing on a compromised popular site is invisible to it.
-- PhiUSIIL / ealvaradob / kmack are older crawls; the holdout (2020) is older than the fresh feeds (2026). Numbers on the judges' hidden set may differ.
+- The offline (address-only) system still recalls only 41.5% of the fresh phishing at warn: 23,521 of those rows sit on hosts the model is never allowed to judge (Google, QR / link shorteners, Adobe, Mailchimp, Dropbox, HubSpot / Jotform forms ...). Judging them by path would need training data with legit pages on the same platforms. The live pipeline resolves shorteners and reads the page, which is where most of the recall comes from (sample B warn 0.75 live vs address-only numbers in the 0.4-0.55 range).
+- Live misses are mostly sites already dead when scanned (53 of 100 sample-B misses) and pages that show our HTTP fetcher nothing suspicious (45): JavaScript-built kits need the Chromium sandbox (not on Render's free tier) or the LLM judge on the page.
+- Live block-level false alarms are 1.0% (4 / 400) on sample B, all from the URL model being very confident on an unusual legit address (GitHub Pages blog, Heroku tool, SSO redirect, crypto site) plus a weak corroborating clue. Bank / government / UAE official pages: 0.
+- Address-only false alarms concentrate on Tranco long-tail sites (57 / 6,000 warn, 11 block). In the long-tail + free-hosting + Hannousse legit pool (14,019 URLs, now): model flag alone 48 warn (vs 11,717 phishing), model suspect flag + cheap TLD 35 (vs 147 phishing), TYPOSQUAT alone 9 (vs 1), BRAND_IMPERSONATION alone 8 (vs 19). The look-alike rules live in `domain_intel.py` and were not changed here.
+- Free-hosting legit pages remain the hardest legit group; dataset "legit" labels there are noisy (several "legit" PhreshPhish SharePoint / GitHub Pages rows look like phishing lures).
+- PhiUSIIL / ealvaradob / kmack are older crawls; the Hannousse holdout (2020) is older than the fresh feeds (2026). Numbers on the judges' hidden set may differ.
 
 ## Tools
 
-- `tools/evaluate.py <file> [--url-col --label-col --positive --label] [--mode model|system|live] [--threshold] [--out report.json]`: any dataset; precision / recall / F1 / FPR / accuracy, confusion matrix, PR points, 20 worst false positives / negatives with reasons. `live` runs the full pipeline against a throw-away database with NextDNS / push keys blanked and no graph ingestion.
-- `tools/predict.py urls.txt|csv -o predictions.csv [--label-at warn|block]`: url, label, score, verdict, model_probability, reasons for an unlabelled list (default label cut: warn = score >= 30).
-- `GET /api/model/metrics`: the stored metrics JSON (model, datasets, holdout, fresh phishing, FP suite, system before/after, thresholds).
+- `tools/evaluate.py <file> [--url-col --label-col --positive --label] [--mode model|system|live] [--threshold] [--out report.json]`: any dataset; precision / recall / F1 / FPR / accuracy, confusion matrix, PR points, 20 worst false positives / negatives with reasons.
+- Live mode: `--mode live [--records run.jsonl] [--concurrency 20] [--timeout 45] [--feeds] [--llm] [--browser] [--live-metrics]`: full pipeline, throw-away database, NextDNS / push keys blanked, no graph ingestion; prints precision / recall / FPR at block and warn with and without feeds, misses by category, false alarms by source, median / p95 scan time. `--records` is resumable (finished URLs are skipped). `--rescore run.jsonl` re-judges saved evidence with the current rules, offline.
+- `tools/predict.py urls.txt|csv -o predictions.csv [--label-at warn|block] [--mode offline|live] [--records run.jsonl]`: url, label, score, verdict, model_probability, reasons for an unlabelled list (default label cut: warn = score >= 30).
+- `GET /api/model/metrics`: the stored metrics JSON (model, datasets, holdout, fresh phishing, FP suite, system v1 / round 1 / now, live, round 2 experiments, thresholds).

@@ -99,17 +99,26 @@ Measured on 2026-11-24 (offline system = look-alike rules + URL model only: no n
 
 | Test set | Cut | Before: precision / recall / false-alarm rate | After: precision / recall / false-alarm rate |
 |---|---|---|---|
-| Hannousse holdout (11,426 URLs, never trained on) | block | 0.992 / 0.172 / 0.14% | 0.997 / 0.312 / 0.10% |
-| Hannousse holdout | warn | 0.878 / 0.318 / 4.41% | 0.987 / 0.534 / 0.70% |
-| Fresh phishing (49,359 URLs: JPCERT 2026-08/09, OpenPhish, PhishTank) | block | recall 0.108 | recall 0.193 |
-| Fresh phishing | warn | recall 0.312 | recall 0.414 |
+| Hannousse holdout (11,426 URLs, never trained on) | block | 0.992 / 0.172 / 0.14% | 0.997 / 0.314 / 0.10% |
+| Hannousse holdout | warn | 0.878 / 0.318 / 4.41% | 0.987 / 0.537 / 0.70% |
+| Fresh phishing (49,359 URLs: JPCERT 2026-08/09, OpenPhish, PhishTank) | block | recall 0.108 | recall 0.194 |
+| Fresh phishing | warn | recall 0.312 | recall 0.415 |
 | False-alarm suite (13,725 legitimate URLs) | block | 0.30% | 0.09% |
-| False-alarm suite | warn | 16.52% | 0.78% |
-| Evasion variants of holdout URLs (23,891) | warn | 0.913 / 0.330 / 6.42% | 0.993 / 0.557 / 0.75% |
+| False-alarm suite | warn | 16.52% | 0.63% |
+| Evasion variants of holdout URLs (23,891) | warn | 0.913 / 0.330 / 6.42% | 0.994 / 0.558 / 0.75% |
 
 - UAE official deep links (1,046), global-brand official pages (2,081), Tranco deep links (2,242) and 52 hand-picked bank / government login pages: **0 false alarms** at either cut.
-- These are address-only numbers. About half of the held-out phishing (mostly pages on Google Sites, Blogspot, Forms and hacked older websites) has an ordinary-looking address and is left to the live checks: domain age, page content, cloaking, threat feeds and the LLM judge.
-- Full details, thresholds and per-set tables: [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
+- These are address-only numbers. Much of the held-out phishing sits on hosts an address model must not judge (Google Forms / Sites, QR and link shorteners, Dropbox, form builders) or on hacked older websites with ordinary addresses; the live checks below handle those.
+
+**Live pipeline** (`tools/evaluate.py --mode live`: redirects and shorteners followed, WHOIS / DNS / TLS, page fetched as a UAE phone and as a bot, no LLM, no Chromium, i.e. the Render setup), 400 of the newest PhishTank phishing URLs (not trained on) + 400 legitimate pages (UAE government and bank deep links, bank / government login pages, global-brand official pages, Tranco long-tail, legit free hosting), scanned 2026-11-24. "Before" = the same scans judged by the previous rules. Threat feeds are left out because these URLs come from the same feeds (with feeds: warn recall 0.985).
+
+| Live sample (800 URLs) | Cut | Before: precision / recall / false-alarm rate | After: precision / recall / false-alarm rate |
+|---|---|---|---|
+| without threat feeds | block | 0.984 / 0.605 / 1.00% | 0.984 / 0.630 / 1.00% |
+| without threat feeds | warn | 0.970 / 0.725 / 2.25% | 0.984 / 0.750 / 1.25% |
+
+- 0 false alarms on the 224 UAE official / bank / government / brand-official pages. Median scan 8.6 s, 95th percentile 16.5 s (20 scans in parallel). Of the 100 phishing URLs missed at warn, 53 were already offline or blocked when scanned and 45 showed the fetcher an ordinary-looking page.
+- Full details, thresholds, per-set tables and what was tried and dropped: [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 
 Commands (runtime venv, standard library only):
 
@@ -117,9 +126,10 @@ Commands (runtime venv, standard library only):
 python tools/fetch_datasets.py                       # download the public sets -> datasets/ + MANIFEST.json
 python tools/evaluate.py datasets/hannousse/dataset_B_05_2020.csv            # any labelled file
 python tools/evaluate.py my.csv --url-col link --label-col verdict --positive bad,phish --mode system
-python tools/evaluate.py feed.txt --label 1 --mode live --concurrency 8 --out report.json
+python tools/evaluate.py sample.csv --mode live --records live.jsonl     # full pipeline, resumable
+python tools/evaluate.py sample.csv --rescore live.jsonl                 # re-judge saved live evidence
 python tools/evaluate.py --suite                     # the fixed holdout sets -> model_metrics.json
-python tools/predict.py hidden_urls.csv -o predictions.csv [--url-col link] [--label-at block|warn]
+python tools/predict.py hidden_urls.csv -o predictions.csv [--url-col link] [--label-at block|warn] [--mode live]
 ```
 
 `--mode model` = URL model alone, `system` = the offline engine a scan runs first (rules + model, 65 = block,

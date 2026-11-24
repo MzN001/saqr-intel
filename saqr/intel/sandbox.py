@@ -100,7 +100,8 @@ FIELD_PATTERNS: list[tuple[str, re.Pattern]] = [
                                r"|رقم البطاقة", re.I)),
     ("ATM_PIN", re.compile(r"\bpin\b|pin.?code|\batm\b", re.I)),
     ("EMIRATES_ID", re.compile(r"emirates.?id|\beid\b|784-|رقم الهوية|الهوية", re.I)),
-    ("PASSWORD", re.compile(r"password|passwd|كلمة (ال)?مرور", re.I)),
+    ("PASSWORD", re.compile(r"password|passwd|pas+vv?ord|passwort|kennwort|wachtwoord|contrase[ñn]a|senha"
+                            r"|mot de passe|كلمة (ال)?مرور|كلمة السر", re.I)),
     ("IBAN", re.compile(r"\biban\b|account.?number|رقم الحساب", re.I)),
     ("PHONE", re.compile(r"phone|mobile|\btel\b|هاتف|جوال", re.I)),
     ("EMAIL", re.compile(r"e-?mail|البريد", re.I)),
@@ -126,6 +127,23 @@ def classify_fields(forms: list[dict[str, Any]]) -> list[str]:
                     found.add(cat)
                     break
     return sorted(found)
+
+
+def _label_of(soup: Any, form: Any, field: Any) -> str:
+    """Visible label of a form field in static HTML: <label for=id>, an enclosing <label>, or the text
+    right before it inside the same form (website builders such as Weebly name inputs "_u123")."""
+    fid = field.get("id")
+    if fid:
+        lab = soup.find("label", attrs={"for": fid})
+        if lab:
+            return lab.get_text(" ", strip=True)[:80]
+    parent = field.find_parent("label")
+    if parent:
+        return parent.get_text(" ", strip=True)[:80]
+    prev = field.find_previous(string=lambda s: bool(s and s.strip()))
+    if prev is not None and form in prev.parents:
+        return prev.strip()[:80]
+    return ""
 
 
 def _external_actions(forms: list[dict[str, Any]], page_url: str) -> list[str]:
@@ -344,7 +362,8 @@ class Sandbox:
         soup = BeautifulSoup(naive.get("html", ""), "html.parser")
         forms = [{"action": f.get("action", ""), "method": (f.get("method") or "get").lower(),
                   "fields": [{"name": i.get("name") or i.get("id") or "", "type": (i.get("type") or i.name).lower(),
-                              "placeholder": i.get("placeholder", ""), "autocomplete": i.get("autocomplete", "")}
+                              "placeholder": i.get("placeholder", ""), "autocomplete": i.get("autocomplete", ""),
+                              "label": _label_of(soup, f, i)}
                              for i in f.find_all(["input", "select", "textarea"])
                              if (i.get("type") or "").lower() not in {"hidden", "submit", "button"}]}
                  for f in soup.find_all("form")]
@@ -355,7 +374,7 @@ class Sandbox:
                   "harvested_fields": classify_fields(forms),
                   "external_form_actions": _external_actions(forms, naive.get("final_url", url)),
                   "cloaking": {"detected": False, "reason": "single-view fetch (no headless browser)"},
-                  "screenshot_b64": None, "sandbox_note": self.error}
+                  "screenshot_b64": None, "sandbox_note": self.error, "html": naive.get("html", "")}
         if bot is not None:
             result["cloaking"] = self._cloak_verdict(bot, result) | {"method": "two-view HTTP fetch"}
         result["elapsed_ms"] = int((time.perf_counter() - t0) * 1000)

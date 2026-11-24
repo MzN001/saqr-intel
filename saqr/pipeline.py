@@ -11,7 +11,7 @@ from typing import Any
 
 from .config import settings
 from .db import db, iso, utcnow
-from .intel import ai_inspector, graph_engine, redirects
+from .intel import ai_inspector, graph_engine, page_signals, redirects
 from .intel.domain_intel import (
     LexicalReport,
     age_hours,
@@ -95,7 +95,7 @@ async def follow_redirects(lex: LexicalReport, *, fast: bool) -> tuple[LexicalRe
         if hop.get("note") == "blocked_private":
             continue
         try:
-            hop_lex = analyze_lexical(hop["url"])
+            hop_lex = page_signals.lexical(hop["url"])
         except ValueError:
             continue
         by_host[hop_lex.host] = hop_lex  # the last address seen on a host is where its page lives
@@ -128,7 +128,7 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
 
     intercepted_url = url
     url, mock_slug = resolve_mock_scam(url)
-    input_lex = lex = analyze_lexical(url)
+    input_lex = lex = page_signals.lexical(url)
     timings["lexical_ms"] = int((time.perf_counter() - t0) * 1000)
 
     # Shorteners, open redirects, 30x / meta / JavaScript hops: judge where the link really goes.
