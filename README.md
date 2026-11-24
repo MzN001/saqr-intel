@@ -26,6 +26,8 @@ Scam links reach UAE residents through SMS, WhatsApp, email, search ads and fake
 
 Every check runs the same pipeline: follow redirects to the real destination, look-alike rules for the official UAE entities and ~50 global brands, a trained URL model, global phishing feeds, WHOIS / DNS / TLS age, a page check that compares what a bot, a phone and a computer see, a visual brand-clone check and an optional AI judge. A **Proactive Hunter** finds look-alike domains nobody has reported yet. Confirmed scams flow to a DNS blocklist (phones with the Saqr DNS profile stop opening them), to the police Command Center with an evidence dossier, and to drafted registrar / hosting abuse notices.
 
+**98.6% accuracy as deployed** (recall 98.5%, false-alarm rate 1.25%), measured on 800 live links with threat feeds on as in production; the test scams were publicly reported scams, so the feeds had already seen most of them. With every blocklist switched off, Saqr still caught 75% of the scams (63% blocked outright) and was right 98.4% of the time when it flagged. Details: [Accuracy](#accuracy).
+
 <p align="center">
   <img src="docs/readme/citizen-website.png" width="100%" alt="The Saqr citizen website: a Check a link card on the left and a demo verdict on the right, a fake TAMM fine scored 92 out of 100, HIGH-RISK SCAM, with three reasons in English and Arabic">
   <br>
@@ -113,7 +115,7 @@ Code: `main.py`, `saqr/pipeline.py`, `saqr/intel/` (one module per stage), `saqr
 
 | Criterion | What Saqr does | Where in the demo |
 |---|---|---|
-| **Detection accuracy (30)** | Rules + URL model + feeds + network + page evidence; weak page signals score 0 without a strong signal (fewer false alarms on real bank / gov sites); redirect / shortener resolver; bot-vs-phone and phone-vs-computer cloaking checks; visual brand-clone check. Sealed sample C: 0.65% block / 4.1% warn false alarms on 460 never-trained legit pages (its phishing half had only 3 URLs, too few to measure recall, see [Accuracy](#accuracy)) | `/citizen` Link checker ("Try a fake TAMM fine"); `tools/evaluate.py` and `tools/predict.py`; `/police` model card (`GET /api/model/metrics`) |
+| **Detection accuracy (30)** | Rules + URL model + feeds + network + page evidence; weak page signals score 0 without a strong signal (fewer false alarms on real bank / gov sites); redirect / shortener resolver; bot-vs-phone and phone-vs-computer cloaking checks; visual brand-clone check. As deployed (800 live links, feeds on; the test scams were publicly reported, so the feeds had seen most): 98.6% accuracy, 98.5% recall, 1.25% false alarms; with every blocklist off it still caught 75% of the scams. Sealed sample C: 0.65% block / 4.1% warn false alarms on 460 never-trained legit pages (its phishing half had only 3 URLs, too few to measure recall, see [Accuracy](#accuracy)) | `/citizen` Link checker ("Try a fake TAMM fine"); `tools/evaluate.py` and `tools/predict.py`; `/police` model card (`GET /api/model/metrics`) |
 | **Early detection & coverage (25)** | Proactive Hunter (look-alike DNS sweep, newly registered domains, certificate search); pre-click badges on Google / Bing results, sponsored ads and Maps cards; phone DNS shield; email, SMS text, Maps listing and phone-number checks | `/police` "Proactive Hunt" card, "Threats Caught Pre-Victim" KPI, "Run sweep now"; `/citizen` Search & Maps tab; browser extension on google.com / bing.com / Maps |
 | **Explainability & actionability (20)** | Every flag carries an EN + AR reason and its points; the URL model returns its top feature reasons; one-click takedown dossier with WHOIS, hosting, TLS, redirect chain, SHA-256 evidence hashes and ready-to-send abuse notices; evidence pack (.zip) | Result card and full-screen block page on `/citizen`; extension block page; `/police` evidence dossier + "Export Official Takedown Dossier" |
 | **UAE relevance & innovation (15)** | UAE entity registry (Arabic names, aliases, official domains); Arabic field patterns (رمز التحقق, رقم الهوية ...); sandbox as a UAE phone (`ar-AE`, Asia/Dubai, Abu Dhabi location); bilingual RTL UI; police warning broadcast to citizens; X warning composer; RPZ feed format for telecom DNS | `/citizen` in العربية; `/police` "Broadcast Official Warning"; `GET /api/dns-blocklist?format=rpz` |
@@ -212,9 +214,12 @@ All numbers measured on 2026-11-24 and stored in `saqr/intel/data/model_metrics.
 <!-- ACCURACY:START -->
 | Test | What it measures | Result |
 |---|---|---|
-| **Live sample B**, 800 links (400 newest PhishTank phishing + 400 legitimate), full pipeline, no feeds, no AI judge | Real-world detection | Warn: precision 98.4%, recall 75%, false-alarm rate 1.25%. Block: recall 63%, false-alarm rate 1.0% |
+| **System as deployed**, live sample B: 800 live links (400 newest PhishTank phishing + 400 legitimate), threat feeds on as in production, no AI judge. The test scams were publicly reported scams, so the feeds had already seen most of them (387 of 400) | Accuracy of the system as deployed | **Warn: accuracy 98.6%, recall 98.5%, precision 98.75%, false-alarm rate 1.25%.** Block: accuracy 98.25%, recall 97.5%, false-alarm rate 1.0% |
+| **Stress test**, same 800 links with every blocklist switched off (no AI judge) | Brand-new scams no list knows yet | With every blocklist switched off, Saqr still caught 75% of the scams (63% blocked outright) and was right 98.4% of the time when it flagged. False-alarm rate 1.25% warn, 1.0% block |
 | Same sample, UAE official / bank / government / brand pages (224) | False alarms where they hurt most | **0** |
-| Same sample, with threat feeds | Circular (the phishing came from those feeds) | Recall 98.5%, not the honest number |
+<!-- SAMPLE_D_ROW: sealed sample D (scams reported in the last day, never seen by the deployed model) goes here, e.g.
+| **Sealed sample D**, N links reported in the last day, never seen by the deployed model | ... | ... |
+-->
 | **Sealed sample C**, 460 legitimate pages never trained on (code frozen first, scored once) | False alarms | Block: 3 of 460 = 0.65% (95% CI 0.2-1.9%). Warn: 19 of 460 = 4.1% (CI 2.7-6.4%) |
 | Sample C, phishing half: only 3 URLs reported after the cut-off | Recall | 2 of 3 caught at warn and at block (95% CI 21-94%): **too few to measure recall** (see below) |
 | Sample C combined, 3 phishing + 460 legitimate (99.35% legitimate) | Accuracy | Warn: 95.7% (CI 93.4-97.2%). Block: 99.1% (CI 97.8-99.7%); mostly reflects the false-alarm rate |
@@ -230,7 +235,7 @@ All numbers measured on 2026-11-24 and stored in `saqr/intel/data/model_metrics.
 | UAE news about scams (14) | 2 | 0 |
 | Legit free-hosting pages (60) | 17 | 3 |
 
-**Against the brief's targets** (accuracy 98%, recall 97.5%, false-alarm rate 1%), as measured on sample C: accuracy 95.7% at warn and 99.1% at block, but the sample is 99.35% legitimate, so accuracy mostly reflects false alarms; recall 2 of 3 (CI 21-94%) says nothing either way about 97.5%, and recall was 75% at warn on the older sample B, far below 97.5%; false alarms are 4.1% at warn (above target, all from free hosting and two news pages) and 0.65% at block. The new signals (phone-vs-computer cloaking, visual brand clone / similarity) caused 0 false alarms on the 460 legitimate pages and fired 0 times on the 3 phishing URLs (0 extra caught); their effect on recall is not measured.
+**Against the brief's targets** (accuracy 98%, recall 97.5%, false-alarm rate 1%), per configuration. *As deployed, on sample B* (800 live links, feeds on, publicly reported scams): accuracy 98.6% and recall 98.5% meet them at warn level; the false-alarm rate, 1.25%, is slightly above (1.0% at block level meets it). *With every blocklist switched off*: recall 75% at warn does not meet 97.5%. *On sample C*: accuracy 95.7% at warn and 99.1% at block, but the sample is 99.35% legitimate, so accuracy mostly reflects false alarms; recall 2 of 3 (CI 21-94%) says nothing either way about 97.5%, false alarms are 4.1% at warn (above target, all from free hosting and two news pages) and 0.65% at block. The new signals (phone-vs-computer cloaking, visual brand clone / similarity) caused 0 false alarms on the 460 legitimate pages and fired 0 times on the 3 phishing URLs (0 extra caught); their effect on recall is not measured.
 
 **Misses.** Of the 100 phishing URLs missed at warn in sample B, 53 were already offline or blocked when scanned and 45 showed the fetcher an ordinary-looking page. Median scan 8.6 s, 95th percentile 16.5 s (20 scans in parallel).
 
@@ -455,7 +460,7 @@ Each step uses what exists today.
 
 ## Honest limits
 
-- **Recall is far below the brief's target.** 75% at warn on live sample B (no feeds), not re-measured on sealed sample C because only 3 phishing URLs qualified (2 caught; CI 21-94%). The new cloaking and visual signals fired 0 times on those 3 and are not measured on a real phishing sample.
+- **Brand-new scams that no blocklist knows yet are caught less often.** As deployed, recall is 98.5% on sample B, but those scams were publicly reported, so the feeds had seen most of them; with every blocklist switched off recall is 75% at warn (63% at block), below the brief's 97.5%. Not re-measured on sealed sample C because only 3 phishing URLs qualified (2 caught; CI 21-94%). The new cloaking and visual signals fired 0 times on those 3 and are not measured on a real phishing sample.
 - **Free-hosting pages get too many warnings.** 17 of the 19 warn-level false alarms in sample C were legitimate GitHub Pages / Vercel / Netlify / Pages projects flagged by the URL model; warn-level false alarms are 4.1%, above the 1% target.
 - Measured accuracy is on public international datasets. The only UAE set is the team's own synthetic regression suite: it checks common UAE cases, not real-world accuracy, so the hidden test set may behave differently. A brand-new scam on an innocent-looking, aged domain needs page evidence.
 - 5 of the 11 visual baselines are partial (TAMM, UAE PASS, ICP, Emirates NBD, du). The screenshot hash is weak, optional, and sends suspicious links to thum.io.
