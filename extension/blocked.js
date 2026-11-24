@@ -81,6 +81,9 @@ const REASONS = {
   SITE_TAKEN_DOWN: ["the site has already vanished and its address looks like phishing", "الموقع اختفى بالفعل وعنوانه يشبه مواقع التصيّد"],
   CERT_RENEWED: ["its security certificate was renewed very recently", "شهادة الأمان جُدّدت حديثاً جداً"],
   REDIRECT_CHAIN: ["it passes through hidden redirects", "يمر عبر تحويلات مخفية"],
+  MOBILE_CLOAKING_DETECTED: ["it shows phones a different, dangerous page than computers", "يعرض على الهواتف صفحة خطيرة مختلفة عمّا يعرضه على الكمبيوتر"],
+  VISUAL_BRAND_CLONE_DETECTED: ["it is a copy of an official portal on an address that is not official", "نسخة من بوابة رسمية على عنوان غير رسمي"],
+  VISUAL_BRAND_SIMILARITY: ["it imitates the look of an official portal", "يقلّد مظهر بوابة رسمية"],
   // Email Shield flag codes (email contract, section 2)
   KNOWN_PHISHING_LINK: ["it links to a known phishing website", "يحتوي على رابط لموقع تصيّد معروف"],
   CAMPAIGN_IOC_MATCH: ["it comes from a known scam campaign", "مرتبط بحملة احتيال معروفة"],

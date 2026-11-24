@@ -119,6 +119,15 @@ The full rehearsable version (with what to say and what to do when something fai
      part of this branch: stash them first (`git stash push frontend/src/components/CityGrid.tsx`), then
      `cd frontend` and `npx vercel@latest deploy --prod --yes`, then `git stash pop`.
 
+## Accuracy + visual round (branch `feature/accuracy-visual`, 2026-11-24)
+- [ ] **Sealed sample C has no phishing half**: no phishing URL submitted after the 21:10Z training cut-off had reached PhishTank / OpenPhish / Phishing.Database when collected. Collect >= 400 post-cut-off phishing URLs a day or more later and score them ONCE with the frozen code (only the 460 legit pages were scored).
+- [ ] Partial brand baselines: TAMM and UAE PASS are JavaScript-only shells (no HTML to fingerprint), ICP and Emirates NBD did not answer, du disallows fetching. Rebuild with a browser / from saved pages.
+- [ ] Screenshot dHash is weakly discriminative (unrelated white portals already reach 70-75%); it only adds points next to a fingerprint match. Not measured on sample C (`VISUAL_SCREENSHOTS=false` there).
+- [ ] Pillow / WordPress mshots fallback not enabled in the cloud (thum.io only, PNG decoded in pure Python).
+- [ ] Recall ceiling of the link-only model: many phishing pages sit on hosts the model must not judge or show an ordinary page to an HTTP fetcher; needs the browser sandbox or the LLM on page content.
+- [ ] Registry covers 8 UAE entities + ~50 global brands; real brands have many more official domains (e.g. `eand.ae` was missing until 2026-11-24). Audit official domains per brand.
+- [ ] UAE suite misses (kept in): `url-mal-arabic-encoded-path`, `url-mal-brand-in-path`, `phone-mal-fab-one-digit-off`, `msg-mal-salik-shortener-uk`.
+
 ## Saqr rebrand (branch `feature/saqr-rebrand`, 2026-11-25)
 - [ ] **Police dashboard redesign**: `/police` (dashboard + login) still uses the old Night Grid look on purpose.
   Waiting for the owner's new police format; then remove the `.brand-night-grid` scope (see `frontend/DESIGN.md` section 10).

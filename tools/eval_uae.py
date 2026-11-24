@@ -1,10 +1,10 @@
-"""Run the 50-case UAE regression suite (tests/uae_suite/cases.json) and print the results.
+"""Run the 100-case UAE regression suite (tests/uae_suite/cases.json) and print the results.
 
     python tools/eval_uae.py                 # offline, rules only, deterministic (the default)
     python tools/eval_uae.py --json out.json # also save every case result + the metrics
     python tools/eval_uae.py --live          # REAL network + the configured LLM (see below)
 
-What it measures: 25 malicious + 25 legitimate cases written by the SAQR team, across five input types
+What it measures: 50 malicious + 50 legitimate cases written by the SAQR team, across five input types
 (website link, email, Google Maps listing, phone number, SMS / WhatsApp text). Every scam domain is
 invented. It shows that common legitimate UAE cases are not flagged and that common scam patterns are
 caught. It is NOT a measure of accuracy on real-world scams (see docs/MODEL_CARD.md for those numbers).

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600" width="1600" height="600" role="img" aria-label="Diagram: citizen surfaces send a link or message to the Saqr engine, which runs its checks and returns a verdict; confirmed scams flow to the DNS blocklist, the police Command Center and drafted takedown notices.">
+  <title>How a check flows through Saqr (diagram)</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#111315" fill-opacity="0.55"/></marker>
+  </defs>
+  <rect width="1600" height="600" rx="28" fill="#F7F5F0"/>
+  <rect width="1600" height="600" rx="28" fill="none" stroke="#111315" stroke-opacity="0.08" stroke-width="2"/>
+  <g font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" fill="#111315">
+    <text x="60" y="64" font-size="18" font-weight="700" fill="#057857" letter-spacing="3">DIAGRAM · HOW ONE CHECK FLOWS</text>
+
+    <!-- column 1: surfaces -->
+    <text x="60" y="112" font-size="16" font-weight="700" fill-opacity="0.55" letter-spacing="2">CITIZEN SURFACES</text>
+    <g font-size="20">
+      <rect x="60" y="130" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#111315" stroke-opacity="0.12"/>
+      <text x="84" y="170">Website / PWA (5 windows)</text>
+      <rect x="60" y="208" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#111315" stroke-opacity="0.12"/>
+      <text x="84" y="248">Chrome / Edge extension</text>
+      <rect x="60" y="286" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#111315" stroke-opacity="0.12"/>
+      <text x="84" y="326">Android message guard + blocker</text>
+      <rect x="60" y="364" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#111315" stroke-opacity="0.12"/>
+      <text x="84" y="404">Proactive Hunter (no citizen)</text>
+    </g>
+
+    <!-- engine -->
+    <rect x="470" y="96" width="660" height="440" rx="22" fill="#111315"/>
+    <text x="504" y="140" font-size="16" font-weight="700" fill="#F7F5F0" fill-opacity="0.6" letter-spacing="2">SAQR ENGINE (FastAPI)</text>
+    <g font-size="19" fill="#F7F5F0">
+      <text x="504" y="186">1  Unwrap redirects and short links (SSRF guard per hop)</text>
+      <text x="504" y="224">2  Look-alike rules: UAE entities + ~50 global brands</text>
+      <text x="504" y="262">3  Trained URL model (pure Python at runtime)</text>
+      <text x="504" y="300">4  Threat feeds · WHOIS / DNS / TLS age</text>
+      <text x="504" y="338">5  Page as a UAE phone vs bot vs desktop (cloaking)</text>
+      <text x="504" y="376">6  Visual brand fingerprint vs official portals</text>
+      <text x="504" y="414">7  Phone, message, email and Maps forensics</text>
+      <text x="504" y="452">8  Optional LLM judge + one second opinion</text>
+    </g>
+    <rect x="504" y="474" width="592" height="42" rx="21" fill="#F7F5F0" fill-opacity="0.1"/>
+    <text x="528" y="502" font-size="18" font-weight="700" fill="#F7F5F0">Score 0-100 · SAFE &lt; 30 ≤ SUSPICIOUS &lt; 65 ≤ SCAM · EN + AR</text>
+
+    <!-- outputs -->
+    <text x="1210" y="112" font-size="16" font-weight="700" fill-opacity="0.55" letter-spacing="2">WHAT HAPPENS NEXT</text>
+    <g font-size="20">
+      <rect x="1210" y="130" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#10B981" stroke-width="2"/>
+      <text x="1234" y="170">Verdict + reasons to citizen</text>
+      <rect x="1210" y="208" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#DC2626" stroke-width="2"/>
+      <text x="1234" y="248">DNS blocklist → phone shield</text>
+      <rect x="1210" y="286" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#111315" stroke-opacity="0.3" stroke-width="2"/>
+      <text x="1234" y="326">Police Command Center</text>
+      <rect x="1210" y="364" width="330" height="64" rx="14" fill="#FFFFFF" stroke="#F59E0B" stroke-width="2"/>
+      <text x="1234" y="404">Dossier + drafted notices</text>
+    </g>
+    <text x="1210" y="470" font-size="16" fill-opacity="0.6">An officer approves every takedown;</text>
+    <text x="1210" y="494" font-size="16" fill-opacity="0.6">notices are drafted, never sent.</text>
+
+    <g stroke="#111315" stroke-opacity="0.45" stroke-width="2.5" fill="none" marker-end="url(#a)">
+      <path d="M390 162 L466 250"/><path d="M390 240 L466 280"/><path d="M390 318 L466 310"/><path d="M390 396 L466 340"/>
+      <path d="M1130 260 L1206 162"/><path d="M1130 290 L1206 240"/><path d="M1130 320 L1206 318"/><path d="M1130 350 L1206 396"/>
+    </g>
+  </g>
+</svg>

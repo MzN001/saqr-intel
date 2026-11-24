@@ -79,6 +79,7 @@ EXTRACT_JS = r"""
   return {
     title: document.title || '',
     text: (document.body ? document.body.innerText : '').slice(0, 8000),
+    html: (document.documentElement ? document.documentElement.outerHTML : '').slice(0, 200000),
     forms, lang: document.documentElement.lang || '',
     iframes: document.querySelectorAll('iframe').length,
     scripts: document.scripts.length
@@ -144,6 +145,136 @@ def _label_of(soup: Any, form: Any, field: Any) -> str:
     if prev is not None and form in prev.parents:
         return prev.strip()[:80]
     return ""
+
+
+def form_fields(soup: Any) -> list[dict[str, Any]]:
+    """Every <form> of a parsed static page with its typed fields (same shape as EXTRACT_JS)."""
+    return [{"action": f.get("action", ""), "method": (f.get("method") or "get").lower(),
+             "fields": [{"name": i.get("name") or i.get("id") or "", "type": (i.get("type") or i.name).lower(),
+                         "placeholder": i.get("placeholder", ""), "autocomplete": i.get("autocomplete", ""),
+                         "label": _label_of(soup, f, i)}
+                        for i in f.find_all(["input", "select", "textarea"])
+                        if (i.get("type") or "").lower() not in {"hidden", "submit", "button"}]}
+            for f in soup.find_all("form")]
+
+
+def page_from_html(body: str, url: str, status: int | None = None, final_url: str | None = None) -> dict[str, Any]:
+    """Page evidence (title, text, forms, harvested fields) from HTML that was already fetched: the
+    HTTP-only sandbox path and every redirect hop use it, so no page is fetched twice."""
+    from bs4 import BeautifulSoup
+
+    body = body or ""
+    final_url = final_url or url
+    title = re.search(r"<title[^>]*>(.*?)</title>", body, re.I | re.S)
+    text = re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>", " ", body, flags=re.S | re.I)
+    forms = form_fields(BeautifulSoup(body, "html.parser"))
+    return {"status": "ok", "evidence_source": "http_fallback", "final_url": final_url, "http_status": status,
+            "page_title": html.unescape(title.group(1).strip() if title else "")[:200],
+            "text": re.sub(r"\s+", " ", html.unescape(text)).strip()[:8000], "forms": forms,
+            "harvested_fields": classify_fields(forms), "external_form_actions": _external_actions(forms, final_url),
+            "html": body}
+
+
+# ---------------------------------------------------------------------------
+# Phone vs desktop (dual persona). A kit that only serves its form to phones (the SMS audience) and
+# sends computers somewhere harmless hides from desktop analysts. Legitimate reasons for a phone to
+# see something else are many, so each one is ruled out before it counts.
+# ---------------------------------------------------------------------------
+APP_LINK_HOSTS = (
+    "apps.apple.com", "itunes.apple.com", "play.google.com", "onelink.me", "onelink.to", "app.link", "page.link",
+    "app.goo.gl", "adj.st", "adjust.com", "smart.link", "sng.link", "branch.io", "bnc.lt", "go.link",
+    "appsflyer.com", "urlgeni.us", "app.adjust.com", "appgallery.huawei.com", "galaxystore.samsung.com",
+)
+AMP_HOSTS = ("ampproject.org", "amp.dev")
+MOBILE_SUBDOMAINS = ("m.", "mobile.", "touch.", "amp.", "mob.", "wap.")
+CONSENT_MARKER = re.compile(r"consent|cookie|gdpr|privacy[-_]?(choices|center|gate)|geo[-_]?(block|gate)|region[-_]?select"
+                            r"|country[-_]?select|age[-_]?(gate|verif)", re.I)
+CHALLENGE_MARKER = re.compile(
+    r"just a moment|attention required|cf-chl|cf_chl|challenge-platform|captcha|ddos-guard|access denied"
+    r"|are you a robot|verify you are (a )?human|incapsula|perimeterx|px-captcha|_incapsula_|bot protection"
+    r"|security check|request unsuccessful|pardon our interruption|checking your browser", re.I)
+INCONCLUSIVE_STATUS = {401, 403, 405, 406, 407, 408, 409, 425, 429, 451, 500, 502, 503, 504, 520, 521, 522, 523, 524}
+# Phone-only fields that matter even when the desktop page looks normal. Password / Emirates ID boxes alone
+# need the desktop view to be a decoy too (an error page or an almost empty page).
+DECISIVE_FIELDS = {"OTP", "UAE_PASS", "CVV", "CARD_EXPIRY", "CARD_NUMBER", "ATM_PIN", "IBAN"}
+MOBILE_FIELD_LABELS = {
+    "OTP": ("one-time codes (OTP)", "رموز التحقق"), "UAE_PASS": ("UAE PASS log-in", "بيانات UAE PASS"),
+    "CVV": ("card CVV codes", "رمز CVV"), "CARD_EXPIRY": ("card expiry dates", "تاريخ انتهاء البطاقة"),
+    "CARD_NUMBER": ("card numbers", "أرقام البطاقات"), "ATM_PIN": ("PIN codes", "الرقم السري"),
+    "EMIRATES_ID": ("Emirates ID numbers", "رقم الهوية الإماراتية"), "PASSWORD": ("passwords", "كلمات المرور"),
+    "IBAN": ("bank account / IBAN numbers", "أرقام الحسابات (IBAN)"),
+}
+
+
+def _under(host: str, roots: tuple[str, ...]) -> bool:
+    h = (host or "").lower()
+    return any(h == r or h.endswith("." + r) for r in roots)
+
+
+def _challenge(view: dict[str, Any]) -> bool:
+    blob = f"{view.get('page_title') or view.get('title') or ''} {(view.get('text') or '')[:2000]} " \
+           f"{(view.get('html') or '')[:6000]}"
+    return bool(CHALLENGE_MARKER.search(blob))
+
+
+def mobile_cloak_verdict(phone: dict[str, Any], desktop_raw: dict[str, Any], desktop: dict[str, Any] | None,
+                         input_url: str) -> dict[str, Any]:
+    """MOBILE_CLOAKING_DETECTED rule: the phone view differs from the desktop view in a way that matters
+    (phone sent to a different website, or only the phone is asked for card / OTP / UAE PASS ...)."""
+    from .domain_intel import official_match
+    from .email_rules import regdom
+    from .threat_feeds import popularity_rank
+
+    out: dict[str, Any] = {"detected": False, "desktop_status": desktop_raw.get("status"),
+                           "phone_status": phone.get("http_status")}
+    if not desktop_raw.get("status") or desktop is None or phone.get("status") != "ok":
+        return out | {"reason": "desktop view unavailable"}
+    if desktop_raw["status"] in INCONCLUSIVE_STATUS or (phone.get("http_status") or 0) in INCONCLUSIVE_STATUS:
+        return out | {"reason": "blocked or rate-limited view (inconclusive)"}
+    if _challenge(phone) or _challenge(desktop):
+        return out | {"reason": "bot challenge / interstitial (inconclusive)"}
+    p_url, d_url = phone.get("final_url") or input_url, desktop.get("final_url") or input_url
+    p_host, d_host = (urlsplit(p_url).hostname or "").lower(), (urlsplit(d_url).hostname or "").lower()
+    in_reg = regdom(urlsplit(input_url).hostname or "") or ""
+    p_reg, d_reg = regdom(p_host) or p_host, regdom(d_host) or d_host
+    if _under(p_host, APP_LINK_HOSTS):
+        return out | {"reason": "phone sent to an app store / app link"}
+    if _under(p_host, AMP_HOSTS) or re.search(r"(^|[/.])amp([/.?]|$)", urlsplit(p_url).path or ""):
+        return out | {"reason": "AMP version for phones"}
+    if p_url != d_url and CONSENT_MARKER.search(p_url):
+        return out | {"reason": "consent / region interstitial"}
+    if p_host != d_host and p_host.startswith(MOBILE_SUBDOMAINS):
+        bare = p_host.split(".", 1)[1]
+        if p_reg == d_reg or bare in (d_host, d_host.removeprefix("www.")) or d_host.endswith("." + bare):
+            return out | {"reason": "mobile sub-domain of the same website"}
+    p_title = (phone.get("page_title") or "").strip().lower()
+    d_title = (desktop.get("page_title") or "").strip().lower()
+    sim = fuzz.token_set_ratio((phone.get("text") or "")[:3000], (desktop.get("text") or "")[:3000])
+    same_doc = bool(p_title) and p_title == d_title and sim >= 60
+    out |= {"text_similarity": round(sim, 1), "phone_final_url": p_url[:300], "desktop_final_url": d_url[:300]}
+    if same_doc:
+        return out | {"reason": "same page (responsive site)"}
+
+    def label(reg: str) -> str:
+        return reg.split(".")[0]
+
+    moved = (p_reg != in_reg and p_reg != d_reg and label(p_reg) != label(d_reg)
+             and not official_match(p_host) and not popularity_rank(p_reg))
+    p_sens = set(phone.get("harvested_fields") or []) & SENSITIVE
+    d_sens = set(desktop.get("harvested_fields") or []) & SENSITIVE
+    extra = p_sens - d_sens
+    decoy = desktop_raw["status"] >= 400 or len(desktop.get("text") or "") < 200 or d_reg != p_reg
+    fields_differ = bool(extra & DECISIVE_FIELDS) or (bool(extra) and decoy)
+    if not (moved or fields_differ):
+        return out | {"reason": ""}
+    what = sorted(extra)
+    en = ", ".join(MOBILE_FIELD_LABELS[f][0] for f in what if f in MOBILE_FIELD_LABELS)
+    ar = "، ".join(MOBILE_FIELD_LABELS[f][1] for f in what if f in MOBILE_FIELD_LABELS)
+    return out | {"detected": True, "phone_only_fields": what, "phone_redirected_to": p_reg if moved else None,
+                  "reason_en": (f"Phones are sent to {p_reg} while computers stay on {d_reg}." if moved and not en else
+                                f"Phones are asked for {en}; computers never see that form."),
+                  "reason_ar": (f"تُحوَّل الهواتف إلى {p_reg} بينما تبقى أجهزة الكمبيوتر على {d_reg}." if moved and not ar else
+                                f"تطلب الصفحة من الهواتف {ar}؛ ولا تظهر هذه الاستمارة لأجهزة الكمبيوتر.")}
 
 
 def _external_actions(forms: list[dict[str, Any]], page_url: str) -> list[str]:
@@ -233,6 +364,8 @@ class Sandbox:
         headers = {"User-Agent": BOT_USER_AGENT, "Accept-Language": ACCEPT_LANGUAGE}
         if view == "visitor":
             headers |= {"User-Agent": PROFILES["mobile"]["user_agent"], "Referer": "https://www.google.com/"}
+        elif view == "desktop":  # the same citizen on a computer: the dual-persona comparison
+            headers |= {"User-Agent": PROFILES["desktop"]["user_agent"], "Referer": "https://www.google.com/"}
         async def guard(request: httpx.Request) -> None:
             ok, _ = await host_is_safe_target(request.url.host)
             if not ok:
@@ -289,11 +422,13 @@ class Sandbox:
 
         browser = await self._ensure_browser()
         if not browser:
-            # No browser: fetch as a citizen and as a crawler at the same time and compare the two.
-            visitor, bot = await asyncio.gather(self._naive_fetch(url, "visitor"), self._naive_fetch(url, "bot"))
+            # No browser: fetch as a citizen's phone, the same citizen on a computer and a crawler at the
+            # same time; phone vs crawler = CLOAKING, phone vs computer = MOBILE_CLOAKING_DETECTED.
+            visitor, bot, desktop = await asyncio.gather(
+                self._naive_fetch(url, "visitor"), self._naive_fetch(url, "bot"), self._naive_fetch(url, "desktop"))
             if not visitor.get("status"):
                 return self._from_http_only(bot, url, t0)
-            return self._from_http_only(visitor, url, t0, bot=bot)
+            return self._from_http_only(visitor, url, t0, bot=bot, desktop=desktop)
         naive_task = asyncio.create_task(self._naive_fetch(url))
 
         async with self._sem:
@@ -345,38 +480,35 @@ class Sandbox:
             "external_form_actions": _external_actions(data["forms"], final_url),
             "blocked_requests": blocked[:20],
             "screenshot_b64": base64.b64encode(shot).decode(),
+            "html": data.get("html") or "",  # brand fingerprint input; never stored or returned
         }
         result["cloaking"] = self._cloak_verdict(await naive_task, result)
         result["elapsed_ms"] = int((time.perf_counter() - t0) * 1000)
         return result
 
     def _from_http_only(self, naive: dict[str, Any], url: str, t0: float,
-                        bot: dict[str, Any] | None = None) -> dict[str, Any]:
+                        bot: dict[str, Any] | None = None, desktop: dict[str, Any] | None = None) -> dict[str, Any]:
         """Page evidence from a plain HTTP fetch. With a second, crawler view (bot) the two are
-        compared for cloaking by the same rule as the browser path."""
+        compared for cloaking by the same rule as the browser path; with a desktop view, phone and
+        computer are compared (mobile_cloak_verdict)."""
         if not naive.get("status"):
             return {"status": "unreachable", "evidence_source": "none", "error": naive.get("error"),
                     "elapsed_ms": int((time.perf_counter() - t0) * 1000)}
-        from bs4 import BeautifulSoup
-
-        soup = BeautifulSoup(naive.get("html", ""), "html.parser")
-        forms = [{"action": f.get("action", ""), "method": (f.get("method") or "get").lower(),
-                  "fields": [{"name": i.get("name") or i.get("id") or "", "type": (i.get("type") or i.name).lower(),
-                              "placeholder": i.get("placeholder", ""), "autocomplete": i.get("autocomplete", ""),
-                              "label": _label_of(soup, f, i)}
-                             for i in f.find_all(["input", "select", "textarea"])
-                             if (i.get("type") or "").lower() not in {"hidden", "submit", "button"}]}
-                 for f in soup.find_all("form")]
-        result = {"status": "ok", "evidence_source": "http_fallback", "final_url": naive.get("final_url", url),
-                  "http_status": naive.get("status"),
-                  "redirect_chain": list(dict.fromkeys([url, naive.get("final_url", url)])),
-                  "page_title": naive.get("title", ""), "text": naive.get("text", ""), "forms": forms,
-                  "harvested_fields": classify_fields(forms),
-                  "external_form_actions": _external_actions(forms, naive.get("final_url", url)),
-                  "cloaking": {"detected": False, "reason": "single-view fetch (no headless browser)"},
-                  "screenshot_b64": None, "sandbox_note": self.error, "html": naive.get("html", "")}
+        final = naive.get("final_url", url)
+        result = page_from_html(naive.get("html", ""), url, naive.get("status"), final)
+        result |= {"redirect_chain": list(dict.fromkeys([url, final])),
+                   "page_title": naive.get("title", ""), "text": naive.get("text", ""),
+                   "cloaking": {"detected": False, "reason": "single-view fetch (no headless browser)"},
+                   "screenshot_b64": None, "sandbox_note": self.error}
         if bot is not None:
             result["cloaking"] = self._cloak_verdict(bot, result) | {"method": "two-view HTTP fetch"}
+        if desktop is not None:
+            desk_page = None
+            if desktop.get("status"):
+                desk_page = page_from_html(desktop.get("html", ""), url, desktop.get("status"),
+                                           desktop.get("final_url", url))
+                desk_page |= {"page_title": desktop.get("title", ""), "text": desktop.get("text", "")}
+            result["mobile_cloaking"] = mobile_cloak_verdict(result, desktop, desk_page, url)
         result["elapsed_ms"] = int((time.perf_counter() - t0) * 1000)
         return result
 

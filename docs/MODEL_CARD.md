@@ -191,6 +191,90 @@ ADCB / Abu Dhabi Police Maps listings with only a mobile or foreign number (30).
 gap was fixed: Arabic polite requests with a verbal noun ("يرجى إرسال رمز التحقق", "الرجاء مشاركة الرقم السري") were not
 recognised as asking for a code (a request word is required, so "تم إرسال رمز التحقق إلى هاتفك" stays a notice).
 
+### UAE suite extended to 100 cases (2026-11-24)
+
+50 "tricky" cases (`"tricky": true`; 25 scams + 25 legitimate, 5 + 5 per input type) were written from realistic
+patterns BEFORE the suite was run on them (free-host look-alikes, sub-domain abuse, a percent-encoded Arabic lure
+path, brand in the path of an unrelated host, an open-redirect wrapper, look-alike senders, link-in-bio listings,
+foreign numbers for government bodies, Arabic OTP harvest; legit: UAE news about scams, tracking-heavy official
+links, a Telr payment page, bank marketing with urgency, brand-like business names, official SMS, short codes).
+Run ONCE, offline, rules only:
+
+| type | cases | TP | FN | FP | TN | recall | FPR |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| url | 20 | 8 | 2 | 0 | 10 | 0.80 | 0 |
+| email | 20 | 10 | 0 | 0 | 10 | 1.00 | 0 |
+| maps | 20 | 10 | 0 | 0 | 10 | 1.00 | 0 |
+| phone | 20 | 9 | 1 | 0 | 10 | 0.90 | 0 |
+| message | 20 | 9 | 1 | 0 | 10 | 0.90 | 0 |
+| **all** | 100 | 46 | 4 | 0 | 50 | **0.92** | **0** |
+
+Precision 1.00, F1 0.958. Misses (kept in the file): `url-mal-arabic-encoded-path` (11), `url-mal-brand-in-path`
+(25), `phone-mal-fab-one-digit-off` (600 number one digit off FAB's: level none), `msg-mal-salik-shortener-uk`
+(0: an unexpandable bit.ly from a UK mobile claiming Salik). `tests/test_uae_suite.py` now asserts the honest floor
+46 / 50 detected (below the old 24 / 25 ratio) and 0 false positives.
+
+## Sealed sample C (2026-11-24): legitimate half only
+
+Protocol: detection code, rules, weights, thresholds, registry and baselines frozen at 2026-11-24T21:39:11Z
+(`saqr/` tree SHA-256 `544ca45e…f6f756`, unchanged at scoring time); the only changes made in the pre-freeze step were `eand.ae`
+added as e&'s official site (verified: `etisalat.ae` answers 302 to `www.eand.ae`) and a test. Sample sealed in
+`datasets/live3.csv` (SHA-256 `76e5baa915a7202e04c21a2551cb3f89548cf43e8e4c6848fe29691d57c7bc90`) before scoring;
+scored ONCE with `tools/evaluate.py --mode live` (HTTP only, no LLM, no feeds in the scan, `VISUAL_SCREENSHOTS=false`,
+concurrency 30, 45 s per URL).
+
+**Phishing: 0 URLs qualified.** The rule was "submitted / first seen after the 21:10Z training cut-off". At
+collection (~22:05Z) the newest PhishTank online-valid submission was 21:06:26Z, and the OpenPhish feeds and
+Phishing.Database NEW-today list had no entries absent from the cut-off snapshot. Nothing was back-filled with
+older phishing, so **recall, precision, accuracy and F1 were NOT measured on sample C**. This must be redone a day
+or more after a cut-off.
+
+**Legitimate: 460 never-trained pages** (none of their URLs in any local dataset / holdout file): 90 UAE official
+deep links, 60 global-brand official pages, 60 log-in pages (banks, government, big services), 70 scam-topic news
+articles (14 UAE, 56 global; from sites NOT used for the hard-negative training set), 120 Tranco long-tail
+homepages (FP-suite pool sites held out of the shipped model), 60 legit user-content pages (github.io, vercel.app,
+netlify.app, pages.dev ... linked from public curated lists). Sample A / B files are not on this machine, so overlap
+with them could only be excluded through the training / holdout files.
+
+| cut | false alarms | FPR | 95% Wilson CI |
+|---|---:|---:|---|
+| warn (>= 30) | 19 / 460 | 4.13% | 2.66% - 6.36% |
+| block (>= 65) | 3 / 460 | 0.65% | 0.22% - 1.90% |
+
+By source (warn / block): UAE official 0 / 0, brand official 0 / 0, log-in pages 0 / 0, global news 0 / 0, Tranco
+long tail 0 / 0, UAE news 2 / 0 (dubaichronicle.com, 35: fresh certificate + brand + urgency words), **free hosting
+17 / 3 of 60** (URL model on GitHub Pages / Vercel / Netlify / Pages project names; the three blocks are
+wox-launcher.github.io, pickywawa.github.io, sentinel-james-murphy.pages.dev at 70). 30 Tranco homepages timed out
+at concurrency 30 and count as not flagged (on the 430 that answered: warn 4.42%, block 0.70%). With feeds
+(circular): identical, 0 feed hits on legit. Scan time median 9.6 s, p95 53.4 s (concurrency 30 is too high for
+this laptop).
+
+New signals on these 460 legit pages: `MOBILE_CLOAKING_DETECTED` 0, `VISUAL_BRAND_CLONE_DETECTED` 0,
+`VISUAL_BRAND_SIMILARITY` 0 (fingerprint computed on 225 pages), per-hop page evidence on 6 (verdict judged from a
+hop page once), JS-redirect hops 0. No false alarm was caused by a new signal. A/B on identical saved evidence
+(re-judging reproduced all 430 judged scores exactly): removing the cloaking / visual inputs changes 0 scores.
+How often the new signals fire on phishing is unknown (no phishing half). LLM subsample: skipped (time).
+
+Against the spec targets (accuracy 98%, recall 97.5%, FPR 1%): recall and accuracy not measured on C; warn-level
+FPR 4.13% is above 1%, driven entirely by free-hosting pages; block-level FPR 0.65% is under 1%, but its CI reaches
+1.9%. On sample B (older, see above) warn recall without feeds was 0.75, far below 97.5%.
+
+## Retrain, calibration, visual similarity (2026-11-24)
+
+- **Retrain rejected (null result).** A candidate trained with hard negatives lost on the pre-agreed rule
+  (validation recall at the strong cut 0.6782 vs 0.6867; FP-suite block false positives 22 vs 17); the shipped
+  model files are unchanged (`datasets/candidate/compare.json`, `retrain_comparison` in the metrics JSON).
+- **Calibration.** A Platt table fitted on the validation split gives `calibrated_probability` (ECE 0.0082 -> 0.0033
+  on validation). It is shown to citizens; decisions still use the RAW probability and the shipped thresholds.
+  Validation is ~half phishing, so it overstates real-world odds.
+- **Visual similarity.** `brand_fingerprint.py` compares a fetched page's title / site name, brand assets, favicon
+  hash, colours and form shape with baselines of 11 official portals: 6 full (Abu Dhabi Police, Emirates Post,
+  Salik, ADCB, FAB, e&), 5 partial (TAMM and UAE PASS are JavaScript-only shells, ICP and Emirates NBD did not
+  answer, du disallows fetching). >= 75 on a non-official domain = `VISUAL_BRAND_CLONE_DETECTED` (+35), 50-74 =
+  `VISUAL_BRAND_SIMILARITY` (+10, weak). The optional screenshot dHash (`VISUAL_SCREENSHOTS`, thum.io) is weakly
+  discriminative: unrelated white portals already reach 70-75%, so it only adds points next to a fingerprint match
+  and never makes a clone alone. It was not measured on sample C.
+
 ## Tools
 
 - `tools/evaluate.py <file> [--url-col --label-col --positive --label] [--mode model|system|live] [--threshold] [--out report.json]`: any dataset; precision / recall / F1 / FPR / accuracy, confusion matrix, PR points, 20 worst false positives / negatives with reasons.

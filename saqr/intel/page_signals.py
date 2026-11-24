@@ -50,16 +50,38 @@ LOGIN_WORDS = re.compile(
     r"|تسجيل الدخول|تحقق|حسابك|تحديث البيانات", re.I)
 
 
+# Hosted payment pages (UAE + global gateways). Every merchant's checkout shares these hosts, so a page
+# there is judged by its content, never trusted outright, and its host is never published to the DNS
+# blocklist (that would block every merchant's payments). Card fields and the merchant's own brand are
+# the normal content of such a page, not evidence. ngenius-payments.com = Network International's
+# N-Genius hosted pay page (network.ae's gateway).
+PAYMENT_GATEWAY_HOSTS = (
+    "network.ae", "ngenius-payments.com", "payfort.com", "telr.com", "magnati.com", "noonpayments.com",
+    "paytabs.com", "checkout.com", "stripe.com",
+)
+
+
 def user_content(host: str) -> bool:
     """Anyone can publish a page on this host (free hosting, website builders, cloud buckets)."""
     h = (host or "").lower().rstrip(".")
     return on_free_hosting(h) or any(h == p or h.endswith("." + p) for p in USER_CONTENT_HOSTS)
 
 
+def payment_gateway(host: str) -> bool:
+    """A payment gateway's hosted page: any merchant's checkout (see PAYMENT_GATEWAY_HOSTS)."""
+    h = (host or "").lower().rstrip(".")
+    return any(h == p or h.endswith("." + p) for p in PAYMENT_GATEWAY_HOSTS)
+
+
+def shared_platform(host: str) -> bool:
+    """Pages of many unrelated owners share this host: judged by content, never trusted outright."""
+    return user_content(host) or payment_gateway(host)
+
+
 def unofficial_user_content(lex: LexicalReport) -> LexicalReport:
     """A page that anyone can publish on an official company's platform (a Google Cloud Storage bucket,
     Google Sites, SharePoint ...) is not that company's own site: it must be judged, not whitelisted."""
-    if lex.is_whitelisted and user_content(lex.host):
+    if lex.is_whitelisted and shared_platform(lex.host):
         return replace(lex, is_whitelisted=False, official_match=None, impersonated=None)
     return lex
 

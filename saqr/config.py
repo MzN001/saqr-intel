@@ -91,6 +91,13 @@ class Settings:
     sandbox_proxy_username: str = os.getenv("SANDBOX_PROXY_USERNAME", "")
     sandbox_proxy_password: str = os.getenv("SANDBOX_PROXY_PASSWORD", "")
 
+    # Screenshot similarity (saqr/intel/visual_similarity.py). Deep scans of suspicious, non-official links
+    # only. WARNING: when there is no Playwright screenshot this SENDS THE SUSPICIOUS URL to the third-party
+    # screenshot services image.thum.io (and s0.wp.com/mshots when Pillow is installed). Corroboration only:
+    # the brand fingerprint (always on, no third party) is the primary visual signal.
+    visual_screenshots: bool = _bool("VISUAL_SCREENSHOTS", True)
+    visual_screenshot_timeout_s: float = min(6.0, _float("VISUAL_SCREENSHOT_TIMEOUT_SECONDS", 6.0))
+
     # --- Maps ----------------------------------------------------------------
     google_maps_api_key: str = os.getenv("GOOGLE_MAPS_API_KEY", "")
     osm_reverse_enabled: bool = _bool("OSM_REVERSE_GEOCODE", True)

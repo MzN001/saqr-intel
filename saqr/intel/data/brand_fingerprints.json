@@ -1,0 +1,605 @@
+{
+ "version": 1,
+ "generated_at": "2026-11-24T21:24:43+00:00",
+ "user_agent": "Mozilla/5.0 (compatible; BrandBaselineCapture/1.0; anti-phishing reference fingerprint)",
+ "tool": "tools/build_brand_fingerprints.py",
+ "note": "Derived fingerprints only (no page copies). status=partial: portal blocked or JS-only; built from what was reachable plus registry data.",
+ "baselines": [
+  {
+   "id": "tamm",
+   "entity_id": "tamm",
+   "name_en": "TAMM",
+   "name_ar": "تم",
+   "official_domains": [
+    "tamm.abudhabi"
+   ],
+   "brand_terms": [
+    "tamm",
+    "tamm abu dhabi",
+    "تم",
+    "منصة تم",
+    "تم أبوظبي"
+   ],
+   "status": "partial",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://www.tamm.abudhabi/",
+    "https://www.tamm.abudhabi/en"
+   ],
+   "title_tokens": [],
+   "phrases": [],
+   "asset_names": [
+    "client.css",
+    "colors-dynamic.css"
+   ],
+   "asset_hosts": [],
+   "colours": [
+    "#161138",
+    "#f79521",
+    "#fcb813",
+    "#fc532e",
+    "#51b53f"
+   ],
+   "form_kinds": [
+    "UAE_PASS"
+   ],
+   "lang": "en",
+   "favicon_url": "https://www.tamm.abudhabi/favicon.ico",
+   "favicon_sha256": "587497ef7dbdef1ac146a29297c27cf49ab4d59f36ab32049aa2bf275d2f174c",
+   "dhash": {},
+   "dhash_captured_at": null,
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)",
+    "thumio screenshot blank or unavailable (no dHash)"
+   ]
+  },
+  {
+   "id": "uaepass",
+   "entity_id": "uaepass",
+   "name_en": "UAE PASS",
+   "name_ar": "الهوية الرقمية UAE PASS",
+   "official_domains": [
+    "uaepass.ae"
+   ],
+   "brand_terms": [
+    "uae pass",
+    "uaepass",
+    "الهوية الرقمية"
+   ],
+   "status": "partial",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://uaepass.ae/",
+    "https://www.uaepass.ae/"
+   ],
+   "title_tokens": [],
+   "phrases": [],
+   "asset_names": [
+    "entry.ckv2ik9m.css"
+   ],
+   "asset_hosts": [],
+   "colours": [],
+   "form_kinds": [
+    "EMIRATES_ID"
+   ],
+   "lang": "en",
+   "favicon_url": "https://uaepass.ae/favicon.ico",
+   "favicon_sha256": "23a7f9574879d8c5cb9a11a5a32695182ff819be50f478f653762f48c4703463",
+   "dhash": {
+    "thumio": "1f7c7d9c0c803625"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)"
+   ]
+  },
+  {
+   "id": "adpolice",
+   "entity_id": "adpolice",
+   "name_en": "Abu Dhabi Police",
+   "name_ar": "شرطة أبوظبي",
+   "official_domains": [
+    "adpolice.gov.ae"
+   ],
+   "brand_terms": [
+    "abu dhabi police",
+    "adpolice",
+    "شرطة أبوظبي",
+    "شرطة ابوظبي"
+   ],
+   "status": "full",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://www.adpolice.gov.ae/",
+    "https://www.adpolice.gov.ae/en"
+   ],
+   "title_tokens": [
+    "ابوظبي",
+    "الرييسيه",
+    "شرطه",
+    "abudhabi",
+    "police"
+   ],
+   "phrases": [
+    "english عن شرطه ابوظبي الرويه والرساله والقيم تاريخ شرطه ابوظبي رساله القايد العام الهيكل التنظيمي الجوده العالميه مراكز",
+    "امكانيه الوصول",
+    "اللغات",
+    "اهلا بكم في الموقع الرسمي للقياده العامه لشرطه ابوظبي",
+    "الخدمات الالكترونيه لشرطه ابوظبي",
+    "كن علي اطلاع",
+    "8003333",
+    "شرطه ابوظبي علي منصات التواصل الاجتماعي",
+    "برعايه برعايه",
+    "برعايه",
+    "عربي customer happiness charter about us vision mission objectives ad police history director general message organiza",
+    "accessibility"
+   ],
+   "asset_names": [
+    "adpolice-logo-01.png",
+    "appstore.svg",
+    "dge-vertical-logo.svg",
+    "favicon_adp.png",
+    "optimized-min.css",
+    "playstore.svg",
+    "the-emerates-logo.svg"
+   ],
+   "asset_hosts": [],
+   "colours": [
+    "#5f3f3f",
+    "#003eff",
+    "#dad55e",
+    "#fffa90",
+    "#777620"
+   ],
+   "form_kinds": [
+    "UAE_PASS"
+   ],
+   "lang": "ar",
+   "favicon_url": "https://www.adpolice.gov.ae:443/-/media/Project/ADP/ADP/favicon_adp.png",
+   "favicon_sha256": "99896e600f0bb4cc6998250b9e911ab560046a4123d0935404daf8ff442ee661",
+   "dhash": {
+    "thumio": "f6e392b3ab8ed831"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)"
+   ]
+  },
+  {
+   "id": "emiratespost",
+   "entity_id": "emiratespost",
+   "name_en": "Emirates Post",
+   "name_ar": "بريد الإمارات",
+   "official_domains": [
+    "emiratespost.ae",
+    "epg.gov.ae"
+   ],
+   "brand_terms": [
+    "emirates post",
+    "emiratespost",
+    "بريد الإمارات"
+   ],
+   "status": "full",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://www.emiratespost.ae/",
+    "https://www.emiratespost.ae/en"
+   ],
+   "title_tokens": [
+    "delivering",
+    "happiness",
+    "post",
+    "wherever"
+   ],
+   "phrases": [
+    "search عربي settings select color theme selected translate website emirate post is not responsible for the translated o",
+    "settings",
+    "select color theme",
+    "emirates post delivering happiness wherever you are",
+    "delivering happiness",
+    "quick actions",
+    "services",
+    "latest news",
+    "download our app and ship on the go",
+    "track your shipments",
+    "search عربي settings select color theme selected translate website emirate post is not responsible for the translated o",
+    "settings"
+   ],
+   "asset_names": [],
+   "asset_hosts": [],
+   "colours": [
+    "#0052a3",
+    "#006ddf",
+    "#001a33",
+    "#4c5e70",
+    "#4ba3ff"
+   ],
+   "form_kinds": [
+    "PASSWORD"
+   ],
+   "lang": "en",
+   "favicon_url": "https://assets.emiratespost.ae/cn-cms/assets/Microsoft_Teams_image_2aef2b86ac.png",
+   "favicon_sha256": "a9d2327159946c42dc56bd96d0992a3dd2749b3163ef4d0f7654aa5715d46184",
+   "dhash": {
+    "thumio": "3032060000000000"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)"
+   ]
+  },
+  {
+   "id": "salik",
+   "entity_id": "rta",
+   "name_en": "Salik",
+   "name_ar": "سالك",
+   "official_domains": [
+    "salik.ae",
+    "rta.ae"
+   ],
+   "brand_terms": [
+    "salik",
+    "سالك"
+   ],
+   "status": "full",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://www.salik.ae/",
+    "https://www.salik.ae/en"
+   ],
+   "title_tokens": [
+    "الرييسيه"
+   ],
+   "phrases": [
+    "english تمكين الوصول تمكين الوصول طباعه هذه الصفحه تغيير حاله تمكين الوصول تغيير حجم النص استخدم الازرار لتكبير حجم النص",
+    "الطريقه الاسهل للتجول في دبي",
+    "احدث الاخبار من سالك",
+    "هل انت متاكد",
+    "مجلس محمد بن راشد الذكي",
+    "العربيه accessibility accessibility print this page accessibility toggle text resize use the buttons to increase or decr",
+    "the easiest way to drive around dubai",
+    "latest from salik",
+    "are you sure",
+    "mohammed bin rashid smart majlis"
+   ],
+   "asset_names": [
+    "logo-mohammed.png",
+    "override-rtl.css",
+    "override.css",
+    "salik-css",
+    "salik-css-rtl"
+   ],
+   "asset_hosts": [],
+   "colours": [
+    "#337ab7",
+    "#286090",
+    "#3c763d",
+    "#8a6d3b",
+    "#a94442"
+   ],
+   "form_kinds": [
+    "PASSWORD"
+   ],
+   "lang": "ar",
+   "favicon_url": "https://www.salik.ae/content/img/ico/favicon.ico",
+   "favicon_sha256": "48d9e4e4c5248e7abdf2893e281dc2388f5eca1384b39f561136068c0a8b1533",
+   "dhash": {},
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)",
+    "thumio screenshot identical to another portal's (placeholder): dropped"
+   ]
+  },
+  {
+   "id": "icp",
+   "entity_id": null,
+   "name_en": "ICP",
+   "name_ar": "الهيئة الاتحادية للهوية والجنسية",
+   "official_domains": [
+    "icp.gov.ae"
+   ],
+   "brand_terms": [
+    "icp",
+    "federal authority for identity",
+    "الهيئة الاتحادية للهوية"
+   ],
+   "status": "partial",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://smartservices.icp.gov.ae/"
+   ],
+   "title_tokens": [],
+   "phrases": [],
+   "asset_names": [],
+   "asset_hosts": [],
+   "colours": [],
+   "form_kinds": [
+    "UAE_PASS"
+   ],
+   "lang": "",
+   "favicon_url": null,
+   "favicon_sha256": null,
+   "dhash": {
+    "thumio": "92bae0e4e6f2d618"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "https://icp.gov.ae/: no answer",
+    "form kinds from registry data (log-in page not reachable)"
+   ]
+  },
+  {
+   "id": "adcb",
+   "entity_id": "adcb",
+   "name_en": "ADCB",
+   "name_ar": "بنك أبوظبي التجاري",
+   "official_domains": [
+    "adcb.com"
+   ],
+   "brand_terms": [
+    "adcb",
+    "abu dhabi commercial bank",
+    "بنك أبوظبي التجاري"
+   ],
+   "status": "full",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://www.adcb.com/en/personal/",
+    "https://www.adcb.com/en/personal/"
+   ],
+   "title_tokens": [
+    "adcb",
+    "banking",
+    "institution",
+    "leading"
+   ],
+   "phrases": [
+    "personal business private about us personal business private about us menu go to adcb islamic go to adcb islamic back to",
+    "our products at a glance",
+    "trending now",
+    "at your service",
+    "consumer education and awareness",
+    "news",
+    "switch to",
+    "adcb logo",
+    "adcb logo facebook instagram twitter linkedin",
+    "facebook instagram twitter linkedin",
+    "personal business private about us personal business private about us menu go to adcb islamic go to adcb islamic back to",
+    "our products at a glance"
+   ],
+   "asset_names": [
+    "tamooha-trending-logo_tcm41.webp",
+    "toolkit-en.css"
+   ],
+   "asset_hosts": [],
+   "colours": [],
+   "form_kinds": [
+    "PASSWORD"
+   ],
+   "lang": "en",
+   "favicon_url": "https://www.adcb.com/en/system/assets/toolkit/favicon-assets/personal/favicon.ico",
+   "favicon_sha256": "76343fe8c8f6dbacfac8c95e4e212e8c4f07be06817d94bb0de2fbff42155ff3",
+   "dhash": {},
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)",
+    "thumio screenshot identical to another portal's (placeholder): dropped"
+   ]
+  },
+  {
+   "id": "fab",
+   "entity_id": "fab",
+   "name_en": "FAB",
+   "name_ar": "بنك أبوظبي الأول",
+   "official_domains": [
+    "bankfab.com"
+   ],
+   "brand_terms": [
+    "fab",
+    "first abu dhabi bank",
+    "bank fab",
+    "بنك أبوظبي الأول"
+   ],
+   "status": "full",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://www.bankfab.com/en-ae/personal",
+    "https://www.bankfab.com/en-ae/personal"
+   ],
+   "title_tokens": [
+    "banking",
+    "fab",
+    "financial",
+    "personal"
+   ],
+   "phrases": [
+    "english english العربيه العربيه customer care login login personal banking personal online banking uae ratibi prepaid",
+    "fab personal banking",
+    "fab s featured offers",
+    "purpose function and future ready",
+    "may our nation remain in god s protection",
+    "don t miss out on the latest products",
+    "our credit card partners give you more",
+    "fab mobile puts the power of the bank in your hands",
+    "fab islamic",
+    "tools and calculators",
+    "english english العربيه العربيه customer care login login personal banking personal online banking uae ratibi prepaid",
+    "fab personal banking"
+   ],
+   "asset_names": [
+    "fab-logo.svg",
+    "quick_render.min.css"
+   ],
+   "asset_hosts": [],
+   "colours": [
+    "#003da6",
+    "#00102b",
+    "#4f758b",
+    "#8f6902",
+    "#d4a63b"
+   ],
+   "form_kinds": [
+    "PASSWORD"
+   ],
+   "lang": "en",
+   "favicon_url": "https://www.bankfab.com/-/media/fab-uds/common-images/icons/favicon.png",
+   "favicon_sha256": "972919c924cab5254d38e36059b9698811b5fb01e2df5eb52a814e08a2135627",
+   "dhash": {
+    "thumio": "f100000178010180"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)"
+   ]
+  },
+  {
+   "id": "emiratesnbd",
+   "entity_id": "emiratesnbd",
+   "name_en": "Emirates NBD",
+   "name_ar": "بنك الإمارات دبي الوطني",
+   "official_domains": [
+    "emiratesnbd.com"
+   ],
+   "brand_terms": [
+    "emirates nbd",
+    "emiratesnbd",
+    "enbd",
+    "بنك الإمارات دبي الوطني"
+   ],
+   "status": "partial",
+   "captured_at": "2026-11-24",
+   "sources": [],
+   "title_tokens": [],
+   "phrases": [],
+   "asset_names": [],
+   "asset_hosts": [],
+   "colours": [],
+   "form_kinds": [
+    "PASSWORD"
+   ],
+   "lang": "",
+   "favicon_url": null,
+   "favicon_sha256": null,
+   "dhash": {
+    "thumio": "03030505f3b594cc"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "https://www.emiratesnbd.com/: no answer",
+    "https://www.emiratesnbd.com/en: no answer",
+    "form kinds from registry data (log-in page not reachable)",
+    "no page reachable: baseline from registry data only"
+   ]
+  },
+  {
+   "id": "etisalat",
+   "entity_id": "etisalat",
+   "name_en": "e&",
+   "name_ar": "اتصالات من e&",
+   "official_domains": [
+    "etisalat.ae",
+    "eand.com",
+    "eand.ae"
+   ],
+   "brand_terms": [
+    "e&",
+    "etisalat",
+    "etisalat by e&",
+    "اتصالات"
+   ],
+   "status": "full",
+   "captured_at": "2026-11-24",
+   "sources": [
+    "https://www.eand.ae/en/index.html",
+    "https://www.eand.com/en/index.html"
+   ],
+   "title_tokens": [
+    "etisalat",
+    "internet",
+    "mobile",
+    "plans",
+    "smartphones",
+    "tv",
+    "wifi",
+    "index"
+   ],
+   "phrases": [
+    "listening",
+    "mega friday mega discounts",
+    "home plans",
+    "whoop now at etisalat",
+    "if you can dream it mac can do it",
+    "50 years together 50 years etisalat",
+    "unfold more value with galaxy z series",
+    "introducing ai glasses",
+    "pro further",
+    "sign out",
+    "fifty years of etisalat",
+    "stories"
+   ],
+   "asset_names": [
+    "clientlib-conrmp25.lc-lc.min.css",
+    "eand-site.lc-lc.min.css",
+    "etisalat-favicon.ico",
+    "etisalat-logo-ver-red-en-1912x536.svg",
+    "etisalat-logo-ver-white-en-1912x536.svg",
+    "menu-footer-logo-3x.png"
+   ],
+   "asset_hosts": [],
+   "colours": [
+    "#e10801"
+   ],
+   "form_kinds": [
+    "PASSWORD"
+   ],
+   "lang": "en",
+   "favicon_url": null,
+   "favicon_sha256": null,
+   "dhash": {
+    "thumio": "f08ccc8894ac0164"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "form kinds from registry data (log-in page not reachable)"
+   ]
+  },
+  {
+   "id": "du",
+   "entity_id": "du",
+   "name_en": "du",
+   "name_ar": "دو",
+   "official_domains": [
+    "du.ae"
+   ],
+   "brand_terms": [
+    "du",
+    "دو",
+    "du telecom"
+   ],
+   "status": "partial",
+   "captured_at": "2026-11-24",
+   "sources": [],
+   "title_tokens": [],
+   "phrases": [],
+   "asset_names": [],
+   "asset_hosts": [],
+   "colours": [],
+   "form_kinds": [
+    "PASSWORD"
+   ],
+   "lang": "",
+   "favicon_url": null,
+   "favicon_sha256": null,
+   "dhash": {
+    "thumio": "f25757000070e0a6"
+   },
+   "dhash_captured_at": "2026-11-24",
+   "notes": [
+    "https://www.du.ae/: no answer",
+    "https://www.du.ae/personal: no answer",
+    "form kinds from registry data (log-in page not reachable)",
+    "no page reachable: baseline from registry data only"
+   ]
+  }
+ ]
+}

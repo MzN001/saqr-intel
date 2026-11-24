@@ -286,6 +286,13 @@ def test_emirates_post_group_domain(client):
     assert analyze_lexical("epgl.ae").impersonated is None and analyze_lexical("mepg.com").impersonated is None
 
 
+def test_eand_ae_is_official_e_and():
+    # verified 2026-11-25: etisalat.ae redirects to www.eand.ae (registry.ENTITY_EXTRA_DOMAINS)
+    lex = analyze_lexical("https://www.eand.ae/en/index.html")
+    assert lex.is_whitelisted and lex.impersonated and lex.impersonated.id == "etisalat"
+    assert not analyze_lexical("eand-ae-rewards.com").is_whitelisted
+
+
 def test_dewa_is_named(client):
     res = scan_raw(client, "DEWA <noreply@dewa.gov.ae>", "Unpaid bill", "Your DEWA bill of AED 230 is due today, pay now.")
     assert res["verdict"] == "HIGH-RISK SCAM" and res["impersonated_entity"] == "DEWA"

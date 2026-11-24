@@ -9,9 +9,11 @@ import time
 from datetime import timedelta
 from typing import Any
 
+from urllib.parse import urlsplit
+
 from .config import settings
 from .db import db, iso, utcnow
-from .intel import ai_inspector, graph_engine, page_signals, redirects
+from .intel import ai_inspector, brand_fingerprint, graph_engine, page_signals, redirects, visual_similarity
 from .intel.domain_intel import (
     LexicalReport,
     age_hours,
@@ -22,9 +24,9 @@ from .intel.domain_intel import (
     tls_lookup,
     whois_lookup,
 )
-from .intel.sandbox import sandbox
+from .intel.sandbox import page_from_html, sandbox
 from .intel.threat_feeds import on_free_hosting
-from .seed_data import DEMO_INTEL, resolve_mock_scam
+from .seed_data import DEMO_INTEL, replica_html, resolve_mock_scam
 
 log = logging.getLogger("saqr.pipeline")
 URL_IN_TEXT = re.compile(r"(?:hxxps?|https?)://\S+|(?:[a-z0-9-]+(?:\.|\[\.\]))+[a-z]{2,24}(?:/\S*)?", re.I)
@@ -82,14 +84,46 @@ def _hop_risk(lex: LexicalReport) -> int:
     return min(100, lex.score + sum(f.points for f in ai_inspector.intel_flags(lex)))
 
 
-async def follow_redirects(lex: LexicalReport, *, fast: bool) -> tuple[LexicalReport, list[dict[str, Any]]]:
+def _hop_pages(hops: list[dict[str, Any]], bodies: dict[int, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Page evidence for every hop whose HTML was already read while walking the chain (no extra
+    request): page_signals + form fields, judged with the hop's own address. Adds page_risk /
+    page_notes / page_title to the hop record. Returns host -> {page, score}."""
+    out: dict[str, dict[str, Any]] = {}
+    for i, body in sorted(bodies.items()):
+        hop = hops[i]
+        try:
+            hop_lex = page_signals.lexical(hop["url"])
+        except ValueError:
+            continue
+        if hop_lex.is_whitelisted:
+            continue
+        page = page_from_html(body.get("html") or "", hop["url"], body.get("status"))
+        rr = ai_inspector.run_rules(hop_lex, {}, page, None)
+        address = _hop_risk(hop_lex)
+        lex_codes = {f.code for f in hop_lex.flags} | {"KNOWN_PHISHING_FEED", "AI_PHISHING_URL", "AI_SUSPICIOUS_URL"}
+        hop["page_risk"] = max(0, rr.score - address)
+        hop["page_notes"] = [f.code for f in rr.flags if f.points > 0 and f.code not in lex_codes][:6]
+        hop["page_title"] = (page.get("page_title") or "")[:120]
+        if hop_lex.host not in out or rr.score >= out[hop_lex.host]["score"]:
+            out[hop_lex.host] = {"page": page, "score": rr.score}
+    return out
+
+
+async def follow_redirects(lex: LexicalReport, *, fast: bool,
+                           pages: dict[str, dict[str, Any]] | None = None) -> tuple[LexicalReport, list[dict[str, Any]]]:
     """Walk the link's redirect chain and pick the host the verdict must be about.
 
-    Every distinct host on the way is checked. The worst one is judged; when none stands out it is
-    the final destination, unless that is a famous or official site and an unknown site sits in
-    front of it (a scam page that bounces scanners to google.com must not be judged as Google)."""
+    Every distinct host on the way is checked: its address and, when its HTML was read on the way,
+    its page (combined evidence). The worst one is judged; when none stands out it is the final
+    destination, unless that is a famous or official site and an unknown site sits in front of it
+    (a scam page that bounces scanners to google.com must not be judged as Google).
+    pages (out-parameter): host -> {page, score} of the hops whose HTML was read."""
+    bodies: dict[int, dict[str, Any]] = {}
     hops = await redirects.resolve_chain(lex.normalized_url, max_hops=5 if fast else 8,
-                                         timeout=2.5 if fast else 5.0, fast=fast)
+                                         timeout=2.5 if fast else 5.0, fast=fast, pages=bodies)
+    hop_pages = _hop_pages(hops, bodies)
+    if pages is not None:
+        pages.update(hop_pages)
     by_host: dict[str, LexicalReport] = {lex.host: lex}
     for hop in hops[1:]:
         if hop.get("note") == "blocked_private":
@@ -101,7 +135,7 @@ async def follow_redirects(lex: LexicalReport, *, fast: bool) -> tuple[LexicalRe
         by_host[hop_lex.host] = hop_lex  # the last address seen on a host is where its page lives
     if len(by_host) < 2:
         return lex, hops
-    risks = {host: _hop_risk(hl) for host, hl in by_host.items()}
+    risks = {host: max(_hop_risk(hl), (hop_pages.get(host) or {}).get("score", 0)) for host, hl in by_host.items()}
     for hop in hops:
         if hop["host"] in risks:
             hop["risk"] = risks[hop["host"]]
@@ -115,6 +149,140 @@ async def follow_redirects(lex: LexicalReport, *, fast: bool) -> tuple[LexicalRe
         if unknown:
             return unknown[0], hops
     return final, hops
+
+
+# ---------------------------------------------------------------------------
+# Visual similarity: brand fingerprint (+ optional screenshot hash)
+# ---------------------------------------------------------------------------
+async def visual_similarity_for(lex: LexicalReport, page: dict[str, Any], *, deep: bool, net: dict[str, Any],
+                                syndicate: dict[str, Any] | None, allow_network: bool) -> dict[str, Any] | None:
+    """{score, matched_entity, matched_domain, components, screenshot_used} for the page, or None."""
+    html = page.get("html") or ""
+    if not html and page.get("evidence_source") == "seeded_replica":
+        dom = lex.registered_domain if lex.registered_domain in DEMO_INTEL else lex.host
+        html = replica_html(dom) if dom in DEMO_INTEL else ""
+    if not html:
+        return None
+    base_url = page.get("final_url") or lex.normalized_url
+    fp = brand_fingerprint.extract(html, base_url)
+    host = (urlsplit(base_url).hostname or lex.host).lower()
+    match = brand_fingerprint.best_match(fp, host=host)
+    if match is None:
+        return None
+    # One optional request: the page's own favicon, only when the page already resembles a portal.
+    if deep and allow_network and match["score"] >= 40:
+        fav = brand_fingerprint.favicon_candidate(fp)
+        if fav:
+            fp["favicon_hash"] = await brand_fingerprint.fetch_favicon_hash(fav)
+            if fp["favicon_hash"]:
+                match = brand_fingerprint.best_match(fp, host=host) or match
+    fp_score = match["score"]
+    shot = None
+    shot_used = False
+    if deep and allow_network and settings.visual_screenshots:
+        prelim = ai_inspector.run_rules(lex, net, {**page, "visual_similarity": _visual_view(match, fp_score, False)},
+                                        syndicate).score
+        if prelim >= 30 or fp_score >= 50 or lex.impersonated is not None:
+            probe = await visual_similarity.capture_hash(base_url, page, settings.visual_screenshot_timeout_s)
+            shot = visual_similarity.best_screenshot_match(probe, brand_fingerprint.baselines(), host)
+    score = fp_score
+    # Unrelated portals' thumbnails already reach 70-75% (white layouts): only a near-identical hash
+    # (>= 88%, at most 7 of 64 bits differ) of the SAME portal the fingerprint picked raises the score.
+    if shot and shot["id"] == match["id"] and shot["score"] >= visual_similarity.CORROBORATE_AT:
+        bonus = min(15, round((shot["score"] - visual_similarity.CORROBORATE_AT) * 1.25))
+        score = min(100, fp_score + bonus)
+        if fp_score < brand_fingerprint.WEAK_THRESHOLD:
+            score = min(score, brand_fingerprint.CLONE_THRESHOLD - 1)  # a hash alone never makes a clone
+        shot_used = True
+    view = _visual_view(match, score, shot_used)
+    view["fingerprint_score"] = fp_score
+    if shot:
+        view["screenshot_similarity"] = shot["score"]
+    return view
+
+
+def _visual_view(match: dict[str, Any], score: int, shot_used: bool) -> dict[str, Any]:
+    return {"score": int(score), "matched_entity": match.get("name_en"), "matched_entity_ar": match.get("name_ar"),
+            "entity_id": match.get("entity_id"), "matched_domain": match.get("matched_domain"),
+            "components": match.get("components"), "screenshot_used": shot_used,
+            "baseline_status": match.get("status"), "official": False}
+
+
+# ---------------------------------------------------------------------------
+# Score breakdown (additive response field)
+# ---------------------------------------------------------------------------
+LAYERS: list[tuple[str, str, str, str, str]] = [
+    # id, EN name, AR name, EN "nothing found", AR "nothing found"
+    ("url_model", "AI address model", "نموذج العناوين الذكي",
+     "The AI model does not find the address phishing-like.", "لا يرى النموذج الذكي أن العنوان يشبه عناوين التصيّد."),
+    ("address", "Address rules (look-alike, brand, ending)", "قواعد العنوان (تشابه، علامة تجارية، امتداد)",
+     "No look-alike, brand or address warning signs.", "لا توجد علامات تشابه أو انتحال في العنوان."),
+    ("redirects", "Redirects", "التحويلات", "The link does not hide its destination.", "لا يخفي الرابط وجهته."),
+    ("page", "Page evidence", "محتوى الصفحة", "Nothing dangerous found on the page.", "لم يُعثر على محتوى خطير في الصفحة."),
+    ("cloaking", "Cloaking", "التخفّي", "Every visitor sees the same page.", "يرى جميع الزوار الصفحة نفسها."),
+    ("visual", "Visual similarity", "التشابه البصري", "It does not imitate an official portal.", "لا تقلّد بوابة رسمية."),
+    ("threat_feeds", "Threat feeds & scam networks", "قوائم التهديدات وشبكات الاحتيال",
+     "Not listed by threat intelligence.", "غير مدرج في قوائم استخبارات التهديدات."),
+    ("domain_age_tls", "Domain age & certificate", "عمر النطاق والشهادة",
+     "No domain-age or certificate warning signs.", "لا توجد علامات تحذير في عمر النطاق أو الشهادة."),
+]
+_LAYER_OF = {
+    **dict.fromkeys(("AI_PHISHING_URL", "AI_SUSPICIOUS_URL", "AI_NEW_DOMAIN", "SITE_TAKEN_DOWN"), "url_model"),
+    **dict.fromkeys(("REDIRECTS_TO_FLAGGED", "URL_SHORTENER", "REDIRECT_CHAIN"), "redirects"),
+    **dict.fromkeys(("CLOAKING", "MOBILE_CLOAKING_DETECTED"), "cloaking"),
+    **dict.fromkeys(("VISUAL_BRAND_CLONE_DETECTED", "VISUAL_BRAND_SIMILARITY"), "visual"),
+    **dict.fromkeys(("KNOWN_PHISHING_FEED", "KNOWN_SYNDICATE_INFRA"), "threat_feeds"),
+    **dict.fromkeys(("NEWLY_REGISTERED", "YOUNG_DOMAIN", "FRESH_CERTIFICATE", "CERT_RENEWED", "TLS_INVALID"),
+                    "domain_age_tls"),
+    **dict.fromkeys(("CREDENTIAL_HARVESTING", "BRAND_CONTENT", "URGENCY_PRESSURE", "EXFIL_FORM", "NO_HTTPS",
+                     "PROVIDER_PHISHING_WARNING", "SHORTLINK_DISABLED", "FORM_SERVICE_CREDENTIALS",
+                     "BRAND_LOGIN_PAGE"), "page"),
+}
+
+
+def score_breakdown(flags: list[Any], rules_score: int, final_score: int, engine: str) -> list[dict[str, Any]]:
+    """Ordered layers with their point contribution, built ONLY from the red flags (each flag in exactly
+    one layer: nothing is double-counted), so the parts add up to the final risk_score:
+
+        sum(layer points) + combination rules + AI judge == risk_score
+
+    * "combination": the rules engine's adjustments to the plain flag sum (the 100 cap, and the floors
+      that make brand + card form / confident AI model + independent clue = 70).
+    * "ai_judge": what the LLM blend changed (blend(): rules are a floor; a confident, corroborated scam
+      verdict weighs 0.75; a confident SAFE can halve a classifier-only warning, so it may be negative).
+      0 when no LLM ran."""
+    totals: dict[str, int] = {lid: 0 for lid, *_ in LAYERS}
+    top: dict[str, Any] = {}
+    for f in flags:
+        layer = _LAYER_OF.get(f.code, "address")  # look-alike / lexical / official-domain flags
+        totals[layer] += int(f.points)
+        if f.points > 0 and (layer not in top or f.points > top[layer].points):
+            top[layer] = f
+        elif layer not in top and f.points == 0 and f.severity != "info":
+            top[layer] = f
+    out = []
+    for lid, name_en, name_ar, none_en, none_ar in LAYERS:
+        f = top.get(lid)
+        out.append({"layer": lid, "name_en": name_en, "name_ar": name_ar, "points": totals[lid],
+                    "summary_en": (f.en if f and f.points > 0 else none_en)[:160],
+                    "summary_ar": (f.ar if f and f.points > 0 else none_ar)[:160]})
+    flag_sum = sum(totals.values())
+    if rules_score != flag_sum:
+        delta = rules_score - flag_sum
+        out.append({"layer": "combination", "name_en": "Combination rules", "name_ar": "قواعد الجمع",
+                    "points": delta,
+                    "summary_en": ("Capped at 100." if delta < 0 else
+                                   "Independent warning signs agree, so the rules raise the score to a scam level."),
+                    "summary_ar": ("الحد الأقصى 100." if delta < 0 else
+                                   "تتوافق علامات خطر مستقلة، فترفع القواعد الدرجة إلى مستوى الاحتيال.")})
+    used = engine != "rules"
+    out.append({"layer": "ai_judge", "name_en": "AI judge", "name_ar": "المحكّم الذكي",
+                "points": final_score - rules_score if used else 0,
+                "summary_en": ("The AI judge's verdict was blended with the rules (rules are a floor)." if used else
+                               "AI judge not used: rules-engine verdict."),
+                "summary_ar": ("دُمج حكم المحكّم الذكي مع القواعد (القواعد حدّ أدنى)." if used else
+                               "لم يُستخدم المحكّم الذكي: حكم محرك القواعد.")})
+    return out
 
 
 async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | None = None,
@@ -133,10 +301,11 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
 
     # Shorteners, open redirects, 30x / meta / JavaScript hops: judge where the link really goes.
     hops: list[dict[str, Any]] = []
+    hop_pages: dict[str, dict[str, Any]] = {}
     if not mock_slug and lex.registered_domain not in DEMO_INTEL and lex.host not in DEMO_INTEL:
         t = time.perf_counter()
         try:
-            lex, hops = await follow_redirects(lex, fast=not run_sandbox)
+            lex, hops = await follow_redirects(lex, fast=not run_sandbox, pages=hop_pages)
         except Exception as exc:  # noqa: BLE001 - evidence gathering must never fail the scan
             log.warning("redirect chain for %s failed: %s", input_lex.host, exc)
         timings["redirect_ms"] = int((time.perf_counter() - t) * 1000)
@@ -161,6 +330,28 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
         page = await sandbox.inspect(lex.normalized_url, lex.registered_domain if lex.registered_domain in DEMO_INTEL
                                      else lex.host, profile)
         timings["sandbox_ms"] = int((time.perf_counter() - t) * 1000)
+
+    # The judged hop's own page, read while walking the chain: it is the evidence when there is no
+    # sandbox page, or when the sandbox was bounced elsewhere (a scam hop that forwards scanners on).
+    hop_page = (hop_pages.get(lex.host) or {}).get("page")
+    if hop_page and not lex.is_whitelisted:
+        sandbox_host = (urlsplit((page or {}).get("final_url") or "").hostname or "").lower()
+        if page is None or page.get("status") != "ok" or (sandbox_host and sandbox_host != lex.host):
+            page = {**hop_page, "evidence_source": "redirect_hop",
+                    "cloaking": (page or {}).get("cloaking"), "mobile_cloaking": (page or {}).get("mobile_cloaking")}
+
+    visual: dict[str, Any] | None = None
+    if page and page.get("status") == "ok" and not lex.is_whitelisted:
+        t = time.perf_counter()
+        try:
+            visual = await visual_similarity_for(
+                lex, page, deep=run_sandbox, net=net, syndicate=syndicate,
+                allow_network=not settings.offline_mode and not mock_slug and lex.registered_domain not in DEMO_INTEL)
+        except Exception as exc:  # noqa: BLE001 - optional evidence, never fails the scan
+            log.warning("visual similarity for %s failed: %s", lex.host, exc)
+        if visual:
+            page["visual_similarity"] = visual
+        timings["visual_ms"] = int((time.perf_counter() - t) * 1000)
 
     t = time.perf_counter()
     # Known training replicas are fully explained by the rules engine; skipping the LLM keeps the
@@ -206,6 +397,7 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
             "page_title": (page or {}).get("page_title"),
             "page_text_excerpt": page_text[:1500],
             "cloaking": (page or {}).get("cloaking"),
+            "mobile_cloaking": (page or {}).get("mobile_cloaking"),
             "sandbox_status": (page or {}).get("status", "skipped"),
             "sandbox_evidence_source": (page or {}).get("evidence_source"),
             "blocked_requests": (page or {}).get("blocked_requests", []),
@@ -216,11 +408,15 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
         },
         "syndicate": graph_engine._syn_brief(syndicate),  # noqa: SLF001
         "analyzer": {"engine": fv.engine, "confidence": fv.confidence, **fv.llm_extra},
+        "visual_similarity": ({k: visual.get(k) for k in ("score", "matched_entity", "matched_domain", "components",
+                                                          "screenshot_used")} if visual else None),
+        "score_breakdown": score_breakdown(fv.flags, fv.rules_score, fv.risk_score, fv.engine),
         "timings": timings,
     }
     # scans.domain feeds the DNS blocklist / NextDNS: a shortener whose destination could not be
-    # resolved must never be published or linked into the syndicate graph.
-    unresolved_shortener = redirects.is_shortener(lex.host)
+    # resolved must never be published or linked into the syndicate graph, nor a payment gateway's
+    # shared checkout host (that would block every merchant's payments).
+    unresolved_shortener = redirects.is_shortener(lex.host) or page_signals.payment_gateway(lex.host)
     stored = {**result, "domain": None} if unresolved_shortener else result
     await db.save_scan(stored, screenshot)
     if ingest and fv.verdict != "SAFE" and not unresolved_shortener:

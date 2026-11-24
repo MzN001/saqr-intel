@@ -13,6 +13,8 @@ Files written (label 1 = phishing, 0 = legitimate):
                            (Tranco lists registrable domains only, so it adds almost none)
   legit_lure_hosts.csv     real popular hosts whose name contains a lure word (login, secure, pay ...)
   synthetic_phishing.csv   look-alike permutations of brand domains + real phishing-kit paths, source "synthetic"
+                           (includes synthetic_uae.csv: Salik / Darb / ICP / MOI / TDRA / banks / e& / du / Emirates
+                           Post / AD Police / TAMM / UAE PASS look-alikes with English + Arabic-script lure paths)
   evasion_variants.csv     scheme / www / case / slash / percent-encoding / port / userinfo rewrites
 """
 from __future__ import annotations
@@ -60,6 +62,39 @@ ARABIC_TRANSLIT = ("mukhalafat", "mokhalafat", "mukhalfat", "tasdid", "tasdeed",
                    "rukhsa", "rokhsa", "mawaqif", "dafa", "istilam", "tafeel", "istirdad", "jumruk", "shahn",
                    "taawun", "musaada", "ruyati", "daman")
 UAE_WORDS = ("uae", "ae", "abudhabi", "dubai", "emirates", "imarat", "gov", "adp", "sharjah")
+# UAE services most impersonated in SMS / WhatsApp lures (2025-2026), several of them not (yet) registry
+# brands. keywords = what kits put in the host; official = registered domains never generated.
+UAE_LURE_BRANDS: tuple[dict, ...] = (
+    {"id": "salik", "keywords": ("salik", "salik-toll", "saliktoll", "salikuae"), "official": ("salik.ae", "salik.gov.ae")},
+    {"id": "darb", "keywords": ("darb", "darbtoll", "darb-toll", "darb-ad"), "official": ("itc.gov.ae",)},
+    {"id": "icp", "keywords": ("icp", "icp-uae", "uaeicp", "icp-gov"), "official": ("icp.gov.ae",)},
+    {"id": "moi", "keywords": ("moi", "moi-uae", "moiuae", "moi-fines"), "official": ("moi.gov.ae",)},
+    {"id": "tdra", "keywords": ("tdra", "tdra-uae", "uaetdra"), "official": ("tdra.gov.ae",)},
+    {"id": "dib", "keywords": ("dib", "dib-bank", "dubaiislamic", "dubai-islamic-bank"), "official": ("dib.ae",)},
+    {"id": "mashreq", "keywords": ("mashreq", "mashreqbank", "mashreq-neo", "mashreqneo"),
+     "official": ("mashreq.com", "mashreqbank.com")},
+    {"id": "adib", "keywords": ("adib", "adib-bank", "adibonline"), "official": ("adib.ae",)},
+    {"id": "rakbank", "keywords": ("rakbank", "rak-bank", "rakbankonline"), "official": ("rakbank.ae",)},
+    {"id": "eand", "keywords": ("eand", "e-and", "etisalat", "etisalat-uae", "eand-rewards"),
+     "official": ("etisalat.ae", "eand.com")},
+    {"id": "du", "keywords": ("du", "du-ae", "du-uae", "du-rewards", "mydu"), "official": ("du.ae",)},
+    {"id": "emiratespost", "keywords": ("emiratespost", "emirates-post", "epg", "emiratespost-ae"),
+     "official": ("emiratespost.ae", "epg.gov.ae")},
+    {"id": "adpolice", "keywords": ("adpolice", "ad-police", "adp-fines", "abudhabipolice"),
+     "official": ("adpolice.gov.ae",)},
+    {"id": "tamm", "keywords": ("tamm", "tamm-ad", "tammabudhabi", "tamm-gov"), "official": ("tamm.abudhabi",)},
+    {"id": "uaepass", "keywords": ("uaepass", "uae-pass", "uaepass-login"), "official": ("uaepass.ae",)},
+)
+UAE_LURES = ("pay", "payment", "fine", "fines", "toll", "topup", "recharge", "refund", "verify", "update", "kyc",
+             "login", "secure", "rewards", "points", "delivery", "parcel", "customs", "renew", "eservices",
+             "portal", "otp", "card", "billing", "settlement", "unpaid", "due", "violation")
+# Arabic-script lure path words (fines / tolls / refunds / delivery / account update).
+ARABIC_LURE_PATHS = ("سداد-المخالفات", "دفع-الغرامة", "مخالفات-مرورية", "تحديث-البيانات", "استرداد-المبلغ",
+                     "تأكيد-الدفع", "رسوم-التوصيل", "الهوية-الإماراتية", "تحديث-الحساب", "سالك", "رصيد-سالك",
+                     "تسديد", "الدفع", "تفعيل-الحساب", "استلام-الشحنة", "مكافأة", "نقاط", "تجديد", "التحقق")
+FREE_HOST_SAMPLE = ("vercel.app", "pages.dev", "netlify.app", "firebaseapp.com", "web.app", "github.io",
+                    "weebly.com", "wixsite.com", "workers.dev", "glitch.me", "onrender.com", "blogspot.com",
+                    "square.site", "webflow.io", "framer.app", "r2.dev", "000webhostapp.com", "replit.app")
 ASCII_GLYPHS = {"o": ["0"], "l": ["1", "i"], "i": ["1", "l"], "e": ["3"], "a": ["4"], "s": ["5"], "m": ["rn"],
                 "w": ["vv"], "d": ["cl"], "g": ["q"], "b": ["6"], "t": ["7"], "u": ["v"], "n": ["m"], "c": ["k"]}
 UNICODE_GLYPHS = {"a": "аàáạä", "c": "сç", "e": "еéėẹ", "i": "іíı", "o": "оöọó", "p": "р", "s": "ѕș", "x": "х",
@@ -124,7 +159,9 @@ def read_tranco(limit: int = 1_000_000) -> list[str]:
 def dataset_rows(per_file: int | None = None) -> list[tuple[str, int, str]]:
     """Rows of every downloaded dataset that loads (Tranco and the augmented folder excluded)."""
     rows: list[tuple[str, int, str]] = []
-    for folder in sorted(p for p in DATASETS.iterdir() if p.is_dir() and p.name not in ("augmented", "tranco")):
+    # URLhaus = malware distribution (a different task): never a phishing label, never a kit path.
+    skip = ("augmented", "tranco", "holdout", "urlhaus")
+    for folder in sorted(p for p in DATASETS.iterdir() if p.is_dir() and p.name not in skip):
         for path in sorted(folder.iterdir()):
             if path.suffix.lower() not in (".csv", ".txt", ".json", ".tsv", ".jsonl"):
                 continue
@@ -393,6 +430,78 @@ def kit_paths(data: list[tuple], rng: random.Random, cap: int = 60_000) -> list[
     return paths[:cap] or list(FALLBACK_PATHS)
 
 
+def _uae_path(paths: list[str], rng: random.Random) -> str:
+    """A lure path: a real kit path, a UAE-style English path, or an Arabic-script one (percent-encoded or raw)."""
+    r = rng.random()
+    if r < 0.35:
+        return rng.choice(paths)
+    if r < 0.7:
+        segs = rng.sample(UAE_LURES, rng.randint(1, 3))
+        tail = "/" + "/".join(segs) + rng.choice(("", "/", ".php", ".html", "/index.php", f"?id={rng.randint(10**5, 10**9)}",
+                                                  f"?ref=sms&t={rng.randint(10**6, 10**9)}"))
+        return rng.choice(("", "/ae", "/en", "/uae")) + tail
+    ar = "/".join(rng.sample(ARABIC_LURE_PATHS, rng.randint(1, 2)))
+    if rng.random() < 0.75:
+        ar = quote(ar, safe="/-")
+    return "/" + ar + rng.choice(("", "/", "/index.html", f"?id={rng.randint(10**5, 10**9)}"))
+
+
+def uae_lure_hosts(brand: dict, rng: random.Random, count: int) -> list[tuple[str, str]]:
+    """UAE-service look-alike hosts: sub-domain abuse, free hosts, cheap TLDs, hyphenated lures, Arabic
+    transliterations, typos. (host, technique)."""
+    kws = brand["keywords"]
+    official = brand["official"]
+    cheap = lambda: rng.choice(CHEAP_TLDS)  # noqa: E731
+    lure = lambda: rng.choice(UAE_LURES)  # noqa: E731
+    uae = lambda: rng.choice(UAE_WORDS)  # noqa: E731
+    makers = (
+        ("uae_subdomain_abuse", lambda k: f"{k}.{lure()}-{rng.choice(UNRELATED_WORDS)}.{rng.choice(CHEAP_TLDS + COMMON_TLDS)}"),
+        ("uae_subdomain_abuse", lambda k: f"{rng.choice(official).replace('.', '-')}.{lure()}{rng.randint(1, 99)}.{cheap()}"),
+        ("uae_subdomain_abuse", lambda k: f"{rng.choice(official)}.{rng.choice(UNRELATED_WORDS)}-{uae()}.{cheap()}"),
+        ("uae_subdomain_abuse", lambda k: f"{lure()}.{k}-{uae()}.{cheap()}"),
+        ("uae_free_hosting", lambda k: f"{k}-{lure()}.{rng.choice(FREE_HOST_SAMPLE)}"),
+        ("uae_free_hosting", lambda k: f"{k}-{uae()}-{lure()}-{rng.randint(1, 999)}.{rng.choice(FREE_HOST_SAMPLE)}"),
+        ("uae_free_hosting", lambda k: f"{lure()}-{k}.{rng.choice(FREE_HOST_SAMPLE)}"),
+        ("uae_cheap_tld", lambda k: f"{k}-{uae()}.{cheap()}"),
+        ("uae_cheap_tld", lambda k: f"{k}{lure()}.{cheap()}"),
+        ("uae_hyphen_lure", lambda k: f"{k}-{lure()}-{lure()}.{rng.choice(CHEAP_TLDS + COMMON_TLDS)}"),
+        ("uae_hyphen_lure", lambda k: f"{uae()}-{k}-{lure()}.{rng.choice(CHEAP_TLDS + COMMON_TLDS)}"),
+        ("uae_hyphen_lure", lambda k: f"{k}-{lure()}-{uae()}-{rng.randint(1, 99)}.{cheap()}"),
+        ("uae_translit", lambda k: f"{rng.choice(ARABIC_TRANSLIT)}-{k}.{rng.choice(CHEAP_TLDS + COMMON_TLDS)}"),
+        ("uae_translit", lambda k: f"{k}-{rng.choice(ARABIC_TRANSLIT)}-{uae()}.{cheap()}"),
+    )
+    hosts: list[tuple[str, str]] = []
+    long_kws = [k.replace("-", "") for k in kws if len(k.replace("-", "")) >= 5]
+    typos = [p for w in long_kws for p in permutations(w, rng)]
+    rng.shuffle(typos)
+    for variant, technique in typos[: count // 8]:
+        hosts.append((f"{variant}.{rng.choice(CHEAP_TLDS + COMMON_TLDS)}", f"uae_{technique}"))
+    while len(hosts) < count:
+        technique, make = rng.choice(makers)
+        hosts.append((make(rng.choice(kws)), technique))
+    return hosts
+
+
+def synthetic_uae(data: list[tuple], reg: dict, per_brand: int, rng: random.Random) -> list[tuple]:
+    """More UAE brand permutations (Salik, Darb, ICP, MOI, TDRA, DIB, Mashreq, ADIB, RAKBANK, e&, du, Emirates
+    Post, AD Police, TAMM, UAE PASS) with English and Arabic-script lure paths. Source "synthetic"."""
+    paths = kit_paths(data, rng)
+    popular = load_popular(100_000)
+    official = set(reg["official"]) | {d for b in UAE_LURE_BRANDS for d in b["official"]}
+    rows: dict[str, tuple] = {}
+    for brand in UAE_LURE_BRANDS:
+        for host, technique in uae_lure_hosts(brand, rng, per_brand):
+            host = host.lower().strip(".-")
+            if host in official or on_suffix(host, official) or is_popular(host, popular) \
+                    or host in reg["free_hosting"] or not re.fullmatch(r"[a-z0-9.-]+\.[a-z0-9-]{2,}", host) \
+                    or host.endswith(".gov.ae"):
+                continue
+            scheme = "https" if rng.random() < 0.8 else "http"
+            url = f"{scheme}://{host}{_uae_path(paths, rng)}"
+            rows.setdefault(url, (url, 1, "synthetic", f"{technique}:{brand['id']}"))
+    return list(rows.values())
+
+
 def synthetic_phishing(reg: dict, data: list[tuple], per_brand: int, rng: random.Random) -> list[tuple]:
     paths = kit_paths(data, rng)
     popular = load_popular(100_000)
@@ -531,6 +640,7 @@ def main() -> None:
     ap.add_argument("--links-per-site", type=int, default=12)
     ap.add_argument("--links-per-official", type=int, default=80)
     ap.add_argument("--per-brand", type=int, default=200, help="synthetic hosts per global brand (UAE brands: x2)")
+    ap.add_argument("--uae-per-brand", type=int, default=400, help="extra UAE-service look-alikes per brand")
     ap.add_argument("--evasion-per-group", type=int, default=4000, help="rows rewritten per (source, label)")
     args = ap.parse_args()
 
@@ -548,6 +658,9 @@ def main() -> None:
     lure = legit_lure_hosts(tranco, data, bad_hosts)
     write("legit_lure_hosts.csv", lure)
     synthetic = synthetic_phishing(reg, data, args.per_brand, random.Random(args.seed + 1))
+    uae = synthetic_uae(data, reg, args.uae_per_brand, random.Random(args.seed + 3))
+    write("synthetic_uae.csv", uae)
+    synthetic += uae
     write("synthetic_phishing.csv", synthetic)
     base = data + [(u, y, s) for u, y, s, _ in deep + free + lure + synthetic]
     write("evasion_variants.csv", evasion_variants(base, reg, args.evasion_per_group, random.Random(args.seed + 2)))

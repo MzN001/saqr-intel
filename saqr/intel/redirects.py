@@ -56,6 +56,67 @@ _JS_URL = r"[\"']((?:https?:)?\\?/\\?/?[^\"'\s]+)[\"']"
 _JS_REDIRECT = re.compile(
     r"\blocation(?:\.href)?\s*=\s*" + _JS_URL + r"|\blocation\.(?:replace|assign)\(\s*" + _JS_URL + r"\s*\)", re.I)
 _TAGS = re.compile(r"<script.*?</script>|<style.*?</style>|<[^>]+>", re.S | re.I)
+_SCRIPT = re.compile(r"<script\b([^>]*)>(.*?)</script\s*>", re.S | re.I)
+# JS strings and comments: comments are removed, strings blanked before counting braces / parentheses.
+_JS_TOKENS = re.compile(r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'|`(?:\\.|[^`\\])*`|/\*.*?\*/|//[^\n]*', re.S)
+_CONDITIONAL_STMT = re.compile(r"\b(?:if|else|while|for|switch|case|return|function|catch)\b|\?|&&|\|\||=>")
+_CONDITION_BEFORE = re.compile(r"(?:\b(?:if|while|for)\s*\([^;{}]*\)|\belse)\s*$", re.S)
+_SET_TIMEOUT_OPEN = re.compile(r"setTimeout\s*\(\s*(?:function\s*\(\s*\)|\(\s*\)\s*=>)\s*$")
+# Unconditional JavaScript redirects count on full pages only when the script starts this early in the
+# document (or inside <head>): a kit's redirect runs before anything is shown.
+TOP_OF_DOCUMENT = 6000
+
+
+def _strip_comments(code: str) -> str:
+    return _JS_TOKENS.sub(lambda m: m.group(0) if m.group(0)[0] in "\"'`" else " ", code)
+
+
+def _blank_strings(code: str) -> str:
+    """Same length, string contents and comments replaced by spaces (indexes stay valid)."""
+    def blank(m: re.Match) -> str:
+        s = m.group(0)
+        return s[0] + " " * (len(s) - 2) + s[-1] if s[0] in "\"'`" and len(s) >= 2 else " " * len(s)
+    return _JS_TOKENS.sub(blank, code)
+
+
+def _unconditional(code: str, pos: int, depth: int = 0) -> bool:
+    """Is the statement at `pos` run as soon as the script loads? Not inside a function, handler,
+    if / else / loop, ternary or && chain. One wrapper is allowed: setTimeout(() => { ... })."""
+    prefix = _blank_strings(code)[:pos]
+    braces = prefix.count("{") - prefix.count("}")
+    parens = prefix.count("(") - prefix.count(")")
+    if braces or parens:
+        if depth or braces != 1 or parens != 1:
+            return False
+        opening = prefix.rfind("{")
+        wrapper = _SET_TIMEOUT_OPEN.search(prefix[:opening].rstrip())
+        if not wrapper or not _unconditional(code, wrapper.start(), depth + 1):
+            return False
+        prefix = prefix[opening + 1:]  # judge the statement inside the timer callback
+    stmt_start = max(prefix.rfind(c) for c in ";{}\n")
+    if _CONDITIONAL_STMT.search(prefix[stmt_start + 1:]):
+        return False
+    # "if (x)\n  location = ..." / "else\n location = ...": a condition on the line before
+    before = prefix[: stmt_start + 1].rstrip()
+    return not _CONDITION_BEFORE.search(before[-300:])
+
+
+def js_redirect_on_page(body: str) -> str | None:
+    """Target of an UNCONDITIONAL JavaScript redirect near the top of a full page (window.location=,
+    location.href=, location.replace/assign(...), top.location ...). Navigations inside handlers,
+    functions or conditions are ignored: real sites have those everywhere."""
+    head_end = body.lower().find("</head>")
+    for m in _SCRIPT.finditer(body):
+        if m.start() > max(TOP_OF_DOCUMENT, head_end):
+            break
+        attrs = m.group(1).lower()
+        if "src=" in attrs or ("type=" in attrs and not re.search(r"type\s*=\s*[\"']?(text/javascript|module|application/javascript)", attrs)):
+            continue
+        code = _strip_comments(m.group(2))
+        for r in _JS_REDIRECT.finditer(code):
+            if _unconditional(code, r.start()):
+                return (r.group(1) or r.group(2)).replace("\\/", "/")
+    return None
 
 
 def is_shortener(host: str | None) -> bool:
@@ -78,13 +139,15 @@ def html_redirect(body: str) -> tuple[str | None, str | None]:
         m = _META_CONTENT.search(tag.group(0))
         if m and float(m.group(1)) <= 10:
             return html.unescape(m.group(2)), "meta"
-    # A script that sets location on a real page is usually a button handler; a redirect stub has
-    # almost no visible text.
+    # A redirect stub has almost no visible text: any location change in it is the redirect.
     if len(re.sub(r"\s+", " ", _TAGS.sub(" ", body)).strip()) < 400:
         m = _JS_REDIRECT.search(body)
         if m:
             return (m.group(1) or m.group(2)).replace("\\/", "/"), "js"
-    return None, None
+        return None, None
+    # A full page: only an unconditional redirect near the top counts (a button handler does not).
+    target = js_redirect_on_page(body)
+    return (target, "js") if target else (None, None)
 
 
 def _hop(url: str, via: str) -> dict[str, Any]:
@@ -97,14 +160,15 @@ def _never_fetch(host: str) -> bool:
 
 
 async def _fetch_next(client: httpx.AsyncClient, url: str, timeout: float,
-                      allow_get: bool) -> tuple[int | None, str | None, str | None]:
-    """One hop: (status, next_url, via). HEAD first; GET only when HEAD cannot answer."""
+                      allow_get: bool) -> tuple[int | None, str | None, str | None, str | None]:
+    """One hop: (status, next_url, via, html_body). HEAD first; GET only when HEAD cannot answer.
+    html_body is the (<= 64 KB) page that was read anyway, kept for per-hop page evidence."""
     status: int | None = None
     try:
         r = await client.head(url, timeout=timeout)
         status = r.status_code
         if 300 <= status < 400 and r.headers.get("location"):
-            return status, r.headers["location"], "http"
+            return status, r.headers["location"], "http", None
         ctype = r.headers.get("content-type", "")
         want_body = allow_get and (status >= 400 or not ctype or "html" in ctype)
     except httpx.TimeoutException:
@@ -114,32 +178,37 @@ async def _fetch_next(client: httpx.AsyncClient, url: str, timeout: float,
             raise
         want_body = True
     if not want_body:
-        return status, None, None
+        return status, None, None, None
     async with client.stream("GET", url, timeout=timeout) as r:
         status = r.status_code
         if 300 <= status < 400 and r.headers.get("location"):
-            return status, r.headers["location"], "http"
+            return status, r.headers["location"], "http", None
         ctype = r.headers.get("content-type", "")
         if ctype and "html" not in ctype:
-            return status, None, None
+            return status, None, None, None
         chunks, size = [], 0
         async for chunk in r.aiter_bytes():
             chunks.append(chunk)
             size += len(chunk)
             if size >= BODY_LIMIT:
                 break
-    nxt, via = html_redirect(b"".join(chunks)[:BODY_LIMIT].decode("utf-8", "replace"))
-    return status, nxt, via
+    body = b"".join(chunks)[:BODY_LIMIT].decode("utf-8", "replace")
+    nxt, via = html_redirect(body)
+    return status, nxt, via, body
 
 
-async def resolve_chain(url: str, max_hops: int = 8, timeout: float = 5.0, *, fast: bool = False) -> list[dict[str, Any]]:
+async def resolve_chain(url: str, max_hops: int = 8, timeout: float = 5.0, *, fast: bool = False,
+                        pages: dict[int, dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     """Follow url to its real destination. Returns the hops in order, the input first:
     {url, host, status, via: input|http|meta|js|param} plus note (loop, blocked_private, timeout,
     unreachable, max_hops) on the hop where the chain was cut.
 
     fast=True is for the browser extension's instant check: the network is only used to expand a
     shortener (HEAD requests, a short overall deadline). Redirect parameters are always unwrapped
-    (no network needed)."""
+    (no network needed).
+
+    pages (optional out-parameter): hop index -> {"status", "html"} for every hop whose HTML was read
+    on the way, so the caller can judge each hop's page without fetching it again."""
     cur = urldefrag(url.strip()).url
     hops = [_hop(cur, "input")]
     seen = {cur}
@@ -171,9 +240,11 @@ async def resolve_chain(url: str, max_hops: int = 8, timeout: float = 5.0, *, fa
                                  "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"})
                 popular = bool(popularity_rank(regdom(host) or host))
                 try:
-                    hop["status"], nxt, via = await _fetch_next(
+                    hop["status"], nxt, via, body = await _fetch_next(
                         client, cur, min(timeout, remaining),
                         allow_get=is_shortener(host) or not (fast or popular))
+                    if body is not None and pages is not None:
+                        pages[len(hops) - 1] = {"status": hop["status"], "html": body}
                 except httpx.TimeoutException:
                     hop["note"] = "timeout"
                     break

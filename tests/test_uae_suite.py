@@ -23,7 +23,7 @@ from main import app  # noqa: E402
 from tests.uae_suite import suite  # noqa: E402
 
 MAX_FALSE_POSITIVES = 0
-MIN_SCAMS_DETECTED = 24
+MIN_SCAMS_DETECTED = 46  # honest floor of the 100-case run; was 24 / 25 on the first 50
 
 CASES = suite.load_cases()
 
@@ -36,8 +36,8 @@ def results():
 
 def test_case_file_shape():
     ids = [c["id"] for c in CASES]
-    assert len(CASES) == 50 and len(set(ids)) == 50
-    assert Counter(c["label"] for c in CASES) == {"malicious": 25, "legitimate": 25}
+    assert len(CASES) == 100 and len(set(ids)) == 100
+    assert Counter(c["label"] for c in CASES) == {"malicious": 50, "legitimate": 50}
     for c in CASES:
         assert c["modality"] in suite.MODALITIES and c["label"] in ("malicious", "legitimate"), c["id"]
         assert c["description"] and isinstance(c["input"], dict), c["id"]
@@ -54,7 +54,7 @@ def test_thresholds(results):
     fps = [r.summary() for r in results if r.outcome == "FP"]
     fns = [r.summary() for r in results if r.outcome == "FN"]
     assert m.fp <= MAX_FALSE_POSITIVES, "legitimate cases flagged:\n" + "\n".join(fps)
-    assert m.tp >= MIN_SCAMS_DETECTED, f"only {m.tp}/25 scams detected; missed:\n" + "\n".join(fns)
+    assert m.tp >= MIN_SCAMS_DETECTED, f"only {m.tp}/50 scams detected; missed:\n" + "\n".join(fns)
 
 
 def test_official_legitimate_cases_are_verified(results):

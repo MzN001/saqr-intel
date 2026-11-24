@@ -56,6 +56,16 @@ def _isolate(live: bool, use_llm: bool = False, browser: bool = False) -> None:
         os.environ["ENABLE_PLAYWRIGHT"] = "false"  # the Render path: pages fetched over HTTP, no Chromium
 
 
+def use_model_dir(model_dir: str | Path) -> None:
+    """Point the runtime at another model's files (old backup / training candidate). Call before ai_inspector
+    is imported: it reads the thresholds of model_metrics.json at import."""
+    from saqr.intel import url_model as um
+    d = Path(model_dir)
+    um.MODEL_PATH, um.TREES_PATH, um.METRICS_PATH = d / "url_model.bin", d / "url_model_trees.json", d / "model_metrics.json"
+    for fn in (um._linear, um._trees, um._score, um._calibration, um.phishing_probability):  # noqa: SLF001
+        fn.cache_clear()
+
+
 def score_model(urls: list[str]) -> list[tuple[float, list[str]]]:
     from saqr.intel import url_model
     out = []
@@ -108,8 +118,25 @@ def _capture_evidence() -> None:
                 box["page"]["html"] = box["page"]["html"][:100_000]
         return page
 
+    judge = pipeline.ai_inspector.inspect
+
+    async def judge_inspect(lex, net, page, syndicate, *args, **kwargs):
+        # The page the verdict was actually based on (sandbox page, or a redirect hop's page) with the
+        # fields the pipeline adds after the sandbox (visual_similarity), so --rescore / A/B runs can re-judge
+        # exactly what the scan judged.
+        box = _evidence.get()
+        if box is not None:
+            jp = None
+            if page is not None:
+                jp = {k: v for k, v in page.items() if k != "screenshot_b64"}
+                if isinstance(jp.get("html"), str):
+                    jp["html"] = jp["html"][:100_000]
+            box["judged"] = {"url": lex.normalized_url, "page": jp, "syndicate": syndicate}
+        return await judge(lex, net, page, syndicate, *args, **kwargs)
+
     pipeline.gather_network = gather_network
     pipeline.sandbox.inspect = sandbox_inspect
+    pipeline.ai_inspector.inspect = judge_inspect
     pipeline._eval_capture = True  # noqa: SLF001
 
 
@@ -150,6 +177,8 @@ async def live_record(url: str, *, use_llm: bool, timeout: float, snap=None) -> 
         page_title=(ti.get("page_title") or "")[:160], harvested=ti.get("harvested_fields") or [],
         dns_status=ti.get("dns_status"), domain_age_hours=ti.get("domain_age_hours"),
         hops=len(ti.get("redirect_chain") or []), feed=feed, ms=r["timings"].get("total_ms"),
+        redirect_chain=[{k: h.get(k) for k in ("host", "status", "via", "risk", "note", "page_notes")}
+                        for h in ti.get("redirect_chain") or []],
         timings=r["timings"], engine=r["analyzer"]["engine"], evidence=box)
     return rec
 
@@ -487,8 +516,12 @@ def main() -> None:
     ap.add_argument("--rescore", help="re-judge a --records file with the current rules (labels from DATASET)")
     ap.add_argument("--live-metrics", action="store_true", help="live mode: store the summary in model_metrics.json")
     ap.add_argument("--out")
+    ap.add_argument("--model-dir", help="score with the model files in this folder (url_model.bin, "
+                                         "url_model_trees.json, model_metrics.json) instead of saqr/intel/")
     args = ap.parse_args()
     _isolate(args.mode == "live" and not args.rescore, args.llm, args.browser)
+    if args.model_dir:
+        use_model_dir(args.model_dir)
     if args.suite:
         suite(args.baseline)
         return

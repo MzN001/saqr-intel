@@ -86,6 +86,15 @@ const REASON_BY_FLAG: Record<string, { en: string; ar: string }> = {
   SITE_TAKEN_DOWN: { en: "the site has already vanished and its address looks like phishing", ar: "الموقع اختفى بالفعل وعنوانه يشبه مواقع التصيّد" },
   CERT_RENEWED: { en: "its security certificate was renewed very recently", ar: "شهادة الأمان جُدّدت حديثاً جداً" },
   REDIRECT_CHAIN: { en: "it passes through hidden redirects", ar: "يمر عبر تحويلات مخفية" },
+  MOBILE_CLOAKING_DETECTED: {
+    en: "it shows phones a different, dangerous page than computers",
+    ar: "يعرض على الهواتف صفحة خطيرة مختلفة عمّا يعرضه على الكمبيوتر",
+  },
+  VISUAL_BRAND_CLONE_DETECTED: {
+    en: "it is a copy of an official portal on an address that is not official",
+    ar: "نسخة من بوابة رسمية على عنوان غير رسمي",
+  },
+  VISUAL_BRAND_SIMILARITY: { en: "it imitates the look of an official portal", ar: "يقلّد مظهر بوابة رسمية" },
   YOUNG_DOMAIN: { en: "a very new website", ar: "موقع حديث جداً" },
   URGENCY_PRESSURE: { en: "fake deadlines and threats", ar: "مهل وتهديدات مزيفة" },
   SUSPICIOUS_TLD: { en: "an unusual web address", ar: "عنوان موقع غير مألوف" },

@@ -1,5 +1,5 @@
 {
- "about": "SAQR UAE regression suite: 50 hand-written cases (25 malicious, 25 legitimate) across the five input types. Every scam domain is invented. Written by the team: NOT a measure of accuracy on real-world scams. Detected = verdict != SAFE (phone: level caution/danger). Run: pytest -q tests/test_uae_suite.py or python tools/eval_uae.py",
+ "about": "SAQR UAE regression suite: 100 hand-written cases (50 malicious, 50 legitimate) across the five input types. Cases 51-100 (\"tricky\": true) were added 2026-11-24 from realistic patterns before the suite was run on them. Every scam domain is invented. Written by the team: NOT a measure of accuracy on real-world scams. Detected = verdict != SAFE (phone: level caution/danger). Run: pytest -q tests/test_uae_suite.py or python tools/eval_uae.py",
  "cases": [
   {
    "id": "url-mal-tamm-refund",
@@ -584,6 +584,639 @@
     "verified_official": true,
     "note": "Hard negative: payment + fine + urgency words, all links official."
    }
+  },
+  {
+   "id": "url-mal-tamm-netlify",
+   "modality": "url",
+   "label": "malicious",
+   "description": "TAMM look-alike on a free host (Netlify sub-domain)",
+   "input": {
+    "url": "https://tamm-abudhabi-fines.netlify.app/en/pay"
+   },
+   "tricky": true
+  },
+  {
+   "id": "url-mal-uaepass-subdomain-abuse",
+   "modality": "url",
+   "label": "malicious",
+   "description": "uaepass.ae spelled as sub-domain labels of an invented .top",
+   "input": {
+    "url": "https://secure-login.uaepass.ae.idverify-center.top/auth"
+   },
+   "tricky": true
+  },
+  {
+   "id": "url-mal-arabic-encoded-path",
+   "modality": "url",
+   "label": "malicious",
+   "description": "Brand-free invented host with a percent-encoded Arabic lure path ('تسديد-المخالفات' = pay fines)",
+   "input": {
+    "url": "https://ae-services-online.com/%D8%AA%D8%B3%D8%AF%D9%8A%D8%AF-%D8%A7%D9%84%D9%85%D8%AE%D8%A7%D9%84%D9%81%D8%A7%D8%AA/pay?ref=77120"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Hard: no brand anywhere; only the path / URL model can see it."
+   }
+  },
+  {
+   "id": "url-mal-brand-in-path",
+   "modality": "url",
+   "label": "malicious",
+   "description": "Emirates Post kit in the PATH of an unrelated invented host",
+   "input": {
+    "url": "https://cdn-files-host.com/emiratespost/redelivery/index.php?id=EP7731"
+   },
+   "tricky": true
+  },
+  {
+   "id": "url-mal-google-redirect",
+   "modality": "url",
+   "label": "malicious",
+   "description": "Open-redirect wrapper (google.com/url?q=) whose target is an ADCB look-alike; decidable offline from the query",
+   "input": {
+    "url": "https://www.google.com/url?q=https://adcb-card-verify.com/otp&sa=D&source=sms"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Hard: the visible host is official Google."
+   }
+  },
+  {
+   "id": "url-leg-khaleejtimes-scam-article",
+   "modality": "url",
+   "label": "legitimate",
+   "description": "Khaleej Times article warning about fake TAMM fine links",
+   "input": {
+    "url": "https://www.khaleejtimes.com/uae/uae-residents-warned-against-fake-tamm-fine-payment-links"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Hard negative: brand + lure words in a news slug."
+   }
+  },
+  {
+   "id": "url-leg-wam-phishing-warning",
+   "modality": "url",
+   "label": "legitimate",
+   "description": "WAM (state news agency) article on phishing links",
+   "input": {
+    "url": "https://www.wam.ae/en/article/b4x9k2l-uae-cyber-security-council-warns-public-against-phishing-links-verify-otp"
+   },
+   "tricky": true
+  },
+  {
+   "id": "url-leg-adcb-tracking",
+   "modality": "url",
+   "label": "legitimate",
+   "description": "ADCB official deep link with a long ad-tracking query",
+   "input": {
+    "url": "https://www.adcb.com/en/personal/cards/credit-cards/?utm_source=google&utm_medium=cpc&utm_campaign=cards_q4_2026&gclid=Cj0KCQiA2eKtBhDcARIsAEGTG40f8xVqP3kW&utm_content=verify_offer"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "url-leg-telr-hosted-payment",
+   "modality": "url",
+   "label": "legitimate",
+   "description": "Payment-gateway hosted page (Telr) for a merchant order",
+   "input": {
+    "url": "https://secure.telr.com/gateway/process.html?o=8A1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Hard negative: card form on a host that is not the merchant."
+   }
+  },
+  {
+   "id": "url-leg-tammam-sweets",
+   "modality": "url",
+   "label": "legitimate",
+   "description": "Legit business whose name starts with a brand token ('Tammam' vs TAMM)",
+   "input": {
+    "url": "https://www.tammam-sweets.ae/en/order-online"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-mal-enbd-lookalike-sender",
+   "modality": "email",
+   "label": "malicious",
+   "description": "Emirates NBD look-alike sender domain, card-blocked lure + link",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119101pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@emiratesnbd-alerts.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of alerts@emiratesnbd-alerts.com designates 198.51.100.80 as permitted sender) smtp.mailfrom=alerts@emiratesnbd-alerts.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=emiratesnbd-alerts.com\nReturn-Path: <alerts@emiratesnbd-alerts.com>\nReceived: from mta1.emiratesnbd-alerts.com (mta1.emiratesnbd-alerts.com. [198.51.100.80])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887101a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: Emirates NBD <alerts@emiratesnbd-alerts.com>\nTo: resident.example@gmail.com\nSubject: Your debit card has been temporarily blocked\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-101.20261124191202@emiratesnbd-alerts.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nDear Customer,\n\nFor your security your debit card ending 4471 has been temporarily blocked. Confirm your details within 12 hours to avoid permanent closure:\nhttps://emiratesnbd-alerts.com/unblock?c=4471\n\nEmirates NBD\n"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-mal-tamm-govae-lookalike",
+   "modality": "email",
+   "label": "malicious",
+   "description": "TAMM sender on an invented 'gov-ae.com' domain, fines link",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119102pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@tamm-abudhabi.gov-ae.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of no-reply@tamm-abudhabi.gov-ae.com designates 198.51.100.80 as permitted sender) smtp.mailfrom=no-reply@tamm-abudhabi.gov-ae.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=tamm-abudhabi.gov-ae.com\nReturn-Path: <no-reply@tamm-abudhabi.gov-ae.com>\nReceived: from mta1.tamm-abudhabi.gov-ae.com (mta1.tamm-abudhabi.gov-ae.com. [198.51.100.80])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887102a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: TAMM Abu Dhabi <no-reply@tamm-abudhabi.gov-ae.com>\nTo: resident.example@gmail.com\nSubject: Outstanding traffic fines - final notice\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-102.20261124191202@tamm-abudhabi.gov-ae.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nDear resident,\n\nYou have 3 outstanding traffic fines totalling AED 1,250. Pay today to receive a 35% discount and avoid black points:\nhttps://tamm-abudhabi.gov-ae.com/fines/pay\n\nTAMM - Abu Dhabi Government\n"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-mal-salik-arabic-gmail",
+   "modality": "email",
+   "label": "malicious",
+   "description": "Arabic RTA / Salik notice from a Gmail address with a look-alike link",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119103pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@gmail.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of salik.rta.notice@gmail.com designates 209.85.220.43 as permitted sender) smtp.mailfrom=salik.rta.notice@gmail.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=gmail.com\nReturn-Path: <salik.rta.notice@gmail.com>\nReceived: from mta1.gmail.com (mta1.gmail.com. [209.85.220.43])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887103a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: =?utf-8?b?2YfZitim2Kkg2KfZhNi32LHZgiDZiNin2YTZhdmI2KfYtdmE2KfYqiAtINiz2KfZhNmD?= <salik.rta.notice@gmail.com>\nTo: resident.example@gmail.com\nSubject: =?utf-8?b?2LHYtdmK2K8g2LPYp9mE2YMg2LrZitixINmD2KfZgdmNIC0g2LrYsdin2YXYqSDZhdiz2KrYrdmC2Kk=?=\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-103.20261124191202@gmail.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nعزيزي المتعامل،\n\nرصيد حساب سالك الخاص بك غير كافٍ وتم تسجيل غرامة بقيمة 400 درهم. يرجى السداد خلال 24 ساعة لتجنب مضاعفة الغرامة:\nhttps://salik-ae-pay.com/ar/recharge\n\nهيئة الطرق والمواصلات\n"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-mal-etisalat-bill-lookalike",
+   "modality": "email",
+   "label": "malicious",
+   "description": "e& / Etisalat bill notice from a look-alike billing domain",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119104pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@e-and-mybill.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of billing@e-and-mybill.com designates 198.51.100.80 as permitted sender) smtp.mailfrom=billing@e-and-mybill.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=e-and-mybill.com\nReturn-Path: <billing@e-and-mybill.com>\nReceived: from mta1.e-and-mybill.com (mta1.e-and-mybill.com. [198.51.100.80])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887104a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: Etisalat by e& <billing@e-and-mybill.com>\nTo: resident.example@gmail.com\nSubject: Action required: your Etisalat account will be suspended\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-104.20261124191202@e-and-mybill.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nDear Customer,\n\nYour last payment of AED 389.00 failed. Update your card details now to avoid service suspension within 24 hours:\nhttps://etisalat-billpay.net/update-card\n\ne& UAE\n"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-mal-m365-subdomain",
+   "modality": "email",
+   "label": "malicious",
+   "description": "Microsoft 365 password expiry with a login.microsoftonline.com.* sub-domain link",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119105pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@company-mail-secure.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of it-helpdesk@company-mail-secure.com designates 198.51.100.80 as permitted sender) smtp.mailfrom=it-helpdesk@company-mail-secure.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=company-mail-secure.com\nReturn-Path: <it-helpdesk@company-mail-secure.com>\nReceived: from mta1.company-mail-secure.com (mta1.company-mail-secure.com. [198.51.100.80])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887105a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: IT Helpdesk <it-helpdesk@company-mail-secure.com>\nTo: resident.example@gmail.com\nSubject: Your password expires today\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-105.20261124191202@company-mail-secure.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nHello,\n\nYour Microsoft 365 password expires today. Keep your current password here:\nhttps://login.microsoftonline.com.auth-verify.site/common/oauth2?client=8823\n\nIT Helpdesk\n"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-leg-gulfnews-newsletter",
+   "modality": "email",
+   "label": "legitimate",
+   "description": "Gulf News newsletter whose stories are about scams (OTP, TAMM fines)",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119106pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@gulfnews.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of newsletter@gulfnews.com designates 192.0.2.61 as permitted sender) smtp.mailfrom=newsletter@gulfnews.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=gulfnews.com\nReturn-Path: <newsletter@gulfnews.com>\nReceived: from mta1.gulfnews.com (mta1.gulfnews.com. [192.0.2.61])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887106a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: Gulf News <newsletter@gulfnews.com>\nTo: resident.example@gmail.com\nSubject: Today: Police warn of fake TAMM fine SMS; how to spot OTP scams\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-106.20261124191202@gulfnews.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nGood morning,\n\nTop stories today:\n- Abu Dhabi Police warn residents about fake TAMM fine messages asking them to verify card details: https://gulfnews.com/uae/crime/police-warn-of-fake-tamm-fine-sms-1.500912345\n- Never share your OTP: how bank scams work in the UAE: https://gulfnews.com/your-money/banking/never-share-your-otp-1.500912399\n\nUnsubscribe: https://gulfnews.com/newsletters/unsubscribe\n\nGulf News\n"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Hard negative: scam vocabulary in genuine news."
+   }
+  },
+  {
+   "id": "email-leg-enbd-marketing-urgency",
+   "modality": "email",
+   "label": "legitimate",
+   "description": "Emirates NBD marketing email with 'last chance' urgency",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119107pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@emiratesnbd.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of offers@emiratesnbd.com designates 192.0.2.62 as permitted sender) smtp.mailfrom=offers@emiratesnbd.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=emiratesnbd.com\nReturn-Path: <offers@emiratesnbd.com>\nReceived: from mta1.emiratesnbd.com (mta1.emiratesnbd.com. [192.0.2.62])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887107a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: Emirates NBD <offers@emiratesnbd.com>\nTo: resident.example@gmail.com\nSubject: Last chance: 0% instalments end tonight\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-107.20261124191202@emiratesnbd.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nDear Customer,\n\nOnly a few hours left! Convert your purchases into 0% instalment plans before midnight. Log in to the ENBD X app or visit https://www.emiratesnbd.com/en/cards/credit-cards/easy-payment-plan\n\nEmirates NBD will never ask for your password or OTP.\n\nEmirates NBD\n"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-leg-fab-kyc-reminder",
+   "modality": "email",
+   "label": "legitimate",
+   "description": "FAB KYC reminder: update Emirates ID or account is restricted (real banks send these)",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119108pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@bankfab.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of noreply@bankfab.com designates 192.0.2.63 as permitted sender) smtp.mailfrom=noreply@bankfab.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=bankfab.com\nReturn-Path: <noreply@bankfab.com>\nReceived: from mta1.bankfab.com (mta1.bankfab.com. [192.0.2.63])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887108a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: FAB <noreply@bankfab.com>\nTo: resident.example@gmail.com\nSubject: Action required: update your Emirates ID details\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-108.20261124191202@bankfab.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nDear Customer,\n\nOur records show your Emirates ID has expired. Please update it before 30/11/2026 through the FAB Mobile app or at any branch, otherwise some services on your account may be restricted. More information: https://www.bankfab.com/en-ae/personal/update-your-details\n\nFirst Abu Dhabi Bank\n"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true,
+    "note": "Hard negative: restriction threat + identity document in a genuine bank email."
+   }
+  },
+  {
+   "id": "email-leg-telr-receipt",
+   "modality": "email",
+   "label": "legitimate",
+   "description": "Payment-gateway receipt sent by Telr on behalf of a merchant",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119109pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@telr.com header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of no-reply@telr.com designates 192.0.2.64 as permitted sender) smtp.mailfrom=no-reply@telr.com;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=telr.com\nReturn-Path: <no-reply@telr.com>\nReceived: from mta1.telr.com (mta1.telr.com. [192.0.2.64])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887109a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: Telr Payments <no-reply@telr.com>\nTo: resident.example@gmail.com\nSubject: Payment receipt - Al Maya Supermarket - AED 214.75\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-109.20261124191202@telr.com>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nThank you for your payment.\n\nMerchant: Al Maya Supermarket\nAmount: AED 214.75\nCard: **** 7731\nTransaction reference: 030021457812\n\nView receipt: https://secure.telr.com/receipt/030021457812\n\nTelr\n"
+   },
+   "tricky": true
+  },
+  {
+   "id": "email-leg-etisalat-bill",
+   "modality": "email",
+   "label": "legitimate",
+   "description": "e& bill-ready email from etisalat.ae with a due date and suspension wording",
+   "input": {
+    "source": "raw",
+    "text": "Delivered-To: resident.example@gmail.com\nReceived: by 2002:a05:6a20:9e31:b0:2c1:77ab:91fe with SMTP id k49csp3119110pzb;\n        Tue, 24 Nov 2026 07:12:05 -0800 (PST)\nAuthentication-Results: mx.google.com;\n       dkim=pass header.i=@etisalat.ae header.s=s1 header.b=Qx7Lm2Pa;\n       spf=pass (google.com: domain of ebill@etisalat.ae designates 192.0.2.65 as permitted sender) smtp.mailfrom=ebill@etisalat.ae;\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=etisalat.ae\nReturn-Path: <ebill@etisalat.ae>\nReceived: from mta1.etisalat.ae (mta1.etisalat.ae. [192.0.2.65])\n        by mx.google.com with ESMTPS id 41be03b00d2f7-7a1b2c3d4e5si99887110a12.301.2026.11.24.07.12.04\n        for <resident.example@gmail.com>\n        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);\n        Tue, 24 Nov 2026 07:12:04 -0800 (PST)\nFrom: e& <ebill@etisalat.ae>\nTo: resident.example@gmail.com\nSubject: Your e& bill for November is ready\nDate: Tue, 24 Nov 2026 19:12:02 +0400\nMessage-ID: <uae-suite-110.20261124191202@etisalat.ae>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=\"UTF-8\"\nContent-Transfer-Encoding: 8bit\n\nDear Customer,\n\nYour bill of AED 412.30 is ready. Please pay by 28/11/2026 to avoid interruption of services. Pay in the e& UAE app or at https://www.etisalat.ae/en/c/mybill.html\n\ne&\n"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "maps-mal-emiratespost-beacons",
+   "modality": "maps",
+   "label": "malicious",
+   "description": "Hijacked Emirates Post listing with a link-in-bio site and a mobile",
+   "input": {
+    "business_name": "Emirates Post Office - Al Wahda",
+    "website": "https://beacons.ai/uae.post.help",
+    "phone": "+971 58 334 1290"
+   },
+   "tricky": true
+  },
+  {
+   "id": "maps-mal-uaepass-lookalike-site",
+   "modality": "maps",
+   "label": "malicious",
+   "description": "UAE PASS support listing with a look-alike website",
+   "input": {
+    "business_name": "UAE PASS Support Centre",
+    "website": "https://uaepass-help-center.com",
+    "phone": "+971 2 448 1903"
+   },
+   "tricky": true
+  },
+  {
+   "id": "maps-mal-dubaipolice-foreign",
+   "modality": "maps",
+   "label": "malicious",
+   "description": "Dubai Police fines office listed with a Nigerian number",
+   "input": {
+    "business_name": "Dubai Police Traffic Fines Office",
+    "phone": "+234 803 555 0147"
+   },
+   "tricky": true
+  },
+  {
+   "id": "maps-mal-tamm-arabic-whatsapp",
+   "modality": "maps",
+   "label": "malicious",
+   "description": "Arabic TAMM service centre listing with a wa.me website",
+   "input": {
+    "business_name": "مركز خدمة تم - المصفح",
+    "website": "https://wa.me/971565550193",
+    "phone": "+971 56 555 0193"
+   },
+   "tricky": true
+  },
+  {
+   "id": "maps-mal-fab-loan-shortlink",
+   "modality": "maps",
+   "label": "malicious",
+   "description": "'FAB Personal Loan Office' with a bit.ly website and a mobile",
+   "input": {
+    "business_name": "FAB Bank Personal Loan Office",
+    "website": "https://bit.ly/fab-loan-ae",
+    "phone": "+971 58 902 7716"
+   },
+   "tricky": true
+  },
+  {
+   "id": "maps-leg-du-shop",
+   "modality": "maps",
+   "label": "legitimate",
+   "description": "du shop with the official du.ae website",
+   "input": {
+    "business_name": "du Shop - Yas Mall",
+    "website": "https://www.du.ae",
+    "lat": 24.4886,
+    "lng": 54.6082
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "maps-leg-adcb-branch",
+   "modality": "maps",
+   "label": "legitimate",
+   "description": "ADCB branch with adcb.com and the ADCB 600 number",
+   "input": {
+    "business_name": "ADCB Al Khalidiyah Branch",
+    "website": "https://www.adcb.com",
+    "phone": "600 50 2030",
+    "lat": 24.4686,
+    "lng": 54.3526
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "maps-leg-emirates-palace",
+   "modality": "maps",
+   "label": "legitimate",
+   "description": "Hotel whose name contains a brand-like word ('Emirates')",
+   "input": {
+    "business_name": "Emirates Palace Mandarin Oriental",
+    "website": "https://www.mandarinoriental.com/en/abu-dhabi/emirates-palace",
+    "phone": "+971 2 690 9000",
+    "lat": 24.4615,
+    "lng": 54.3172
+   },
+   "tricky": true
+  },
+  {
+   "id": "maps-leg-henna-linktree",
+   "modality": "maps",
+   "label": "legitimate",
+   "description": "Small henna studio whose website is a link-in-bio page and phone a mobile",
+   "input": {
+    "business_name": "Noor Henna Studio",
+    "website": "https://linktr.ee/noorhenna.ad",
+    "phone": "+971 55 610 4482"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Hard negative: link-in-bio is normal for small businesses."
+   }
+  },
+  {
+   "id": "maps-leg-adpolice-alain",
+   "modality": "maps",
+   "label": "legitimate",
+   "description": "Abu Dhabi Police Al Ain traffic department with official site + 800 3333",
+   "input": {
+    "business_name": "Abu Dhabi Police - Al Ain Traffic and Licensing",
+    "website": "https://www.adpolice.gov.ae",
+    "phone": "800 3333",
+    "lat": 24.2075,
+    "lng": 55.7447
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "phone-mal-adpolice-bangladesh",
+   "modality": "phone",
+   "label": "malicious",
+   "description": "Bangladesh number in an ad claiming Abu Dhabi Police",
+   "input": {
+    "phone": "+880 1712 555 019",
+    "claimed_entity": "Abu Dhabi Police",
+    "context": "ad"
+   },
+   "tricky": true
+  },
+  {
+   "id": "phone-mal-tamm-tollfree-lookalike",
+   "modality": "phone",
+   "label": "malicious",
+   "description": "Toll-free look-alike of TAMM 800 555 (800 5555) in an ad",
+   "input": {
+    "phone": "800 5555",
+    "claimed_entity": "TAMM",
+    "context": "ad"
+   },
+   "tricky": true
+  },
+  {
+   "id": "phone-mal-emiratespost-philippines",
+   "modality": "phone",
+   "label": "malicious",
+   "description": "Philippine mobile claiming Emirates Post",
+   "input": {
+    "phone": "+63 917 555 0182",
+    "claimed_entity": "Emirates Post",
+    "context": "result"
+   },
+   "tricky": true
+  },
+  {
+   "id": "phone-mal-etisalat-mobile",
+   "modality": "phone",
+   "label": "malicious",
+   "description": "Personal UAE mobile claiming e& / Etisalat (rewards call)",
+   "input": {
+    "phone": "+971 55 190 4477",
+    "claimed_entity": "Etisalat",
+    "context": "result"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Telecoms are excluded from the foreign-number rule; a personal mobile is still not their channel."
+   }
+  },
+  {
+   "id": "phone-mal-fab-one-digit-off",
+   "modality": "phone",
+   "label": "malicious",
+   "description": "600 number one digit off FAB's 600 525500, in an ad",
+   "input": {
+    "phone": "600 52 5501",
+    "claimed_entity": "FAB",
+    "context": "ad"
+   },
+   "tricky": true
+  },
+  {
+   "id": "phone-leg-adpolice-callcentre",
+   "modality": "phone",
+   "label": "legitimate",
+   "description": "Abu Dhabi Police call centre 800 3333",
+   "input": {
+    "phone": "800 3333",
+    "claimed_entity": "Abu Dhabi Police",
+    "context": "panel"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "phone-leg-etisalat-101",
+   "modality": "phone",
+   "label": "legitimate",
+   "description": "e& customer care short code 101",
+   "input": {
+    "phone": "101",
+    "claimed_entity": "Etisalat",
+    "context": "result"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "phone-leg-fab-600",
+   "modality": "phone",
+   "label": "legitimate",
+   "description": "FAB service 600 52 5500",
+   "input": {
+    "phone": "+971 600 52 5500",
+    "claimed_entity": "FAB",
+    "context": "maps"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "phone-leg-pharmacy-landline",
+   "modality": "phone",
+   "label": "legitimate",
+   "description": "Pharmacy Abu Dhabi landline with its own name",
+   "input": {
+    "phone": "+971 2 555 0142",
+    "claimed_entity": "Al Noor Pharmacy",
+    "context": "maps"
+   },
+   "tricky": true
+  },
+  {
+   "id": "phone-leg-aman-2828",
+   "modality": "phone",
+   "label": "legitimate",
+   "description": "Aman short code 2828 for Abu Dhabi Police",
+   "input": {
+    "phone": "2828",
+    "claimed_entity": "Abu Dhabi Police",
+    "context": "panel"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "msg-mal-uaepass-otp-arabic",
+   "modality": "message",
+   "label": "malicious",
+   "description": "Arabic OTP harvest: 'give us the 6-digit code' for UAE PASS / Emirates ID update",
+   "input": {
+    "text": "عزيزي المتعامل، لتحديث بيانات الهوية الإماراتية في الهوية الرقمية UAE PASS يرجى تزويدنا بالرمز المكون من 6 أرقام الذي سيصلك الآن.",
+    "sender": "+971 56 771 3302"
+   },
+   "tricky": true
+  },
+  {
+   "id": "msg-mal-salik-shortener-uk",
+   "modality": "message",
+   "label": "malicious",
+   "description": "Salik negative balance from a UK mobile with an unexpandable bit.ly link",
+   "input": {
+    "text": "Salik: Your toll balance is negative. Pay AED 50 now to avoid an AED 400 fine: https://bit.ly/3Sa1ikP",
+    "sender": "+44 7700 900123"
+   },
+   "tricky": true
+  },
+  {
+   "id": "msg-mal-emiratespost-subdomain",
+   "modality": "message",
+   "label": "malicious",
+   "description": "Emirates Post delivery-failed text with emiratespost.ae as a sub-domain of an invented .info",
+   "input": {
+    "text": "Emirates Post: Delivery attempt failed for parcel EP55120034AE. Reschedule within 12h: https://emiratespost.ae-redeliver.info/track",
+    "sender": "EPost-AE"
+   },
+   "tricky": true
+  },
+  {
+   "id": "msg-mal-dubaipolice-arabic-fine",
+   "modality": "message",
+   "label": "malicious",
+   "description": "Arabic Dubai Police fine with a look-alike link from a mobile",
+   "input": {
+    "text": "شرطة دبي: لديك مخالفة مرورية غير مدفوعة بقيمة 500 درهم. ادفع الآن لتجنب حجز المركبة: https://dxb-police-fines.com/ar",
+    "sender": "+971 50 228 9154"
+   },
+   "tricky": true
+  },
+  {
+   "id": "msg-mal-du-points-prize",
+   "modality": "message",
+   "label": "malicious",
+   "description": "du reward-points prize with a look-alike redeem link",
+   "input": {
+    "text": "du: Congratulations! Your number won 50,000 du Reward points worth AED 1,200. Redeem before midnight: https://du-points-redeem.com",
+    "sender": "+971 52 663 1180",
+    "channel": "whatsapp"
+   },
+   "tricky": true
+  },
+  {
+   "id": "msg-leg-fab-statement",
+   "modality": "message",
+   "label": "legitimate",
+   "description": "FAB statement-ready SMS with an official link",
+   "input": {
+    "text": "FAB: Your credit card statement is ready. Minimum due AED 350 by 05/12. View it at https://www.bankfab.com/en-ae/personal/online-banking",
+    "sender": "FAB"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "msg-leg-du-bill",
+   "modality": "message",
+   "label": "legitimate",
+   "description": "du bill reminder with 'avoid interruption' and an official link",
+   "input": {
+    "text": "du: Your bill of AED 289.50 is due on 28/11. Pay via the du app or https://www.du.ae/pay to avoid service interruption.",
+    "sender": "du"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true
+   }
+  },
+  {
+   "id": "msg-leg-friend-shares-article",
+   "modality": "message",
+   "label": "legitimate",
+   "description": "Friend on WhatsApp sharing a The National article about fake fine texts",
+   "input": {
+    "text": "Did you see this? Police warning about fake TAMM fine texts, don't click them https://www.thenationalnews.com/news/uae/2026/11/20/abu-dhabi-police-warn-of-fake-traffic-fine-messages/",
+    "sender": "+971 50 614 2287",
+    "channel": "whatsapp"
+   },
+   "tricky": true,
+   "expect": {
+    "note": "Hard negative: scam topic + brand, link is news."
+   }
+  },
+  {
+   "id": "msg-leg-adpolice-fine-notice",
+   "modality": "message",
+   "label": "legitimate",
+   "description": "Abu Dhabi Police fine notice pointing to TAMM / the official app",
+   "input": {
+    "text": "Abu Dhabi Police: A traffic fine of AED 400 was recorded on vehicle A 12345 on 22/11/2026. Pay via https://www.tamm.abudhabi or the Abu Dhabi Police app.",
+    "sender": "ADPolice"
+   },
+   "tricky": true,
+   "expect": {
+    "verified_official": true,
+    "note": "Hard negative: same words as the classic scam, official links."
+   }
+  },
+  {
+   "id": "msg-leg-tamm-otp-arabic",
+   "modality": "message",
+   "label": "legitimate",
+   "description": "Arabic TAMM OTP delivery notice with 'do not share'",
+   "input": {
+    "text": "رمز التحقق الخاص بك لتطبيق تم هو 482913. لا تشارك هذا الرمز مع أي شخص.",
+    "sender": "TAMM"
+   },
+   "tricky": true
   }
  ]
 }

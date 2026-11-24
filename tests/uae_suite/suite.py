@@ -1,6 +1,6 @@
 """Shared runner for the UAE benchmark suite (tests/test_uae_suite.py and tools/eval_uae.py).
 
-cases.json holds 50 hand-written cases (25 malicious, 25 legitimate) across the five input types SAQR accepts.
+cases.json holds 100 hand-written cases (50 malicious, 50 legitimate; the second 50 are marked "tricky") across the five input types SAQR accepts.
 Every scam domain in it is invented. The cases were written by the team, so this is a regression set, not a
 measure of accuracy on real-world scams.
 

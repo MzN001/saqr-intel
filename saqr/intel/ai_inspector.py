@@ -52,11 +52,18 @@ STRONG_FIELDS = {"OTP", "CARD_NUMBER", "CVV", "ATM_PIN"}
 STRONG_SIGNALS = {"NEWLY_REGISTERED", "YOUNG_DOMAIN", "FRESH_CERTIFICATE", "KNOWN_SYNDICATE_INFRA",
                   "KNOWN_PHISHING_FEED", "AI_PHISHING_URL",
                   # page evidence that is specific to phishing (saqr/intel/page_signals.py)
-                  "PROVIDER_PHISHING_WARNING", "SHORTLINK_DISABLED", "FORM_SERVICE_CREDENTIALS", "BRAND_LOGIN_PAGE"}
+                  "PROVIDER_PHISHING_WARNING", "SHORTLINK_DISABLED", "FORM_SERVICE_CREDENTIALS", "BRAND_LOGIN_PAGE",
+                  # evasion / clone evidence (sandbox.mobile_cloak_verdict, brand_fingerprint)
+                  "MOBILE_CLOAKING_DETECTED", "VISUAL_BRAND_CLONE_DETECTED"}
 # Evidence that ordinary, legitimate sites show all the time (a login box, a "Sign in with UAE PASS"
 # button, JavaScript-built pages, words like "expire"). It only adds risk next to strong evidence.
 # A broken / expired certificate is common on neglected small sites, so it is weak too.
-WEAK_PAGE_SIGNALS = {"BRAND_CONTENT", "URGENCY_PRESSURE", "CLOAKING", "EXFIL_FORM", "NO_HTTPS", "TLS_INVALID"}
+# VISUAL_BRAND_SIMILARITY = a page 50-74% like an official portal (or a clone on a payment gateway /
+# popular site, where a merchant's or partner's branding is normal).
+WEAK_PAGE_SIGNALS = {"BRAND_CONTENT", "URGENCY_PRESSURE", "CLOAKING", "EXFIL_FORM", "NO_HTTPS", "TLS_INVALID",
+                     "VISUAL_BRAND_SIMILARITY"}
+# Card fields are a payment gateway's normal content (page_signals.PAYMENT_GATEWAY_HOSTS).
+GATEWAY_NORMAL_FIELDS = {"CARD_NUMBER", "CVV", "CARD_EXPIRY"}
 
 # Trained URL classifier thresholds, picked by tools/train_url_model.py on legitimate sites it never saw
 # (grouped validation split + the false-positive suite of UAE / bank / long-tail sites): CERTAIN = at most
@@ -80,7 +87,8 @@ ML_SUSPECT = _ML["suspect"]
 ML_CORROBORATION = {"FRESH_CERTIFICATE", "NEWLY_REGISTERED", "YOUNG_DOMAIN", "BRAND_CONTENT", "BRAND_IMPERSONATION",
                     "CREDENTIAL_HARVESTING", "EXFIL_FORM", "SUSPICIOUS_TLD", "URGENCY_PRESSURE", "LURE_KEYWORDS",
                     "CLOAKING", "TYPOSQUAT", "HOMOGLYPH_SPOOF", "PUNYCODE", "RAW_IP_HOST", "BRAND_LOGIN_PAGE",
-                    "FORM_SERVICE_CREDENTIALS"}
+                    "FORM_SERVICE_CREDENTIALS", "MOBILE_CLOAKING_DETECTED", "VISUAL_BRAND_CLONE_DETECTED",
+                    "VISUAL_BRAND_SIMILARITY"}
 
 URGENCY = re.compile(
     r"24\s*hours|within \d+ (hours|minutes)|immediately|expire|expires today|suspend|blocked|impound|last chance|"
@@ -120,6 +128,11 @@ def _entity_in_text(text: str) -> Entity | None:
     return None
 
 
+def popular_site(lex: LexicalReport) -> bool:
+    """Tranco top-100k registered domain, not a page on a user-content platform."""
+    return bool(popularity_rank(lex.registered_domain)) and not page_signals.user_content(lex.host)
+
+
 def _owns(ent: Entity, lex: LexicalReport) -> bool:
     return any(lex.registered_domain == d or lex.host == d or lex.host.endswith("." + d) for d in ent.domains)
 
@@ -128,8 +141,10 @@ def url_model_result(lex: LexicalReport) -> dict | None:
     """Trained classifier's verdict on the full address ({probability, reasons}), or None when it must
     not judge it: official / trusted sites, and popular sites (Tranco top 100k) unless the page sits on
     a free-hosting / user-content platform (a popular site's own pages are not phishing; its users' pages
-    may be: page_signals.user_content)."""
-    if lex.is_whitelisted or (popularity_rank(lex.registered_domain) and not page_signals.user_content(lex.host)):
+    may be: page_signals.user_content). A payment gateway's checkout address is the gateway's own, not
+    the merchant's: those pages are judged by content only."""
+    if lex.is_whitelisted or page_signals.payment_gateway(lex.host) or (
+            popularity_rank(lex.registered_domain) and not page_signals.user_content(lex.host)):
         return None
     return url_model.score_url(lex.normalized_url or lex.host)
 
@@ -150,7 +165,9 @@ def intel_flags(lex: LexicalReport) -> list[RedFlag]:
     res = url_model_result(lex)
     p = None if res is None else res["probability"]
     if p is not None and p >= ML_SUSPECT:
-        pct = round(p * 100)
+        # Decisions use the RAW probability; the citizen text shows the calibrated one when the model has it.
+        shown = res.get("calibrated_probability")
+        pct = round((shown if shown is not None else p) * 100)
         why_en = "; ".join(r["en"] for r in res["reasons"])
         why_ar = "؛ ".join(r["ar"] for r in res["reasons"])
         if p >= ML_CERTAIN and not on_free_hosting(lex.host):
@@ -256,6 +273,35 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
         flags.append(RedFlag("CLOAKING", "high", 15,
                              "The site hides its real content from security scanners and only shows it to UAE phones.",
                              "يخفي الموقع محتواه الحقيقي عن أنظمة الفحص الأمني ويُظهره فقط لهواتف المستخدمين في الدولة."))
+    mobile = page.get("mobile_cloaking") or {}
+    if mobile.get("detected"):
+        flags.append(RedFlag("MOBILE_CLOAKING_DETECTED", "critical", 25,
+                             "The site shows phones a different page than computers. "
+                             + (mobile.get("reason_en") or "") + " Scam pages do this to hide from desktop checks.",
+                             "يعرض الموقع على الهواتف صفحة مختلفة عمّا يعرضه على أجهزة الكمبيوتر. "
+                             + (mobile.get("reason_ar") or "") + " تفعل صفحات الاحتيال ذلك للتخفّي من الفحص عبر الكمبيوتر."))
+    gateway = page_signals.payment_gateway(lex.host)
+    vis = page.get("visual_similarity") or {}
+    vis_score = int(vis.get("score") or 0)
+    if vis_score >= 50 and vis.get("matched_entity") and not vis.get("official"):
+        name, name_ar = vis["matched_entity"], vis.get("matched_entity_ar") or vis["matched_entity"]
+        dom = vis.get("matched_domain") or ""
+        clone = vis_score >= 75 and not gateway and not popular_site(lex)
+        if clone:
+            flags.append(RedFlag("VISUAL_BRAND_CLONE_DETECTED", "critical", 35,
+                                 f"Looks {vis_score}% like the real {name} portal, but the address is not {name}'s "
+                                 f"(the real one is {dom}).",
+                                 f"تبدو مطابقة بنسبة {vis_score}٪ لبوابة {name_ar} الحقيقية، لكن العنوان لا يتبع "
+                                 f"{name_ar} (الموقع الحقيقي {dom})."))
+            ent_id = vis.get("entity_id")
+            if entity is None and ent_id:
+                from .registry import ENTITY_BY_ID
+
+                entity = ENTITY_BY_ID.get(ent_id)
+        else:
+            flags.append(RedFlag("VISUAL_BRAND_SIMILARITY", "medium", 10,
+                                 f"The page resembles the {name} portal ({vis_score}% similar) without being on {dom}.",
+                                 f"تشبه الصفحة بوابة {name_ar} (بنسبة {vis_score}٪) دون أن تكون على {dom}."))
     ext = page.get("external_form_actions") or []
     if ext:
         raw_ip = any(re.match(r"https?://\d+\.\d+\.\d+\.\d+", a) for a in ext)
@@ -287,7 +333,7 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
     # -- corroboration -----------------------------------------------------------------
     # Weak page signals (and a form that only asks for a password / UAE PASS / Emirates ID)
     # are kept for analysts but score 0 unless at least one strong signal is present.
-    strong_fields = [h for h in sens if h in STRONG_FIELDS]
+    strong_fields = [h for h in sens if h in STRONG_FIELDS and not (gateway and h in GATEWAY_NORMAL_FIELDS)]
     corroborated = bool(strong_fields) or any(
         f.code in STRONG_LEXICAL or f.code in STRONG_SIGNALS for f in flags) or (
         ml is not None and page_ent is not None)  # the address model and the page's branding agree
@@ -657,6 +703,10 @@ def _evidence(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
         "page_title": (page.get("page_title") or "")[:200],
         "page_text_excerpt": (page.get("text") or "")[:2500],
         "harvested_fields": rr.harvested, "cloaking": (page.get("cloaking") or {}).get("detected"),
+        "phone_vs_desktop_cloaking": (page.get("mobile_cloaking") or {}).get("detected"),
+        "looks_like_official_portal": {k: (page.get("visual_similarity") or {}).get(k)
+                                       for k in ("score", "matched_entity", "matched_domain")}
+        if page.get("visual_similarity") else None,
         "external_form_actions": page.get("external_form_actions"),
         "rule_engine": {"score": rr.score, "flags": [f.code for f in rr.flags]},
     }
@@ -699,6 +749,8 @@ class FinalVerdict:
     confidence: float | None = None
     # Additive LLM details for the response's "analyzer" block (no keys, no prompts).
     llm_extra: dict[str, Any] = field(default_factory=dict)
+    # The rules engine's own score before any LLM blend (score_breakdown reconciles flags -> this -> final).
+    rules_score: int = 0
 
 
 def _validate(data: dict[str, Any] | None) -> LLMVerdict | None:
@@ -716,7 +768,7 @@ async def inspect(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] 
     rr = run_rules(lex, net, page, syndicate)
     en, ar = template_explanations(rr, net, lex.host)
     final = FinalVerdict(rr.score, rr.verdict, rr.entity, rr.entity.name_en if rr.entity else None,
-                         en, ar, rr.flags, rr.harvested, "rules")
+                         en, ar, rr.flags, rr.harvested, "rules", rules_score=rr.score)
     if lex.is_whitelisted or not use_llm or settings.active_llm == "rules":
         return final
 

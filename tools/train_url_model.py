@@ -2,6 +2,8 @@
 
 Train on any set of labelled datasets (any format tools/url_datasets.py reads) plus the built-in recipe:
 
+    .venv-train/Scripts/python -I tools/train_url_model.py              # Windows: candidate -> datasets/candidate/
+    .venv/Scripts/python -I tools/compare_models.py --old <backup> --new datasets/candidate --out c.json --apply
     .venv-train/bin/py -I tools/train_url_model.py                      # built-in recipe (datasets/)
     .venv-train/bin/py -I tools/train_url_model.py --data extra.csv --data feed.txt:1 --no-recipe
     .venv/bin/python tools/train_url_model.py --build-holdout            # (re)write the fixed holdout sets
@@ -39,9 +41,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
-_runtime_site = ROOT / ".venv" / "lib" / f"python{sys.version_info.major}.{sys.version_info.minor}" / "site-packages"
-if _runtime_site.is_dir():
-    sys.path.append(str(_runtime_site))  # tldextract / pydantic for saqr imports in the training venv
+def _runtime_site_packages() -> list[Path]:
+    """site-packages of the runtime venv, for saqr imports (tldextract, dotenv, phonenumbers) when they are
+    not installed in the training venv. Linux layout .venv/lib/pythonX.Y/site-packages, Windows layout
+    .venv/Lib/site-packages; only used when the runtime venv runs the SAME Python minor version (compiled
+    packages from another version would not load)."""
+    ver = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    out = [ROOT / ".venv" / "lib" / ver / "site-packages"]
+    cfg = ROOT / ".venv" / "pyvenv.cfg"
+    if os.name == "nt" and cfg.exists():
+        text = cfg.read_text(encoding="utf-8", errors="replace")
+        if f"version = {sys.version_info.major}.{sys.version_info.minor}." in text \
+                or f"version_info = {sys.version_info.major}.{sys.version_info.minor}." in text:
+            out.append(ROOT / ".venv" / "Lib" / "site-packages")
+    return [p for p in out if p.is_dir()]
+
+
+for _site in _runtime_site_packages():
+    sys.path.append(str(_site))  # appended: the training venv's own packages win
 
 from url_datasets import load_labelled  # noqa: E402
 from saqr.intel import url_features as uf  # noqa: E402
@@ -50,6 +67,10 @@ from saqr.intel import url_model as um  # noqa: E402
 DATA = ROOT / "datasets"
 HOLDOUT_DIR = DATA / "holdout"
 EXCLUDE_PATH = ROOT / "tools" / "holdout_sites.txt.gz"
+EXCLUDE_V1_PATH = ROOT / "tools" / "holdout_sites_v1.txt.gz"  # sites sealed in round 1 (2026-11-24 model)
+CANDIDATE_DIR = DATA / "candidate"
+SPLITS_DIR = DATA / "splits"
+CUTOFF_UTC = "2026-11-24T21:10:00Z"  # training cut-off, also in model_metrics.json "training_cutoff"
 METRICS_PATH = ROOT / "saqr" / "intel" / "data" / "model_metrics.json"
 VECTORS_PATH = ROOT / "tests" / "fixtures" / "url_model_vectors.json"
 SEED = 20261124
@@ -92,7 +113,9 @@ RECIPE = (
     ("hf_ealvaradob/urls.json", 30_000, "full"),
     ("augmented/legit_lure_hosts.csv", None, "full"),
     ("augmented/synthetic_phishing.csv", None, "full"),
+    ("augmented/legit_hard_negatives.csv", None, "full"),  # tools/collect_hard_negatives.py (round 2)
 )
+HARDNEG_VAL_SHARE = 25  # percent of hard-negative SITES held out as the news / advisory validation slice
 TRANCO_TRAIN = 100_000
 SYNTHETIC_WEIGHT = 0.3
 EVASION_WEIGHT = 0.5
@@ -153,14 +176,21 @@ def build_holdout() -> dict[str, int]:
     for u, lab, src in load_labelled(DATA / "augmented" / "legit_free_hosting.csv", quiet=True):
         if lab == 0 and not src.startswith("hannousse") and bucket(site_of(u)) < 20:
             fp.append((u, 0, src))
-    tail = [d for r, d in _tranco() if r > 100_000]
-    fp += [(f"https://{d}/", 0, "tranco_longtail") for d in rng.sample(tail, 6000)]
+    sets["robustness"] = [r for r in load_labelled(DATA / "augmented" / "evasion_variants.csv", quiet=True)
+                          if r[2] in HOLDOUT_EVASION]
+    bad_sites = {site_of(u) for name in ("hannousse", "fresh_phishing", "robustness") for u, y, _ in sets[name] if y}
+    tail = [d for r, d in _tranco() if r > 100_000 and d not in bad_sites]
+    sealed_v1 = _read_sites(EXCLUDE_V1_PATH)
+    if sealed_v1:
+        # Round 2+: the Tranco list changes daily, so re-sampling would pick sites earlier models may have
+        # trained on. Take the long-tail sites that were already sealed in round 1 (never trained on by any
+        # model), so the FP suite stays comparable and fair to the old model.
+        tail = [d for d in tail if d in sealed_v1]
+    fp += [(f"https://{d}/", 0, "tranco_longtail") for d in rng.sample(sorted(tail), min(6000, len(tail)))]
     fp += [(u, 0, "fp_extra_bank_gov") for u in FP_EXTRA]
     sets["fp_suite"] = fp
 
-    sets["robustness"] = [r for r in load_labelled(DATA / "augmented" / "evasion_variants.csv", quiet=True)
-                          if r[2] in HOLDOUT_EVASION]
-    sites = set()
+    sites = set(sealed_v1)  # once sealed, a site stays sealed
     for name, rows in sets.items():
         _write(rows, HOLDOUT_DIR / f"{name}.csv")
         sites.update(site_of(u) for u, _, _ in rows)
@@ -168,8 +198,16 @@ def build_holdout() -> dict[str, int]:
         f.write("\n".join(sorted(s for s in sites if s)) + "\n")
     out = {k: len(v) for k, v in sets.items()}
     out["excluded_sites"] = len(sites)
+    out["sealed_v1_sites"] = len(sealed_v1)
     print(json.dumps(out))
     return out
+
+
+def _read_sites(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return {line.strip() for line in f if line.strip()}
 
 
 def holdout_sets() -> dict[str, list[tuple[str, int, str]]]:
@@ -192,7 +230,7 @@ def training_rows(extra: list[tuple[str, int | None]], recipe: bool) -> tuple[li
             items = rng.sample(items, cap)
         for u, lab, src in items:
             u = host_only(u) if mode == "host" else u
-            w = SYNTHETIC_WEIGHT if src == "synthetic" else weight
+            w = SYNTHETIC_WEIGHT if src == "synthetic" or src.endswith("_synthetic") else weight
             rows.append((u, lab, w, src))
             counts[src] += 1
 
@@ -200,11 +238,14 @@ def training_rows(extra: list[tuple[str, int | None]], recipe: bool) -> tuple[li
         for rel, cap, mode in RECIPE:
             t = time.time()
             src = rel.split("/")[0] if rel.startswith(("hf_kmack", "hf_ealvaradob")) else None  # both files: urls.*
+            if not (DATA / rel).exists():
+                print(f"  {rel}: MISSING, skipped", flush=True)
+                continue
             add(load_labelled(DATA / rel, source=src, quiet=True), cap, mode)
             print(f"  {rel}: total {sum(counts.values()):,} ({time.time() - t:.0f}s)", flush=True)
         jp = []
         for p in sorted((DATA / "jpcert").glob("*.csv")):
-            if p.name not in FRESH_JPCERT:
+            if p.name not in FRESH_JPCERT and p.stem[:6] <= CUTOFF_UTC[:7].replace("-", ""):  # cut-off month
                 jp += [(u, 1, "jpcert") for u, _, _ in load_labelled(p, quiet=True)]
         add(jp, None, "full")
         deep = [r for r in load_labelled(DATA / "augmented" / "legit_deep_links.csv", quiet=True)
@@ -372,19 +413,33 @@ VECTOR_URLS = (
 )
 
 
+def is_hardneg(src: str) -> bool:
+    return src.startswith("hardneg_")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", action="append", default=[], help="extra dataset PATH[:LABEL]")
     ap.add_argument("--no-recipe", action="store_true", help="train only on --data files")
     ap.add_argument("--build-holdout", action="store_true", help="rewrite datasets/holdout/ and exit")
     ap.add_argument("--linear-only", action="store_true", help="ship stage 1 only")
+    ap.add_argument("--out-dir", default=str(CANDIDATE_DIR),
+                    help="where the CANDIDATE is written; tools/compare_models.py decides whether it replaces "
+                         "the shipped model in saqr/intel/")
     args = ap.parse_args()
     if args.build_holdout:
         build_holdout()
         return
     import numpy as np
+    import calibration as cal
+
     if not EXCLUDE_PATH.exists():
         build_holdout()
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    um.MODEL_PATH = out_dir / "url_model.bin"
+    um.TREES_PATH = out_dir / "url_model_trees.json"
+    um.METRICS_PATH = out_dir / "model_metrics.json"
     extra = []
     for d in args.data:
         path, _, lab = d.rpartition(":") if d.rsplit(":", 1)[-1] in ("0", "1") else (d, "", "")
@@ -398,10 +453,18 @@ def main() -> None:
     t = time.time()
     X, N = featurise(urls)
     print(f"features {X.shape}, nnz {X.nnz:,} in {time.time() - t:.0f}s", flush=True)
-    site_b = np.array([bucket(site_of(u)) for u in urls])
-    val = site_b < VAL_SHARE
+    sites = [site_of(u) for u in urls]
+    site_b = np.array([bucket(s) for s in sites])
+    hn = np.array([is_hardneg(s) for s in sources])
+    # Grouped validation: 10% of sites; hard-negative sites 25% (a meaningful news / advisory slice).
+    val = (site_b < VAL_SHARE) | (hn & (site_b < HARDNEG_VAL_SHARE))
     tr = ~val
+    # Trees early-stop on a site-disjoint slice of TRAINING sites: validation stays untouched until
+    # thresholds and calibration are picked on it.
+    es = tr & (site_b >= VAL_SHARE) & (site_b < VAL_SHARE + 4)
     fold = site_b % 2
+    val_idx = np.where(val)[0]
+    _write([(urls[i], int(y[i]), sources[i]) for i in val_idx], SPLITS_DIR / "validation.csv")
 
     t = time.time()
     oof = np.zeros(len(urls))
@@ -420,7 +483,8 @@ def main() -> None:
     booster = None
     if not args.linear_only:
         t = time.time()
-        booster = fit_trees(Z[tr], y[tr], w[tr], Z[val], y[val], w[val])
+        fit = tr & ~es
+        booster = fit_trees(Z[fit], y[fit], w[fit], Z[es], y[es], w[es])
         print(f"stage 2: {booster.num_trees()} trees in {time.time() - t:.0f}s", flush=True)
 
     def sig(z):
@@ -434,22 +498,25 @@ def main() -> None:
         return lin, ens
 
     sets = holdout_sets()
-    val_idx = np.where(val)[0]
+    vsrc = [sources[i] for i in val_idx]
     preds = {"validation": (sig(oof[val]), booster.predict(Z[val]) if booster else None,
-                            y[val].astype(int), [sources[i] for i in val_idx])}
+                            y[val].astype(int), vsrc)}
     judged_mask = {"validation": np.array([judged(urls[i]) for i in val_idx])}
+    hn_val = np.array([is_hardneg(s) for s in vsrc])
+    if hn_val.any():
+        lin, ens, yy, _ = preds["validation"]
+        preds["validation_news_hardneg"] = (lin[hn_val], None if ens is None else ens[hn_val], yy[hn_val],
+                                            [s for s, m in zip(vsrc, hn_val) if m])
+        judged_mask["validation_news_hardneg"] = judged_mask["validation"][hn_val]
     for name, rows in sets.items():
         lin, ens = predict(rows)
         preds[name] = (lin, ens, np.array([r[1] for r in rows]), [r[2] for r in rows])
         judged_mask[name] = np.array([judged(r[0]) for r in rows])
 
     def legit_pool(kind: int):
-        """Legitimate URLs the server would actually let the model judge (val split + FP suite)."""
-        out = []
-        for name in ("validation", "fp_suite"):
-            m = (preds[name][2] == 0) & judged_mask[name]
-            out.append(preds[name][kind][m])
-        return np.concatenate(out)
+        """Legitimate VALIDATION URLs the server would actually let the model judge (never a holdout set)."""
+        m = (preds["validation"][2] == 0) & judged_mask["validation"]
+        return preds["validation"][kind][m]
 
     choose = {}
     for kind, nm in ((0, "linear"), (1, "ensemble")):
@@ -458,7 +525,8 @@ def main() -> None:
         pool = legit_pool(kind)
         th = {"certain": threshold_for_fpr(pool, 0.001), "strong": threshold_for_fpr(pool, 0.005),
               "suspect": threshold_for_fpr(pool, 0.02)}
-        rep = {"thresholds": th, "threshold_pool_rows": int(len(pool)), "sets": {}}
+        rep = {"thresholds": th, "threshold_pool": "validation legit rows the server would judge",
+               "threshold_pool_rows": int(len(pool)), "sets": {}}
         for sname, (lin, ens, yy, srcs) in preds.items():
             p = lin if kind == 0 else ens
             rep["sets"][sname] = {"rows": int(len(yy)), "phishing": int(yy.sum()),
@@ -475,40 +543,66 @@ def main() -> None:
         print(f"\n== {nm}  thresholds {json.dumps({k: round(v, 4) for k, v in rep['thresholds'].items()})}")
         for sname, s in rep["sets"].items():
             m = s["strong"]
-            print(f"  {sname:16s} rows {s['rows']:7d}  @strong P {m['precision']} R {m['recall']} F1 {m['f1']} "
+            print(f"  {sname:24s} rows {s['rows']:7d}  @strong P {m['precision']} R {m['recall']} F1 {m['f1']} "
                   f"FPR {m['fpr']}  | @suspect R {s['suspect']['recall']} FPR {s['suspect']['fpr']}")
 
-    def holdout_f1(nm):
-        return choose[nm]["sets"]["hannousse"]["strong"]["f1"] or 0
-    ship = "ensemble" if booster and holdout_f1("ensemble") > holdout_f1("linear") else "linear"
+    def val_recall(nm):  # stage choice on VALIDATION (equal FPR by construction), never on a holdout set
+        return choose[nm]["sets"]["validation"]["strong"]["recall"] or 0
+    ship = "ensemble" if booster and val_recall("ensemble") > val_recall("linear") else "linear"
     if ship == "ensemble":
         um.TREES_PATH.write_text(json.dumps(export_trees(booster), separators=(",", ":")), encoding="utf-8")
     elif um.TREES_PATH.exists():
         um.TREES_PATH.unlink()
     um._trees.cache_clear()
     um._score.cache_clear()
-    print(f"\nshipping: {ship}")
-    write_vectors(list(VECTOR_URLS))
-    if ship == "ensemble":  # pure-Python walker must reproduce LightGBM
-        chk = [u for u, _, _ in sets["hannousse"][:300]]
-        Xc, Nc = featurise(chk)
-        ref = booster.predict(np.column_stack([Nc, linear_logit(q, scale, bias, Xc)]).astype(np.float32))
-        diff = max(abs(um.score_url(u)["probability"] - r) for u, r in zip(chk, ref))
-        print(f"pure-Python vs LightGBM max |diff| on 300 URLs: {diff:.2e}")
+    print(f"\ncandidate stage: {ship}")
+
+    # Calibration on validation (judged rows, both classes); isotonic vs Platt chosen by cross-fitting.
+    kind = 1 if ship == "ensemble" else 0
+    jm = judged_mask["validation"]
+    pv = [float(v) for v in preds["validation"][kind][jm]]
+    yv = [int(v) for v in preds["validation"][2][jm]]
+    gv = [sites[i] for i, keep in zip(val_idx, jm) if keep]
+    table, cal_rep = cal.choose(pv, yv, gv)
+    for sname in sets:
+        p = [float(v) for v in preds[sname][kind]]
+        yy = [int(v) for v in preds[sname][2]]
+        cal_rep[f"holdout_{sname}"] = {"raw": cal.reliability(p, yy),
+                                       "calibrated": cal.reliability([cal.apply(table, v) for v in p], yy)}
+    print("calibration:", json.dumps({k: v for k, v in cal_rep.items() if not k.startswith("holdout")}), flush=True)
+
+    chk = [u for u, _, _ in sets["hannousse"][:300]] if "hannousse" in sets else urls[:300]
+    Xc, Nc = featurise(chk)
+    s1c = linear_logit(q, scale, bias, Xc)
+    ref = booster.predict(np.column_stack([Nc, s1c]).astype(np.float32)) if ship == "ensemble" else sig(s1c)
+    diff = max(abs(um.score_url(u)["probability"] - r) for u, r in zip(chk, ref))
+    print(f"pure-Python vs training-side max |diff| on {len(chk)} URLs: {diff:.2e}")
     size = um.MODEL_PATH.stat().st_size + (um.TREES_PATH.stat().st_size if um.TREES_PATH.exists() else 0)
+    vec = [{"url": u, "probability": round(um.score_url(u)["probability"], 6), "stage1": round(um.stage1_logit(u), 6)}
+           for u in VECTOR_URLS]
+    (out_dir / "url_model_vectors.json").write_text(json.dumps(vec, indent=1) + "\n", encoding="utf-8")
+    syn = sum(v for k, v in info["per_source"].items() if k.split("+")[0] == "synthetic" or k.endswith("_synthetic"))
     metrics = {
-        "model": {"name": "saqr-url-v2", "version": f"2.0-{ship}", "stage": ship,
+        "model": {"name": "saqr-url-v2", "version": f"2.1-{ship}", "stage": ship,
                   "trained_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "training_rows": info["rows"], "training_phishing": int(y.sum()), "seed": SEED,
-                  "files_bytes": size, "trees": booster.num_trees() if booster and ship == "ensemble" else 0},
+                  "files_bytes": size, "trees": booster.num_trees() if booster and ship == "ensemble" else 0,
+                  "pure_python_max_abs_diff": diff},
         "datasets": [{"name": k, "rows": v} for k, v in info["per_source"].items()],
+        "synthetic_share_of_training_rows": round(syn / max(1, sum(info["per_source"].values())), 4),
+        "split": {"validation_rows": int(val.sum()), "validation_hardneg_rows": int((val & hn).sum()),
+                  "rule": f"{VAL_SHARE}% of sites by hash ({HARDNEG_VAL_SHARE}% of hard-negative sites)",
+                  "early_stopping_rows": int(es.sum()),
+                  "early_stopping": "site-disjoint slice of the training sites (validation untouched)"},
         "holdout_sets": {k: len(v) for k, v in sets.items()},
         "thresholds": choose[ship]["thresholds"],
+        "calibration": {**table, "fitted_on": "validation split, rows the server would judge",
+                        "model_sha256": um.model_fingerprint(), "report": cal_rep},
         "model_eval": choose,
         "minutes": round((time.time() - t0) / 60, 1),
     }
-    METRICS_PATH.write_text(json.dumps(metrics, indent=1) + "\n", encoding="utf-8")
-    print(f"saved {um.MODEL_PATH.name} (+trees: {ship == 'ensemble'}), {size / 1e6:.2f} MB; metrics -> {METRICS_PATH}")
+    (out_dir / "model_metrics.json").write_text(json.dumps(metrics, indent=1) + "\n", encoding="utf-8")
+    print(f"candidate in {out_dir}: {size / 1e6:.2f} MB ({ship}); {metrics['minutes']} min")
 
 
 if __name__ == "__main__":

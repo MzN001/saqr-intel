@@ -12,12 +12,14 @@ If the tree file is missing, stage 1 alone is used.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
 import struct
 import zlib
 from array import array
+from bisect import bisect_right
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import unquote
@@ -25,7 +27,8 @@ from urllib.parse import unquote
 from . import url_features as uf
 from .url_features import FREE_HOSTING, FEATURES, parse
 
-__all__ = ["FREE_HOSTING", "available", "phishing_probability", "score_url", "features", "normalise_host"]
+__all__ = ["FREE_HOSTING", "available", "calibrate", "phishing_probability", "score_url", "features",
+           "normalise_host"]
 
 MODEL_PATH = Path(__file__).with_name("url_model.bin")
 TREES_PATH = Path(__file__).with_name("url_model_trees.json")
@@ -223,8 +226,53 @@ def _score(url: str) -> tuple[float, tuple[tuple[str, float], ...], str] | None:
     return _sigmoid(raw), tuple(named + [t for t in top if t not in named]), "ensemble"
 
 
+def model_fingerprint() -> str:
+    """SHA-256 over the installed model files: ties a calibration table to the model it was fitted for."""
+    h = hashlib.sha256()
+    for path in (MODEL_PATH, TREES_PATH):
+        if path.exists():
+            h.update(path.read_bytes())
+    return h.hexdigest()
+
+
+@lru_cache(maxsize=1)
+def _calibration() -> tuple[tuple[float, ...], tuple[float, ...]] | None:
+    """Monotone lookup table raw -> calibrated (model_metrics.json "calibration"), only if it was fitted for
+    exactly these model files. Fitted on the validation split by tools/train_url_model.py / compare_models.py."""
+    try:
+        cal = json.loads(METRICS_PATH.read_text(encoding="utf-8")).get("calibration") or {}
+    except (OSError, ValueError):
+        return None
+    xs, ys = cal.get("x"), cal.get("y")
+    if not xs or not ys or len(xs) != len(ys) or cal.get("model_sha256") != model_fingerprint():
+        return None
+    xs, ys = tuple(float(v) for v in xs), tuple(float(v) for v in ys)
+    if any(b < a for a, b in zip(xs, xs[1:])) or any(b < a for a, b in zip(ys, ys[1:])):
+        return None  # not monotone: refuse rather than mislead
+    return xs, ys
+
+
+def calibrate(p: float) -> float | None:
+    """Calibrated probability (validation frequency of phishing at this raw score), None without a table.
+
+    Piecewise-linear interpolation, clamped to the table's end points: monotone and inside [0, 1]."""
+    table = _calibration()
+    if table is None or p is None:
+        return None
+    xs, ys = table
+    if p <= xs[0]:
+        return ys[0]
+    if p >= xs[-1]:
+        return ys[-1]
+    i = bisect_right(xs, p) - 1
+    x0, x1, y0, y1 = xs[i], xs[i + 1], ys[i], ys[i + 1]
+    return y0 if x1 <= x0 else min(1.0, max(0.0, y0 + (y1 - y0) * (p - x0) / (x1 - x0)))
+
+
 def score_url(url: str, max_reasons: int = 3) -> dict | None:
-    """{probability, reasons: [{feature, en, ar, weight}], stage} for a full URL, None without a model."""
+    """{probability, calibrated_probability, reasons: [{feature, en, ar, weight}], stage} for a full URL,
+    None without a model. `probability` is the RAW model score (the thresholds in model_metrics.json apply
+    to it); `calibrated_probability` is the calibrated estimate for display (None without a table)."""
     res = _score(url)
     if res is None:
         return None
@@ -239,7 +287,7 @@ def score_url(url: str, max_reasons: int = 3) -> dict | None:
             reasons.append({"feature": name, "en": text[0], "ar": text[1], "weight": round(weight, 3)})
         if len(reasons) >= max_reasons:
             break
-    return {"probability": prob, "reasons": reasons, "stage": stage}
+    return {"probability": prob, "calibrated_probability": calibrate(prob), "reasons": reasons, "stage": stage}
 
 
 @lru_cache(maxsize=4096)

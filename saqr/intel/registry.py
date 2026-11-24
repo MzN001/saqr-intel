@@ -249,6 +249,10 @@ GOV_AE_SUFFIX = "gov.ae"
 # "epg" would make every 4-letter domain containing it a "typo"). Mail from them is that entity's own mail.
 ENTITY_EXTRA_DOMAINS: dict[str, str] = {
     "epg.gov.ae": "emiratespost",  # Emirates Post Group (verified 2026-11-23: epg.gov.ae, custservice@epg.gov.ae)
+    # e& UAE consumer site (verified 2026-11-25: https://www.etisalat.ae/en/index.html answers 302 ->
+    # https://www.eand.ae/en/index.html, footer "etisalat. All Rights Reserved."; e&'s customer charter PDF
+    # cited in VERIFIED_PHONES lives there too)
+    "eand.ae": "etisalat",
 }
 
 OFFICIAL_DOMAINS: dict[str, Entity | None] = {d: e for e in ALL_BRANDS for d in e.domains}
