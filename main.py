@@ -27,9 +27,10 @@ from saqr.intel.threat_feeds import threat_feeds
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
 from saqr.police_state import police_state
-from saqr.routers import (analysis, blocklist, campaigns, ct, email, graph, live, maps, mobile, police, push, system,
-                          takedown, user_model)
+from saqr.routers import (analysis, batch, blocklist, campaigns, ct, email, graph, live, maps, mobile, police, push,
+                          system, takedown, user_model)
 from saqr.routers import hunter as hunter_router
+from saqr.routers import model as model_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("saqr")
@@ -126,8 +127,9 @@ async def mock_scam(slug: str):
 
 for r in (system.router, analysis.router, maps.router, ct.router, graph.router, takedown.router, live.router,
           mobile.router, blocklist.router, push.router, email.router, campaigns.router, user_model.router,
-          police.router, hunter_router.router):
+          police.router, hunter_router.router, batch.router):
     app.include_router(r)
+app.include_router(model_router.router)
 
 
 if __name__ == "__main__":

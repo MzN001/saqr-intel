@@ -661,3 +661,68 @@ export async function labelEmail(scanId: string, label: EmailLabel): Promise<Lab
 export function emailModelDownloadUrl(): string {
   return apiUrl(`/api/email-model/${encodeURIComponent(getReporterId())}`);
 }
+
+
+// ---------------------------------------------------------------------------
+// Pre-click shield: POST /api/batch-verdict + POST /api/check-phone (search results, ads, Maps)
+// ---------------------------------------------------------------------------
+export interface PreClickEntity {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  official_domains: string[];
+  official_phones: string[];
+  official_phones_display: string[];
+}
+
+export interface PreClickReason {
+  code: string;
+  en: string;
+  ar: string;
+}
+
+export interface BatchVerdictItem {
+  url: string;
+  domain: string | null;
+  input_domain: string | null;
+  score: number;
+  /** null when the text is not a website address (see error). */
+  verdict: VerdictLabel | null;
+  /** The imitated institution (scams) or the owner (verified official UAE sites); null otherwise. */
+  entity: PreClickEntity | null;
+  /** A verified official UAE website: the only case that earns a green tick. */
+  official: boolean;
+  reasons: PreClickReason[];
+  redirected: boolean;
+  unresolved_shortener: boolean;
+  error?: string;
+}
+
+/** Instant offline verdicts for up to 200 links (no sandbox, nothing saved). */
+export async function batchVerdict(urls: string[], expand = false): Promise<BatchVerdictItem[]> {
+  const r = await request<{ results: BatchVerdictItem[] }>("/api/batch-verdict", {
+    method: "POST",
+    body: JSON.stringify({ urls, expand }),
+  });
+  return r.results;
+}
+
+export type PhoneContext = "ad" | "maps" | "panel" | "result";
+
+export interface PhoneCheck {
+  phone: string;
+  normalized: string;
+  status: "official" | "unofficial" | "mobile_for_institution" | "linked_to_scam" | "unknown";
+  level: "danger" | "caution" | "official" | "none";
+  claimed_entity: string | null;
+  entity: PreClickEntity | null;
+  reasons: PreClickReason[];
+}
+
+/** Is this the claimed institution's official number? */
+export async function checkPhone(phone: string, claimedEntity?: string, context?: PhoneContext): Promise<PhoneCheck> {
+  return request<PhoneCheck>("/api/check-phone", {
+    method: "POST",
+    body: JSON.stringify({ phone, claimed_entity: claimedEntity ?? null, context: context ?? null }),
+  });
+}

@@ -177,6 +177,37 @@ def match_entity(name: str | None) -> tuple[Entity | None, float]:
     return best if best[1] >= 85 else (None, best[1])
 
 
+INSTITUTION_CATEGORIES = {"government", "bank", "courier", "identity"}
+
+
+def phone_flags(entity: Entity | None, phone: str | None) -> list[RedFlag]:
+    """Is the phone shown next to an institution's name (Maps card, search ad) one of its official
+    numbers? A personal mobile number for a bank or government office is a strong scam sign."""
+    norm_phone = normalise_phone(phone)
+    if not entity or not norm_phone:
+        return []
+    if norm_phone in {normalise_phone(p) for p in entity.phones}:
+        return []
+    flags = [RedFlag(
+        "UNOFFICIAL_PHONE", "medium", 10,
+        f"Phone {phone} is not an official {entity.name_en} number (official: {', '.join(entity.phones)}).",
+        f"الرقم {phone} ليس رقماً رسمياً لـ{entity.name_ar} (الرسمي: {'، '.join(entity.phones)}).",
+    )]
+    if norm_phone.startswith("9715") and entity.category in INSTITUTION_CATEGORIES:
+        flags.append(RedFlag("MOBILE_FOR_INSTITUTION", "high", 15,
+                             "Institutions don't use personal mobile numbers on official listings.",
+                             "المؤسسات الرسمية لا تستخدم أرقام هواتف متحركة شخصية في إدراجاتها."))
+    return flags
+
+
+async def pins_sharing_phone(norm_phone: str, exclude_pin: str = "") -> list[dict[str, Any]]:
+    """Map listings in the intelligence graph that use this (normalised) phone number."""
+    return await db.fetchall(
+        "SELECT e.source, n.label FROM graph_edges e JOIN graph_nodes n ON n.id = e.source "
+        "WHERE e.type='shares_phone' AND e.target=? AND e.source != ?",
+        (f"phone:{norm_phone}", exclude_pin))
+
+
 async def scan_listing(*, maps_url: str | None, business_name: str | None, query: str | None,
                        website: str | None, phone: str | None, lat: float | None, lng: float | None) -> dict[str, Any]:
     parsed: dict[str, Any] = {}
@@ -259,24 +290,9 @@ async def scan_listing(*, maps_url: str | None, business_name: str | None, query
 
     # 2) Phone checks
     norm_phone = normalise_phone(listing.get("phone"))
-    if entity and norm_phone:
-        official = {normalise_phone(p) for p in entity.phones}
-        if norm_phone not in official:
-            flags.append(RedFlag(
-                "UNOFFICIAL_PHONE", "medium", 10,
-                f"Phone {listing['phone']} is not an official {entity.name_en} number "
-                f"(official: {', '.join(entity.phones)}).",
-                f"الرقم {listing['phone']} ليس رقماً رسمياً لـ{entity.name_ar} (الرسمي: {'، '.join(entity.phones)}).",
-            ))
-            if norm_phone.startswith("9715") and entity.category in {"government", "bank", "courier", "identity"}:
-                flags.append(RedFlag("MOBILE_FOR_INSTITUTION", "high", 15,
-                                     "Institutions don't use personal mobile numbers on official listings.",
-                                     "المؤسسات الرسمية لا تستخدم أرقام هواتف متحركة شخصية في إدراجاتها."))
+    flags += phone_flags(entity, listing.get("phone"))
     if norm_phone:
-        rows = await db.fetchall(
-            "SELECT e.source, n.label FROM graph_edges e JOIN graph_nodes n ON n.id = e.source "
-            "WHERE e.type='shares_phone' AND e.target=? AND e.source != ?",
-            (f"phone:{norm_phone}", listing["pin_id"]))
+        rows = await pins_sharing_phone(norm_phone, exclude_pin=listing["pin_id"])
         if rows:
             names = [r["label"] for r in rows][:5]
             flags.append(RedFlag(

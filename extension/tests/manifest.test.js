@@ -52,5 +52,17 @@ test("background importScripts the same libs in the same order", () => {
   const src = fs.readFileSync(path.join(EXT, "background.js"), "utf8");
   const m = src.match(/importScripts\(([^)]*)\)/);
   assert.ok(m);
-  assert.deepEqual(JSON.parse("[" + m[1] + "]"), ["lib/config.js", ...LIBS]);
+  assert.deepEqual(JSON.parse("[" + m[1] + "]"), ["lib/config.js", ...LIBS, "lib/search_core.js"]);
+});
+
+test("Search & Maps shield: Google (incl. google.ae) + Bing pages, shared core before the content script", () => {
+  const cs = manifest.content_scripts.find((c) => c.js.includes("content/search.js"));
+  assert.ok(cs);
+  assert.deepEqual(cs.js, ["lib/search_core.js", "content/search.js"]);
+  assert.deepEqual(cs.css, ["content/search.css"]);
+  for (const m of ["https://www.google.com/*", "https://www.google.ae/*", "https://www.google.com.sa/*", "https://www.bing.com/*"]) {
+    assert.ok(cs.matches.includes(m), m);
+  }
+  // never on the webmail hosts (the Email Shield owns them)
+  assert.ok(!cs.matches.some((m) => m.includes("mail.google.com")));
 });
