@@ -533,3 +533,231 @@ html.theme-fading *::after {
   text-transform: uppercase;
   color: var(--color-ink-soft);
 }
+
+/* =====================================================================================
+   Citizen home: brand green + reference styling (2026-11-25, branch feature/citizen-reference-match).
+   Values sampled from design-refs/citizen-hero-reference.png (see DESIGN.md "Brand green").
+   Additive only: nothing above is changed and nothing here touches `.brand-night-grid`.
+   ===================================================================================== */
+@theme {
+  /* Brand green: primary call to action + step guidance on the citizen home. NOT a verdict colour. */
+  --color-brand: #057857; /* white text 5.48:1 */
+  --color-brand-hover: #04664a; /* white text 6.9:1 */
+  --color-brand-soft: #eef7f2; /* check card tint, guided step */
+  --color-brand-line: #a9cdc1; /* check card hairline, guided step border */
+  --color-on-brand: #ffffff;
+  --color-brand-ink: #057857; /* green text ("Set up"): 5.48:1 on white, 5.05:1 on brand-soft */
+  /* Home backdrop (light): cool porcelain ground, sage + sand circles, dot grid. */
+  --color-home-ground: #f4f6f3;
+  --color-home-sage: #dae9e2;
+  --color-home-sand: #eae6da;
+  --color-home-dot: rgb(16 21 27 / 0.11);
+  /* Verdict card: the reference crimson (stamp, single-line meter, reason icons) and the meter track. */
+  --color-scam-mark: #be113c; /* 6.3:1 on white */
+  --color-meter-track: #dee4e2;
+  --radius-tile: 22px;
+  --radius-row: 12px;
+  --radius-inner: 16px;
+  --animate-step-breathe: saqr-step-breathe 2.8s ease-in-out infinite;
+
+  @keyframes saqr-step-breathe {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 rgb(5 120 87 / 0),
+        0 1px 2px rgb(17 19 21 / 0.04);
+    }
+    50% {
+      box-shadow:
+        0 0 0 4px rgb(5 120 87 / 0.12),
+        0 6px 18px -8px rgb(5 120 87 / 0.35);
+    }
+  }
+}
+
+[data-theme="dark"] {
+  --color-brand: #057857;
+  --color-brand-hover: #06855f; /* white text 4.65:1 */
+  --color-brand-soft: #0f241d;
+  --color-brand-line: #1d5644;
+  --color-brand-ink: #5fd3a6; /* 9.6:1 on surface */
+  --color-home-ground: #0e1012;
+  --color-home-sage: rgb(5 120 87 / 0.16);
+  --color-home-sand: rgb(234 230 218 / 0.05);
+  --color-home-dot: rgb(250 248 245 / 0.07);
+  --color-scam-mark: #f87171;
+  --color-meter-track: #2a2f37;
+}
+
+/* Brand button: solid green, white label, 48px touch target. The citizen home's primary action. */
+@utility btn-brand {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-inline: 1.25rem;
+  border-radius: var(--radius-control);
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: background-color 150ms ease, transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  &:hover:not(:disabled) {
+    background-color: var(--color-brand-hover);
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Solid green tag ("START HERE"): white tracked caps on brand. Standalone (not combined with `chip`). */
+@utility chip-brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-inline: 0.625rem;
+  font-size: 11px;
+  line-height: 1;
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Grey tag ("DEMO EXAMPLE"). Standalone (not combined with `chip`). */
+@utility chip-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-inline: 0.625rem;
+  font-size: 11px;
+  line-height: 1;
+  background-color: var(--color-meter-track);
+  color: var(--color-ink-soft);
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* The pale green "Check a link" card. */
+@utility card-brand {
+  background-color: var(--color-brand-soft);
+  border: 1px solid var(--color-brand-line);
+  border-radius: var(--radius-tile);
+  box-shadow:
+    0 1px 2px rgb(5 120 87 / 0.05),
+    0 14px 36px -18px rgb(5 120 87 / 0.32);
+}
+
+/* The translucent white verdict card ("What you will see"). */
+@utility card-glass {
+  background-color: rgb(255 255 255 / 0.8);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-tile);
+  box-shadow:
+    0 1px 2px rgb(17 19 21 / 0.04),
+    0 18px 40px -22px rgb(17 19 21 / 0.22);
+  backdrop-filter: blur(8px);
+  [data-theme="dark"] & {
+    background-color: rgb(23 26 31 / 0.88);
+  }
+}
+
+/* White hairline row (reasons, mobile steps). */
+@utility row-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-row);
+}
+
+/* Verdict stamp: outlined, tilted 4 degrees (measured on the reference), colour = currentColor. */
+@utility verdict-stamp {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  border: 1.5px solid currentColor;
+  border-radius: 6px;
+  background-color: color-mix(in oklab, currentColor 5%, transparent);
+  transform: rotate(-4deg);
+  line-height: 1.15;
+}
+
+/* Home dot grid (22px pitch, as in the reference). */
+.home-dots {
+  background-image: radial-gradient(var(--color-home-dot) 1.15px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+.home-decor-in {
+  animation: saqr-decor-in 420ms ease-out 240ms both;
+}
+@keyframes saqr-decor-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- "Set up in three steps" guidance (see DESIGN.md "Step guidance") ----
+   data-guide="lit"     : green for the one-time sweep (and hover / keyboard focus)
+   data-guide="current" : the next step to do, green with a slow breathing glow
+   Only background-color, border-color, box-shadow and opacity animate (no layout shift). */
+.guide-step {
+  transition:
+    background-color 450ms ease,
+    border-color 450ms ease,
+    box-shadow 450ms ease;
+}
+.guide-step .guide-badge {
+  transition:
+    background-color 450ms ease,
+    border-color 450ms ease,
+    color 450ms ease;
+}
+.guide-step[data-guide="lit"],
+.guide-step[data-guide="current"],
+.guide-step:hover,
+.guide-step:focus-within {
+  background-color: var(--color-brand-soft);
+  border-color: var(--color-brand-line);
+}
+.guide-step[data-guide="current"] {
+  animation: var(--animate-step-breathe);
+}
+.guide-step[data-guide="lit"] .guide-badge,
+.guide-step[data-guide="current"] .guide-badge,
+.guide-step:hover .guide-badge,
+.guide-step:focus-within .guide-badge {
+  background-color: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-on-brand);
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-step[data-guide="current"] {
+    animation: none;
+  }
+  .home-decor-in {
+    animation: none;
+  }
+}
+
+/* Phone bottom navigation: content never hides behind it. */
+.pb-bottom-nav {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .pb-bottom-nav {
+    padding-bottom: 0;
+  }
+}

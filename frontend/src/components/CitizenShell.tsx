@@ -15,13 +15,15 @@ import {
 } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
 import { hostOf, isMapsUrl } from "@/lib/url";
-import type { View } from "@/lib/view";
+import type { MobileTab, View } from "@/lib/view";
+import { isMobileViewport, useViewport } from "@/lib/viewport";
 import { CheckView } from "./CheckView";
-import { CitizenFooter, CitizenHeader, NoticeStrip } from "./CitizenChrome";
+import { BottomNav, CitizenFooter, CitizenHeader, NoticeStrip } from "./CitizenChrome";
 import { CHECK_INPUT_ID } from "./LinkChecker";
 import { OfficialWarningBanner } from "./OfficialWarningBanner";
 import { isDemoScamUrl } from "./SearchMapsShield";
 import { SetupDrawer } from "./SetupDrawer";
+import { markSetupStep, useSetupProgress } from "./SetupSteps";
 import { ToolView } from "./ToolViews";
 import { ResultView, VerdictScreen, type ScanState } from "./VerdictScreen";
 
@@ -44,6 +46,22 @@ type Job = {
   present: Presentation;
 };
 
+/**
+ * Home backdrop (desktop / tablet, `check` window only): porcelain ground, 22px dot grid, a sage circle
+ * anchored top-right (partly off-screen) and a sand circle at the left edge by the check card. Sizes and
+ * positions measured on design-refs/citizen-hero-reference.png (x1.6). Clipped by its own box, so it never
+ * causes horizontal scroll; hidden on phones (the phone reference has a plain ground).
+ */
+function HomeBackdrop() {
+  return (
+    <div aria-hidden className="home-decor-in pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden bg-home-ground md:block">
+      <div className="home-dots absolute inset-0" />
+      <div className="absolute -top-[275px] -right-[176px] size-[560px] rounded-full bg-home-sage" />
+      <div className="absolute top-[328px] -left-[194px] size-[400px] rounded-full bg-home-sand max-lg:hidden" />
+    </div>
+  );
+}
+
 export function CitizenShell({
   view,
   onView,
@@ -61,7 +79,6 @@ export function CitizenShell({
   const [scan, setScan] = useState<ScanState>({ status: "idle" });
   const [present, setPresent] = useState<Presentation>("inline");
   const [reportOpen, setReportOpen] = useState(false);
-  const [checkedOnce, setCheckedOnce] = useState(false);
   const lastJob = useRef<Job | null>(null);
   const runId = useRef(0);
   const sharedHandled = useRef<string | null>(null);
@@ -79,7 +96,7 @@ export function CitizenShell({
       const [result] = await Promise.all([next.job(), sleep(2600)]);
       if (id !== runId.current) return;
       setScan({ status: "done", result });
-      setCheckedOnce(true);
+      markSetupStep("checked");
     } catch (e) {
       if (id !== runId.current) return;
       setScan({ status: "error", target: next.target, interception: next.interception, message: e instanceof Error ? e.message : String(e) });
@@ -192,9 +209,14 @@ export function CitizenShell({
     }
   }, []);
 
-  // An inline check on a phone: bring the verdict card into view when it is below the fold.
+  // An inline check: on a phone the result replaces the home content, so go to the top; on a wider screen
+  // bring the verdict card into view when it is below the fold.
   useEffect(() => {
     if (present !== "inline" || scan.status !== "scanning") return;
+    if (view === "check" && isMobileViewport()) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
     const card = document.querySelector<HTMLElement>('[data-testid="verdict-card"]');
     if (!card) return;
     const r = card.getBoundingClientRect();
@@ -202,7 +224,7 @@ export function CitizenShell({
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
     }
-  }, [present, scan.status]);
+  }, [present, scan.status, view]);
 
   // A window switch the resident asked for: start at the top and move focus to the new window's title.
   const switchView = useCallback(
@@ -229,24 +251,48 @@ export function CitizenShell({
     el.focus({ preventScroll: true });
   }, []);
 
+  /** Phone result -> empty home again (cancels a running check). */
+  const newCheck = useCallback(() => {
+    runId.current += 1;
+    lastJob.current = null;
+    setReportOpen(false);
+    setScan({ status: "idle" });
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+
+  /** Bottom navigation: tapping "Check" while a result is open goes back to the empty home. */
+  const selectTab = useCallback(
+    (tab: MobileTab) => {
+      if (tab === "check" && view === "check" && scan.status !== "idle" && present === "inline") newCheck();
+      else switchView(tab);
+    },
+    [view, scan.status, present, newCheck, switchView],
+  );
+
+  const vp = useViewport();
+  const { done } = useSetupProgress();
+  const shieldChip = vp === "mobile" && view === "check" && scan.status === "done" && present === "inline" && done[1];
+
   const openReport = useCallback(() => setReportOpen(true), []);
   const closeReport = useCallback(() => setReportOpen(false), []);
   const backToCheck = useCallback(() => switchView("check"), [switchView]);
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="flex min-h-dvh flex-col">
+      <div className="pb-bottom-nav flex min-h-dvh flex-col">
         <a
           href="#main"
           className="sr-only z-50 rounded-control bg-primary px-4 py-3 font-semibold text-on-primary focus:not-sr-only focus:fixed focus:start-4 focus:top-4"
         >
           {t("navCheck")}
         </a>
-        <CitizenHeader view={view} onView={switchView} />
+        <CitizenHeader view={view} onView={switchView} shieldChip={shieldChip} />
         <OfficialWarningBanner />
         <NoticeStrip />
 
-        <main id="main" className="mx-auto w-full max-w-6xl flex-1 overflow-x-clip px-4 py-8 sm:px-6 lg:py-12">
+        <div className="relative isolate flex flex-1 flex-col">
+        {view === "check" && <HomeBackdrop />}
+        <main id="main" className="mx-auto w-full max-w-6xl flex-1 overflow-x-clip px-4 pt-4 pb-8 sm:px-6 md:pt-8 lg:py-12">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={view}
@@ -258,19 +304,20 @@ export function CitizenShell({
               {view === "check" ? (
                 <CheckView
                   scan={scan}
-                  checkedOnce={checkedOnce}
                   onCheck={runManualScan}
                   onCheckMessage={runMessageScan}
                   onFullReport={openReport}
                   onRetry={retry}
                   onFocusInput={focusInput}
                   onView={switchView}
+                  onNewCheck={newCheck}
                 />
               ) : (
                 <ToolView
                   view={view}
                   scan={scan}
                   onBack={backToCheck}
+                  onView={switchView}
                   onFullReport={openReport}
                   onRetry={retry}
                   runDnsScan={runDnsScan}
@@ -283,8 +330,10 @@ export function CitizenShell({
             </motion.div>
           </AnimatePresence>
         </main>
+        </div>
 
         <CitizenFooter />
+        <BottomNav view={view} onSelect={selectTab} />
 
         <SetupDrawer open={reportOpen && scan.status === "done"} onClose={closeReport} title={t("vcFullReport")} testId="drawer-report" wide canvas>
           {scan.status === "done" && <ResultView key={scan.result.scanId} result={scan.result} onClose={closeReport} embedded />}

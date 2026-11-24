@@ -279,3 +279,80 @@ code; replace them when a component is migrated.
 - Don't set text below 11px, or input text below 16px.
 - Don't recolour, outline or animate the logo; don't use the wordmark font for anything else.
 - Don't reproduce any police emblem.
+
+## 13. Citizen home: owner reference (2026-11-25)
+
+The `/citizen` home window copies the owner's reference (`design-refs/citizen-hero-reference.png` for
+desktop, `design-refs/citizen-mobile-reference.jpg` for phones). The reference was drawn in Barlow; we keep
+Inter / IBM Plex Sans Arabic and match its sizes, weights and spacing. Values below were sampled from the
+image (desktop image = CSS px / 1.6) unless the reference HTML gave them.
+
+### Brand green (new; not a verdict colour)
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `brand` | `#057857` (white text 5.48:1) | `#057857` | `btn-brand`, `chip-brand`, filled step badge, safe ring / single-line fill |
+| `brand-hover` | `#04664A` (6.9:1) | `#06855F` (4.65:1) | hover |
+| `brand-soft` | `#EEF7F2` | `#0F241D` | check card tint, guided step |
+| `brand-line` | `#A9CDC1` | `#1D5644` | check card hairline, guided step border |
+| `brand-ink` | `#057857` (5.48:1 on white, 5.05:1 on brand-soft) | `#5FD3A6` | green text ("Set up", "Done") |
+| `on-brand` | `#FFFFFF` | `#FFFFFF` | text on brand |
+
+- Brand green = the **primary call to action and the step guidance on the citizen home** (desktop "Check link",
+  phone "Check", START HERE, the current setup step). Bright emerald `safe` stays "safe" only.
+- Obsidian `btn-primary` stays for strong secondary actions (the verdict card's "Don't open it" / "Full report")
+  and for every other window unless it is changed on purpose.
+- Verdict card extras: `scam-mark` `#BE113C` (light, 6.3:1 on white) / `#F87171` (dark) for the stamp, the
+  single-line meter fill and reason icons on scam results; `meter-track` `#DEE4E2` / `#2A2F37` for the meter
+  track, the ring track and the grey `chip-tag` ("DEMO EXAMPLE").
+- Radii from the reference: `rounded-tile` 22px (check card, verdict card, steps), `rounded-inner` 16px
+  (input row, shield row), `rounded-row` 12px (reason rows, phone step rows).
+
+### Background decoration (desktop / tablet home only)
+
+`HomeBackdrop` in `CitizenShell.tsx`, behind `main`, `aria-hidden`, `pointer-events-none`, clipped by its
+own `overflow-hidden` box (never horizontal scroll): ground `home-ground` `#F4F6F3`, a 22px dot grid
+(`.home-dots`, dot `rgb(16 21 27 / .11)`), a 560px sage circle `#DAE9E2` at top-right (`-top-[275px]
+-right-[176px]`, partly off-screen) and a 400px sand circle `#EAE6DA` at the left edge (`top-[328px]
+-left-[194px]`, from `lg`). Dark: canvas ground, sage `rgb(5 120 87 / .16)`, sand `rgb(234 230 218 / .05)`,
+dots `rgb(250 248 245 / .07)`. It fades in once (`home-decor-in`). Other windows keep the plain canvas (calm);
+phones keep the plain canvas too (the phone reference has no decoration).
+
+### Verdict card (desktop) and phone result
+
+- `card-glass`: white at 80% (dark: surface at 88%), hairline, 22px radius, soft neutral shadow.
+- Score: 64px light (300) `tabular-nums` with a 15px "/ 100".
+- **Stamp** `verdict-stamp`: outlined 1.5px `currentColor`, 6px radius, 5% tint, rotated **-4deg** (measured);
+  "HIGH-RISK SCAM" 12px bold tracked caps over the Arabic word 15px bold. Colour by verdict: `scam-mark`,
+  `suspicious-ink`, `brand-ink` (SAFE / آمن). Always both languages, so it stays readable in RTL.
+- **Single-line meter** (`RiskMeter variant="line"`): one 6px rounded line, `meter-track` ground, filled to
+  the score in the verdict colour (crimson / amber / brand green), SAFE · SUSPICIOUS · SCAM 11px tracked caps
+  at start / centre / end. In RTL it fills from the right and the labels mirror.
+- `RiskMeter` variants: `line` = desktop `VerdictCard`; `knob` = phone `MobileResult` (three-colour bar,
+  white knob with a 3px ink ring); `zones` (default) = `VerdictScreen` full report / block page.
+- Reason rows `row-card`: white, hairline, 12px radius, 18px verdict-colour icon, bold line in the page
+  language and the other language under it.
+- Phone result: 84px ring gauge (7px stroke) + verdict headline 21px extra-bold in the verdict colour; safe
+  rows only when the result proves them (verified official domain, `ssl_valid`, page inspected with no card /
+  password fields); a phone-shield row that never shows a made-up block count.
+
+### Step guidance ("Set up in three steps" / phone rows)
+
+- Progress in `localStorage` `saqr-setup-progress` (`SetupSteps.tsx`): 1 = a check finished; 2 = a
+  phone-shield setup was opened (never claimed as "on": a page cannot see the DNS setting); 3 = this browser
+  really has a push subscription. Current step = first not done.
+- First time the list scrolls into view: steps 1 → 2 → 3 each turn green (`brand-soft` ground, `brand-line`
+  border, badge filled `brand`) for 900ms with a 450ms cross-fade; then the current step stays green with a
+  2.8s low-amplitude breathing glow (box-shadow only; this and the green card glow are the two deliberate
+  exceptions to "no coloured shadows" and "nothing loops"). Done steps show a white tick on a green badge and
+  return to white; when all three are done nothing pulses. Hover / keyboard focus also turns a step green.
+- Only `background-color`, `border-color`, `box-shadow`, `opacity` animate (no layout shift).
+- `prefers-reduced-motion: reduce`: no sweep, no breathing; the current step is simply green.
+
+### Phone layout (< 768px)
+
+Header: logo, `EN | ع` pill, theme button (no tab bar, no call button). Home: notice card, "Is this link safe
+to open?", white check card with the green "Check" inside the input row, "Protect this phone in 3 steps" rows.
+Fixed bottom navigation (Check / Shield / Alerts / Learn, `?view=check|shield|alerts|learn`; SMS, Email and
+Maps windows sit under Learn, the live feed under Alerts). Both layouts are server-rendered (CSS picks one);
+after hydration only the matching one stays mounted (`lib/viewport.ts`), so test ids stay unique.

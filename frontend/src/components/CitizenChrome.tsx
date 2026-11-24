@@ -1,9 +1,9 @@
 "use client";
 
-import { Phone } from "lucide-react";
-import { useEffect, useRef, type MouseEvent } from "react";
+import { Bell, BookOpen, Lock, Shield } from "lucide-react";
+import { type MouseEvent } from "react";
 import { useLang, type DictKey } from "@/lib/i18n";
-import { viewHref, type View } from "@/lib/view";
+import { mobileTabOf, MOBILE_TABS, viewHref, type MobileTab, type View } from "@/lib/view";
 import { PrivacyNote } from "./PrivacyNote";
 import { SaqrLogo } from "./SaqrLogo";
 import { ShareQrButton } from "./ShareQrButton";
@@ -40,28 +40,31 @@ function LangPill() {
           data-testid={`lang-${l}`}
           onClick={() => setLang(l)}
           lang={l}
-          className={`min-h-11 rounded-full px-3 text-[13px] font-semibold transition-colors md:min-h-9 ${
+          className={`min-h-9 min-w-10 rounded-full px-3 text-[13px] font-semibold transition-colors md:min-w-0 ${
             lang === l ? "bg-primary text-on-primary" : "text-ink-soft hover:text-ink"
           }`}
         >
-          {l === "en" ? "EN" : "عربي"}
+          {l === "en" ? (
+            "EN"
+          ) : (
+            <>
+              <span className="md:hidden">ع</span>
+              <span className="hidden md:inline">عربي</span>
+            </>
+          )}
         </button>
       ))}
     </div>
   );
 }
 
-export function CitizenHeader({ view, onView }: { view: View; onView: (v: View) => void }) {
+/**
+ * Sticky header. Desktop / tablet: logo, the five window tabs, language, theme. Phone: logo, language, theme
+ * (the windows move to the bottom navigation); on the phone result screen a "Shield set up" chip takes the
+ * place of the toggles when the resident has opened the phone-shield setup (`shieldChip`).
+ */
+export function CitizenHeader({ view, onView, shieldChip = false }: { view: View; onView: (v: View) => void; shieldChip?: boolean }) {
   const { t } = useLang();
-  const mobileBar = useRef<HTMLUListElement>(null);
-
-  // Keep the active pill visible in the phone tab bar (no page scroll: the header is sticky and in view).
-  useEffect(() => {
-    const el = mobileBar.current?.querySelector<HTMLElement>(`[data-view="${view}"]`);
-    if (!el || el.offsetParent === null) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "nearest", inline: "center" });
-  }, [view]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur-md">
@@ -100,45 +103,21 @@ export function CitizenHeader({ view, onView }: { view: View; onView: (v: View) 
         </nav>
 
         <div className="ms-auto flex shrink-0 items-center gap-2 md:ms-0">
-          <LangPill />
-          <ThemeToggle variant="saqr" className="hidden md:grid" />
-          <a
-            href="tel:8002626"
-            aria-label={t("callAmanLabel")}
-            data-testid="header-call-aman"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-ink hover:bg-muted md:hidden"
-          >
-            <Phone className="size-4 shrink-0" aria-hidden />
-            <span dir="ltr" className="whitespace-nowrap tabular-nums">
-              <span className="hidden min-[380px]:inline">{t("aman")} </span>8002626
+          {shieldChip && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-line bg-brand-soft px-2.5 py-1 text-[12px] font-semibold text-brand-ink md:hidden"
+              data-testid="header-shield-chip"
+            >
+              <span className="size-1.5 rounded-full bg-brand" aria-hidden />
+              {t("chipShieldSet")}
             </span>
-          </a>
+          )}
+          <div className={`items-center gap-2 ${shieldChip ? "hidden md:flex" : "flex"}`}>
+            <LangPill />
+            <ThemeToggle variant="saqr" />
+          </div>
         </div>
       </div>
-
-      <nav aria-label={t("navLabel")} className="border-t border-line md:hidden">
-        <ul ref={mobileBar} className="tab-scroller no-scrollbar flex gap-2 overflow-x-auto px-4 py-1 sm:px-6">
-          {NAV.map(({ id, key }) => {
-            const active = view === id;
-            return (
-              <li key={id} className="shrink-0">
-                <a
-                  href={viewHref(id)}
-                  onClick={navClick(onView, id)}
-                  aria-current={active ? "page" : undefined}
-                  data-view={id}
-                  data-testid={`tab-mobile-${id}`}
-                  className={`inline-flex min-h-12 items-center whitespace-nowrap rounded-full px-4 text-[14px] transition-colors ${
-                    active ? "bg-primary font-semibold text-on-primary" : "font-medium text-ink-soft hover:text-ink"
-                  }`}
-                >
-                  {t(key)}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
     </header>
   );
 }
@@ -147,7 +126,7 @@ export function CitizenHeader({ view, onView }: { view: View; onView: (v: View) 
 export function NoticeStrip() {
   const { t } = useLang();
   return (
-    <div className="border-b border-line bg-muted" data-testid="notice-strip">
+    <div className="hidden border-b border-line bg-muted md:block" data-testid="notice-strip">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-2 text-[13px] leading-snug text-ink-soft sm:px-6">
         <p>{t("noticeDemo")}</p>
         <p className="whitespace-nowrap">
@@ -165,13 +144,73 @@ export function NoticeStrip() {
   );
 }
 
+/** Phone home: the notice as a small card (design-refs/citizen-mobile-reference.jpg). */
+export function MobileNotice() {
+  const { t } = useLang();
+  return (
+    <div className="rounded-control border border-line bg-surface px-3 py-2 text-[12px] leading-normal text-ink-soft" data-testid="notice-card">
+      <span className="font-semibold text-ink">{t("mNoticeBold")}</span> {t("mNoticeRest")} {t("noticeReport")}{" "}
+      <a href="tel:8002626" className="font-semibold text-ink underline-offset-2 hover:underline" data-testid="header-call-aman">
+        {t("callAmanShort")}
+      </a>{" "}
+      <span aria-hidden>·</span>{" "}
+      <a href="sms:2828" className="font-semibold text-ink underline-offset-2 hover:underline">
+        {t("sms")} 2828
+      </a>
+    </div>
+  );
+}
+
+const TAB_ICON: Record<MobileTab, typeof Shield> = { check: Shield, shield: Lock, alerts: Bell, learn: BookOpen };
+const TAB_LABEL: Record<MobileTab, DictKey> = { check: "tabCheck", shield: "tabShield", alerts: "tabAlerts", learn: "tabLearn" };
+
+/** Phone bottom navigation (< 768px): Check, Shield, Alerts, Learn. Fixed, translucent, safe-area aware. */
+export function BottomNav({ view, onSelect }: { view: View; onSelect: (tab: MobileTab) => void }) {
+  const { t } = useLang();
+  const active = mobileTabOf(view);
+  return (
+    <nav
+      aria-label={t("tabBarLabel")}
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/92 px-2.5 pt-[9px] pb-[calc(9px+env(safe-area-inset-bottom))] backdrop-blur-md md:hidden"
+      data-testid="bottom-nav"
+    >
+      <ul className="flex gap-0.5">
+        {MOBILE_TABS.map((tab) => {
+          const Icon = TAB_ICON[tab];
+          const on = active === tab;
+          return (
+            <li key={tab} className="flex-1">
+              <a
+                href={viewHref(tab)}
+                onClick={(e) => {
+                  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                  e.preventDefault();
+                  onSelect(tab);
+                }}
+                aria-current={on ? "page" : undefined}
+                data-testid={`bottom-nav-${tab}`}
+                className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-control py-1 transition-colors ${
+                  on ? "text-ink" : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                <Icon className="size-5" strokeWidth={on ? 2.2 : 1.8} aria-hidden />
+                <span className="text-[11px] font-semibold leading-none">{t(TAB_LABEL[tab])}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 export function CitizenFooter() {
   const { t, lang } = useLang();
   return (
     <footer className="border-t border-line bg-surface" data-testid="site-footer">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 md:py-6">
         <div className="flex flex-col gap-2 text-[14px] leading-relaxed md:flex-row md:items-start md:justify-between md:gap-8">
-          <p className="text-ink">
+          <p className="hidden text-ink md:block">
             <span className="font-semibold">{t("footerScammed")}</span> {t("footerCall")}{" "}
             <a href="tel:8002626" className="font-semibold underline underline-offset-2">
               {lang === "ar" ? "8002626" : "Aman 8002626"}
@@ -182,13 +221,12 @@ export function CitizenFooter() {
             </a>
             .
           </p>
-          <p className="text-ink-soft md:max-w-[52ch] md:text-end">{t("footerProto")}</p>
+          <p className="text-[12px] text-ink-soft md:max-w-[52ch] md:text-end md:text-[14px]">{t("footerProto")}</p>
         </div>
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-3 border-t border-line pt-3">
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-3 md:mt-4 md:border-t md:border-line md:pt-3">
           <PrivacyNote className="min-w-0 flex-1 basis-64" />
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             <ShareQrButton />
-            <ThemeToggle variant="saqr" className="md:hidden" />
           </div>
         </div>
       </div>

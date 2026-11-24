@@ -72,6 +72,8 @@ interface UrlScanResponse {
     ip_addresses?: string[];
     harvested_fields?: string[];
     ssl_issuer?: string | null;
+    ssl_valid?: boolean | null;
+    sandbox_status?: string | null;
     domain_age_hours?: number | null;
     cloaking?: { detected?: boolean } | null;
   };
@@ -123,6 +125,10 @@ export interface ScanVerdict {
   harvested: string[];
   ip: string | null;
   sslIssuer: string | null;
+  /** URL scans: the TLS certificate verified (true), failed (false) or was not checked (undefined/null). */
+  sslValid?: boolean | null;
+  /** URL scans: the page itself was fetched and inspected (sandbox status "ok"), so `harvested` is meaningful. */
+  pageChecked?: boolean;
   domainAgeHours: number | null;
   cloaking: boolean;
   screenshot: string | null;
@@ -226,6 +232,8 @@ function fromUrlScan(r: UrlScanResponse, interception: InterceptionChannel): Sca
     harvested: ti.harvested_fields ?? [],
     ip: ti.ip_addresses?.[0] ?? null,
     sslIssuer: ti.ssl_issuer ?? null,
+    sslValid: ti.ssl_valid ?? null,
+    pageChecked: ti.sandbox_status === "ok",
     domainAgeHours: ti.domain_age_hours ?? null,
     cloaking: Boolean(ti.cloaking?.detected),
     screenshot: r.screenshot_base64 ?? null,
