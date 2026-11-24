@@ -1,0 +1,7 @@
+################################################################
+# abuse.ch URLhaus Database Dump (CSV - online URLs only)      #
+################################################################
+#
+# id,dateadded,url,url_status,last_online,threat,tags,urlhaus_link,reporter
+"1","2026-11-23 10:00:00","http://198.51.100.7/bins/mips","online","2026-11-23 10:00:00","malware_download","elf","https://urlhaus.abuse.ch/url/1/","anon"
+"2","2026-11-23 10:01:00","http://files.example.net/update.exe","online","2026-11-23 10:01:00","malware_download","exe","https://urlhaus.abuse.ch/url/2/","anon"
