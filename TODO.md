@@ -71,3 +71,13 @@ Then open **https://saqr-intel.vercel.app/police**.
 - **Never run a local backend with the real NextDNS keys** in `.env` while Render is live: it double-syncs the block list and sends double alerts. The local test setup forces NextDNS off.
 - **Tests:** `pytest -q` in the project root (123 pass). `cd frontend; npm run build` builds cleanly.
 - **Map tiles:** OpenStreetMap, darkened with CSS. CARTO's dark tiles now require an API key.
+
+## ScamShield submission (2026-11-24)
+- [ ] Merge `feature/scamshield-model` into `main`, then check https://saqr-intel-api.onrender.com/api/hunter/status (it was 404 before the merge) and redeploy Vercel so `/police` shows the Proactive Hunt and model cards.
+- [ ] Paste the measured model table at the `<!-- METRICS -->` line in `README.md`.
+- [ ] Fix `.env.example`: `GEMINI_MODEL=gemini-2.5-flash` is a retired model (remove the line so the built-in model list is used).
+- [ ] Test the Search & Maps content script against live Google / Bing / Maps pages (only HTML fixtures so far).
+- [ ] crt.sh answered HTTP 502 on 2026-11-24: add a second certificate source (e.g. a self-hosted CertStream server) and test `CT_MODE=certstream`.
+- [ ] Cloud page checks have no browser: no screenshots in cloud dossiers, no JavaScript rendering. Needs a Playwright worker, ideally behind a UAE egress (`SANDBOX_PROXY_SERVER`).
+- [ ] Training data: confirm the licence of HuggingFace `kmack/Phishing_urls` or drop it; Phishing Army (CC BY-NC) and OpenPhish (non-commercial) need clearing before operational police use.
+- [ ] Replace demo registry phone numbers and branch coordinates with entity-verified data before a pilot.
