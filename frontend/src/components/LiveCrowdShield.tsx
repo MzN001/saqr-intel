@@ -153,7 +153,7 @@ export function LiveCrowdShield() {
   const now = useNow(20_000);
 
   return (
-    <section aria-labelledby="live-title" className="card p-5" data-testid="live-crowd-shield">
+    <section aria-labelledby="live-title" className="card min-w-0 max-w-full p-5" data-testid="live-crowd-shield">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="live-title" className="text-[17px] font-semibold text-ink">
@@ -184,14 +184,14 @@ export function LiveCrowdShield() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex items-center gap-3 py-3"
+                className="flex min-w-0 items-center gap-3 py-3"
               >
                 <span className={`grid size-9 shrink-0 place-items-center rounded-control ${blocked ? "bg-scam text-on-scam" : "bg-suspicious text-on-suspicious"}`}>
                   <Icon className="size-4" aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] font-semibold text-ink">
-                    <span className="truncate">{entity ?? t("unknownEntity")}</span>
+                    <span className="min-w-0 max-w-full truncate">{entity ?? t("unknownEntity")}</span>
                     <span className={`chip tabular-nums ${blocked ? "chip-scam" : "chip-suspicious"}`}>
                       {blocked ? t("liveBlocked") : t("liveFlagged")} · {b.riskScore}
                     </span>

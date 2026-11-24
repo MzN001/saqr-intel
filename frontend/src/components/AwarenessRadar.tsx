@@ -89,6 +89,9 @@ function Radar({ cards }: { cards: AlertCardData[] }) {
         const r = c.severity === "HIGH" ? 0.28 : c.severity === "MEDIUM" ? 0.52 : 0.72;
         const x = 50 + Math.cos(angle) * r * 50;
         const y = 50 + Math.sin(angle) * r * 50;
+        // The centre label sits just below the middle (top 54%): put a point's label below it only when the
+        // point is clearly lower than that label, otherwise above, so the two never overlap.
+        const labelBelow = y > 56;
         return (
           <motion.div
             key={c.entity}
@@ -99,7 +102,7 @@ function Radar({ cards }: { cards: AlertCardData[] }) {
             style={{ left: `${x}%`, top: `${y}%` }}
           >
             <span className={`relative block size-3.5 rounded-full ring-2 ring-surface ${SEVERITY_STYLE[c.severity].dot}`} />
-            <span className="absolute left-1/2 top-5 max-w-[110px] -translate-x-1/2 truncate whitespace-nowrap rounded bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-ink shadow-card">
+            <span className={`absolute left-1/2 ${labelBelow ? "top-5" : "bottom-5"} max-w-[110px] -translate-x-1/2 truncate whitespace-nowrap rounded bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-ink shadow-card`}>
               {lang === "ar" ? ENTITY_AR[c.entity] ?? c.entity : c.entity}
             </span>
           </motion.div>
@@ -138,7 +141,7 @@ function AlertCard({ card, index }: { card: AlertCardData; index: number }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="card p-5"
+      className="card min-w-0 max-w-full p-5"
       data-testid="awareness-card"
     >
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-ink-soft">
@@ -157,7 +160,7 @@ function AlertCard({ card, index }: { card: AlertCardData; index: number }) {
       <h3 className="mt-2 text-[17px] font-semibold leading-snug text-ink">{title}</h3>
       <p className="text-[14px] font-medium text-ink-soft">{entity}</p>
 
-      <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-ink">{post}</p>
+      <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-ink [overflow-wrap:anywhere]">{post}</p>
 
       <dl className="mt-4 grid grid-cols-3 divide-x divide-line rounded-control bg-muted py-2.5 text-center rtl:divide-x-reverse">
         {[
@@ -245,9 +248,11 @@ export function AwarenessRadar() {
   }, [load]);
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-      <div className="space-y-4">
-        <section className="card overflow-hidden p-5" aria-labelledby="waves-title" data-testid="awareness-radar">
+    // grid-cols-1 = minmax(0, 1fr): without an explicit track the phone column grew to the widest nowrap row
+    // (Live Crowd-Shield domains) and pushed both cards past the right edge of the screen.
+    <div className="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-4">
+        <section className="card min-w-0 max-w-full overflow-hidden p-5" aria-labelledby="waves-title" data-testid="awareness-radar">
           <div className="flex items-center justify-between gap-3">
             <h2 id="waves-title" className="text-[17px] font-semibold text-ink">
               {t("activeWaves")} <span className="tabular-nums text-ink-soft">· {cards.length}</span>
@@ -271,13 +276,13 @@ export function AwarenessRadar() {
         <LiveCrowdShield />
       </div>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         {error && (
           <div className="card p-5 text-[15px] text-ink" role="alert">
             <p className="flex items-center gap-2 font-semibold">
               <Info className="size-4 shrink-0 text-ink-soft" aria-hidden /> {t("backendOffline")}
             </p>
-            <p className="mt-1 text-[13px] text-ink-soft">{error}</p>
+            <p className="mt-1 text-[13px] text-ink-soft [overflow-wrap:anywhere]">{error}</p>
           </div>
         )}
         {loading && cards.length === 0 && !error && (

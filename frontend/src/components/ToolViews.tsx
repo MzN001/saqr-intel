@@ -171,7 +171,7 @@ function AlertsWindow() {
         </h2>
         <ScamAlertsPanel />
       </section>
-      <section aria-labelledby="alerts-live-title">
+      <section aria-labelledby="alerts-live-title" className="min-w-0">
         <h2 id="alerts-live-title" className="mb-4 text-[20px] font-bold text-ink">
           {t("alertsLiveTitle")}
         </h2>
@@ -270,7 +270,7 @@ export function ToolView({
   if (view === "maps") {
     return (
       <ToolWindow title={t("moreMapsTitle")} intro={t("searchIntro")} onBack={onBack} onMobileBack={toLearn}>
-        <div className="grid items-start gap-8 lg:grid-cols-[auto_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[auto_minmax(0,1fr)]">
           <SearchMapsShield runScan={runDnsScan} />
           <div className="min-w-0 space-y-6 lg:sticky lg:top-24">
             <MapsListingCheck onCheck={runListingScan} />
@@ -283,7 +283,7 @@ export function ToolView({
   if (view === "sms") {
     return (
       <ToolWindow title={t("moreSmsTitle")} intro={t("viewSmsIntro")} onBack={onBack} onMobileBack={toLearn}>
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="min-w-0 space-y-6 lg:order-2 lg:w-[390px]">
             <MessageCheck onCheck={runMessageScan} />
             {card}
@@ -301,7 +301,7 @@ export function ToolView({
   if (view === "email") {
     return (
       <ToolWindow title={t("moreEmailTitle")} intro={t("emIntro")} onBack={onBack} onMobileBack={toLearn}>
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="min-w-0">
             <EmailGuard onScan={runEmailScan} />
           </div>
