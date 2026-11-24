@@ -64,6 +64,27 @@ CREATE TABLE IF NOT EXISTS ct_events (
     data_json TEXT DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_ct_seen ON ct_events(seen_at);
+CREATE TABLE IF NOT EXISTS hunter_detections (  -- proactive hunter: scam domains found before any citizen saw them
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain TEXT NOT NULL UNIQUE,
+    source TEXT NOT NULL,              -- lookalike_sweep | crtsh | ct | nrd
+    first_seen TEXT NOT NULL,          -- when the hunter found it (lead time is measured from here)
+    scanned_at TEXT,
+    triage_score INTEGER NOT NULL DEFAULT 0,
+    score INTEGER NOT NULL DEFAULT 0,
+    verdict TEXT,
+    entity TEXT,
+    flags_json TEXT NOT NULL DEFAULT '[]',
+    domain_age_hours REAL,
+    registrar TEXT,
+    ip TEXT,
+    asn TEXT,
+    scan_id TEXT,                      -- full scan in the scans table (NULL for simulated leads)
+    simulated INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL,              -- confirmed | suspicious | cleared
+    detail_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_hunter_first_seen ON hunter_detections(first_seen);
 CREATE TABLE IF NOT EXISTS push_subscriptions (  -- phones that enabled SAQR scam alerts (Web Push)
     endpoint TEXT PRIMARY KEY,
     sub_json TEXT NOT NULL,

@@ -203,6 +203,8 @@ class PoliceState:
         return pins
 
     async def snapshot(self) -> dict[str, Any]:
+        from .intel import hunter  # local: hunter -> pipeline -> heavy imports
+
         campaigns = await self.campaigns()
         pins = self.map_pins()
         cutoff = iso(utcnow() - timedelta(hours=72))
@@ -211,7 +213,10 @@ class PoliceState:
         return {
             "kpis": {"citizens_protected": self.protected, "active_entities": len(entities),
                      "hijacked_pins": sum(1 for p in pins if p["type"] == "SPOOFED"),
-                     "x_alerts_dispatched": self.x_alerts},
+                     "x_alerts_dispatched": self.x_alerts,
+                     "pre_victim_detections": await hunter.pre_victim_count()},
+            "proactive_detections": await hunter.latest_detections(20),
+            "hunter_mode": hunter.hunter.mode,
             "campaigns": campaigns,
             "recent_events": list(self.events)[:25],
             "map_pins": pins,

@@ -23,7 +23,8 @@ def client():
 
 def test_state_is_populated_on_cold_boot(client):
     s = client.get("/api/police/state").json()
-    assert set(s["kpis"]) == {"citizens_protected", "active_entities", "hijacked_pins", "x_alerts_dispatched"}
+    assert set(s["kpis"]) == {"citizens_protected", "active_entities", "hijacked_pins", "x_alerts_dispatched",
+                              "pre_victim_detections"}
     assert s["kpis"]["citizens_protected"] > 0 and s["kpis"]["hijacked_pins"] >= 1
     assert 1 <= len(s["recent_events"]) <= 25
     domains = {c["domain"] for c in s["campaigns"]}
