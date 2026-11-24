@@ -54,10 +54,24 @@ STRONG_SIGNALS = {"NEWLY_REGISTERED", "YOUNG_DOMAIN", "FRESH_CERTIFICATE", "KNOW
 # button, JavaScript-built pages, words like "expire"). It only adds risk next to strong evidence.
 WEAK_PAGE_SIGNALS = {"BRAND_CONTENT", "URGENCY_PRESSURE", "CLOAKING", "EXFIL_FORM", "NO_HTTPS"}
 
-# Trained URL classifier thresholds (held-out data: at 0.98 about 1 false alarm per 1,250 real sites).
-ML_CERTAIN = 0.98
-ML_STRONG = 0.92
-ML_SUSPECT = 0.80
+# Trained URL classifier thresholds, picked by tools/train_url_model.py on legitimate sites it never saw
+# (grouped validation split + the false-positive suite of UAE / bank / long-tail sites): CERTAIN = at most
+# 0.1% of them reach it, STRONG = 0.5%, SUSPECT = 2%. Measured numbers: docs/MODEL_CARD.md.
+ML_DEFAULTS = {"certain": 0.98, "strong": 0.92, "suspect": 0.80}
+
+
+def _ml_thresholds() -> dict[str, float]:
+    try:
+        stored = json.loads(url_model.METRICS_PATH.read_text(encoding="utf-8")).get("thresholds") or {}
+        return {k: float(stored.get(k, v)) for k, v in ML_DEFAULTS.items()}
+    except (OSError, ValueError, TypeError):
+        return dict(ML_DEFAULTS)
+
+
+_ML = _ml_thresholds()
+ML_CERTAIN = _ML["certain"]
+ML_STRONG = _ML["strong"]
+ML_SUSPECT = _ML["suspect"]
 # Independent evidence that turns a confident classifier verdict into HIGH-RISK.
 ML_CORROBORATION = {"FRESH_CERTIFICATE", "NEWLY_REGISTERED", "YOUNG_DOMAIN", "BRAND_CONTENT", "BRAND_IMPERSONATION",
                     "CREDENTIAL_HARVESTING", "EXFIL_FORM", "SUSPICIOUS_TLD", "URGENCY_PRESSURE", "LURE_KEYWORDS",
@@ -101,12 +115,18 @@ def _entity_in_text(text: str) -> Entity | None:
     return None
 
 
-def url_model_probability(lex: LexicalReport) -> float | None:
-    """Trained classifier's phishing probability for this host, or None when it must not judge it:
-    popular sites (Tranco top 100k) unless the page sits on a free-hosting platform."""
+def url_model_result(lex: LexicalReport) -> dict | None:
+    """Trained classifier's verdict on the full address ({probability, reasons}), or None when it must
+    not judge it: official / trusted sites, and popular sites (Tranco top 100k) unless the page sits on
+    a free-hosting platform (a popular site's own pages are not phishing; its users' pages may be)."""
     if lex.is_whitelisted or (popularity_rank(lex.registered_domain) and not on_free_hosting(lex.host)):
         return None
-    return url_model.phishing_probability(lex.host)
+    return url_model.score_url(lex.normalized_url or lex.host)
+
+
+def url_model_probability(lex: LexicalReport) -> float | None:
+    res = url_model_result(lex)
+    return None if res is None else res["probability"]
 
 
 def intel_flags(lex: LexicalReport) -> list[RedFlag]:
@@ -117,9 +137,12 @@ def intel_flags(lex: LexicalReport) -> list[RedFlag]:
         out.append(RedFlag("KNOWN_PHISHING_FEED", "critical", 70,
                            f"Listed as an active phishing site by global threat intelligence ({feed}).",
                            f"مُدرج كموقع تصيّد نشط في قوائم استخبارات التهديدات العالمية ({feed})."))
-    p = url_model_probability(lex)
+    res = url_model_result(lex)
+    p = None if res is None else res["probability"]
     if p is not None and p >= ML_SUSPECT:
         pct = round(p * 100)
+        why_en = "; ".join(r["en"] for r in res["reasons"])
+        why_ar = "؛ ".join(r["ar"] for r in res["reasons"])
         if p >= ML_CERTAIN and not on_free_hosting(lex.host):
             pts = 65  # enough on its own; random free-hosting names (x-y-1a2b.netlify.app) need more
         elif p >= ML_STRONG:
@@ -128,10 +151,10 @@ def intel_flags(lex: LexicalReport) -> list[RedFlag]:
             pts = 20
         out.append(RedFlag("AI_PHISHING_URL" if p >= ML_STRONG else "AI_SUSPICIOUS_URL",
                            "critical" if p >= ML_CERTAIN else "high" if p >= ML_STRONG else "medium", pts,
-                           f"SAQR's AI model, trained on 760,000 real and phishing websites, rates this address "
-                           f"{pct}% likely to be phishing.",
-                           f"يُقدّر نموذج صقر الذكي، المُدرَّب على 760 ألف موقع حقيقي واحتيالي، أن هذا العنوان "
-                           f"احتيالي بنسبة {pct}٪."))
+                           f"SAQR's AI model rates this address {pct}% likely to be phishing"
+                           + (f". Main reasons: {why_en}." if why_en else "."),
+                           f"يُقدّر نموذج صقر الذكي أن هذا العنوان احتيالي بنسبة {pct}٪"
+                           + (f". أهم الأسباب: {why_ar}." if why_ar else ".")))
     return out
 
 

@@ -95,7 +95,21 @@ Code: `main.py`, `saqr/pipeline.py`, `saqr/intel/` (one module per stage), `saqr
   holdout URLs). Every holdout site is listed in `tools/holdout_sites.txt.gz` and removed from training;
   validation is split by site, never by URL. Results are stored in `saqr/intel/data/model_metrics.json`.
 
-<!-- METRICS -->
+Measured on 2026-11-24 (offline system = look-alike rules + URL model only: no network, no page fetch, no LLM, no threat feeds; "block" = HIGH-RISK, score >= 65; "warn" = SUSPICIOUS or worse, score >= 30). "Before" is the previous hostname-only model.
+
+| Test set | Cut | Before: precision / recall / false-alarm rate | After: precision / recall / false-alarm rate |
+|---|---|---|---|
+| Hannousse holdout (11,426 URLs, never trained on) | block | 0.992 / 0.172 / 0.14% | 0.997 / 0.312 / 0.10% |
+| Hannousse holdout | warn | 0.878 / 0.318 / 4.41% | 0.987 / 0.534 / 0.70% |
+| Fresh phishing (49,359 URLs: JPCERT 2026-08/09, OpenPhish, PhishTank) | block | recall 0.108 | recall 0.193 |
+| Fresh phishing | warn | recall 0.312 | recall 0.414 |
+| False-alarm suite (13,725 legitimate URLs) | block | 0.30% | 0.09% |
+| False-alarm suite | warn | 16.52% | 0.78% |
+| Evasion variants of holdout URLs (23,891) | warn | 0.913 / 0.330 / 6.42% | 0.993 / 0.557 / 0.75% |
+
+- UAE official deep links (1,046), global-brand official pages (2,081), Tranco deep links (2,242) and 52 hand-picked bank / government login pages: **0 false alarms** at either cut.
+- These are address-only numbers. About half of the held-out phishing (mostly pages on Google Sites, Blogspot, Forms and hacked older websites) has an ordinary-looking address and is left to the live checks: domain age, page content, cloaking, threat feeds and the LLM judge.
+- Full details, thresholds and per-set tables: [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 
 Commands (runtime venv, standard library only):
 
