@@ -245,7 +245,19 @@ export interface ModelMetrics {
   model?: { name?: string; version?: string; trained_at?: string; training_rows?: number };
   datasets?: { name?: string; rows?: number }[];
   holdout?: { name?: string; rows?: number; precision?: number; recall?: number; f1?: number; fpr?: number; threshold?: number };
-  fp_suite?: { rows?: number; false_positives?: number };
+  fp_suite?: {
+    rows?: number;
+    false_positives?: number;
+    by_source?: Record<string, { rows?: number; warn_30?: number; block_65?: number }>;
+  };
+  live?: { rows?: number; date?: string; no_feeds?: { warn_30?: CutMetrics; block_65?: CutMetrics } };
+}
+
+export interface CutMetrics {
+  precision?: number;
+  recall?: number;
+  f1?: number;
+  fpr?: number;
 }
 
 export interface SweepCycle {
@@ -575,7 +587,12 @@ export const P = {
   f1: { en: "F1", ar: "F1" },
   fpr: { en: "False-positive rate", ar: "معدل الإنذار الكاذب" },
   threshold: { en: "Threshold", ar: "العتبة" },
-  fpSuite: { en: "Real bank / government sites", ar: "مواقع بنوك وجهات حكومية حقيقية" },
+  fpSuite: { en: "Legitimate sites (incl. long-tail and free hosting)", ar: "مواقع سليمة (تشمل المواقع الصغيرة والاستضافة المجانية)" },
+  officialSuite: { en: "UAE official, bank and government pages", ar: "صفحات الجهات الرسمية والبنوك والحكومة" },
+  liveSystem: { en: "Full live scan · fresh phishing + legitimate pages", ar: "الفحص الحي الكامل · تصيّد حديث + صفحات سليمة" },
+  liveNote: { en: "warn level, threat feeds off", ar: "مستوى التحذير، بدون قوائم التهديدات" },
+  addressOnly: { en: "Address-only model", ar: "نموذج العنوان فقط" },
+  more: { en: "more", ar: "أخرى" },
   falseAlarms: { en: "false alarms", ar: "إنذارات كاذبة" },
   datasets: { en: "Datasets", ar: "مجموعات البيانات" },
   rows: { en: "rows", ar: "صف" },

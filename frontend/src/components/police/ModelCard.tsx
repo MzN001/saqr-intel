@@ -12,6 +12,10 @@ function pct(v: number | undefined, digits = 1): string | null {
   return `${p.toFixed(p > 0 && p < 1 ? 2 : digits)}%`;
 }
 
+/** Sources of the false-alarm suite that are official / bank / government pages. */
+const OFFICIAL_SOURCES = ["harvest_uae_official", "harvest_brand_official", "fp_extra_bank_gov"];
+const MAX_DATASETS = 8;
+
 const num = (v: number | undefined) => (typeof v === "number" ? v.toLocaleString("en-US") : null);
 
 function Stat({ label, value, tone }: { label: string; value: string | null; tone: string }) {
@@ -30,7 +34,12 @@ export function ModelCard({ metrics, className = "" }: { metrics: ModelMetrics; 
   const m = metrics.model ?? {};
   const h = metrics.holdout ?? {};
   const fp = metrics.fp_suite;
-  const datasets = (metrics.datasets ?? []).filter((d) => d.name);
+  const live = metrics.live?.no_feeds?.warn_30;
+  const official = Object.entries(fp?.by_source ?? {}).filter(([k]) => OFFICIAL_SOURCES.includes(k));
+  const officialRows = official.reduce((n, [, v]) => n + (v.rows ?? 0), 0);
+  const officialAlarms = official.reduce((n, [, v]) => n + (v.warn_30 ?? 0), 0);
+  const allSets = (metrics.datasets ?? []).filter((d) => d.name);
+  const datasets = allSets.filter((d) => !d.name?.includes("+evasion")).slice(0, MAX_DATASETS);
   const trained = m.trained_at ? m.trained_at.slice(0, 10) : null;
 
   return (
@@ -46,13 +55,29 @@ export function ModelCard({ metrics, className = "" }: { metrics: ModelMetrics; 
           .join(" · ")}
       </p>
 
+      {live && (
+        <>
+          <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-white/60">
+            {L("liveSystem")}
+            {typeof metrics.live?.rows === "number" && <span className="text-white/45" dir="ltr"> · {num(metrics.live.rows)} {L("rows")}</span>}
+            <span className="normal-case text-white/45"> · {L("liveNote")}</span>
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Stat label={L("precision")} value={pct(live.precision)} tone="text-emerald-300" />
+            <Stat label={L("recall")} value={pct(live.recall)} tone="text-sky-300" />
+            <Stat label={L("f1")} value={pct(live.f1)} tone="text-white" />
+            <Stat label={L("fpr")} value={pct(live.fpr, 2)} tone="text-amber-300" />
+          </div>
+        </>
+      )}
+
       {(h.precision !== undefined || h.recall !== undefined || h.f1 !== undefined || h.fpr !== undefined) && (
         <>
           <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-white/60">
-            {L("holdout")}
+            {L("addressOnly")} · {L("holdout")}
             {h.name && <span className="normal-case text-white/45" dir="ltr"> · {h.name}</span>}
             {typeof h.rows === "number" && <span className="text-white/45" dir="ltr"> · {num(h.rows)} {L("rows")}</span>}
-            {typeof h.threshold === "number" && <span className="text-white/45" dir="ltr"> · {L("threshold")} {h.threshold}</span>}
+            {typeof h.threshold === "number" && <span className="text-white/45" dir="ltr"> · {L("threshold")} {h.threshold.toFixed(3)}</span>}
           </p>
           <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <Stat label={L("precision")} value={pct(h.precision)} tone="text-emerald-300" />
@@ -67,6 +92,13 @@ export function ModelCard({ metrics, className = "" }: { metrics: ModelMetrics; 
         <p className="mt-3 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100 ring-1 ring-emerald-400/25">
           {L("fpSuite")}: <b className="tabular-nums" dir="ltr">{num(fp.false_positives ?? 0)}</b> {L("falseAlarms")} /{" "}
           <b className="tabular-nums" dir="ltr">{num(fp.rows)}</b>
+          {officialRows > 0 && (
+            <>
+              <br />
+              {L("officialSuite")}: <b className="tabular-nums" dir="ltr">{num(officialAlarms)}</b> {L("falseAlarms")} /{" "}
+              <b className="tabular-nums" dir="ltr">{num(officialRows)}</b>
+            </>
+          )}
         </p>
       )}
 
@@ -80,6 +112,11 @@ export function ModelCard({ metrics, className = "" }: { metrics: ModelMetrics; 
                 {typeof d.rows === "number" && <span className="text-white/45"> · {num(d.rows)}</span>}
               </li>
             ))}
+            {allSets.length > datasets.length && (
+              <li className="px-1 py-0.5 text-[11px] text-white/45">
+                +{allSets.length - datasets.length} {L("more")}
+              </li>
+            )}
           </ul>
         </div>
       )}

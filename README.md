@@ -182,9 +182,7 @@ If PowerShell refuses `activate`, run `Set-ExecutionPolicy -Scope CurrentUser Re
 Frontend (second terminal): `cd frontend`, `npm install`, `npm run dev` → http://localhost:3000/citizen and
 http://localhost:3000/police. `/api/*` is proxied to `http://127.0.0.1:8000` (or `NEXT_PUBLIC_API_URL`).
 
-`.env` notes: all keys are optional (without an LLM key the rules engine decides). In `.env`, delete the
-`GEMINI_MODEL=gemini-2.5-flash` line copied from `.env.example` (that model is retired; the built-in list is
-used instead). Leave `NEXTDNS_PROFILE_ID` / `NEXTDNS_API_KEY` empty on a laptop while the cloud backend uses
+`.env` notes: all keys are optional (without an LLM key the rules engine decides). Leave `NEXTDNS_PROFILE_ID` / `NEXTDNS_API_KEY` empty on a laptop while the cloud backend uses
 them. `OFFLINE_MODE=true` runs a demo with no internet (seeded data, simulated CT and hunter).
 
 Extension: `chrome://extensions` or `edge://extensions` → Developer mode → Load unpacked → `extension/`.

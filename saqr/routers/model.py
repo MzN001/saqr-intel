@@ -14,7 +14,7 @@ from ..intel import url_model
 
 router = APIRouter(prefix="/api/model", tags=["Model"])
 
-PUBLIC_KEYS = ("model", "datasets", "holdout", "fresh_phishing", "fp_suite", "system", "thresholds")
+PUBLIC_KEYS = ("model", "datasets", "holdout", "fresh_phishing", "fp_suite", "system", "live", "thresholds")
 
 
 @router.get("/metrics")
