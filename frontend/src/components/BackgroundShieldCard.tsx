@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, Download, Info, ShieldCheck, Smartphone, Tablet } from "lucide-react";
+import { Check, Copy, Download, Info, ListOrdered, ShieldCheck, SlidersHorizontal, Smartphone, Tablet } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { apiUrl, getNextDnsStatus, type NextDnsStatus } from "@/lib/api";
+import { Disclosure } from "./Disclosure";
 import { useLang } from "@/lib/i18n";
 import { copyText } from "@/lib/share";
 import { SetupVideoButton } from "./SetupVideo";
@@ -136,27 +137,6 @@ export function BackgroundShieldCard() {
         </p>
       )}
 
-      <label className="mt-4 block">
-        <span className="text-xs font-semibold text-ink-soft">{t("bgNextdns")}</span>
-        <input
-          type="text"
-          value={rawId}
-          onChange={(e) => setRawId(e.target.value)}
-          placeholder={feedId ?? "abc123"}
-          dir="ltr"
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          maxLength={16}
-          aria-invalid={!idValid}
-          className={`mt-1.5 w-full rounded-2xl bg-muted px-3.5 py-2.5 font-mono text-sm text-ink outline-none ring-1 focus:ring-2 sm:max-w-xs ${
-            idValid ? "ring-line focus:ring-emerald-600" : "ring-crimson-600"
-          }`}
-        />
-        <span className={`mt-1 block text-xs ${idValid ? "text-ink-soft/75" : "font-semibold text-crimson-700 dark:text-red-300"}`}>
-          {idValid ? t("bgNextdnsHint") : t("bgNextdnsInvalid")}
-        </span>
-      </label>
 
       <AnimatePresence mode="wait" initial={false}>
         {platform === "android" ? (
@@ -193,11 +173,13 @@ export function BackgroundShieldCard() {
               </p>
             </div>
             <SetupVideoButton platform="android" host={dotHost} />
-            <Steps items={[t("bgA1"), t("bgA2"), t("bgA3")]} />
-            <p className="flex items-start gap-2 text-xs font-medium text-ink">
-              <Info className="mt-0.5 size-4 shrink-0 text-gold-ink" />
-              {t("bgAndroidTip")}
-            </p>
+            <Disclosure summary={t("bgShowSteps")} icon={<ListOrdered className="size-4" />}>
+              <Steps items={[t("bgA1"), t("bgA2"), t("bgA3")]} />
+              <p className="mt-3 flex items-start gap-2 text-xs font-medium text-ink">
+                <Info className="mt-0.5 size-4 shrink-0 text-gold-ink" />
+                {t("bgAndroidTip")}
+              </p>
+            </Disclosure>
           </motion.div>
         ) : (
           <motion.div
@@ -219,16 +201,41 @@ export function BackgroundShieldCard() {
               <Download className="size-4" /> {t("bgDownloadIos")}
             </a>
             <SetupVideoButton platform="ios" host={dotHost} />
-            <Steps items={[t("bgI1"), t("bgI2"), t("bgI3")]} />
-            <p className="flex items-start gap-2 text-xs text-ink-soft">
-              <Info className="mt-0.5 size-4 shrink-0" />
-              {t("bgIosNote")}
-            </p>
+            <Disclosure summary={t("bgShowSteps")} icon={<ListOrdered className="size-4" />}>
+              <Steps items={[t("bgI1"), t("bgI2"), t("bgI3")]} />
+              <p className="mt-3 flex items-start gap-2 text-xs text-ink-soft">
+                <Info className="mt-0.5 size-4 shrink-0" />
+                {t("bgIosNote")}
+              </p>
+            </Disclosure>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <p className="mt-4 border-t border-line pt-3 text-xs leading-relaxed text-ink-soft/80">{t("bgFootnote")}</p>
+      <Disclosure className="mt-4" summary={t("bgAdvanced")} icon={<SlidersHorizontal className="size-4" />} defaultOpen={!idValid}>
+      <label className="block">
+        <span className="text-xs font-semibold text-ink-soft">{t("bgNextdns")}</span>
+        <input
+          type="text"
+          value={rawId}
+          onChange={(e) => setRawId(e.target.value)}
+          placeholder={feedId ?? "abc123"}
+          dir="ltr"
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          maxLength={16}
+          aria-invalid={!idValid}
+          className={`mt-1.5 w-full rounded-2xl bg-muted px-3.5 py-2.5 font-mono text-sm text-ink outline-none ring-1 focus:ring-2 sm:max-w-xs ${
+            idValid ? "ring-line focus:ring-emerald-600" : "ring-crimson-600"
+          }`}
+        />
+        <span className={`mt-1 block text-xs ${idValid ? "text-ink-soft/75" : "font-semibold text-crimson-700 dark:text-red-300"}`}>
+          {idValid ? t("bgNextdnsHint") : t("bgNextdnsInvalid")}
+        </span>
+      </label>
+        <p className="mt-3 text-xs leading-relaxed text-ink-soft">{t("bgFootnote")}</p>
+      </Disclosure>
     </section>
   );
 }

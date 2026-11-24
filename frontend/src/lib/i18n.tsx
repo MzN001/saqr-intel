@@ -113,6 +113,11 @@ const dict = {
   bgI2: { en: "Open iPhone Settings → General → VPN, DNS & Device Management.", ar: "افتح إعدادات الآيفون ← عام ← VPN وDNS وإدارة الجهاز." },
   bgI3: { en: "Tap SAQR-INTEL Citizen DNS Shield → Install.", ar: "اضغط SAQR-INTEL Citizen DNS Shield ← تثبيت." },
   bgIosNote: { en: "Open this page in Safari on the iPhone. Remove the profile any time in the same settings screen.", ar: "افتح هذه الصفحة في سفاري على الآيفون. يمكنك حذف الملف في أي وقت من نفس شاشة الإعدادات." },
+  bgShowSteps: { en: "Show the 3 setup steps", ar: "اعرض خطوات الإعداد الثلاث" },
+  bgAdvanced: { en: "Advanced: demo filter & DNS details", ar: "متقدم: مرشّح العرض وتفاصيل DNS" },
+  howItWorks: { en: "How it works", ar: "كيف يعمل" },
+  reportFraud: { en: "Report fraud", ar: "بلّغ عن احتيال" },
+  emergency: { en: "Emergency", ar: "الطوارئ" },
   bgFootnote: {
     en: "Cloudflare 1.1.1.2 blocks known malware & phishing worldwide. With an e& / du partnership, SAQR's own live detections would be added to this shield.",
     ar: "يحظر Cloudflare 1.1.1.2 البرمجيات الخبيثة ومواقع التصيّد المعروفة عالمياً. وبالشراكة مع اتصالات ودو ستُضاف اكتشافات صقر المباشرة إلى هذا الدرع.",

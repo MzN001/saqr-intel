@@ -1,11 +1,64 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BatteryFull, Cloud, MessageSquare, Phone, ShieldCheck, Signal, Wifi, Zap } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { BatteryFull, ChevronDown, Cloud, MessageSquare, Phone, ShieldAlert, ShieldCheck, Signal, Siren, Wifi, Zap } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang } from "@/lib/i18n";
 import { ShareQrButton } from "./ShareQrButton";
 import { ThemeToggle } from "./ThemeToggle";
+
+/** Aman, SMS and emergency numbers folded into one menu instead of three pills. */
+function ReportMenu() {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const items = [
+    { href: "tel:8002626", icon: Phone, label: t("aman"), num: "8002626" },
+    { href: "sms:2828", icon: MessageSquare, label: t("sms"), num: "2828" },
+    { href: "tel:999", icon: Siren, label: t("emergency"), num: "999" },
+  ];
+  return (
+    <div ref={box} className="relative hidden md:block">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
+        onClick={() => setOpen((v) => !v)}
+        className="press inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-ink ring-1 ring-line hover:bg-line"
+      >
+        <ShieldAlert className="size-3.5 text-emerald-700 dark:text-emerald-400" />
+        {t("reportFraud")}
+        <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <ul className="absolute end-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-2xl border border-line bg-surface py-1 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.5)]">
+          {items.map(({ href, icon: Icon, label, num }) => (
+            <li key={href}>
+              <a href={href} onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold text-ink hover:bg-muted">
+                <Icon className="size-4 text-emerald-700 dark:text-emerald-400" />
+                <span className="flex-1">{label}</span>
+                <span dir="ltr" className="tabular-nums text-ink-soft">{num}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function Header() {
   const { t, lang, setLang } = useLang();
@@ -22,19 +75,7 @@ export function Header() {
         </div>
 
         <div className="ms-auto flex items-center gap-1.5 sm:gap-2">
-          <a
-            href="tel:8002626"
-            className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-ink ring-1 ring-line hover:bg-line md:inline-flex"
-          >
-            <Phone className="size-3.5 text-emerald-700 dark:text-emerald-400" /> {t("aman")} <span dir="ltr">8002626</span>
-          </a>
-          <a
-            href="sms:2828"
-            className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-ink ring-1 ring-line hover:bg-line md:inline-flex"
-          >
-            <MessageSquare className="size-3.5 text-emerald-700 dark:text-emerald-400" /> {t("sms")} <span dir="ltr">2828</span>
-          </a>
-
+          <ReportMenu />
           <ShareQrButton />
           <div
             role="radiogroup"

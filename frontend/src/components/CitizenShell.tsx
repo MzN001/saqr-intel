@@ -4,6 +4,7 @@ import { AnimatePresence, MotionConfig, motion, type Variants } from "framer-mot
 import { AtSign, Cpu, Globe, Link2Off, Mail, MessageSquareWarning, Network, Radar, ScanSearch, ShieldCheck, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { analyzeEmail, analyzeUrl, getAlertVerdict, scanMaps, type EmailScanInput, type InterceptionChannel, type ScanVerdict } from "@/lib/api";
+import { Disclosure } from "./Disclosure";
 import { useLang, type DictKey } from "@/lib/i18n";
 import { hostOf, isMapsUrl } from "@/lib/url";
 import { AwarenessRadar } from "./AwarenessRadar";
@@ -80,6 +81,7 @@ function SidePanel({ tab }: { tab: DemoTab }) {
         </h1>
         <p className="mt-3 text-base leading-relaxed text-ink-soft">{t(SIDE_COPY[tab].intro)}</p>
       </div>
+      <Disclosure summary={t("howItWorks")} className="max-w-xl">
       <ol className="space-y-3">
         {STEP_COPY[tab].map((s, i) => (
           <motion.li
@@ -87,7 +89,7 @@ function SidePanel({ tab }: { tab: DemoTab }) {
             initial={{ opacity: 0, x: lang === "ar" ? 12 : -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.12 + i * 0.05, duration: 0.3, ease: EASE_OUT }}
-            className="flex items-start gap-3 rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-line"
+            className="flex items-start gap-3"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-navy-900 text-gold-500 dark:bg-navy-950 dark:ring-1 dark:ring-white/10">
               <s.icon className="size-4.5" />
@@ -96,6 +98,7 @@ function SidePanel({ tab }: { tab: DemoTab }) {
           </motion.li>
         ))}
       </ol>
+      </Disclosure>
     </div>
   );
 }

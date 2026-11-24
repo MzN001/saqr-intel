@@ -147,8 +147,8 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
       </div>
       </div>
       {/* Night Grid: Abu Dhabi at night, your shield lit in emerald around the island. */}
-      <figure className="relative order-last h-32 overflow-hidden rounded-2xl border border-line bg-canvas lg:h-auto">
-        <div className="absolute inset-0 lg:relative lg:inset-auto lg:w-full" style={{ aspectRatio: MAP_ASPECT }}>
+      <figure className="relative order-last hidden overflow-hidden rounded-2xl border border-line bg-canvas lg:block">
+        <div className="relative w-full" style={{ aspectRatio: MAP_ASPECT }}>
           <CityGridBackdrop />
         </div>
         <figcaption className="absolute bottom-2 start-2 flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink">

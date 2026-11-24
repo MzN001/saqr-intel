@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { BellOff, BellRing, Check, CircleAlert, Loader2, PlusSquare, Send, Share, ShieldCheck, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { deletePushSubscription, getVapidPublicKey, savePushSubscription, sendTestAlert } from "@/lib/api";
+import { Disclosure } from "./Disclosure";
 import { useLang } from "@/lib/i18n";
 
 type State = "checking" | "ios-add-home" | "unsupported" | "denied" | "off" | "busy" | "on";
@@ -330,7 +331,9 @@ export function ScamAlertsCard() {
           )}
         </AnimatePresence>
 
-        <p className="text-xs leading-relaxed text-ink-soft/80">{t("alHow")}</p>
+        <Disclosure summary={t("howItWorks")}>
+          <p className="text-xs leading-relaxed text-ink-soft">{t("alHow")}</p>
+        </Disclosure>
       </div>
     </section>
   );
