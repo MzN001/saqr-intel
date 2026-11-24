@@ -56,7 +56,7 @@ export function project(lat: number, lng: number): { x: number; y: number } {
 const COLS = 64;
 const ROWS = Math.round((COLS * H) / W);
 
-const Dots = memo(function Dots({ glow }: { glow?: { lat: number; lng: number; r: number } }) {
+const Dots = memo(function Dots({ glow, strong }: { glow?: { lat: number; lng: number; r: number }; strong?: boolean }) {
   const dots = useMemo(() => {
     const out: { cx: number; cy: number; land: boolean; lit: boolean }[] = [];
     for (let r = 0; r < ROWS; r++) {
@@ -78,7 +78,7 @@ const Dots = memo(function Dots({ glow }: { glow?: { lat: number; lng: number; r
           cx={d.cx}
           cy={d.cy}
           r={d.land ? 0.2 : 0.11}
-          className={d.lit ? "fill-emerald-500/80" : d.land ? "fill-ink-soft/45" : "fill-ink-soft/15"}
+          className={d.lit ? "fill-emerald-500/85" : d.land ? (strong ? "fill-ink-soft/70" : "fill-ink-soft/45") : strong ? "fill-ink-soft/20" : "fill-ink-soft/15"}
         />
       ))}
     </svg>
@@ -133,7 +133,7 @@ export function CityGridMap({
 export function CityGridBackdrop() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden dir="ltr">
-      <Dots glow={{ lat: 24.465, lng: 54.385, r: 0.05 }} />
+      <Dots strong glow={{ lat: 24.465, lng: 54.385, r: 0.05 }} />
     </div>
   );
 }

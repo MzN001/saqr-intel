@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { CircleAlert, Link2, ScanSearch, ShieldCheck, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
+import { CityGridBackdrop } from "./CityGrid";
 import { useLang } from "@/lib/i18n";
 import { extractUrl } from "@/lib/url";
 import { SCAM_FINE_URL } from "./SearchMapsShield";
@@ -43,7 +44,12 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
   };
 
   return (
-    <section aria-labelledby="link-checker-title" className="rounded-3xl bg-surface p-4 shadow-sm ring-1 ring-line sm:p-5">
+    <section aria-labelledby="link-checker-title" className="relative isolate overflow-hidden rounded-[20px] border border-line bg-surface p-4 sm:p-6">
+      {/* Night Grid: the check sits on Abu Dhabi at night, your shield lit around the island. */}
+      <div className="absolute inset-y-0 end-0 -z-10 w-full sm:w-[72%]">
+        <CityGridBackdrop />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/55 to-transparent rtl:bg-gradient-to-l" />
+      </div>
       <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-navy-900 text-gold-500 dark:bg-navy-950 dark:ring-1 dark:ring-white/10">
           <ScanSearch className="size-5" />

@@ -309,7 +309,7 @@ export function AwarenessRadar() {
           </div>
         </div>
         <LiveCrowdShield />
-        <div className="flex gap-3 rounded-3xl bg-surface p-4 text-sm text-ink-soft ring-1 ring-line">
+        <div className="flex gap-3 rounded-[20px] border border-line bg-surface p-4 text-sm text-ink-soft">
           <Megaphone className="size-5 shrink-0 text-gold-500" />
           <p>{t("radarIntro")}</p>
         </div>
@@ -324,12 +324,12 @@ export function AwarenessRadar() {
         {loading && cards.length === 0 && !error && (
           <div className="space-y-4">
             {[0, 1].map((i) => (
-              <div key={i} className="h-56 animate-pulse rounded-3xl bg-surface ring-1 ring-line" />
+              <div key={i} className="h-56 animate-pulse rounded-[20px] border border-line bg-surface" />
             ))}
           </div>
         )}
         {!loading && !error && cards.length === 0 && (
-          <div className="rounded-3xl bg-surface p-8 text-center text-ink-soft ring-1 ring-line">
+          <div className="rounded-[20px] border border-line bg-surface p-8 text-center text-ink-soft">
             <ShieldCheck className="mx-auto size-10 text-emerald-600" />
             <p className="mt-3 font-semibold">{t("noWaves")}</p>
           </div>

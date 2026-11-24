@@ -66,7 +66,7 @@ export function ThemeToggle() {
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="grid size-9 shrink-0 place-items-center rounded-full bg-navy-900 shadow-sm transition-transform hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 dark:bg-navy-950 dark:ring-1 dark:ring-white/15"
+      className="grid size-9 shrink-0 place-items-center rounded-full bg-navy-900 shadow-sm transition-transform hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 ring-1 ring-gold-500/40 dark:bg-navy-800"
     >
       <span ref={box} aria-hidden className="block size-7" />
     </button>

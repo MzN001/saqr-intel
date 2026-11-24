@@ -159,7 +159,7 @@ export function LiveCrowdShield() {
         : "bg-crimson-600/15 text-crimson-700 dark:text-red-300";
 
   return (
-    <section aria-labelledby="live-title" className="rounded-3xl bg-surface p-4 shadow-sm ring-1 ring-line">
+    <section aria-labelledby="live-title" className="rounded-[20px] border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="live-title" className="flex items-center gap-2 font-extrabold text-ink">

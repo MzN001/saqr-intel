@@ -308,7 +308,7 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
   return (
     <section
       aria-labelledby="email-guard-title"
-      className="w-full rounded-3xl bg-surface p-4 shadow-sm ring-1 ring-line sm:p-5 lg:w-[560px]"
+      className="w-full rounded-[20px] border border-line bg-surface p-4 sm:p-5 lg:w-[560px]"
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) {
           e.preventDefault();

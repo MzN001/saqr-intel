@@ -80,7 +80,7 @@ export function BackgroundShieldCard() {
   ];
 
   return (
-    <section aria-labelledby="bg-shield-title" className="rounded-3xl bg-surface p-4 shadow-sm ring-1 ring-line sm:p-5">
+    <section aria-labelledby="bg-shield-title" className="rounded-[20px] border border-line bg-surface p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-sm">
           <ShieldCheck className="size-5" />

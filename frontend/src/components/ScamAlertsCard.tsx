@@ -224,7 +224,7 @@ export function ScamAlertsCard() {
   const on = state === "on";
 
   return (
-    <section aria-labelledby="alerts-title" className="overflow-hidden rounded-3xl bg-surface shadow-sm ring-1 ring-line">
+    <section aria-labelledby="alerts-title" className="overflow-hidden rounded-[20px] border border-line bg-surface">
       <div className={`relative overflow-hidden p-4 sm:p-5 ${on ? "bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-800" : "bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950"}`}>
         <div className="pointer-events-none absolute -end-10 -top-12 size-44 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex items-start gap-3 text-white">

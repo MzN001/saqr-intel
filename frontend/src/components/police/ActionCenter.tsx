@@ -28,7 +28,7 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
   const [dossier, setDossier] = useState<TakedownDossier | null>(null);
 
   if (!campaign) {
-    return <p className="rounded-2xl bg-white/5 p-4 text-sm text-white/60 ring-1 ring-white/10">{L("selectCampaign")}</p>;
+    return <p className="rounded-2xl border border-line bg-canvas p-4 text-sm text-ink-soft">{L("selectCampaign")}</p>;
   }
   const c = campaign;
   const key = (what: string) => `${what}:${c.campaign_id}`;
@@ -51,9 +51,9 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
 
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl bg-white/5 p-3 ring-1 ring-white/10">
-        <p className="font-mono text-sm font-bold text-white" dir="ltr">{c.defanged_domain}</p>
-        <p className="mt-0.5 text-xs text-white/60">
+      <div className="rounded-2xl border border-line bg-canvas p-3">
+        <p className="font-mono text-sm font-bold text-ink" dir="ltr">{c.defanged_domain}</p>
+        <p className="mt-0.5 text-xs text-ink-soft">
           {c.impersonated_entity ?? "—"} · <span dir="ltr">{c.campaign_id}</span>
         </p>
       </div>
@@ -62,20 +62,20 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
         type="button"
         disabled={busy !== null || synced}
         onClick={() => run("sync", async () => (await syncTelecom(c.campaign_id, c.domain)).rpz_record)}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-sky-600 px-4 py-3 text-start text-sm font-bold text-white shadow transition hover:bg-sky-500 disabled:cursor-default disabled:opacity-90"
+        className="flex w-full items-center justify-between gap-3 press rounded-2xl bg-emerald-700 px-4 py-3 text-start text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-default disabled:opacity-90"
       >
         <span className="flex items-center gap-2">
           {busy === "sync" ? <Loader2 className="size-4 animate-spin" /> : <RadioTower className="size-4" />}
           {L("syncTelecom")}
         </span>
         {synced && (
-          <span className="flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[11px]">
+          <span className="inline-flex -rotate-3 items-center gap-1 rounded-md border-2 border-white/90 px-1.5 py-px text-[10px] font-extrabold uppercase tracking-[0.1em]">
             <CheckCircle2 className="size-3.5" /> {L("synced")}
           </span>
         )}
       </button>
       {synced && (
-        <p className="rounded-xl bg-emerald-500/10 px-3 py-2 font-mono text-[11px] text-emerald-300 ring-1 ring-emerald-400/25" dir="ltr">
+        <p className="rounded-xl border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 font-mono text-[11px] text-emerald-800 dark:text-emerald-300" dir="ltr">
           RPZ · {done[key("sync")] ?? `${c.domain} CNAME .`} · rpz.saqr-intel.ae
         </p>
       )}
@@ -84,14 +84,14 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
         type="button"
         disabled={busy !== null}
         onClick={() => run("warn", async () => (await broadcastWarning(warningFor(c))).warning.id)}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-crimson-600 px-4 py-3 text-start text-sm font-bold text-white shadow transition hover:bg-crimson-700 disabled:opacity-70"
+        className="flex w-full items-center justify-between gap-3 press rounded-2xl bg-gold-500 px-4 py-3 text-start text-sm font-bold text-navy-950 transition hover:brightness-105 disabled:opacity-70"
       >
         <span className="flex items-center gap-2">
           {busy === "warn" ? <Loader2 className="size-4 animate-spin" /> : <Megaphone className="size-4" />}
           {L("broadcast")}
         </span>
         {done[key("warn")] && (
-          <span className="flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11px] text-crimson-700">
+          <span className="inline-flex -rotate-3 items-center gap-1 rounded-md border-2 border-navy-950 px-1.5 py-px text-[10px] font-extrabold uppercase tracking-[0.1em]">
             <CheckCircle2 className="size-3.5" /> {L("broadcasted")}
           </span>
         )}
@@ -105,13 +105,13 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
             setDossier(await getTakedown(c.campaign_id));
           })
         }
-        className="flex w-full items-center gap-2 rounded-2xl bg-white px-4 py-3 text-start text-sm font-bold text-navy-900 shadow transition hover:bg-white/90 disabled:opacity-70"
+        className="flex w-full items-center gap-2 press rounded-2xl border border-line bg-canvas px-4 py-3 text-start text-sm font-bold text-ink transition hover:bg-muted disabled:opacity-70"
       >
         {busy === "dossier" ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
         {L("dossier")}
       </button>
 
-      {err && <p className="rounded-xl bg-crimson-600/20 px-3 py-2 text-xs text-red-200 ring-1 ring-crimson-600/40">{err}</p>}
+      {err && <p className="rounded-xl border border-scam/40 bg-scam/10 px-3 py-2 text-xs text-ink">{err}</p>}
 
       <DossierModal dossier={dossier} onClose={() => setDossier(null)} />
     </div>
@@ -153,7 +153,7 @@ function DossierModal({ dossier, onClose }: { dossier: TakedownDossier | null; o
               </div>
               <div className="text-end">
                 <p className="text-[11px] font-semibold uppercase text-ink-soft">Aman reference</p>
-                <p className="font-mono text-base font-extrabold text-crimson-600" dir="ltr">{d.aman_ref_id}</p>
+                <p className="font-mono text-base font-extrabold text-ink" dir="ltr">{d.aman_ref_id}</p>
               </div>
             </div>
             <dl>
