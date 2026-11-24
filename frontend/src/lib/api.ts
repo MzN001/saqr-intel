@@ -27,6 +27,7 @@ export type InterceptionChannel =
   | "AUTO_SMS_GUARD"
   | "CITIZEN_MANUAL_CHECK"
   | "PC_BROWSER_EXTENSION"
+  | "ANDROID_APP_GUARD"
   | "DIRECT_API"
   | "MANUAL";
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SAQR web blocker: window events of four browsers only. It looks up the address bar by view id
+     (flagReportViewIds) and never reads page content, passwords or typed text. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/web_service_description"
+    android:notificationTimeout="300"
+    android:packageNames="com.android.chrome,com.sec.android.app.sbrowser,org.mozilla.firefox,com.microsoft.emmx"
+    android:summary="@string/web_service_summary" />

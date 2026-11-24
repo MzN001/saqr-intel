@@ -274,6 +274,7 @@ const dict = {
   channelShare: { en: "Phone Share Sheet", ar: "قائمة المشاركة في الهاتف" },
   channelManual: { en: "Manual check", ar: "فحص يدوي" },
   channelPc: { en: "PC Browser Shield", ar: "درع متصفح الكمبيوتر" },
+  channelAndroid: { en: "Android Shield", ar: "درع أندرويد" },
   channelApi: { en: "Partner API", ar: "واجهة الشركاء" },
   smsIntro: {
     en: "A scam SMS arrives. SAQR scans it in the background and quarantines it before you can tap the link.",

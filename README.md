@@ -75,6 +75,11 @@ Code: `main.py`, `saqr/pipeline.py`, `saqr/intel/` (one module per stage), `saqr
   NextDNS denylist every 60 s and right after a high-risk scan; blocked visits can trigger a Web Push alert.
 - **Browser navigation**: the extension checks every page on navigation (fast check, deep scan only when
   suspicious) and replaces scams with a block page.
+- **Android app** (`android-app/`, native Kotlin): a message guard checks links and code requests in new SMS,
+  WhatsApp and email notifications (an on-device filter decides what is sent), and a web blocker reads only the
+  address bar of Chrome, Samsung Internet, Firefox and Edge and covers a high-risk site with a full-screen
+  "Blocked by SAQR-INTEL" screen (suspicious sites get a quieter alert). Both use `ANDROID_APP_GUARD` and need
+  the user's consent; see `android-app/README.md`.
 - **Telecom feed**: `GET /api/dns-blocklist` (JSON) and `?format=rpz` (zone file). Official, trusted and
   shared-hosting domains (vercel.app, onrender.com ...) are never published.
 
@@ -255,6 +260,7 @@ Cloud: `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=fals
 | Screenshots | Only with Playwright (laptop). Render has no browser: no screenshots, cloaking check = two HTTP views |
 | Search & Maps badges (extension) | Tested on saved HTML fixtures of Google, Bing and Maps, not yet against live Google markup |
 | SMS guard tab on `/citizen` | A simulated phone screen with a demo SMS (checked by `/api/analyze-message`); real messages are pasted or shared to the PWA (Android share target). SAQR cannot read a phone's SMS inbox |
+| Android app (message guard + web blocker) | Real scans against the SAQR API. Tested in the Android 16 emulator only (Google Messages, Chrome 133); not yet on a real phone, Samsung Internet, Firefox or Edge. Browser address-bar ids can change with browser updates; in-app web views are not covered. Sideloaded on Android 13+ it needs "Allow restricted settings" |
 | Demo scam sites (saqr-demo-scam.vercel.app, aed-refund-claim.vercel.app) | Harmless training replicas with an inert form |
 
 ## 10. Limitations and route to a police pilot

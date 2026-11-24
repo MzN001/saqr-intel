@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SAQR Shield</string>
+    <string name="brand_wordmark" translatable="false">SAQR صقر</string>
+
+    <string name="tab_shield">Shield</string>
+    <string name="tab_scanner">Scanner</string>
+    <string name="tab_alerts">Alerts</string>
+
+    <string name="notice_demo">Hackathon demo. Not an official government service.</string>
+    <string name="aman_footer">Aman 8002626 · SMS 2828</string>
+
+    <string name="language_pill">عربي</string>
+    <string name="cd_language_switch">Switch language to Arabic</string>
+    <string name="cd_theme_to_light">Switch to light theme</string>
+    <string name="cd_theme_to_dark">Switch to dark theme</string>
+
+    <!-- Common actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_save">Save</string>
+    <string name="action_warn_x">Warn others on X</string>
+    <string name="action_call_aman">Call Aman 8002626</string>
+    <string name="action_copy_report">Copy report</string>
+    <string name="action_false_alarm">Report a false alarm</string>
+    <string name="false_alarm_sending">Sending…</string>
+    <string name="false_alarm_retry">Could not send. Try again</string>
+    <string name="false_alarm_thanks">Thank you. SAQR officers will review it.</string>
+    <string name="toast_copied">Report copied</string>
+    <string name="toast_no_app">No app on this phone can open this</string>
+
+    <!-- Verdicts -->
+    <string name="verdict_safe">Safe</string>
+    <string name="verdict_suspicious">Suspicious</string>
+    <string name="verdict_scam">High-risk scam</string>
+    <string name="meter_safe">Safe</string>
+    <string name="meter_suspicious">Suspicious</string>
+    <string name="meter_scam">Scam</string>
+    <string name="verdict_verified">Verified official</string>
+    <string name="verdict_pretends">Pretends to be</string>
+    <string name="verdict_address">Web address</string>
+    <string name="verdict_official_site">Official website</string>
+    <string name="verdict_reasons">Why</string>
+    <string name="verdict_notes">Notes</string>
+    <string name="verdict_found">Found in the message</string>
+    <string name="verdict_link_official">Official</string>
+    <string name="verdict_link_not_checked">Not checked</string>
+    <string name="kind_web">Website check</string>
+    <string name="kind_maps">Maps listing check</string>
+    <string name="kind_message">Message check</string>
+    <string name="kind_email">Email check</string>
+    <string name="kind_phone">Phone number check</string>
+    <string name="instr_web_scam">Do not open it.</string>
+    <string name="instr_web_suspicious">Check before you tap. Do not enter any details.</string>
+    <string name="instr_web_safe">Safe to open</string>
+    <string name="instr_message_scam">Do not open it. Delete the message.</string>
+    <string name="instr_message_suspicious">Check before you tap. Do not reply with any details.</string>
+    <string name="instr_message_safe">No scam signs found.</string>
+    <string name="instr_phone_official">This is an official number.</string>
+    <string name="instr_phone_none">This number is not flagged. Still never share a code on a call.</string>
+    <string name="instr_phone_caution">Be careful. Do not share any codes or card details.</string>
+    <string name="instr_phone_danger">Do not call back. Do not share any details.</string>
+    <string name="phone_level_official">Official number</string>
+    <string name="phone_level_none">Not flagged</string>
+    <string name="phone_level_caution">Be careful</string>
+    <string name="phone_level_danger">Danger</string>
+    <string name="privacy_web">Only the web address is checked. SAQR keeps it and the result for 30 days (scam sites longer, as police evidence).</string>
+    <string name="privacy_message">We don\'t store the full message. If it is flagged, a short excerpt with numbers hidden is kept for 30 days.</string>
+    <string name="privacy_email">We don\'t store the full email. The sender, subject and a short excerpt are kept for 30 days.</string>
+    <string name="privacy_phone">Only the number is checked. It is not saved.</string>
+
+    <!-- Scanner -->
+    <string name="scan_title">Is this link safe to open?</string>
+    <string name="scan_hint">Paste a link, text message, or email before you open it.</string>
+    <string name="mode_auto">Auto</string>
+    <string name="mode_web">Web</string>
+    <string name="mode_message">Message</string>
+    <string name="mode_email">Email</string>
+    <string name="mode_phone">Phone</string>
+    <string name="mode_maps">Maps</string>
+    <string name="scan_input_label">What to check</string>
+    <string name="ph_auto">Paste a link, message, email or number</string>
+    <string name="ph_web">https://…</string>
+    <string name="ph_message">Paste the SMS or WhatsApp message</string>
+    <string name="ph_email">Paste the email (From, Subject and text)</string>
+    <string name="ph_phone">+971 …</string>
+    <string name="ph_maps">Google Maps link or business name</string>
+    <string name="scan_sender">Sender (optional)</string>
+    <string name="scan_maps_website">Website on the listing (optional)</string>
+    <string name="scan_maps_phone">Phone on the listing (optional)</string>
+    <string name="scan_check">Check</string>
+    <string name="scan_checking">Checking…</string>
+    <string name="scan_waking">The server is waking up — this can take up to a minute.</string>
+    <string name="scan_try">Try an example</string>
+    <string name="sample_tamm">Try a fake TAMM fine</string>
+    <string name="sample_bank_email">Spoofed bank email</string>
+    <string name="sample_official">Official AD Police</string>
+    <string name="scan_last">Last check</string>
+    <string name="scan_view_details">View details</string>
+    <string name="err_empty">Paste something to check first.</string>
+    <string name="err_rate_limited">Too many checks in a minute. Wait a moment and try again.</string>
+    <string name="err_waking">The server is still waking up. Try again in a moment.</string>
+    <string name="err_failed">Could not check right now. Check your internet and try again.</string>
+    <string name="err_invalid">The server could not check this: %1$s</string>
+
+    <!-- Shield -->
+    <string name="shield_heading">Shield</string>
+    <string name="api_pill">API server</string>
+    <string name="status_protected">Protected</string>
+    <string name="status_protected_sub">Scam messages are checked as they arrive.</string>
+    <string name="status_action_needed">Action needed</string>
+    <string name="status_action_sub">Finish the steps below to protect this phone.</string>
+    <string name="metric_blocked">Blocked today</string>
+    <string name="metric_checked">Checked today</string>
+    <string name="steps_title">Protect this phone in 3 steps</string>
+    <string name="step1_title">Alert notifications</string>
+    <string name="step1_body">Let SAQR warn you the moment a scam message arrives.</string>
+    <string name="step1_button">Allow notifications</string>
+    <string name="step1_done">Alert notifications are on</string>
+    <string name="step2_title">Message guard</string>
+    <string name="step2_body">Checks links in SMS, WhatsApp and email notifications before you tap them.</string>
+    <string name="step2_button">Turn on message guard</string>
+    <string name="step2_done">Message guard is on</string>
+    <string name="step3_title">Web blocker</string>
+    <string name="step3_recommended">Recommended</string>
+    <string name="step3_body">Checks the websites you open in Chrome, Samsung Internet, Firefox and Edge, and blocks scam sites before you type anything.</string>
+    <string name="step3_button">Turn on web blocker</string>
+    <string name="step3_done">Web blocker is on</string>
+    <string name="step3_restricted">Switch greyed out (Android 13+)? Open Settings > Apps > SAQR Shield, tap ⋮ at the top > Allow restricted settings, then turn on SAQR web blocker again.</string>
+    <string name="web_consent_title">Turn on web blocker?</string>
+    <string name="web_consent_body">SAQR reads only the address bar (the web address) of Chrome, Samsung Internet, Firefox and Edge. It never reads the page itself, passwords or anything you type.\n\nThe web address is sent to the SAQR server to be checked. Official UAE sites, local addresses and sites you chose to open anyway are not sent. Nothing else leaves your phone.\n\nA scam site is covered by a full-screen warning; a suspicious one gets a quieter alert.\n\nNext, Android opens Accessibility settings: tap SAQR web blocker and switch it on. To turn it off, switch it off there, or tap the web blocker pill here.</string>
+    <string name="web_manage_title">Web blocker</string>
+    <string name="web_manage_body">The web blocker checks the address of sites you open in Chrome, Samsung Internet, Firefox and Edge. To stop it, turn it off here and switch off SAQR web blocker in Settings > Accessibility.</string>
+    <string name="web_service_label">SAQR web blocker</string>
+    <string name="web_service_summary">Blocks scam websites in Chrome, Samsung Internet, Firefox and Edge.</string>
+    <string name="web_service_description">SAQR reads ONLY the browser\'s address bar to check the website you open with the SAQR server. It never reads page content, passwords or text you type. Works in Chrome, Samsung Internet, Firefox and Edge.</string>
+
+    <!-- Block screen -->
+    <string name="block_title">Blocked by SAQR-INTEL</string>
+    <string name="block_sub">This website is a high-risk scam. SAQR stopped it before you could enter any details.</string>
+    <string name="block_risk">risk</string>
+    <string name="block_close">Close &amp; stay safe</string>
+    <string name="block_warn_x">Warn community on X</string>
+    <string name="block_continue">Continue anyway</string>
+    <string name="block_continue_confirm">Tap again to open this scam site</string>
+    <string name="block_privacy">Only the web address was checked. Nothing on the page was read.</string>
+    <string name="notif_kind_web">website</string>
+    <string name="notif_title_web_caution">Suspicious website · %1$s%% risk</string>
+    <string name="notif_title_web_scam">Scam website blocked · %1$s%% risk</string>
+    <string name="consent_title">Turn on message guard?</string>
+    <string name="consent_body">SAQR reads new notifications from these apps only: Messages (Google, Samsung), Gmail, Outlook, WhatsApp, WhatsApp Business and Telegram.\n\nThe check starts on your phone. Only a message with a link, a phone number with a claim (fine, bank, prize…), or a request for a code, PIN or card details is sent to the SAQR server. Codes in it are hidden first. The sender is sent only when it is a phone number or a business sender name. Ordinary chats never leave your phone.\n\nThis phone keeps your last 50 alerts (web address, result, reasons), never the message text or the sender. The server keeps flagged results for 30 days.\n\nTurn it off any time here, or in Settings > Notification access.</string>
+    <string name="consent_accept">I agree, continue</string>
+    <string name="consent_decline">Not now</string>
+    <string name="guard_manage_title">Message guard</string>
+    <string name="guard_manage_body">The guard checks new messages from messaging and mail apps. To stop it, turn it off here and remove SAQR from Notification access.</string>
+    <string name="guard_turn_off">Turn off</string>
+    <string name="guard_service_label">SAQR message guard</string>
+
+    <!-- API server dialog -->
+    <string name="api_title">API server</string>
+    <string name="api_hint">The SAQR server this app checks with. HTTPS only.</string>
+    <string name="api_hint_debug">The SAQR server this app checks with. HTTPS, or http://10.0.2.2:8011 for a local backend in the emulator.</string>
+    <string name="api_label">Base URL</string>
+    <string name="api_invalid">Use an https:// address (debug: http://10.0.2.2, localhost or 127.0.0.1).</string>
+    <string name="api_ping">Ping /health</string>
+    <string name="api_ping_running">Checking…</string>
+    <string name="api_ping_ok">Online · %1$s ms</string>
+    <string name="api_ping_waking">Waking up, try again</string>
+    <string name="api_ping_failed">Not reachable</string>
+    <string name="api_reset">Reset to default</string>
+
+    <!-- Alerts -->
+    <string name="alerts_title">Alerts</string>
+    <string name="alerts_body">Scam and suspicious messages SAQR warned you about will be listed here.</string>
+    <string name="alerts_empty">No scam alerts yet.</string>
+    <string name="alerts_clear">Clear all</string>
+    <string name="alerts_clear_title">Clear all alerts?</string>
+    <string name="alerts_clear_body">This removes the alert list from this phone.</string>
+    <string name="alerts_fake_entity">Fake %1$s message</string>
+    <string name="alerts_text_message">Text message</string>
+    <string name="chip_sms">SMS</string>
+    <string name="chip_whatsapp">WhatsApp</string>
+    <string name="chip_email">Email</string>
+    <string name="chip_web">Web</string>
+    <string name="chip_manual">Manual check</string>
+    <string name="chip_message">Message</string>
+
+    <!-- Notifications (title and text are one line each) -->
+    <string name="notif_channel_alerts">Scam alerts</string>
+    <string name="notif_channel_alerts_desc">A message with a scam link or a code request arrived.</string>
+    <string name="notif_channel_cautions">Check before you tap</string>
+    <string name="notif_channel_cautions_desc">A message looks suspicious.</string>
+    <string name="notif_kind_sms">SMS</string>
+    <string name="notif_kind_whatsapp">WhatsApp</string>
+    <string name="notif_kind_email">Email</string>
+    <string name="notif_kind_message">Message</string>
+    <string name="notif_title_scam">Scam %1$s blocked · %2$s%% risk</string>
+    <string name="notif_title_caution">Suspicious %1$s · %2$s%% risk</string>
+    <string name="notif_text_entity_link">Fake %1$s link (%2$s)</string>
+    <string name="notif_text_link_scam">Scam link (%1$s)</string>
+    <string name="notif_text_link_caution">Check this link first (%1$s)</string>
+    <string name="notif_text_entity_code">Fake %1$s message asking for your code</string>
+    <string name="notif_text_entity">Fake %1$s message</string>
+    <string name="notif_text_code">Message asking for your code</string>
+    <string name="notif_text_generic_scam">Message with scam warning signs</string>
+    <string name="notif_text_generic_caution">Check this message before you reply</string>
+    <string name="notif_action_view">View details</string>
+    <string name="notif_action_x">Warn on X</string>
+</resources>

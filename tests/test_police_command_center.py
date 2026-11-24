@@ -57,6 +57,30 @@ def test_citizen_scan_updates_kpis_stream_and_ws(client):
     assert s["recent_events"][0]["channel"] == "PC_BROWSER_EXTENSION"
 
 
+def test_android_app_guard_channel_is_accepted_and_kept(client):
+    """The native Android app (android-app/) sends ANDROID_APP_GUARD; the stream keeps it, not CITIZEN_MANUAL_CHECK."""
+    r = client.post("/api/analyze-url", json={"url": "http://127.0.0.1:8000/mock-scam/tamm-fine", "run_sandbox": False,
+                                              "interception_channel": "ANDROID_APP_GUARD"})
+    assert r.status_code == 200 and r.json()["verdict"] != "SAFE"
+    assert r.json()["interception_channel"] == "ANDROID_APP_GUARD"
+    assert client.get("/api/police/state").json()["recent_events"][0]["channel"] == "ANDROID_APP_GUARD"
+
+    m = client.post("/api/analyze-message", json={
+        "text": "Emirates Post: Parcel held at Abu Dhabi customs. Pay AED 14.50 at "
+                "http://127.0.0.1:8000/mock-scam/emiratespost", "sender": "EmiratesPost",
+        "interception_channel": "ANDROID_APP_GUARD"})
+    assert m.status_code == 200 and m.json()["verdict"] != "SAFE"
+    assert m.json()["interception_channel"] == "ANDROID_APP_GUARD"
+    events = client.get("/api/police/state").json()["recent_events"]
+    assert any(e["channel"] == "ANDROID_APP_GUARD" and e["kind"] == "message" for e in events)
+
+
+def test_unknown_interception_channel_is_rejected(client):
+    for path, body in (("/api/analyze-url", {"url": "https://example.com/", "run_sandbox": False}),
+                       ("/api/analyze-message", {"text": "hello"})):
+        assert client.post(path, json={**body, "interception_channel": "ANDROID_APP_GUARDX"}).status_code == 422
+
+
 def test_safe_scan_does_not_count(client):
     before = client.get("/api/police/state").json()["kpis"]["citizens_protected"]
     client.post("/api/analyze-url", json={"url": "https://www.adpolice.gov.ae/", "run_sandbox": False})

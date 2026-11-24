@@ -10,6 +10,7 @@ export type PoliceChannel =
   | "CITIZEN_MANUAL_CHECK"
   | "MOBILE_OS_SHARE_SHEET"
   | "PC_BROWSER_EXTENSION"
+  | "ANDROID_APP_GUARD"
   | "X_COMMUNITY_ALERT";
 
 export type CampaignStatus = "ACTIVE" | "SYNCED_TO_TELECOM_DNS" | "COMMUNITY_FLAGGED_X";
@@ -421,6 +422,7 @@ export const CHANNEL_LABEL: Record<string, { en: string; ar: string; tone: strin
   CITIZEN_MANUAL_CHECK: { en: "Citizen Check", ar: "فحص المواطن", tone: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30", short: { en: "Check", ar: "فحص" } },
   MOBILE_OS_SHARE_SHEET: { en: "Share Sheet", ar: "قائمة المشاركة", tone: "bg-teal-500/15 text-teal-300 ring-teal-400/30", short: { en: "Share", ar: "مشاركة" } },
   PC_BROWSER_EXTENSION: { en: "PC Extension", ar: "إضافة المتصفح", tone: "bg-amber-500/15 text-amber-300 ring-amber-400/30", short: { en: "Browser", ar: "متصفح" } },
+  ANDROID_APP_GUARD: { en: "Android Shield", ar: "درع أندرويد", tone: "bg-lime-500/15 text-lime-300 ring-lime-400/30", short: { en: "Android", ar: "أندرويد" } },
   X_COMMUNITY_ALERT: { en: "X Community Alert", ar: "تنبيه مجتمعي على X", tone: "bg-white/10 text-white ring-white/25", short: { en: "X alert", ar: "تنبيه X" } },
 };
 

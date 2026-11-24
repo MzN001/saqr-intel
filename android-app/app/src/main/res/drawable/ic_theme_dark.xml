@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Theme toggle: moon (switch to dark). Hand-drawn 24dp glyph; tinted by Compose. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M20,14.5 C18.9,15 17.7,15.2 16.5,15.2 C12.1,15.2 8.6,11.7 8.6,7.3 C8.6,6.1 8.9,4.9 9.4,3.9 C6.2,5.1 4,8.2 4,11.8 C4,16.4 7.6,20 12.2,20 C15.8,20 18.8,17.7 20,14.5 Z" />
+</vector>
