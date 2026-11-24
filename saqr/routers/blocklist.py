@@ -20,7 +20,7 @@ from fastapi.responses import PlainTextResponse
 from .. import self_hosts
 from ..config import settings
 from ..db import db, iso
-from ..intel.domain_intel import analyze_lexical
+from ..intel.domain_intel import official_match
 from ..seed_data import DEMO_INTEL
 
 router = APIRouter(prefix="/api", tags=["Telecom DNS feed"])
@@ -43,7 +43,9 @@ def _publishable(domain: str | None) -> str | None:
         d = d[4:]
     if not HOSTNAME.match(d) or d.endswith((".localhost", ".local", ".internal")):
         return None
-    if d in SHARED_HOSTING_ROOTS or analyze_lexical(d).is_whitelisted:  # never block official / trusted UAE sites
+    # never block official / trusted sites; a cheap registry lookup (the full lexical analysis here ran on
+    # every listed domain every few seconds and saturated Render's 0.1 CPU)
+    if d in SHARED_HOSTING_ROOTS or official_match(d):
         return None
     return d
 
