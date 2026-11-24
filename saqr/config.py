@@ -95,6 +95,29 @@ class Settings:
     ct_sim_interval_s: float = _float("CT_SIM_INTERVAL_SECONDS", 12.0)
     ct_alert_threshold: int = _int("CT_ALERT_THRESHOLD", 45)
 
+    # --- Proactive hunter -------------------------------------------------------
+    # live | simulated | off. Finds scam domains before any citizen sees them (saqr/intel/hunter.py).
+    # OFFLINE_MODE turns live into simulated (synthetic, labelled leads; no network).
+    hunter_mode: str = os.getenv("HUNTER_MODE", "live").strip().lower()
+    hunter_sources: list[str] = field(default_factory=lambda: _list("HUNTER_SOURCES", "lookalike_sweep,crtsh,ct,nrd"))
+    hunter_interval_s: float = _float("HUNTER_INTERVAL_SECONDS", 900.0)
+    hunter_start_delay_s: float = _float("HUNTER_START_DELAY_SECONDS", 45.0)
+    hunter_sim_interval_s: float = _float("HUNTER_SIM_INTERVAL_SECONDS", 120.0)
+    # Limits that keep a 512 MB single-worker host alive.
+    hunter_max_scans_per_cycle: int = _int("HUNTER_MAX_SCANS_PER_CYCLE", 12)
+    hunter_scan_concurrency: int = _int("HUNTER_SCAN_CONCURRENCY", 2)
+    hunter_scan_timeout_s: float = _float("HUNTER_SCAN_TIMEOUT_SECONDS", 75.0)
+    hunter_lookalikes_per_brand: int = _int("HUNTER_LOOKALIKES_PER_BRAND", 300)
+    hunter_sweep_batch: int = _int("HUNTER_SWEEP_BATCH", 600)  # look-alike names resolved per cycle
+    hunter_dns_concurrency: int = _int("HUNTER_DNS_CONCURRENCY", 25)
+    hunter_triage_threshold: int = _int("HUNTER_TRIAGE_THRESHOLD", 35)  # lexical + URL-model score to earn a full scan
+    hunter_use_llm: bool = _bool("HUNTER_USE_LLM", False)  # off: the hunt must not spend the citizens' LLM quota
+    hunter_crtsh_queries: int = _int("HUNTER_CRTSH_QUERIES", 3)  # crt.sh keyword searches per cycle
+    hunter_crtsh_timeout_s: float = _float("HUNTER_CRTSH_TIMEOUT_SECONDS", 60.0)
+    hunter_crtsh_max_age_hours: float = _float("HUNTER_CRTSH_MAX_AGE_HOURS", 168.0)
+    # A mild warning on a domain older than this is treated as an unrelated established site.
+    hunter_established_days: int = _int("HUNTER_ESTABLISHED_DAYS", 730)
+
     # --- NextDNS phone shield sync --------------------------------------------
     # SAQR's high-risk domains are pushed to this NextDNS profile's denylist, so phones using it
     # (iPhone profile / Android Private DNS) block them in every app.

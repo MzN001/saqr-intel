@@ -28,6 +28,16 @@ services:
         value: "false"
       - key: CT_MODE                    # simulated certificate feed for the demo radar
         value: simulated
+      - key: HUNTER_MODE                # proactive hunter: real look-alike / crt.sh / new-domain leads
+        value: live
+      - key: HUNTER_MAX_SCANS_PER_CYCLE # 512 MB, one worker: few full scans per 15-minute cycle
+        value: "8"
+      - key: HUNTER_SCAN_CONCURRENCY
+        value: "1"
+      - key: HUNTER_SWEEP_BATCH
+        value: "400"
+      - key: HUNTER_DNS_CONCURRENCY
+        value: "15"
       - key: DATABASE_PATH              # free tier disk is wiped on every restart / deploy
         value: ./data/saqr_intel.db
       - key: CORS_ORIGINS

@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "SAQR-INTEL | Citizen Web & Maps Scam Shield",
   "short_name": "SAQR Shield",
-  "version": "1.2.0",
-  "description": "Real-time Abu Dhabi Police scam protection for Chrome & Edge. Checks every website, Google Maps link and Gmail / Outlook email with SAQR-INTEL before you type anything.",
+  "version": "1.3.0",
+  "description": "Real-time Abu Dhabi Police scam protection for Chrome & Edge. Checks every website, Google / Bing search result, ad and Google Maps card, and Gmail / Outlook email with SAQR-INTEL before you click or type anything.",
   "permissions": [
     "webNavigation",
     "tabs",
@@ -78,6 +78,35 @@
       "js": [
         "lib/config.js",
         "content/wip.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.google.com/*",
+        "https://www.google.ae/*",
+        "https://www.google.com.sa/*",
+        "https://www.google.com.qa/*",
+        "https://www.google.com.kw/*",
+        "https://www.google.com.om/*",
+        "https://www.google.com.bh/*",
+        "https://www.google.com.eg/*",
+        "https://www.google.co.uk/*",
+        "https://www.google.co.in/*",
+        "https://www.google.com.pk/*",
+        "https://www.google.com.ph/*",
+        "https://www.google.de/*",
+        "https://www.google.fr/*",
+        "https://www.google.ca/*",
+        "https://www.google.com.au/*",
+        "https://www.bing.com/*"
+      ],
+      "js": [
+        "lib/search_core.js",
+        "content/search.js"
+      ],
+      "css": [
+        "content/search.css"
       ],
       "run_at": "document_idle"
     }

@@ -67,8 +67,44 @@ export interface OfficialWarning {
   verified: boolean;
 }
 
+export type HunterSource = "lookalike_sweep" | "nrd" | "ct" | "crtsh";
+export type HunterMode = "live" | "simulated" | "off";
+
+/** A Proactive Hunter detection (saqr/intel/hunter.latest_detections + citizen_visits_blocked). */
+export interface ProactiveDetection {
+  id: number;
+  domain: string;
+  defanged_domain: string;
+  source: HunterSource | string;
+  first_seen: string;
+  scanned_at: string | null;
+  score: number;
+  triage_score: number;
+  verdict: string;
+  status: "confirmed" | "suspicious" | "cleared";
+  entity: string | null;
+  flags: string[];
+  domain_age_hours: number | null;
+  registrar: string | null;
+  scan_id: string | null;
+  simulated: boolean;
+  citizen_visits: number;
+  citizen_visits_blocked?: number;
+  lead_time_hours: number | null;
+  hours_since_detection: number | null;
+  published_to_blocklist?: boolean;
+}
+
 export interface PoliceState {
-  kpis: { citizens_protected: number; active_entities: number; hijacked_pins: number; x_alerts_dispatched: number };
+  kpis: {
+    citizens_protected: number;
+    active_entities: number;
+    hijacked_pins: number;
+    x_alerts_dispatched: number;
+    pre_victim_detections?: number;
+  };
+  proactive_detections?: ProactiveDetection[];
+  hunter_mode?: HunterMode;
   campaigns: Campaign[];
   recent_events: PoliceEvent[];
   map_pins: MapPin[];
@@ -100,6 +136,138 @@ export interface TakedownDossier {
   last_seen: string;
   requested_actions: string[];
   generated_at: string;
+  scan_id?: string | null;
+  evidence?: EvidenceDossier | null;
+}
+
+export interface DossierFlag {
+  code: string;
+  severity: string;
+  points?: number;
+  en: string;
+  ar: string;
+}
+
+export interface RedirectHop {
+  url: string;
+  host: string | null;
+  status: number | null;
+  via: string | null;
+  risk: string | null;
+  note: string | null;
+}
+
+export interface DetectionContext {
+  detection_id: number;
+  domain: string;
+  defanged_domain: string;
+  source: string;
+  source_label: string;
+  first_seen: string;
+  scanned_at: string | null;
+  status: string;
+  triage_score: number;
+  score: number;
+  verdict: string | null;
+  entity: string | null;
+  domain_age_hours: number | null;
+  registrar: string | null;
+  ip: string | null;
+  asn: string | null;
+  scan_id: string | null;
+  simulated: boolean;
+  citizen_visits: number;
+  citizen_visits_blocked: number;
+  first_citizen_at: string | null;
+  lead_time_hours: number | null;
+  hours_since_detection: number | null;
+}
+
+/** saqr/intel/takedown.build_dossier: the full evidence record of one flagged scan. */
+export interface EvidenceDossier {
+  dossier_id: string;
+  case_reference: string;
+  classification: string;
+  generated_at: string;
+  generated_by: string;
+  scan_id: string;
+  summary: {
+    target: string | null;
+    target_defanged: string;
+    verdict: string;
+    risk_score: number;
+    impersonated_entity: string | null;
+    official_domains: string[];
+    harvested_data_types: string[];
+    citizen_reports: number;
+    narrative_en?: string | null;
+  };
+  whois: {
+    registrar: string | null;
+    creation_date: string | null;
+    domain_age_hours: number | null;
+    registrant_country: string | null;
+    abuse_contacts: string[];
+    name_servers: string[];
+  };
+  dns: { a: string[]; aaaa: string[]; mx: string[]; ns: string[]; status: string | null };
+  network: { ip_addresses: string[]; asn: string | null; asn_org: string | null; country: string | null; prefix: string | null };
+  tls: { issuer: string | null; not_before: string | null; cert_age_hours: number | null; sha256: string | null; valid: boolean | null };
+  sandbox_evidence: {
+    input_domain?: string | null;
+    final_url: string | null;
+    redirect_chain: RedirectHop[];
+    http_status?: number | null;
+    page_title: string | null;
+    screenshot_available?: boolean;
+    screenshot_note?: string | null;
+  };
+  detection?: DetectionContext | null;
+  timestamps?: { first_seen: string; scanned_at: string; generated_at: string; timezone: string };
+  red_flags: DossierFlag[];
+  evidence_integrity: Record<string, string | null>;
+  timeline: { ts: string; event: string; source: string }[];
+  recommended_actions: { priority: number; action: string; addressee: string }[];
+  notices: { registrar_abuse: string; hosting_abuse: string };
+  syndicate?: { id: string; name: string; name_ar?: string } | null;
+}
+
+export interface DetectionDossier {
+  detection: DetectionContext;
+  triage_reasons: DossierFlag[];
+  evidence: EvidenceDossier | null;
+  note: string | null;
+  generated_at: string;
+}
+
+/** GET /api/model/metrics: every field optional (the endpoint may be missing: card hidden). */
+export interface ModelMetrics {
+  model?: { name?: string; version?: string; trained_at?: string; training_rows?: number };
+  datasets?: { name?: string; rows?: number }[];
+  holdout?: { name?: string; rows?: number; precision?: number; recall?: number; f1?: number; fpr?: number; threshold?: number };
+  fp_suite?: {
+    rows?: number;
+    false_positives?: number;
+    by_source?: Record<string, { rows?: number; warn_30?: number; block_65?: number }>;
+  };
+  live?: { rows?: number; date?: string; no_feeds?: { warn_30?: CutMetrics; block_65?: CutMetrics } };
+}
+
+export interface CutMetrics {
+  precision?: number;
+  recall?: number;
+  f1?: number;
+  fpr?: number;
+}
+
+export interface SweepCycle {
+  leads?: number;
+  scanned?: number;
+  confirmed?: number;
+  suspicious?: number;
+  cleared?: number;
+  finished_at?: string;
+  skipped?: string;
 }
 
 /* ---------- API ---------- */
@@ -123,6 +291,24 @@ export const syncTelecom = (campaign_id: string, domain: string) =>
 export const broadcastWarning = (w: { title_en: string; title_ar: string; message_en: string; message_ar: string; domain: string | null }) =>
   call<{ ok: boolean; warning: OfficialWarning }>("/api/police/broadcast-warning", { method: "POST", body: JSON.stringify(w) });
 export const getTakedown = (campaignId: string) => call<TakedownDossier>(`/api/police/takedown/${encodeURIComponent(campaignId)}`);
+export const getDetectionDossier = (id: number) => call<DetectionDossier>(`/api/police/detections/${id}/dossier`);
+export const evidencePackUrl = (dossierId: string) => apiUrl(`/api/dossiers/${encodeURIComponent(dossierId)}/evidence-pack`);
+export const screenshotUrl = (scanId: string) => apiUrl(`/api/scans/${encodeURIComponent(scanId)}/screenshot`);
+export const startHunterSweep = () =>
+  call<{ started: boolean; reason?: string; mode: HunterMode; cycle: SweepCycle | null }>("/api/hunter/sweep", { method: "POST" });
+export const getHunterStatus = () => call<{ mode: HunterMode; cycle_running: boolean; last_cycle: SweepCycle | null }>("/api/hunter/status");
+
+/** null when the backend has no metrics endpoint (404) or is unreachable: the card is then hidden. */
+export async function getModelMetrics(): Promise<ModelMetrics | null> {
+  try {
+    const res = await fetch(apiUrl("/api/model/metrics"), { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as unknown;
+    return body && typeof body === "object" ? (body as ModelMetrics) : null;
+  } catch {
+    return null;
+  }
+}
 export const getLatestWarning = () => call<{ warning: OfficialWarning | null }>("/api/police/warning/latest");
 
 /** Citizen side: count an X warning on /police. Fire-and-forget; never blocks or throws. */
@@ -181,7 +367,7 @@ export function usePoliceLive() {
 
     const connect = () => {
       try {
-        ws = new WebSocket(`${getWsUrl()}?topics=police,url_scan,maps_scan`);
+        ws = new WebSocket(`${getWsUrl()}?topics=police,url_scan,maps_scan,hunter.cycle`);
       } catch {
         return;
       }
@@ -197,7 +383,7 @@ export function usePoliceLive() {
             const ev = msg.data as PoliceEvent;
             setState((s) => (s ? { ...s, recent_events: [ev, ...s.recent_events.filter((e) => e.id !== ev.id)].slice(0, 25) } : s));
           }
-          if (msg.event.startsWith("police.") || msg.event.endsWith(".completed")) refreshSoon();
+          if (msg.event.startsWith("police.") || msg.event.endsWith(".completed") || msg.event === "hunter.cycle") refreshSoon();
         } catch {
           /* ignore */
         }
@@ -281,4 +467,133 @@ export const P = {
   loading: { en: "Connecting to the SAQR-INTEL backend…", ar: "جارٍ الاتصال بخادم صقر…" },
   failed: { en: "Action failed", ar: "فشل الإجراء" },
   registry: { en: "Registry check", ar: "التحقق من السجل الرسمي" },
+
+  /* Proactive Hunt */
+  hunt: { en: "Proactive Hunt · caught before any citizen visited", ar: "الصيد الاستباقي · رُصدت قبل أن يزورها أي مواطن" },
+  huntHint: {
+    en: "SAQR searches look-alike names, newly registered domains and certificate logs on its own, before anyone reports them.",
+    ar: "يبحث صقر بنفسه في النطاقات الشبيهة والنطاقات المسجّلة حديثاً وسجلات الشهادات، قبل أن يبلّغ عنها أحد.",
+  },
+  kPreVictim: { en: "Threats Caught Pre-Victim", ar: "تهديدات رُصدت قبل وقوع ضحايا" },
+  srcLookalike: { en: "Look-alike sweep", ar: "مسح النطاقات الشبيهة" },
+  srcNrd: { en: "Newly registered", ar: "مسجّل حديثاً" },
+  srcCt: { en: "CT log", ar: "سجل شفافية الشهادات" },
+  srcCrtsh: { en: "crt.sh", ar: "crt.sh" },
+  simulated: { en: "SIMULATED", ar: "محاكاة" },
+  simulatedHint: {
+    en: "Simulated mode: synthetic demo leads, clearly labelled and never published to any blocklist.",
+    ar: "وضع المحاكاة: نطاقات تجريبية مُعلَّمة بوضوح ولا تُنشر في أي قائمة حظر.",
+  },
+  liveHunt: { en: "LIVE SOURCES", ar: "مصادر حقيقية" },
+  hunterOff: { en: "The proactive hunter is switched off on this server.", ar: "الصيد الاستباقي متوقف على هذا الخادم." },
+  detected: { en: "Detected", ar: "رُصد" },
+  domainAge: { en: "Domain age", ar: "عمر النطاق" },
+  citizensMet: { en: "Citizens who met it since", ar: "مواطنون صادفوه منذ ذلك" },
+  allBlocked: { en: "all blocked", ar: "حُظروا جميعاً" },
+  blockedOf: { en: "blocked", ar: "محظور" },
+  noCitizenYet: { en: "No citizen has seen it yet", ar: "لم يصادفه أي مواطن بعد" },
+  leadTime: { en: "Lead time before the first citizen", ar: "الفارق الزمني قبل أول مواطن" },
+  hoursShort: { en: "h", ar: "س" },
+  daysShort: { en: "d", ar: "ي" },
+  runSweep: { en: "Run sweep now", ar: "تشغيل المسح الآن" },
+  sweeping: { en: "Sweeping…", ar: "جارٍ المسح…" },
+  sweepDone: { en: "Sweep finished", ar: "اكتمل المسح" },
+  sweepLeads: { en: "leads", ar: "نطاقات مرشّحة" },
+  sweepScanned: { en: "scanned", ar: "تم فحصها" },
+  sweepConfirmed: { en: "confirmed", ar: "مؤكدة" },
+  noDetections: { en: "No proactive detections yet. Run a sweep.", ar: "لا توجد عمليات رصد استباقي بعد. شغّل المسح." },
+  statusConfirmed: { en: "Confirmed scam", ar: "احتيال مؤكد" },
+  statusSuspicious: { en: "Suspicious", ar: "مشبوه" },
+  openDossier: { en: "Evidence dossier", ar: "ملف الأدلة" },
+
+  /* Evidence dossier */
+  loadingDossier: { en: "Building the evidence dossier…", ar: "جارٍ إعداد ملف الأدلة…" },
+  caseRef: { en: "Case reference", ar: "رقم القضية" },
+  amanRef: { en: "Aman reference", ar: "مرجع أمان" },
+  riskScore: { en: "Risk score", ar: "درجة الخطورة" },
+  reasons: { en: "Why this score: every reason", ar: "سبب هذه الدرجة: جميع الأسباب" },
+  triageReasons: { en: "Triage reasons (offline rules + URL model)", ar: "أسباب الفرز (قواعد محلية + نموذج الروابط)" },
+  pts: { en: "pts", ar: "نقطة" },
+  whois: { en: "WHOIS & registrar", ar: "بيانات WHOIS والمسجّل" },
+  registrar: { en: "Registrar", ar: "المسجّل" },
+  registered: { en: "Registered", ar: "تاريخ التسجيل" },
+  registrantCountry: { en: "Registrant country", ar: "دولة المسجِّل" },
+  abuseContacts: { en: "Abuse contacts", ar: "جهات الإبلاغ عن الإساءة" },
+  nameServers: { en: "Name servers", ar: "خوادم الأسماء" },
+  hostingTitle: { en: "Hosting · IP · ASN", ar: "الاستضافة · IP · ASN" },
+  ipAddresses: { en: "IP addresses", ar: "عناوين IP" },
+  asn: { en: "ASN", ar: "ASN" },
+  country: { en: "Country", ar: "الدولة" },
+  mx: { en: "Mail servers (MX)", ar: "خوادم البريد (MX)" },
+  tls: { en: "TLS certificate", ar: "شهادة TLS" },
+  issuer: { en: "Issuer", ar: "الجهة المُصدِرة" },
+  issued: { en: "Issued", ar: "تاريخ الإصدار" },
+  certAge: { en: "Certificate age", ar: "عمر الشهادة" },
+  fingerprint: { en: "SHA-256 fingerprint", ar: "بصمة SHA-256" },
+  redirectChain: { en: "Redirect chain", ar: "سلسلة إعادة التوجيه" },
+  noRedirects: { en: "No redirects: the link opens this page directly.", ar: "لا توجد إعادة توجيه: الرابط يفتح الصفحة مباشرة." },
+  screenshot: { en: "Sandbox screenshot", ar: "لقطة شاشة من بيئة العزل" },
+  noShotCloud: {
+    en: "No screenshot in cloud mode: the page was fetched over HTTP only (no browser sandbox on the free server).",
+    ar: "لا توجد لقطة شاشة في الوضع السحابي: جُلبت الصفحة عبر HTTP فقط (لا يوجد متصفح عزل على الخادم المجاني).",
+  },
+  noShotFast: { en: "No screenshot: this was a fast scan without the browser sandbox.", ar: "لا توجد لقطة شاشة: كان فحصاً سريعاً دون متصفح العزل." },
+  noShotUnavailable: {
+    en: "No screenshot: the browser sandbox is not available on this server.",
+    ar: "لا توجد لقطة شاشة: متصفح العزل غير متاح على هذا الخادم.",
+  },
+  noShotFailed: { en: "No screenshot: the page did not render in the sandbox.", ar: "لا توجد لقطة شاشة: لم تُعرض الصفحة في بيئة العزل." },
+  timestamps: { en: "Timestamps (UTC, ISO 8601)", ar: "الطوابع الزمنية (UTC، ISO 8601)" },
+  firstSeen: { en: "First seen", ar: "أول رصد" },
+  scannedAt: { en: "Scanned", ar: "وقت الفحص" },
+  generatedAt: { en: "Dossier generated", ar: "وقت إنشاء الملف" },
+  hashes: { en: "Evidence integrity (SHA-256)", ar: "سلامة الأدلة (SHA-256)" },
+  timeline: { en: "Timeline (UTC)", ar: "التسلسل الزمني (UTC)" },
+  notices: { en: "Ready-to-send abuse notices", ar: "إشعارات إساءة جاهزة للإرسال" },
+  registrarNotice: { en: "Registrar abuse notice", ar: "إشعار إلى المسجّل" },
+  hostingNotice: { en: "Hosting abuse notice", ar: "إشعار إلى مزوّد الاستضافة" },
+  copy: { en: "Copy", ar: "نسخ" },
+  copied: { en: "Copied", ar: "تم النسخ" },
+  detectionBlock: { en: "Proactive detection", ar: "الرصد الاستباقي" },
+  source: { en: "Source", ar: "المصدر" },
+  downloadZip: { en: "Download evidence pack (.zip)", ar: "تحميل حزمة الأدلة (.zip)" },
+  noEvidenceSim: {
+    en: "Simulated lead: no live WHOIS / DNS / TLS / page evidence exists for it.",
+    ar: "نطاق محاكاة: لا توجد له أدلة حقيقية من WHOIS أو DNS أو TLS أو الصفحة.",
+  },
+  noEvidenceLead: {
+    en: "No flagged full scan yet: only the triage evidence is shown.",
+    ar: "لا يوجد فحص كامل مُبلَّغ عنه بعد: تُعرض أدلة الفرز فقط.",
+  },
+  syndicate: { en: "Linked syndicate", ar: "الشبكة الإجرامية المرتبطة" },
+  targetDomain: { en: "Target domain", ar: "النطاق المستهدف" },
+  impersonated: { en: "Impersonated entity", ar: "الجهة المنتحلة" },
+  registrarAbuse: { en: "Registrar abuse email", ar: "بريد الإبلاغ لدى المسجّل" },
+  citizenReports: { en: "Citizen reports", ar: "بلاغات المواطنين" },
+  campaignStatus: { en: "Campaign status", ar: "حالة الحملة" },
+  requestedActions: { en: "Requested actions", ar: "الإجراءات المطلوبة" },
+  redFlags: { en: "Red flags", ar: "علامات الخطر" },
+  verdictHigh: { en: "High-risk scam", ar: "احتيال عالي الخطورة" },
+  verdictSuspicious: { en: "Suspicious", ar: "مشبوه" },
+  verdictSafe: { en: "Safe", ar: "آمن" },
+
+  /* Detection model */
+  model: { en: "Detection Model", ar: "نموذج الكشف" },
+  trained: { en: "Trained", ar: "تاريخ التدريب" },
+  trainingRows: { en: "Training rows", ar: "صفوف التدريب" },
+  holdout: { en: "Hold-out test set", ar: "مجموعة اختبار منفصلة" },
+  precision: { en: "Precision", ar: "الدقة" },
+  recall: { en: "Recall", ar: "الاسترجاع" },
+  f1: { en: "F1", ar: "F1" },
+  fpr: { en: "False-positive rate", ar: "معدل الإنذار الكاذب" },
+  threshold: { en: "Threshold", ar: "العتبة" },
+  fpSuite: { en: "Legitimate sites (incl. long-tail and free hosting)", ar: "مواقع سليمة (تشمل المواقع الصغيرة والاستضافة المجانية)" },
+  officialSuite: { en: "UAE official, bank and government pages", ar: "صفحات الجهات الرسمية والبنوك والحكومة" },
+  liveSystem: { en: "Full live scan · fresh phishing + legitimate pages", ar: "الفحص الحي الكامل · تصيّد حديث + صفحات سليمة" },
+  liveNote: { en: "warn level, threat feeds off", ar: "مستوى التحذير، بدون قوائم التهديدات" },
+  addressOnly: { en: "Address-only model", ar: "نموذج العنوان فقط" },
+  more: { en: "more", ar: "أخرى" },
+  falseAlarms: { en: "false alarms", ar: "إنذارات كاذبة" },
+  datasets: { en: "Datasets", ar: "مجموعات البيانات" },
+  rows: { en: "rows", ar: "صف" },
 } as const;

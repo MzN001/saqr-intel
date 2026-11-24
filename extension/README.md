@@ -3,7 +3,8 @@
 Automatic scam protection for PC and laptop users. Every website you open is checked with the
 SAQR-INTEL backend; dangerous sites are replaced by an Abu Dhabi Police block page before you can
 type a password or card number. Every block also appears live on the `/citizen` Crowd-Shield radar.
-The **Email Shield** also checks the emails you open in Gmail and Outlook (see below).
+The **Email Shield** also checks the emails you open in Gmail and Outlook, and the **Search & Maps
+shield** marks scam search results, ads and fake helpline numbers before you click (see below).
 
 ## Install (unpacked)
 
@@ -44,6 +45,32 @@ is replaced by the block page within about a second. The block also shows up on 
 - **Continue anyway:** the block page has a small "continue" link for false alarms; that site is then
   allowed until the browser is closed.
 
+## Search & Maps shield
+
+Works on Google Search (`google.com`, `google.ae`, `google.com.sa` and other country domains), Bing and
+Google Maps place panels. Before you click, every organic result, every **Sponsored** ad (the ad-click
+wrapper is resolved to the advertiser's real address from the page itself), the knowledge-panel and Maps
+"Website" buttons, and the phone numbers shown in ads, knowledge panels and Maps cards are checked:
+
+| Badge | When |
+|---|---|
+| red `SAQR: scam — imitates TAMM Abu Dhabi` | HIGH-RISK (score 65+). The link is crossed out and locked: clicking it opens a SAQR warning first ("Don't open" / "Open anyway"). Reasons on hover. |
+| amber `SAQR: suspicious` | score 30–64 |
+| green `Official: Abu Dhabi Police` | only verified official UAE websites |
+| red `Not the official number (official: 800 555)` | a personal mobile number, a number linked to fake Maps listings, or (in an ad) any number that is not the claimed institution's official one |
+| amber `Not on the official list (official: …)` | an unlisted landline in a Maps card or knowledge panel (real branches have their own numbers) |
+| nothing | ordinary sites and unknown numbers (no noise) |
+
+- Links go in batches to `POST /api/batch-verdict` (instant offline checks: look-alike rules, AI URL
+  model, threat feeds, SAQR's earlier scans and proactive-hunter detections; nothing is saved), phones to
+  `POST /api/check-phone`. Verdicts are cached per URL in the service worker (safe 30 min, risky 10 min).
+- Google and Bing change their markup often: known selectors first, then any link inside the results
+  area (fallback links only ever get red / amber badges). New results (infinite scroll, Maps panels) are
+  picked up by a debounced MutationObserver.
+- Turn it off in **Options → Search & Maps shield** (on by default).
+- Files: `content/search.js` (page part), `content/search.css`, `lib/search_core.js` (site detection,
+  link unwrapping, phone finding, badge decisions; also loaded by `background.js` and the tests).
+
 ## Email Shield
 
 | Webmail | Status |
@@ -76,7 +103,7 @@ No install needed (Node.js 20+):
 
 ```bash
 node --test extension/tests/*.test.js              # background worker, libs, manifest
-node --test extension/tests/content/*.test.cjs     # content-script helpers
+node --test extension/tests/content/*.test.cjs     # content-script helpers + Search & Maps shield (HTML fixtures)
 ```
 
 ## Limits

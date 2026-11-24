@@ -1,10 +1,10 @@
-"""POST /api/generate-takedown/{scan_id}  &  GET /api/awareness-alert  (Module 5)."""
+"""POST /api/generate-takedown/{scan_id}, GET /api/dossiers/{id}[/evidence-pack], GET /api/awareness-alert (Module 5)."""
 from __future__ import annotations
 
 import json
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, Response
 
 from ..db import db
 from ..intel import awareness, takedown
@@ -40,6 +40,20 @@ async def get_dossier(dossier_id: str, format: str = Query("json", pattern="^(js
         raise HTTPException(404, "Dossier not found")
     d = json.loads(row["dossier_json"])
     return PlainTextResponse(takedown.dossier_markdown(d), media_type="text/markdown") if format == "markdown" else d
+
+
+@router.get("/dossiers/{dossier_id}/evidence-pack")
+async def evidence_pack(dossier_id: str):
+    """The stored dossier as a zip (dossier.json, dossier.md, takedown_notice.txt, screenshot.jpg if
+    one exists, manifest.json with the SHA-256 of each file)."""
+    row = await db.fetchone("SELECT dossier_json FROM dossiers WHERE id=?", (dossier_id,))
+    if not row:
+        raise HTTPException(404, "Dossier not found")
+    d = json.loads(row["dossier_json"])
+    scan = await db.get_scan(d["scan_id"], with_screenshot=True)
+    data = takedown.evidence_pack(d, (scan or {}).get("screenshot_base64"))
+    name = f"{d['case_reference']}-evidence-pack.zip"
+    return Response(data, media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @router.get("/awareness-alert")

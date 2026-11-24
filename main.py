@@ -20,14 +20,17 @@ from saqr.db import db, seed_if_empty
 from saqr.intel.campaigns import campaign_feed
 from saqr.intel.ct_monitor import ct_monitor
 from saqr.intel.domain_intel import shutdown_pools
+from saqr.intel.hunter import hunter
 from saqr.intel.nextdns_sync import block_watcher, nextdns_sync
 from saqr.intel.sandbox import sandbox
 from saqr.intel.threat_feeds import threat_feeds
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
 from saqr.police_state import police_state
-from saqr.routers import (analysis, blocklist, campaigns, ct, email, graph, live, maps, mobile, police, push, system,
-                          takedown, user_model)
+from saqr.routers import (analysis, batch, blocklist, campaigns, ct, email, graph, live, maps, mobile, police, push,
+                          system, takedown, user_model)
+from saqr.routers import hunter as hunter_router
+from saqr.routers import model as model_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("saqr")
@@ -45,13 +48,16 @@ async def lifespan(_: FastAPI):
     campaign_feed.start()
     nextdns_sync.start()
     block_watcher.start()
+    await hunter.start()
     keepalive_task = asyncio.create_task(keepalive.run(), name="keep-awake")
     log.info("SAQR-INTEL %s ready — LLM engine: %s, CT mode: %s", __version__, settings.active_llm, settings.ct_mode)
+    log.info("Proactive hunter mode: %s", hunter.mode)
     try:
         yield
     finally:
         seed_task.cancel()
         keepalive_task.cancel()
+        await hunter.stop()
         await ct_monitor.stop()
         await threat_feeds.stop()
         await campaign_feed.stop()
@@ -121,8 +127,9 @@ async def mock_scam(slug: str):
 
 for r in (system.router, analysis.router, maps.router, ct.router, graph.router, takedown.router, live.router,
           mobile.router, blocklist.router, push.router, email.router, campaigns.router, user_model.router,
-          police.router):
+          police.router, hunter_router.router, batch.router):
     app.include_router(r)
+app.include_router(model_router.router)
 
 
 if __name__ == "__main__":

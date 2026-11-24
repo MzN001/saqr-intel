@@ -1,0 +1,8 @@
+id,website,verdict,notes
+1,https://www.google.com/search?q=weather,benign,ok
+2,http://paypa1-secure-login.xyz/signin.php,phishing,kit
+3,https://github.com/login,benign,ok
+4,http://update-account.top/wp-admin/x/,malware,dropper
+5,http://old-defaced.example.org/index.html,defacement,
+6,https://www.wikipedia.org/,benign,
+7,http://weird.example.net/,unknown-kind,

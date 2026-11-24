@@ -1,14 +1,17 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink, Flag, Globe2, Loader2, MapPinned, QrCode, Radar, ShieldCheck, Siren, Users } from "lucide-react";
+import { Crosshair, ExternalLink, Flag, Globe2, Loader2, MapPinned, QrCode, Radar, ShieldCheck, Siren, Users } from "lucide-react";
 import dynamic from "next/dynamic";
 import { QRCodeSVG } from "qrcode.react";
-import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Modal } from "@/components/Modal";
 import { useLang } from "@/lib/i18n";
-import { CHANNEL_LABEL, P, STATUS_LABEL, usePoliceLive, type Campaign, type MapPin, type PoliceEvent } from "@/lib/police";
+import { CHANNEL_LABEL, P, STATUS_LABEL, getModelMetrics, usePoliceLive, type Campaign, type MapPin, type ModelMetrics, type PoliceEvent } from "@/lib/police";
 import { ActionCenter } from "./ActionCenter";
+import { ModelCard } from "./ModelCard";
+import { ProactiveHunt } from "./ProactiveHunt";
+import { Card, riskTone, timeAgo, type L } from "./ui";
 
 const AbuDhabiMap = dynamic(() => import("@/components/AbuDhabiMap"), {
   ssr: false,
@@ -19,34 +22,7 @@ const AbuDhabiMap = dynamic(() => import("@/components/AbuDhabiMap"), {
   ),
 });
 
-type L = (k: keyof typeof P) => string;
 const noSubscribe = () => () => {};
-
-function timeAgo(ts: string, lang: "en" | "ar"): string {
-  const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000);
-  const rtf = new Intl.RelativeTimeFormat(lang === "ar" ? "ar" : "en", { numeric: "auto" });
-  if (s < 60) return rtf.format(-Math.round(s), "second");
-  if (s < 3600) return rtf.format(-Math.round(s / 60), "minute");
-  if (s < 86400) return rtf.format(-Math.round(s / 3600), "hour");
-  return rtf.format(-Math.round(s / 86400), "day");
-}
-
-function riskTone(score: number) {
-  return score >= 65 ? "bg-crimson-600 text-white" : score >= 30 ? "bg-amber-500 text-navy-900" : "bg-emerald-600 text-white";
-}
-
-function Card({ title, icon, children, right, className = "" }: { title: string; icon: ReactNode; children: ReactNode; right?: ReactNode; className?: string }) {
-  return (
-    <section className={`rounded-3xl bg-navy-900/70 p-4 ring-1 ring-white/10 backdrop-blur ${className}`}>
-      <div className="mb-3 flex items-center gap-2">
-        <span className="grid size-8 place-items-center rounded-xl bg-white/10 text-white">{icon}</span>
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-white">{title}</h2>
-        <div className="ms-auto">{right}</div>
-      </div>
-      {children}
-    </section>
-  );
-}
 
 function Header({ link, lang, setLang, L }: { link: string; lang: "en" | "ar"; setLang: (l: "en" | "ar") => void; L: L }) {
   const [qrOpen, setQrOpen] = useState(false);
@@ -194,6 +170,15 @@ export function CommandCenter() {
   const { state, link, refresh } = usePoliceLive();
   const [picked, setPicked] = useState<string | null>(null);
   const [pin, setPin] = useState<MapPin | null>(null);
+  const [metrics, setMetrics] = useState<ModelMetrics | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void getModelMetrics().then((m) => alive && setMetrics(m));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const campaigns = useMemo(() => state?.campaigns ?? [], [state]);
   // Until the officer picks one, the most severe campaign is selected.
@@ -218,11 +203,22 @@ export function CommandCenter() {
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <Kpi label={L("kProtected")} value={state?.kpis.citizens_protected} icon={<Users className="size-4" />} tone="bg-emerald-400" />
           <Kpi label={L("kEntities")} value={state?.kpis.active_entities} icon={<Siren className="size-4" />} tone="bg-crimson-600" />
           <Kpi label={L("kPins")} value={state?.kpis.hijacked_pins} icon={<MapPinned className="size-4" />} tone="bg-amber-400" />
           <Kpi label={L("kX")} value={state?.kpis.x_alerts_dispatched} icon={<Flag className="size-4" />} tone="bg-sky-400" />
+          <Kpi label={L("kPreVictim")} value={state?.kpis.pre_victim_detections} icon={<Crosshair className="size-4" />} tone="bg-violet-400" />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-5">
+          <ProactiveHunt
+            className={metrics ? "lg:col-span-3" : "lg:col-span-5"}
+            detections={state?.proactive_detections ?? []}
+            mode={state?.hunter_mode}
+            onSwept={() => void refresh()}
+          />
+          {metrics && <ModelCard metrics={metrics} className="lg:col-span-2" />}
         </div>
 
         <div className="grid gap-4 lg:grid-cols-5">

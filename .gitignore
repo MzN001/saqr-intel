@@ -12,3 +12,5 @@ frontend/.next/
 frontend/tsconfig.tsbuildinfo
 frontend-preview/
 preview/
+.venv-train/
+/datasets/

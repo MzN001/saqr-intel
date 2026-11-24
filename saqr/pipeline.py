@@ -11,7 +11,7 @@ from typing import Any
 
 from .config import settings
 from .db import db, iso, utcnow
-from .intel import ai_inspector, graph_engine
+from .intel import ai_inspector, graph_engine, page_signals, redirects
 from .intel.domain_intel import (
     LexicalReport,
     age_hours,
@@ -75,6 +75,48 @@ async def gather_network(lex: LexicalReport) -> dict[str, Any]:
     }
 
 
+def _hop_risk(lex: LexicalReport) -> int:
+    """Cheap risk of one hop's address: look-alike rules + threat feeds + the URL classifier."""
+    if lex.is_whitelisted:
+        return 0
+    return min(100, lex.score + sum(f.points for f in ai_inspector.intel_flags(lex)))
+
+
+async def follow_redirects(lex: LexicalReport, *, fast: bool) -> tuple[LexicalReport, list[dict[str, Any]]]:
+    """Walk the link's redirect chain and pick the host the verdict must be about.
+
+    Every distinct host on the way is checked. The worst one is judged; when none stands out it is
+    the final destination, unless that is a famous or official site and an unknown site sits in
+    front of it (a scam page that bounces scanners to google.com must not be judged as Google)."""
+    hops = await redirects.resolve_chain(lex.normalized_url, max_hops=5 if fast else 8,
+                                         timeout=2.5 if fast else 5.0, fast=fast)
+    by_host: dict[str, LexicalReport] = {lex.host: lex}
+    for hop in hops[1:]:
+        if hop.get("note") == "blocked_private":
+            continue
+        try:
+            hop_lex = page_signals.lexical(hop["url"])
+        except ValueError:
+            continue
+        by_host[hop_lex.host] = hop_lex  # the last address seen on a host is where its page lives
+    if len(by_host) < 2:
+        return lex, hops
+    risks = {host: _hop_risk(hl) for host, hl in by_host.items()}
+    for hop in hops:
+        if hop["host"] in risks:
+            hop["risk"] = risks[hop["host"]]
+    candidates = list(by_host.values())
+    worst = max(risks.values())
+    if worst > 0:
+        return next(hl for hl in reversed(candidates) if risks[hl.host] == worst), hops
+    final = candidates[-1]
+    if redirects.is_trusted_passthrough(final.host, final.registered_domain):
+        unknown = [hl for hl in candidates if not redirects.is_trusted_passthrough(hl.host, hl.registered_domain)]
+        if unknown:
+            return unknown[0], hops
+    return final, hops
+
+
 async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | None = None,
                       reporter: str | None = None, message_text: str | None = None,
                       run_sandbox: bool = True, profile: str = "mobile", use_llm: bool = True,
@@ -86,8 +128,18 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
 
     intercepted_url = url
     url, mock_slug = resolve_mock_scam(url)
-    lex = analyze_lexical(url)
+    input_lex = lex = page_signals.lexical(url)
     timings["lexical_ms"] = int((time.perf_counter() - t0) * 1000)
+
+    # Shorteners, open redirects, 30x / meta / JavaScript hops: judge where the link really goes.
+    hops: list[dict[str, Any]] = []
+    if not mock_slug and lex.registered_domain not in DEMO_INTEL and lex.host not in DEMO_INTEL:
+        t = time.perf_counter()
+        try:
+            lex, hops = await follow_redirects(lex, fast=not run_sandbox)
+        except Exception as exc:  # noqa: BLE001 - evidence gathering must never fail the scan
+            log.warning("redirect chain for %s failed: %s", input_lex.host, exc)
+        timings["redirect_ms"] = int((time.perf_counter() - t) * 1000)
 
     t = time.perf_counter()
     net = {"evidence_source": "skipped", "ip_addresses": []} if lex.is_whitelisted else await gather_network(lex)
@@ -115,6 +167,10 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
     # stage demo deterministic and fast (well under 100 ms) even on a small cloud instance.
     fv = await ai_inspector.inspect(lex, net, page, syndicate, use_llm=use_llm and not mock_slug)
     timings["ai_ms"] = int((time.perf_counter() - t) * 1000)
+    fv.flags = redirects.flags_for(hops, input_lex.host, lex.host, fv.verdict) + fv.flags
+    if lex.host != input_lex.host:
+        fv.explanation_en = f"This link ({input_lex.host}) really leads to {lex.host}.\n\n{fv.explanation_en}"
+        fv.explanation_ar = f"هذا الرابط ({input_lex.host}) يقود فعلياً إلى {lex.host}.\n\n{fv.explanation_ar}"
 
     screenshot = (page or {}).pop("screenshot_b64", None)
     page_text = (page or {}).get("text") or ""
@@ -124,6 +180,7 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
         "target": intercepted_url, "input_url": intercepted_url, "normalized_url": lex.normalized_url,
         "mock_scam_replica": mock_slug, "interception_channel": interception_channel,
         "domain": lex.host, "registered_domain": lex.registered_domain, "unicode_domain": lex.unicode_host,
+        "input_domain": input_lex.host,
         "channel": channel, "reporter": reporter, "message_text": message_text,
         "risk_score": fv.risk_score, "verdict": fv.verdict,
         "impersonated_entity": fv.impersonated_name,
@@ -143,7 +200,8 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
             "external_form_actions": (page or {}).get("external_form_actions", []),
             "final_url": (page or {}).get("final_url"),
             "http_status": (page or {}).get("http_status"),
-            "redirect_chain": (page or {}).get("redirect_chain", []),
+            "redirect_chain": hops,
+            "browser_redirects": (page or {}).get("redirect_chain", []),
             "page_title": (page or {}).get("page_title"),
             "page_text_excerpt": page_text[:1500],
             "cloaking": (page or {}).get("cloaking"),
@@ -159,8 +217,12 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
         "analyzer": {"engine": fv.engine, "confidence": fv.confidence},
         "timings": timings,
     }
-    await db.save_scan(result, screenshot)
-    if ingest and fv.verdict != "SAFE":
+    # scans.domain feeds the DNS blocklist / NextDNS: a shortener whose destination could not be
+    # resolved must never be published or linked into the syndicate graph.
+    unresolved_shortener = redirects.is_shortener(lex.host)
+    stored = {**result, "domain": None} if unresolved_shortener else result
+    await db.save_scan(stored, screenshot)
+    if ingest and fv.verdict != "SAFE" and not unresolved_shortener:
         delta = await graph_engine.ingest_url_scan(result)
         result["graph_delta"] = delta
         if delta.get("syndicate"):

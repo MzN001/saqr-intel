@@ -1,12 +1,12 @@
 """Request models (responses are rich JSON documents described in README)."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, SecretStr, model_validator
 
 Interception = Literal["MOBILE_OS_SHARE_SHEET", "AUTO_TELECOM_DNS", "AUTO_SMS_GUARD", "CITIZEN_MANUAL_CHECK",
-                       "PC_BROWSER_EXTENSION", "DIRECT_API", "MANUAL"]
+                       "PC_BROWSER_EXTENSION", "DIRECT_API", "MANUAL", "PROACTIVE_HUNTER"]
 Channel = Literal["sms", "whatsapp", "email", "social", "web", "call", "maps", "other"]
 
 
@@ -114,3 +114,22 @@ class AnalyzeEmailRequest(BaseModel):
         if not (self.text or self.file_base64 or self.meta):
             raise ValueError("Provide the email as 'text', 'file_base64' or 'meta'")
         return self
+
+
+# ---------------------------------------------------------------------------
+# POST /api/batch-verdict and /api/check-phone (pre-click badges on search results, ads and Maps)
+# ---------------------------------------------------------------------------
+class BatchVerdictRequest(BaseModel):
+    urls: list[Annotated[str, Field(max_length=2048)]] = Field(
+        ..., min_length=1, max_length=200,
+        examples=[["https://tamm-smart-pay.net/refund", "https://www.tamm.abudhabi/"]])
+    expand: bool = Field(False, description="Also expand URL shorteners over the network (small time budget).")
+
+
+class CheckPhoneRequest(BaseModel):
+    phone: str = Field(..., min_length=3, max_length=40, examples=["+971 50 000 7781"])
+    claimed_entity: str | None = Field(None, max_length=200, examples=["TAMM Service Center"],
+                                       description="The institution the ad / Maps card claims to be.")
+    context: Literal["ad", "maps", "panel", "result"] | None = Field(
+        None, description="Where the number was shown: a sponsored ad (a wrong number there is treated as "
+                          "a fake helpline), a Maps card, a knowledge panel or an organic result.")
