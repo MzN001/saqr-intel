@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Barlow, Noto_Kufi_Arabic } from "next/font/google";
 import { ThemeScript } from "@/components/ThemeScript";
 import "./globals.css";
+
+// Self-hosted at build time (no request to Google from the visitor). Wired to --font-sans / --font-arabic.
+// Barlow: a DIN-like grotesk in the register of UAE road signs and the Abu Dhabi Police site's caps.
+const barlow = Barlow({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"], variable: "--font-barlow", display: "swap" });
+const kufi = Noto_Kufi_Arabic({ subsets: ["arabic"], variable: "--font-kufi", display: "swap" });
 
 export const metadata: Metadata = {
   title: "SAQR-INTEL Citizen Shield",
@@ -25,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning className={`${barlow.variable} ${kufi.variable}`}>
       <head>
         <ThemeScript />
       </head>

@@ -4,7 +4,7 @@ import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { ExternalLink, Flag, Loader2, Menu, QrCode, Search, Settings, ShieldCheck, Siren, Users, X, MapPinned } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { CityGridMap, type GridPin } from "@/components/CityGrid";
+import { CityGridMap, MAP_ASPECT, type GridPin } from "@/components/CityGrid";
 import { Modal } from "@/components/Modal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLang } from "@/lib/i18n";
@@ -32,6 +32,15 @@ function timeAgo(ts: string, lang: "en" | "ar"): string {
   return rtf.format(-Math.round(s / 86400), "day");
 }
 
+/** "now", "18m", "3h" — short enough to never be the part that gets cut off. */
+function shortAgo(ts: string, lang: "en" | "ar"): string {
+  const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000);
+  if (s < 60) return lang === "ar" ? "الآن" : "now";
+  if (s < 3600) return `${Math.round(s / 60)}${lang === "ar" ? " د" : "m"}`;
+  if (s < 86400) return `${Math.round(s / 3600)}${lang === "ar" ? " س" : "h"}`;
+  return `${Math.round(s / 86400)}${lang === "ar" ? " ي" : "d"}`;
+}
+
 /** Crimson means scam, nothing else; lower scores stay neutral. */
 function Score({ v }: { v: number }) {
   const tone = v >= 65 ? "bg-scam text-white" : v >= 30 ? "bg-gold-500 text-navy-950" : "bg-muted text-ink";
@@ -41,9 +50,9 @@ function Score({ v }: { v: number }) {
 /** States stamp themselves onto the row (Night Grid): nothing silently changes. */
 export function Stamp({ status, lang }: { status: CampaignStatus; lang: "en" | "ar" }) {
   const tone =
-    status === "SYNCED_TO_TELECOM_DNS" ? "text-emerald-600 dark:text-emerald-400" : status === "COMMUNITY_FLAGGED_X" ? "text-gold-500" : "text-scam";
+    status === "SYNCED_TO_TELECOM_DNS" ? "text-emerald-600 dark:text-emerald-400" : status === "COMMUNITY_FLAGGED_X" ? "text-gold-ink" : "text-scam-ink";
   return (
-    <span className={`inline-block -rotate-3 rounded-md border-2 border-current px-1.5 py-px text-[10px] font-extrabold uppercase tracking-[0.12em] ${tone}`}>
+    <span className={`inline-block -rotate-3 rounded-md border-2 border-current px-2 py-1 text-[11px] leading-none font-extrabold uppercase tracking-[0.12em] ${tone}`}>
       {STATUS_LABEL[status][lang]}
     </span>
   );
@@ -52,7 +61,7 @@ export function Stamp({ status, lang }: { status: CampaignStatus; lang: "en" | "
 function Tile({ title, icon, right, children, className = "", id }: { title: string; icon: ReactNode; right?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   return (
     <section id={id} className={`scroll-mt-40 rounded-[20px] border border-line bg-surface p-4 ${className}`}>
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-ink-soft">{icon}</span>
         <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-soft">{title}</h2>
         <div className="ms-auto">{right}</div>
@@ -170,7 +179,7 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
           <span className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-gold-500 bg-navy-900 sm:size-[54px]" aria-hidden>
             <ShieldCheck className="size-6 text-gold-500" />
           </span>
-          <span className="hidden sm:block lg:hidden"><ThemeToggle /></span>
+          <span className="lg:hidden"><ThemeToggle /></span>
         </div>
       </div>
 
@@ -181,6 +190,7 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
             <span className={`size-2 rounded-full ${badge.dot}`} /> {badge.text}
           </span>
           <span className="hidden text-xs text-ink-soft sm:inline">{L("title")}</span>
+          <span className="rounded-md border border-gold-500/60 px-2 py-1 text-xs font-bold leading-none text-gold-ink">{L("demoData")}</span>
           <div className="ms-auto flex items-center gap-2">
             <a href="/citizen" target="_blank" rel="noopener" className="press inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-bold text-ink hover:bg-muted">
               {L("citizenPortal")} <ExternalLink className="size-3.5" />
@@ -232,23 +242,26 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
 
 /* ------------------------------------------------------------------ desk */
 
-function Kpi({ label, value, icon, accent }: { label: string; value: number | undefined; icon: ReactNode; accent: string }) {
+function Kpi({ label, short, value, icon, accent, context }: {
+  label: string; short: string; value: number | undefined; icon: ReactNode; accent: string; context?: ReactNode;
+}) {
   return (
     <div className="rounded-[20px] border border-line bg-surface p-4">
-      <div className="flex items-center gap-2 text-ink-soft">
+      <div className="flex items-center gap-2 text-ink-soft" title={label}>
         <span className={accent}>{icon}</span>
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em]">{label}</p>
+        <p className="min-w-0 text-[11px] font-bold uppercase tracking-[0.1em]"><span className="sm:hidden">{short}</span><span className="hidden sm:inline">{label}</span></p>
       </div>
       <motion.p key={value} initial={{ opacity: 0.35 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="mt-2 text-[42px] font-light leading-none tracking-tight text-ink tabular-nums" dir="ltr">
         {value === undefined ? "—" : value.toLocaleString("en-US")}
       </motion.p>
+      {context && <p className="mt-2 line-clamp-2 text-xs leading-snug text-ink-soft">{context}</p>}
     </div>
   );
 }
 
 function Stream({ events, selected, onPick, lang, L }: { events: PoliceEvent[]; selected: string | null; onPick: (e: PoliceEvent) => void; lang: "en" | "ar"; L: L }) {
   return (
-    <ul className="max-h-[360px] overflow-y-auto pe-1">
+    <ul className="max-h-[360px] overflow-y-auto pe-1 [mask-image:linear-gradient(to_bottom,#000_calc(100%-36px),transparent)] pb-6">
       {events.length === 0 && <li className="p-3 text-sm text-ink-soft">{L("noEvents")}</li>}
       <AnimatePresence initial={false}>
         {events.map((e) => {
@@ -257,11 +270,12 @@ function Stream({ events, selected, onPick, lang, L }: { events: PoliceEvent[]; 
           return (
             <motion.li key={e.id} layout initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="border-t border-line first:border-0">
               <button type="button" onClick={() => onPick(e)} className={`flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-start transition-colors ${on ? "bg-muted" : "hover:bg-muted/60"}`}>
-                <span className="w-24 shrink-0 text-[10px] font-extrabold uppercase tracking-[0.08em] text-emerald-700 dark:text-emerald-400">{ch[lang]}</span>
+                <span className="w-16 shrink-0 text-xs font-extrabold uppercase leading-tight tracking-[0.04em] text-emerald-700 dark:text-emerald-400" title={ch[lang]}>{ch.short[lang]}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-mono text-[13px] font-bold text-ink" dir="ltr">{e.title ?? e.defanged_domain}</span>
-                  <span className="block truncate text-xs text-ink-soft">{e.impersonated_entity ?? "—"} · {timeAgo(e.ts, lang)}</span>
+                  <span className="block truncate text-xs text-ink-soft">{e.impersonated_entity ?? "—"}</span>
                 </span>
+                <span className="shrink-0 text-xs tabular-nums text-ink-soft">{shortAgo(e.ts, lang)}</span>
                 <Score v={e.risk_score} />
               </button>
             </motion.li>
@@ -274,12 +288,12 @@ function Stream({ events, selected, onPick, lang, L }: { events: PoliceEvent[]; 
 
 function Roster({ list, selected, onPick, lang, L }: { list: Campaign[]; selected: string | null; onPick: (c: Campaign) => void; lang: "en" | "ar"; L: L }) {
   return (
-    <ol className="grid gap-2 sm:grid-cols-2">
+    <ol className="grid sm:grid-cols-2 sm:gap-x-6">
       {list.map((c, i) => {
         const on = c.campaign_id === selected;
         return (
           <li key={c.campaign_id}>
-            <button type="button" onClick={() => onPick(c)} className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-start transition-colors ${on ? "border-ink/40 bg-muted" : "border-line hover:bg-muted/60"}`}>
+            <button type="button" onClick={() => onPick(c)} className={`flex w-full items-start gap-3 border-t border-line px-1 py-3 text-start transition-colors ${on ? "bg-muted" : "hover:bg-muted/60"}`}>
               <span className="w-6 shrink-0 pt-0.5 text-sm font-light text-ink-soft tabular-nums">{String(i + 1).padStart(2, "0")}</span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
@@ -304,7 +318,8 @@ export function CommandCenter() {
   const L: L = (k) => P[k][lang];
   const { state, link, refresh } = usePoliceLive();
   const [picked, setPicked] = useState<string | null>(null);
-  const [pin, setPin] = useState<MapPin | null>(null);
+  // undefined = show the newest scam pin automatically; null = the officer closed the card.
+  const [pinChoice, setPinChoice] = useState<MapPin | null | undefined>(undefined);
   const [query, setQuery] = useState("");
 
   const q = query.trim().toLowerCase();
@@ -315,10 +330,19 @@ export function CommandCenter() {
   const selected = picked ?? campaigns[0]?.campaign_id ?? null;
   const current = campaigns.find((c) => c.campaign_id === selected) ?? null;
   const pins: GridPin[] = (state?.map_pins ?? []).map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, title: p.title, type: p.type }));
+  const pin = pinChoice === undefined ? (state?.map_pins.find((p) => p.type === "SPOOFED") ?? null) : pinChoice;
+  const latest = state?.recent_events[0];
+  // KPI context: when and how the last block happened, the last X post, the entities impersonated.
+  const lastX = state?.recent_events.find((e) => e.channel === "X_COMMUNITY_ALERT");
+  const mix = Object.entries(
+    (state?.recent_events ?? []).reduce<Record<string, number>>((m, e) => ((m[e.channel] = (m[e.channel] ?? 0) + 1), m), {}),
+  ).sort((a, b) => b[1] - a[1]);
+  const mixMax = Math.max(1, ...mix.map(([, n]) => n));
+  const entityNames = [...new Set(campaigns.map((c) => c.impersonated_entity).filter(Boolean))].slice(0, 3).join(" · ");
 
   const pickPin = (g: GridPin) => {
     const p = state?.map_pins.find((x) => x.id === g.id) ?? null;
-    setPin(p);
+    setPinChoice(p);
     const c = p && campaigns.find((x) => x.domain === p.domain);
     if (c) setPicked(c.campaign_id);
   };
@@ -335,50 +359,84 @@ export function CommandCenter() {
             </p>
           )}
 
-          <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)_380px]">
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-1 lg:content-start">
-              <Kpi label={L("kProtected")} value={state?.kpis.citizens_protected} icon={<Users className="size-4" />} accent="text-emerald-600 dark:text-emerald-400" />
-              <Kpi label={L("kEntities")} value={state?.kpis.active_entities} icon={<Siren className="size-4" />} accent="text-scam" />
-              <Kpi label={L("kPins")} value={state?.kpis.hijacked_pins} icon={<MapPinned className="size-4" />} accent="text-scam" />
-              <Kpi label={L("kX")} value={state?.kpis.x_alerts_dispatched} icon={<Flag className="size-4" />} accent="text-gold-500" />
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[260px_minmax(0,1fr)_380px]">
+            <div className="grid min-w-0 grid-cols-[repeat(2,minmax(0,1fr))] gap-3 sm:gap-4 lg:grid-cols-1 lg:content-start">
+              <Kpi label={L("kProtected")} short={L("kProtectedShort")} value={state?.kpis.citizens_protected} icon={<Users className="size-4" />} accent="text-emerald-600 dark:text-emerald-400"
+                context={latest ? `${L("lastBlock")} ${shortAgo(latest.ts, lang)} · ${(CHANNEL_LABEL[latest.channel] ?? CHANNEL_LABEL.CITIZEN_MANUAL_CHECK)[lang]}` : undefined} />
+              <Kpi label={L("kEntities")} short={L("kEntitiesShort")} value={state?.kpis.active_entities} icon={<Siren className="size-4" />} accent="text-scam-ink"
+                context={entityNames} />
+              <Kpi label={L("kPins")} short={L("kPinsShort")} value={state?.kpis.hijacked_pins} icon={<MapPinned className="size-4" />} accent="text-scam-ink"
+                context={state?.map_pins.find((p) => p.type === "SPOOFED")?.title} />
+              <Kpi label={L("kX")} short={L("kXShort")} value={state?.kpis.x_alerts_dispatched} icon={<Flag className="size-4" />} accent="text-gold-500"
+                context={lastX ? `${L("lastPost")} ${shortAgo(lastX.ts, lang)} · ${lastX.defanged_domain}` : undefined} />
+              <section className="col-span-2 rounded-[20px] border border-line bg-surface p-4 lg:col-span-1">
+                <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-soft">{L("channelMix")}</h2>
+                <ul className="space-y-2">
+                  {mix.map(([ch, n]) => (
+                    <li key={ch} className="grid grid-cols-[4.5rem_1fr_1.5rem] items-center gap-2 text-xs">
+                      <span className="truncate font-semibold text-ink">{(CHANNEL_LABEL[ch] ?? CHANNEL_LABEL.CITIZEN_MANUAL_CHECK).short[lang]}</span>
+                      <span className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <span className="block h-full rounded-full bg-emerald-600" style={{ width: `${(n / mixMax) * 100}%` }} />
+                      </span>
+                      <span className="text-end tabular-nums text-ink-soft">{n}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             </div>
 
-            <Tile id="map" title={L("map")} icon={<MapPinned className="size-4" />}
-              right={
-                <span className="flex items-center gap-3 text-[11px] text-ink-soft">
-                  <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-scam" />{L("spoofed")}</span>
-                  <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-emerald-500" />{L("verified")}</span>
-                </span>
-              }
-              className="flex flex-col"
-            >
-              <div className="relative min-h-[420px] flex-1 overflow-hidden rounded-2xl border border-line bg-canvas lg:min-h-[520px]">
-                <CityGridMap pins={pins} selectedId={pin?.id ?? null} onSelect={pickPin} label={L("map")} />
-                <AnimatePresence>
-                  {pin && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 6 }}
-                      transition={{ duration: 0.24, ease: EASE }}
-                      className="absolute inset-x-3 bottom-3 rounded-2xl border border-line bg-surface/95 p-3 backdrop-blur"
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-extrabold text-white ${pin.type === "SPOOFED" ? "bg-scam" : "bg-emerald-700"}`}>
-                          {pin.type === "SPOOFED" ? L("spoofed") : L("verified")}
-                        </span>
-                        <p className="min-w-0 flex-1 text-sm font-bold text-ink">{pin.title}</p>
-                        <button type="button" onClick={() => setPin(null)} className="text-ink-soft hover:text-ink" aria-label="Close"><X className="size-4" /></button>
-                      </div>
-                      <p className="mt-1.5 text-xs leading-relaxed text-ink-soft"><b className="text-ink">{L("registry")}: </b>{pin.registry_note}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+            <div className="min-w-0 space-y-4">
+              <Tile id="map" title={L("map")} icon={<MapPinned className="size-4" />}
+                right={
+                  <span className="flex items-center gap-3 whitespace-nowrap text-xs text-ink-soft">
+                    <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-scam" />{L("spoofed")}</span>
+                    <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-emerald-500" />{L("verified")}</span>
+                  </span>
+                }
+                className="flex flex-col"
+              >
+                {latest && (
+                <p className="mb-2 flex min-w-0 items-center gap-2 text-xs text-ink-soft" aria-live="polite">
+                  <span className="size-2 shrink-0 rounded-full bg-scam" />
+                  <span className="min-w-0 truncate">
+                    <b className="font-mono font-bold text-ink" dir="ltr">{latest.title ?? latest.defanged_domain}</b>
+                    {" · "}{(CHANNEL_LABEL[latest.channel] ?? CHANNEL_LABEL.CITIZEN_MANUAL_CHECK)[lang]}
+                    {latest.impersonated_entity ? ` · ${latest.impersonated_entity}` : ""} · {timeAgo(latest.ts, lang)}
+                  </span>
+                </p>
+              )}
+              <div className="relative w-full overflow-hidden rounded-2xl border border-line bg-canvas" style={{ aspectRatio: MAP_ASPECT }}>
+                  <CityGridMap pins={pins} selectedId={pin?.id ?? null} onSelect={pickPin} label={L("map")} lang={lang} />
+                </div>
+                  <AnimatePresence>
+                    {pin && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 6 }}
+                        transition={{ duration: 0.24, ease: EASE }}
+                        className="mt-3 border-t border-line pt-3"
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className={`mt-0.5 rounded-full px-2 py-0.5 text-[11px] font-extrabold text-white ${pin.type === "SPOOFED" ? "bg-scam" : "bg-emerald-700"}`}>
+                            {pin.type === "SPOOFED" ? L("spoofed") : L("verified")}
+                          </span>
+                          <p className="min-w-0 flex-1 text-sm font-bold text-ink">{pin.title}</p>
+                          <button type="button" onClick={() => setPinChoice(null)} className="text-ink-soft hover:text-ink" aria-label="Close"><X className="size-4" /></button>
+                        </div>
+                        <p className="mt-1.5 max-w-[68ch] text-xs leading-relaxed text-ink-soft"><b className="text-ink">{L("registry")}: </b>{pin.registry_note}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+              </Tile>
+                <Tile id="campaigns" title={L("campaigns")} icon={<Siren className="size-4" />}
+              right={<span className="text-xs text-ink-soft tabular-nums">{shownCampaigns.length}</span>}>
+              <Roster list={shownCampaigns} selected={selected} onPick={(c) => setPicked(c.campaign_id)} lang={lang} L={L} />
             </Tile>
+            </div>
 
             <div className="space-y-4">
-              <Tile title={L("stream")} icon={<Siren className="size-4" />}>
+              <Tile title={L("stream")} icon={<Siren className="size-4" />} right={<span className="text-xs text-ink-soft tabular-nums">{shownEvents.length}</span>}>
                 <Stream events={shownEvents} selected={selected} lang={lang} L={L} onPick={(e) => e.campaign_id && setPicked(e.campaign_id)} />
               </Tile>
               <Tile id="actions" title={L("action")} icon={<ShieldCheck className="size-4" />}>
@@ -387,10 +445,6 @@ export function CommandCenter() {
             </div>
           </div>
 
-          <Tile id="campaigns" title={L("campaigns")} icon={<Siren className="size-4" />}
-            right={<span className="text-xs text-ink-soft tabular-nums">{shownCampaigns.length}</span>}>
-            <Roster list={shownCampaigns} selected={selected} onPick={(c) => setPicked(c.campaign_id)} lang={lang} L={L} />
-          </Tile>
         </main>
       </div>
     </MotionConfig>

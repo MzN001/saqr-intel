@@ -113,7 +113,7 @@ export function BackgroundShieldCard() {
               )}
               <Icon className="relative size-3.5" />
               <span className="relative">{label}</span>
-              {detected === tabId && <span className="relative text-[10px] font-semibold opacity-75">· {t("bgDetected")}</span>}
+              {detected === tabId && <span className="relative text-[11px] font-semibold opacity-75">· {t("bgDetected")}</span>}
             </button>
           ))}
         </div>
@@ -121,10 +121,8 @@ export function BackgroundShieldCard() {
 
       {feed?.configured && (
         <p
-          className={`mt-4 flex items-start gap-2 rounded-2xl p-3 text-xs font-semibold ring-1 ${
-            feed.last_error
-              ? "bg-amber-50 text-amber-900 ring-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
-              : "bg-emerald-50 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+          className={`mt-4 flex items-start gap-2 border-t border-line pt-3 text-xs font-semibold ${
+            feed.last_error ? "text-amber-800 dark:text-amber-200" : "text-emerald-800 dark:text-emerald-300"
           }`}
         >
           <span className="relative mt-1 flex size-2 shrink-0">
@@ -171,7 +169,7 @@ export function BackgroundShieldCard() {
             exit={{ opacity: 0, y: -6 }}
             className="mt-4 space-y-4"
           >
-            <div className="rounded-2xl bg-muted p-3 ring-1 ring-line">
+            <div className="border-y border-line py-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("bgAndroidHost")}</p>
               <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <code dir="ltr" className="min-w-0 flex-1 truncate rounded-xl bg-surface px-3 py-2.5 text-sm font-bold text-ink ring-1 ring-line">
@@ -196,8 +194,8 @@ export function BackgroundShieldCard() {
             </div>
             <SetupVideoButton platform="android" host={dotHost} />
             <Steps items={[t("bgA1"), t("bgA2"), t("bgA3")]} />
-            <p className="flex items-start gap-2 rounded-2xl bg-gold-100 p-3 text-xs font-medium text-navy-900 ring-1 ring-gold-500/40 dark:bg-gold-500/10 dark:text-gold-100">
-              <Info className="mt-0.5 size-4 shrink-0 text-gold-500" />
+            <p className="flex items-start gap-2 text-xs font-medium text-ink">
+              <Info className="mt-0.5 size-4 shrink-0 text-gold-ink" />
               {t("bgAndroidTip")}
             </p>
           </motion.div>

@@ -206,18 +206,18 @@ function SenderCard({ email }: { email: EmailDetails }) {
                 {visible(from.address) || "—"}
               </span>
               {from.is_freemail && (
-                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
                   {t("emFreemail")}
                 </span>
               )}
               {/* Green only when DMARC proves it: a spoofed From: noreply@tamm.abudhabi must not get a green badge. */}
               {from.is_official && email.auth?.dmarc?.result === "pass" && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[11px] font-bold uppercase text-white">
                   <BadgeCheck className="size-3" /> {t("emOfficial")}
                 </span>
               )}
               {from.is_official && email.auth?.dmarc?.result !== "pass" && (
-                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
                   {t("emOfficialUnproven")}
                 </span>
               )}
@@ -266,9 +266,9 @@ function AuthChip({ name, result, meaning, extra }: { name: string; result: stri
       </span>
       <span className="min-w-0 flex-1 text-sm leading-snug text-ink-soft">{meaning}</span>
       <span className="flex shrink-0 flex-col items-end gap-1">
-        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${label.style}`}>{t(label.key)}</span>
+        <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${label.style}`}>{t(label.key)}</span>
         {extra && (
-          <span dir="ltr" className="font-mono text-[10px] text-ink-soft/80">
+          <span dir="ltr" className="font-mono text-[11px] text-ink-soft/80">
             {extra}
           </span>
         )}
@@ -381,7 +381,7 @@ function LinksCard({ links }: { links: EmailLink[] }) {
                 </div>
               </dl>
               <span
-                className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${
                   l.verdict ? VERDICT_CHIP[l.verdict] ?? "bg-line text-ink-soft" : "bg-line text-ink-soft"
                 }`}
               >
@@ -926,7 +926,7 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                     transition={{ delay: 0.55 + i * 0.07 }}
                     className="flex gap-3 rounded-xl bg-muted p-3"
                   >
-                    <span className={`h-fit shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${SEVERITY_STYLE[f.severity]}`}>
+                    <span className={`h-fit shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${SEVERITY_STYLE[f.severity]}`}>
                       {SEVERITY_LABEL[f.severity] ? t(SEVERITY_LABEL[f.severity]) : f.severity}
                     </span>
                     <span className="text-sm leading-snug text-ink">{lang === "ar" ? f.ar : f.en}</span>

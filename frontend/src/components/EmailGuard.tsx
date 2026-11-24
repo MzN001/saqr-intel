@@ -168,7 +168,7 @@ function LlmPanel({ open, onToggle, error }: { open: boolean; onToggle: () => vo
         <Bot className="size-4 shrink-0 text-ink-soft" />
         <span className="min-w-0 flex-1">{t("llmTitle")}</span>
         {active && (
-          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">{t("llmActive")}</span>
+          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-extrabold uppercase text-white">{t("llmActive")}</span>
         )}
         <ChevronDown className={`size-4 shrink-0 text-ink-soft transition-transform ${open ? "rotate-180" : ""}`} />
       </button>

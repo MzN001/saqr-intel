@@ -8,8 +8,8 @@ const dict = {
   appName: { en: "SAQR-INTEL", ar: "صقر للاستخبارات" },
   appTagline: { en: "Citizen Shield · Abu Dhabi", ar: "درع المواطن · أبوظبي" },
   banner: {
-    en: "Agentless Cloud Shield Active • Zero App Install • Zero Phone Battery or RAM Usage",
-    ar: "الدرع السحابي نشط بدون تطبيق • لا حاجة لتثبيت أي تطبيق • لا استهلاك لبطارية الهاتف أو ذاكرته",
+    en: "Agentless Cloud Shield Active • No App to Install • Checks Run in the Cloud, Not on Your Phone",
+    ar: "الدرع السحابي نشط بدون تطبيق • لا حاجة لتثبيت أي تطبيق • يتم الفحص سحابياً وليس على هاتفك",
   },
   // Phones: the first claim of `banner` only, so the strip stays on one line.
   bannerShort: { en: "Agentless Cloud Shield Active", ar: "الدرع السحابي نشط بدون تطبيق" },

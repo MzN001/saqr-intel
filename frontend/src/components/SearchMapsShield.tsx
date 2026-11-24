@@ -115,7 +115,7 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
                 </svg>
               </motion.div>
               <span className="absolute left-1/2 top-1/2 size-3 -translate-x-1/2 rounded-full bg-black/20 blur-[2px]" />
-              <span className="absolute bottom-2 end-2 rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-gray-600 dark:bg-black/60 dark:text-gray-300">Mussafah · Abu Dhabi</span>
+              <span className="absolute bottom-2 end-2 rounded bg-white/90 px-1.5 py-0.5 text-[11px] text-gray-600 dark:bg-black/60 dark:text-gray-300">Mussafah · Abu Dhabi</span>
             </div>
             <div className="p-3.5">
               <p className="text-[17px] font-medium leading-snug text-gray-900 dark:text-gray-100">{t("mapsCardTitle")}</p>
@@ -153,7 +153,7 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
 
           <motion.a variants={item} href={link(OFFICIAL_URL)} onClick={interceptOfficial} className="group block cursor-pointer rounded-2xl p-1">
             <div className="flex items-center gap-2.5">
-              <span className="grid size-7 place-items-center rounded-full bg-navy-900 text-[10px] font-bold text-gold-500">ADP</span>
+              <span className="grid size-7 place-items-center rounded-full bg-navy-900 text-[11px] font-bold text-gold-500">ADP</span>
               <div className="min-w-0 leading-tight" dir="ltr">
                 <p className="truncate text-[13px] text-gray-900 dark:text-gray-200">Abu Dhabi Police</p>
                 <p className="truncate text-[12px] text-gray-600 dark:text-gray-400">https://www.adpolice.gov.ae</p>

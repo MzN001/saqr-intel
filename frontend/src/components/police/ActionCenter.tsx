@@ -51,7 +51,7 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
 
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl border border-line bg-canvas p-3">
+      <div className="border-b border-line pb-3">
         <p className="font-mono text-sm font-bold text-ink" dir="ltr">{c.defanged_domain}</p>
         <p className="mt-0.5 text-xs text-ink-soft">
           {c.impersonated_entity ?? "—"} · <span dir="ltr">{c.campaign_id}</span>
@@ -69,14 +69,15 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
           {L("syncTelecom")}
         </span>
         {synced && (
-          <span className="inline-flex -rotate-3 items-center gap-1 rounded-md border-2 border-white/90 px-1.5 py-px text-[10px] font-extrabold uppercase tracking-[0.1em]">
+          <span className="inline-flex -rotate-3 items-center gap-1 rounded-md border-2 border-white/90 px-2 py-1 text-[11px] leading-none font-extrabold uppercase tracking-[0.1em]">
             <CheckCircle2 className="size-3.5" /> {L("synced")}
           </span>
         )}
       </button>
       {synced && (
-        <p className="rounded-xl border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 font-mono text-[11px] text-emerald-800 dark:text-emerald-300" dir="ltr">
-          RPZ · {done[key("sync")] ?? `${c.domain} CNAME .`} · rpz.saqr-intel.ae
+        <p className="rounded-xl border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 font-mono text-xs text-emerald-800 dark:text-emerald-300" dir="ltr">
+          <span className="block truncate">RPZ · {done[key("sync")] ?? `${c.domain} CNAME .`}</span>
+          <span className="block opacity-75">zone rpz.saqr-intel.ae</span>
         </p>
       )}
 
@@ -91,7 +92,7 @@ export function ActionCenter({ campaign, onChanged }: { campaign: Campaign | nul
           {L("broadcast")}
         </span>
         {done[key("warn")] && (
-          <span className="inline-flex -rotate-3 items-center gap-1 rounded-md border-2 border-navy-950 px-1.5 py-px text-[10px] font-extrabold uppercase tracking-[0.1em]">
+          <span className="inline-flex -rotate-3 items-center gap-1 rounded-md border-2 border-navy-950 px-2 py-1 text-[11px] leading-none font-extrabold uppercase tracking-[0.1em]">
             <CheckCircle2 className="size-3.5" /> {L("broadcasted")}
           </span>
         )}
@@ -176,7 +177,7 @@ function DossierModal({ dossier, onClose }: { dossier: TakedownDossier | null; o
               <ul className="space-y-1.5 text-sm">
                 {d.red_flags.map((f) => (
                   <li key={f.code} className="rounded-xl bg-muted px-3 py-2">
-                    <span className="me-2 rounded bg-crimson-600 px-1.5 py-0.5 font-mono text-[10px] font-bold text-white">{f.code}</span>
+                    <span className="me-2 rounded bg-crimson-600 px-1.5 py-0.5 font-mono text-[11px] font-bold text-white">{f.code}</span>
                     {f.en}
                     <span className="mt-0.5 block text-ink-soft" dir="rtl">{f.ar}</span>
                   </li>

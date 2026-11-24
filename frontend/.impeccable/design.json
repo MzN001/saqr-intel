@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-24T00:00:00Z",
+  "title": "Design System: SAQR-INTEL",
+  "extensions": {
+    "colorMeta": {
+      "night-canvas": { "role": "neutral", "displayName": "Night Canvas", "canonical": "#0a1220", "tonalRamp": ["#05090f", "#0a1220", "#111c2e", "#16243a", "#1f2d45", "#3a4a63", "#a3b3c8", "#e8eef7"] },
+      "night-surface": { "role": "neutral", "displayName": "Night Surface", "canonical": "#111c2e", "tonalRamp": ["#05090f", "#0a1220", "#111c2e", "#16243a", "#1f2d45", "#3a4a63", "#a3b3c8", "#e8eef7"] },
+      "night-muted": { "role": "neutral", "displayName": "Night Muted", "canonical": "#16243a" },
+      "night-line": { "role": "neutral", "displayName": "Night Hairline", "canonical": "#1f2d45" },
+      "night-ink": { "role": "neutral", "displayName": "Night Ink", "canonical": "#e8eef7" },
+      "night-ink-soft": { "role": "neutral", "displayName": "Night Ink Soft", "canonical": "#a3b3c8" },
+      "cream-canvas": { "role": "neutral", "displayName": "Cream Paper", "canonical": "#f3ecdf", "tonalRamp": ["#0b192c", "#2b4568", "#8a7a5e", "#c9b896", "#e0d4bf", "#eee5d5", "#f3ecdf", "#faf6ee"] },
+      "cream-surface": { "role": "neutral", "displayName": "Cream Surface", "canonical": "#faf6ee" },
+      "cream-muted": { "role": "neutral", "displayName": "Cream Muted", "canonical": "#eee5d5" },
+      "cream-line": { "role": "neutral", "displayName": "Cream Hairline", "canonical": "#e0d4bf" },
+      "cream-ink": { "role": "neutral", "displayName": "Navy Ink", "canonical": "#0b192c" },
+      "cream-ink-soft": { "role": "neutral", "displayName": "Navy Ink Soft", "canonical": "#2b4568" },
+      "shield-emerald": { "role": "primary", "displayName": "Shield Emerald", "canonical": "#047857", "tonalRamp": ["#022c22", "#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#d1fae5"] },
+      "shield-emerald-deep": { "role": "primary", "displayName": "Shield Emerald Deep", "canonical": "#065f46" },
+      "shield-emerald-bright": { "role": "primary", "displayName": "Shield Emerald Bright", "canonical": "#10b981" },
+      "shield-emerald-night": { "role": "primary", "displayName": "Shield Emerald Night Text", "canonical": "#34d399" },
+      "emerald-brand": { "role": "primary", "displayName": "Brand Emerald (browser surfaces)", "canonical": "#0e9f6e" },
+      "verified-gold": { "role": "secondary", "displayName": "Verified Gold", "canonical": "#c5a572", "tonalRamp": ["#3d2d10", "#5c4418", "#7a5a1f", "#a3803f", "#c5a572", "#d8bd8c", "#ead9b8", "#f6efe2"] },
+      "gold-ink-cream": { "role": "secondary", "displayName": "Gold Ink on Cream", "canonical": "#7a5a1f" },
+      "gold-ink-night": { "role": "secondary", "displayName": "Gold Ink on Night", "canonical": "#d8bd8c" },
+      "scam-crimson": { "role": "tertiary", "displayName": "Scam Crimson", "canonical": "#e11d48", "tonalRamp": ["#4c0519", "#881337", "#be123c", "#e11d48", "#f43f5e", "#fb7185", "#fda4af", "#ffe4e6"] },
+      "scam-ink-cream": { "role": "tertiary", "displayName": "Scam Ink on Cream", "canonical": "#be123c" },
+      "scam-ink-night": { "role": "tertiary", "displayName": "Scam Ink on Night", "canonical": "#fb7185" },
+      "navy-900": { "role": "neutral", "displayName": "Crest Navy", "canonical": "#0b192c" },
+      "navy-950": { "role": "neutral", "displayName": "Deep Navy", "canonical": "#060f1c" }
+    },
+    "typographyMeta": {
+      "figure": { "displayName": "Figure", "purpose": "KPI numbers: large, light, tabular, fade in on change." },
+      "headline": { "displayName": "Headline", "purpose": "Citizen tile titles." },
+      "nav": { "displayName": "Nav", "purpose": "Police top-bar menu items, uppercase." },
+      "body": { "displayName": "Body", "purpose": "Explanations and registry notes, about 68ch." },
+      "label": { "displayName": "Label", "purpose": "Tracked caps for tile headers, KPI labels, district names, live strip." },
+      "stamp": { "displayName": "Stamp", "purpose": "Rotated bordered state stamps." },
+      "domain": { "displayName": "Domain", "purpose": "Defanged domains, RPZ records, URLs; always LTR." },
+      "arabic": { "displayName": "Arabic", "purpose": "Whole page in Arabic and any lang=ar fragment." }
+    },
+    "shadows": [
+      { "name": "popover", "value": "0 18px 40px -16px rgba(0,0,0,0.5)", "purpose": "Police settings popover only. Tiles never carry shadows." },
+      { "name": "pin-scam-rings", "value": "0 0 0 6px color-mix(in oklab, var(--color-scam) 22%, transparent), 0 0 0 14px color-mix(in oklab, var(--color-scam) 9%, transparent)", "purpose": "Flat concentric rings on scam map pins (no blur)." },
+      { "name": "pin-verified-ring", "value": "0 0 0 5px rgba(16,185,129,0.2)", "purpose": "Flat ring on verified map pins." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Entrances, stream rows, registry card, press squeeze." },
+      { "name": "press", "value": "transform 120ms cubic-bezier(0.16, 1, 0.3, 1); :active scale(0.97)", "purpose": "Tap confirmation on primary actions." },
+      { "name": "nav-underline-spring", "value": "spring stiffness 500-520, damping 40-42", "purpose": "Active nav and tab underline sliding between items." },
+      { "name": "theme-fade", "value": "450ms ease on background, border, color, fill", "purpose": "Theme switch fallback; View Transitions circle reveal where supported." },
+      { "name": "reduced-motion", "value": "MotionConfig reducedMotion=\"user\" + CSS animation/transition 0.01ms", "purpose": "Drops travel, keeps fades." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "police-container", "value": "1500px" },
+      { "name": "citizen-container", "value": "1280px" }
+    ],
+    "themes": {
+      "default": "dark (Night Grid), set before first paint unless localStorage saqr-theme = light",
+      "selector": "[data-theme=\"dark\"] on <html>"
+    }
+  },
+  "components": [
+    {
+      "name": "Tile",
+      "kind": "card",
+      "refersTo": "tile",
+      "description": "Every container: surface, 1px hairline, 20px radius, tracked-caps header.",
+      "html": "<section class=\"ds-tile\"><h2 class=\"ds-tile-label\">Live citizen interception stream</h2><p class=\"ds-tile-body\">Rows sit directly on the tile, separated by hairlines.</p></section>",
+      "css": ".ds-tile { background: var(--color-surface, #111c2e); color: var(--color-ink, #e8eef7); border: 1px solid var(--color-line, #1f2d45); border-radius: 20px; padding: 16px; font-family: Barlow, 'Segoe UI', system-ui, sans-serif; } .ds-tile-label { margin: 0 0 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-ink-soft, #a3b3c8); } .ds-tile-body { margin: 0; font-size: 14px; line-height: 1.5; }"
+    },
+    {
+      "name": "KPI Tile",
+      "kind": "custom",
+      "refersTo": "tile",
+      "description": "Tracked-caps label, large light figure, one line of context.",
+      "html": "<div class=\"ds-kpi\"><p class=\"ds-kpi-label\">Citizens protected today</p><p class=\"ds-kpi-fig\">1,284</p><p class=\"ds-kpi-ctx\">+3 this session</p></div>",
+      "css": ".ds-kpi { background: var(--color-surface, #111c2e); border: 1px solid var(--color-line, #1f2d45); border-radius: 20px; padding: 16px; font-family: Barlow, 'Segoe UI', system-ui, sans-serif; } .ds-kpi-label { margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-ink-soft, #a3b3c8); } .ds-kpi-fig { margin: 8px 0 0; font-size: 42px; font-weight: 300; line-height: 1; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; color: var(--color-ink, #e8eef7); } .ds-kpi-ctx { margin: 8px 0 0; font-size: 12px; color: var(--color-ink-soft, #a3b3c8); }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Emerald action (Scan Now, Sync to e& / du) with press squeeze.",
+      "html": "<button class=\"ds-btn-primary\">Sync to e&amp; / du</button>",
+      "css": ".ds-btn-primary { background: #047857; color: #fff; border: 0; border-radius: 16px; padding: 12px 16px; font: 700 14px Barlow, 'Segoe UI', system-ui, sans-serif; cursor: pointer; transition: transform 120ms cubic-bezier(0.16,1,0.3,1), background-color 150ms ease; } .ds-btn-primary:hover { background: #065f46; } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-emerald-brand, #0e9f6e); outline-offset: 2px; }"
+    },
+    {
+      "name": "Police Action Button",
+      "kind": "button",
+      "refersTo": "button-police-action",
+      "description": "Gold fill for verified police acts only.",
+      "html": "<button class=\"ds-btn-gold\">Broadcast official warning</button>",
+      "css": ".ds-btn-gold { background: #c5a572; color: #060f1c; border: 0; border-radius: 16px; padding: 12px 16px; font: 700 14px Barlow, 'Segoe UI', system-ui, sans-serif; cursor: pointer; transition: transform 120ms cubic-bezier(0.16,1,0.3,1), filter 150ms ease; } .ds-btn-gold:hover { filter: brightness(1.05); } .ds-btn-gold:active { transform: scale(0.97); } .ds-btn-gold:focus-visible { outline: 2px solid var(--color-emerald-brand, #0e9f6e); outline-offset: 2px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Canvas fill with hairline (Export dossier).",
+      "html": "<button class=\"ds-btn-quiet\">Export dossier</button>",
+      "css": ".ds-btn-quiet { background: var(--color-canvas, #0a1220); color: var(--color-ink, #e8eef7); border: 1px solid var(--color-line, #1f2d45); border-radius: 16px; padding: 12px 16px; font: 700 14px Barlow, 'Segoe UI', system-ui, sans-serif; cursor: pointer; transition: background-color 150ms ease; } .ds-btn-quiet:hover { background: var(--color-muted, #16243a); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--color-emerald-brand, #0e9f6e); outline-offset: 2px; }"
+    },
+    {
+      "name": "Link Input",
+      "kind": "input",
+      "refersTo": "input-link",
+      "description": "Muted well with hairline ring; ring thickens to emerald on focus.",
+      "html": "<input class=\"ds-input\" dir=\"ltr\" placeholder=\"Paste a link, SMS or email\" />",
+      "css": ".ds-input { background: var(--color-muted, #16243a); color: var(--color-ink, #e8eef7); border: 0; box-shadow: 0 0 0 1px var(--color-line, #1f2d45); border-radius: 16px; padding: 12px 14px; font: 400 15px Barlow, 'Segoe UI', system-ui, sans-serif; outline: none; transition: box-shadow 150ms ease; } .ds-input:focus { box-shadow: 0 0 0 2px #059669; }"
+    },
+    {
+      "name": "State Stamp",
+      "kind": "chip",
+      "refersTo": "stamp",
+      "description": "Rotated bordered caps that mark a state on its row.",
+      "html": "<span class=\"ds-stamp ds-stamp-synced\">Synced to e&amp; / du</span> <span class=\"ds-stamp ds-stamp-x\">Flagged on X</span> <span class=\"ds-stamp ds-stamp-scam\">Active</span>",
+      "css": ".ds-stamp { display: inline-block; transform: rotate(-3deg); border: 2px solid currentColor; border-radius: 6px; padding: 4px 8px; font: 800 11px/1 Barlow, 'Segoe UI', system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.12em; } .ds-stamp-synced { color: #34d399; } .ds-stamp-x { color: var(--color-gold-ink, #d8bd8c); } .ds-stamp-scam { color: var(--color-scam-ink, #fb7185); }"
+    },
+    {
+      "name": "Score Pill",
+      "kind": "chip",
+      "refersTo": "score-scam",
+      "description": "Crimson at 65+, gold 30-64, muted below.",
+      "html": "<span class=\"ds-score ds-score-scam\">96</span> <span class=\"ds-score ds-score-mid\">45</span> <span class=\"ds-score ds-score-low\">12</span>",
+      "css": ".ds-score { display: inline-block; border-radius: 9999px; padding: 2px 8px; font: 700 12px Barlow, 'Segoe UI', system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-score-scam { background: var(--color-scam, #e11d48); color: #fff; } .ds-score-mid { background: #c5a572; color: #060f1c; } .ds-score-low { background: var(--color-muted, #16243a); color: var(--color-ink, #e8eef7); }"
+    },
+    {
+      "name": "Police Top Bar",
+      "kind": "nav",
+      "refersTo": "crest",
+      "description": "Abu Dhabi Police site layout: uppercase items, crimson active underline, bilingual wordmark and SAQR shield crest.",
+      "html": "<header class=\"ds-topbar\"><nav class=\"ds-topbar-nav\"><a class=\"ds-topbar-item is-active\">Live desk</a><a class=\"ds-topbar-item\">Campaigns</a><a class=\"ds-topbar-item\">Takedowns</a></nav><div class=\"ds-topbar-mark\"><div><p class=\"ds-topbar-ar\" lang=\"ar\" dir=\"rtl\">شرطة أبوظبي</p><p class=\"ds-topbar-en\">Abu Dhabi Police</p></div><span class=\"ds-crest\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/><path d=\"m9 12 2 2 4-4\"/></svg></span></div></header>",
+      "css": ".ds-topbar { display: flex; align-items: stretch; justify-content: space-between; height: 76px; padding: 0 24px; background: var(--color-surface, #111c2e); border-bottom: 1px solid var(--color-line, #1f2d45); font-family: Barlow, 'Segoe UI', system-ui, sans-serif; } .ds-topbar-nav { display: flex; } .ds-topbar-item { position: relative; display: flex; align-items: center; padding: 0 14px; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: var(--color-ink-soft, #a3b3c8); cursor: pointer; } .ds-topbar-item:hover, .ds-topbar-item.is-active { color: var(--color-ink, #e8eef7); } .ds-topbar-item.is-active::after { content: \"\"; position: absolute; inset: auto 0 0 0; height: 4px; background: var(--color-scam, #e11d48); } .ds-topbar-mark { display: flex; align-items: center; gap: 12px; text-align: end; line-height: 1.2; } .ds-topbar-ar { margin: 0; font: 700 22px 'Noto Kufi Arabic', Tahoma, sans-serif; color: var(--color-ink, #e8eef7); } .ds-topbar-en { margin: 0; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-ink, #e8eef7); } .ds-crest { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 9999px; border: 3px solid #c5a572; background: #0b192c; color: #c5a572; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Abu Dhabi Night Grid",
+    "overview": "Every scam is a light on the city. Both surfaces, the police Command Center (desktop, projected on stage) and the citizen portal (phone first), stand on the same ground: Abu Dhabi drawn as a dot-matrix city at night, with live data as the only thing that lights it. Crimson pins are interceptions, emerald pins and the emerald glow around the island are verified places and the citizen's own shield. The system refuses the category default of a grey card grid with a chart in every tile; the map is the large tile, and numbers are figures, not charts.\n\nNight Grid is the default theme: a night-navy ground, tiles one step lighter, 1px hairline edges, 20px corners, and nothing glowing. A light version keeps the identical structure on cream paper with navy ink. The theme is chosen before first paint (dark unless the visitor saved \"light\"), so a first visit never flashes cream. The colour language is fixed like an orienteering map: emerald, gold and crimson each mean one thing on every screen and are never swapped.\n\nState is shown, not implied. When a campaign is blocked, synced to the telecoms or flagged on X, a rotated, bordered stamp lands on the row, so nothing changes silently. The police top bar follows the Abu Dhabi Police website layout, with the SAQR shield standing in the crest slot. Everything is bilingual (English and Arabic, with full RTL) and honours reduced motion.",
+    "keyCharacteristics": [
+      "Dot-matrix Abu Dhabi map as the signature ground, drawn in SVG, no map service.",
+      "Night navy by default; cream light theme with the same structure.",
+      "Flat tiles: surface, 1px hairline, 20px radius. No shadows on tiles, no glow halos, no nested cards.",
+      "Fixed colour meanings: emerald = official / safe / shield on, gold = verified police action, crimson = scam only.",
+      "Large light-weight figures; small tracked capital labels.",
+      "Self-stamping states.",
+      "Barlow (DIN-like, UAE road-sign register) with Noto Kufi Arabic."
+    ],
+    "rules": [
+      { "name": "The Crimson Means Scam Rule", "body": "Crimson appears only where something is a scam. Scores below 65 are gold (30 to 64) or neutral muted (under 30), never crimson. Fills use Scam Crimson, text uses Scam Ink.", "section": "colors" },
+      { "name": "The Gold Is Police Action Rule", "body": "Gold marks a verified police act or an official notice. It is never decoration and never a warning colour for citizens.", "section": "colors" },
+      { "name": "The One Meaning Rule", "body": "Emerald, gold and crimson are never swapped between surfaces, themes or languages.", "section": "colors" },
+      { "name": "The Figure Not Chart Rule", "body": "Counts are shown as large light figures with one line of context (\"+3 this session\", the entities impersonated), not as charts.", "section": "typography" },
+      { "name": "The Tracked Caps Label Rule", "body": "Tile and KPI labels are small tracked capitals in Ink Soft; titles never compete with the figures.", "section": "typography" },
+      { "name": "The No Halo Rule", "body": "Tiles never glow and never cast shadows. A tile is surface plus a 1px hairline.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do build every tile as Surface + 1px Line + 20px radius + 16px padding.",
+      "Do fill with `--color-scam` and write crimson text with `--color-scam-ink`; write gold text with `--color-gold-ink`.",
+      "Do use the semantic theme variables (canvas, surface, muted, line, ink, ink-soft) so both themes come from one structure.",
+      "Do stamp a state onto the row or button it changed, with the rotated bordered caps stamp.",
+      "Do show counts as large light figures with one line of context.",
+      "Do use logical (start / end) spacing and keep domains and URLs `dir=\"ltr\"` inside Arabic pages.",
+      "Do wrap animated surfaces in `MotionConfig reducedMotion=\"user\"`; reduced motion keeps fades and drops travel.",
+      "Do keep the demo-data mark visible whenever the desk shows seeded data."
+    ],
+    "donts": [
+      "Don't use crimson for anything that is not a scam: not for errors, warnings, low scores or decoration.",
+      "Don't use gold except for verified police action and official notices.",
+      "Don't add glow halos, drop shadows or blur glows to tiles.",
+      "Don't nest a card inside a tile; the police map's inset canvas well is the only framed element inside a tile.",
+      "Don't reproduce the official Abu Dhabi Police emblem; the crest slot holds the SAQR shield.",
+      "Don't put a chart in every tile; the map and figures carry the data.",
+      "Don't let a state change silently; nothing disappears without a stamp or a message."
+    ]
+  }
+}

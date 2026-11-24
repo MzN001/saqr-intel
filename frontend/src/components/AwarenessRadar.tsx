@@ -78,7 +78,7 @@ function Radar({ cards }: { cards: AlertCardData[] }) {
       <span className="absolute inset-y-0 left-1/2 w-px bg-emerald-400/15" />
       <span className="absolute inset-0 overflow-hidden rounded-full"><span className="absolute inset-0 animate-sweep bg-[conic-gradient(from_0deg,rgba(16,185,129,0.45),rgba(16,185,129,0.08)_18%,transparent_30%)]" /></span>
       <span className="absolute left-1/2 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-500 shadow-[0_0_12px_#c5a572]" />
-      <span className="absolute left-1/2 top-[54%] -translate-x-1/2 text-[10px] font-semibold uppercase tracking-widest text-white/50">
+      <span className="absolute left-1/2 top-[54%] -translate-x-1/2 text-[11px] font-semibold uppercase tracking-widest text-white/50">
         {lang === "ar" ? "أبوظبي" : "Abu Dhabi"}
       </span>
       {cards.map((c, i) => {
@@ -98,7 +98,7 @@ function Radar({ cards }: { cards: AlertCardData[] }) {
           >
             <span className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 animate-ping-slow rounded-full" style={{ backgroundColor: `${color}55` }} />
             <span className="relative block size-3.5 rounded-full ring-2 ring-white" style={{ backgroundColor: color }} />
-            <span className="absolute left-1/2 top-5 -translate-x-1/2 whitespace-nowrap rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+            <span className="absolute left-1/2 top-5 -translate-x-1/2 whitespace-nowrap rounded bg-black/40 px-1.5 py-0.5 text-[11px] font-semibold text-white">
               {lang === "ar" ? ENTITY_AR[c.entity] ?? c.entity : c.entity}
             </span>
           </motion.div>
@@ -151,7 +151,7 @@ function AlertCard({ card, index }: { card: AlertCardData; index: number }) {
             <span>
               {t("broadcastAt")} {new Date(card.generatedAt).toLocaleTimeString(lang === "ar" ? "ar-AE" : "en-AE", { hour: "2-digit", minute: "2-digit" })}
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${s.pill}`}>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${s.pill}`}>
               {t("severity")}: {sevLabel}
             </span>
           </div>
@@ -189,7 +189,7 @@ function AlertCard({ card, index }: { card: AlertCardData; index: number }) {
             <div key={label} className="rounded-2xl bg-muted p-2.5">
               <Icon className="mx-auto size-4 text-ink-soft" />
               <p className="mt-1 text-lg font-extrabold tabular-nums text-ink">{value}</p>
-              <p className="text-[10px] font-medium leading-tight text-ink-soft/80">{label}</p>
+              <p className="text-[11px] font-medium leading-tight text-ink-soft/80">{label}</p>
             </div>
           ))}
         </div>

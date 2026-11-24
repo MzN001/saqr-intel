@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { CircleAlert, Link2, ScanSearch, ShieldCheck, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
-import { CityGridBackdrop } from "./CityGrid";
+import { CityGridBackdrop, MAP_ASPECT } from "./CityGrid";
 import { useLang } from "@/lib/i18n";
 import { extractUrl } from "@/lib/url";
 import { SCAM_FINE_URL } from "./SearchMapsShield";
@@ -19,7 +19,7 @@ function toUrl(input: string): string | null {
 
 /** `rawText` is what the citizen pasted when it was more than a bare link (e.g. a whole SMS). */
 export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: string) => void }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [value, setValue] = useState("");
   const [invalid, setInvalid] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -44,12 +44,8 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
   };
 
   return (
-    <section aria-labelledby="link-checker-title" className="relative isolate overflow-hidden rounded-[20px] border border-line bg-surface p-4 sm:p-6">
-      {/* Night Grid: the check sits on Abu Dhabi at night, your shield lit around the island. */}
-      <div className="absolute inset-y-0 end-0 -z-10 w-full sm:w-[72%]">
-        <CityGridBackdrop />
-        <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/55 to-transparent rtl:bg-gradient-to-l" />
-      </div>
+    <section aria-labelledby="link-checker-title" className="grid gap-5 rounded-[20px] border border-line bg-surface p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div className="min-w-0">
       <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-navy-900 text-gold-500 dark:bg-navy-950 dark:ring-1 dark:ring-white/10">
           <ScanSearch className="size-5" />
@@ -149,6 +145,16 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
           {t("exampleSafe")}
         </button>
       </div>
+      </div>
+      {/* Night Grid: Abu Dhabi at night, your shield lit in emerald around the island. */}
+      <figure className="relative order-last h-32 overflow-hidden rounded-2xl border border-line bg-canvas lg:h-auto">
+        <div className="absolute inset-0 lg:relative lg:inset-auto lg:w-full" style={{ aspectRatio: MAP_ASPECT }}>
+          <CityGridBackdrop />
+        </div>
+        <figcaption className="absolute bottom-2 start-2 flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink">
+          <span className="size-2 rounded-full bg-emerald-500" /> {lang === "ar" ? "درعك · جزيرة أبوظبي" : "Your shield · Abu Dhabi island"}
+        </figcaption>
+      </figure>
     </section>
   );
 }

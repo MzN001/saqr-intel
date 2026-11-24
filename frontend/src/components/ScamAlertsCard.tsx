@@ -60,18 +60,18 @@ function AlertPreview() {
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.15 }}
-      className="rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_-12px_rgba(11,25,44,0.35)] ring-1 ring-black/5 backdrop-blur dark:bg-white/10 dark:ring-white/10"
+      className="border-t border-line pt-3"
       aria-hidden
     >
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-navy-900/60 dark:text-white/60">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
         <span className="grid size-5 place-items-center rounded-md bg-navy-900 text-gold-500">
           <ShieldCheck className="size-3" />
         </span>
         {t("alPreviewApp")}
         <span className="ms-auto font-medium normal-case">{t("alPreviewNow")}</span>
       </div>
-      <p className="mt-1.5 text-[13.5px] font-bold leading-snug text-navy-900 dark:text-white">{t("alPreviewTitle")}</p>
-      <p className="mt-0.5 text-[12.5px] leading-snug text-navy-900/75 dark:text-white/75">{t("alPreviewBody")}</p>
+      <p className="mt-1.5 text-[13.5px] font-bold leading-snug text-ink">{t("alPreviewTitle")}</p>
+      <p className="mt-0.5 text-[12.5px] leading-snug text-ink-soft">{t("alPreviewBody")}</p>
     </motion.div>
   );
 }
@@ -84,13 +84,13 @@ function IosSteps() {
     { icon: Smartphone, text: t("alIos3") },
   ];
   return (
-    <div className="rounded-2xl bg-muted p-4 ring-1 ring-line">
+    <div className="border-t border-line pt-4">
       <p className="font-bold text-ink">{t("alIosTitle")}</p>
       <p className="mt-0.5 text-sm text-ink-soft">{t("alIosIntro")}</p>
       <ol className="mt-3 space-y-2.5">
         {steps.map(({ icon: Icon, text }, i) => (
           <li key={i} className="flex items-center gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface text-[#0a84ff] shadow-sm ring-1 ring-line">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-[#0a84ff]">
               <Icon className="size-4.5" />
             </span>
             <span className="text-sm font-medium text-ink">
@@ -225,24 +225,23 @@ export function ScamAlertsCard() {
 
   return (
     <section aria-labelledby="alerts-title" className="overflow-hidden rounded-[20px] border border-line bg-surface">
-      <div className={`relative overflow-hidden p-4 sm:p-5 ${on ? "bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-800" : "bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950"}`}>
-        <div className="pointer-events-none absolute -end-10 -top-12 size-44 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative flex items-start gap-3 text-white">
+      <div className="p-4 pb-0 sm:p-5 sm:pb-0">
+        <div className="flex items-start gap-3 text-ink">
           <motion.span
-            className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25"
+            className={`grid size-10 shrink-0 place-items-center rounded-xl ${on ? "bg-emerald-700 text-white" : "bg-navy-900 text-gold-500"}`}
             animate={on ? { rotate: [0, -14, 12, -8, 6, 0] } : { rotate: 0 }}
             transition={on ? { duration: 1.1, repeat: 1, repeatDelay: 1.5 } : undefined}
           >
-            {on ? <BellRing className="size-5.5" /> : <BellRing className="size-5.5 text-gold-500" />}
+            <BellRing className="size-5" />
           </motion.span>
           <div className="min-w-0">
             <h2 id="alerts-title" className="text-balance text-base font-extrabold leading-snug sm:text-lg sm:leading-tight">
               {t("alTitle")}
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-white/80">{on ? t("alOnSub") : t("alIntro")}</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">{on ? t("alOnSub") : t("alIntro")}</p>
           </div>
         </div>
-        <div className="relative mt-4">
+        <div className="mt-4">
           <AlertPreview />
         </div>
       </div>
@@ -255,7 +254,7 @@ export function ScamAlertsCard() {
             {state === "ios-add-home" && <IosSteps />}
 
             {state === "unsupported" && (
-              <p className="flex items-start gap-2 rounded-2xl bg-muted p-3 text-sm text-ink-soft ring-1 ring-line">
+              <p className="flex items-start gap-2 border-t border-line pt-3 text-sm text-ink-soft">
                 <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-500" />
                 {t("alUnsupported")}
               </p>
@@ -275,7 +274,7 @@ export function ScamAlertsCard() {
                 type="button"
                 onClick={enable}
                 disabled={state === "busy"}
-                className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-emerald-700 px-5 py-4 text-base font-extrabold text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.8)] transition hover:bg-emerald-800 active:scale-[0.98] disabled:opacity-80"
+                className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-emerald-700 px-5 py-4 text-base font-extrabold text-white transition hover:bg-emerald-800 active:scale-[0.98] disabled:opacity-80"
               >
                 <span className="pointer-events-none absolute inset-0 animate-[shimmer_2.5s_ease-out_1] bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.25)_50%,transparent_65%)] bg-[length:200%_100%]" />
                 {state === "busy" ? <Loader2 className="relative size-5 animate-spin" /> : <BellRing className="relative size-5" />}

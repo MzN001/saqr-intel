@@ -224,13 +224,13 @@ export function usePoliceLive() {
 }
 
 /* ---------- labels ---------- */
-export const CHANNEL_LABEL: Record<string, { en: string; ar: string; tone: string }> = {
-  AUTO_TELECOM_DNS: { en: "Telecom DNS", ar: "حظر شبكة الاتصالات", tone: "bg-sky-500/15 text-sky-300 ring-sky-400/30" },
-  AUTO_SMS_GUARD: { en: "SMS Guard", ar: "حارس الرسائل", tone: "bg-violet-500/15 text-violet-300 ring-violet-400/30" },
-  CITIZEN_MANUAL_CHECK: { en: "Citizen Check", ar: "فحص المواطن", tone: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30" },
-  MOBILE_OS_SHARE_SHEET: { en: "Share Sheet", ar: "قائمة المشاركة", tone: "bg-teal-500/15 text-teal-300 ring-teal-400/30" },
-  PC_BROWSER_EXTENSION: { en: "PC Extension", ar: "إضافة المتصفح", tone: "bg-amber-500/15 text-amber-300 ring-amber-400/30" },
-  X_COMMUNITY_ALERT: { en: "X Community Alert", ar: "تنبيه مجتمعي على X", tone: "bg-white/10 text-white ring-white/25" },
+export const CHANNEL_LABEL: Record<string, { en: string; ar: string; tone: string; short: { en: string; ar: string } }> = {
+  AUTO_TELECOM_DNS: { en: "Telecom DNS", ar: "حظر شبكة الاتصالات", tone: "bg-sky-500/15 text-sky-300 ring-sky-400/30", short: { en: "DNS", ar: "DNS" } },
+  AUTO_SMS_GUARD: { en: "SMS Guard", ar: "حارس الرسائل", tone: "bg-violet-500/15 text-violet-300 ring-violet-400/30", short: { en: "SMS", ar: "رسائل" } },
+  CITIZEN_MANUAL_CHECK: { en: "Citizen Check", ar: "فحص المواطن", tone: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30", short: { en: "Check", ar: "فحص" } },
+  MOBILE_OS_SHARE_SHEET: { en: "Share Sheet", ar: "قائمة المشاركة", tone: "bg-teal-500/15 text-teal-300 ring-teal-400/30", short: { en: "Share", ar: "مشاركة" } },
+  PC_BROWSER_EXTENSION: { en: "PC Extension", ar: "إضافة المتصفح", tone: "bg-amber-500/15 text-amber-300 ring-amber-400/30", short: { en: "Browser", ar: "متصفح" } },
+  X_COMMUNITY_ALERT: { en: "X Community Alert", ar: "تنبيه مجتمعي على X", tone: "bg-white/10 text-white ring-white/25", short: { en: "X alert", ar: "تنبيه X" } },
 };
 
 export const STATUS_LABEL: Record<CampaignStatus, { en: string; ar: string; tone: string }> = {
@@ -256,6 +256,15 @@ export const P = {
   kEntities: { en: "Active Impersonated UAE Entities", ar: "جهات إماراتية منتحلة نشطة" },
   kPins: { en: "Hijacked Abu Dhabi Maps Pins", ar: "دبابيس خرائط مخترقة في أبوظبي" },
   kX: { en: "Community X Alerts Dispatched", ar: "تنبيهات مجتمعية على X" },
+  kProtectedShort: { en: "Protected", ar: "تمت حمايتهم" },
+  kEntitiesShort: { en: "Entities", ar: "الجهات" },
+  kPinsShort: { en: "Hijacked pins", ar: "دبابيس مخترقة" },
+  kXShort: { en: "X alerts", ar: "تنبيهات X" },
+  thisSession: { en: "this session", ar: "في هذه الجلسة" },
+  lastBlock: { en: "Last block", ar: "آخر حظر" },
+  lastPost: { en: "Last post", ar: "آخر منشور" },
+  channelMix: { en: "Where interceptions come from", ar: "مصادر عمليات الاعتراض" },
+  demoData: { en: "Demo data · resets on restart", ar: "بيانات تجريبية · تُعاد عند إعادة التشغيل" },
   stream: { en: "Live Citizen Interception Stream", ar: "بث مباشر لعمليات اعتراض المواطنين" },
   streamHint: { en: "Click an interception to inspect its campaign", ar: "اضغط على أي عملية لفحص الحملة المرتبطة بها" },
   map: { en: "Abu Dhabi Geo-Spoof Sentinel", ar: "رادار تزييف المواقع الجغرافية في أبوظبي" },

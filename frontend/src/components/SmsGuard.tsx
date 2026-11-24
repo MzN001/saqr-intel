@@ -209,7 +209,7 @@ export function SmsGuard({ onVerdict }: { onVerdict: (v: ScanVerdict) => void })
                           initial={{ scale: 0 }}
                           animate={{ scale: [0, 1.4, 1] }}
                           exit={{ scale: 0 }}
-                          className="grid size-4 place-items-center rounded-full bg-crimson-600 text-[10px] text-white"
+                          className="grid size-4 place-items-center rounded-full bg-crimson-600 text-[11px] text-white"
                         >
                           {quarantineCount}
                         </motion.span>

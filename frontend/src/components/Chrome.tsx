@@ -12,12 +12,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6">
-        <div className="relative grid size-10 shrink-0 place-items-center rounded-2xl bg-navy-900 shadow-md ring-2 ring-gold-500/60 sm:size-11">
+        <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-navy-900 shadow-md ring-2 ring-gold-500/60 sm:size-11 sm:rounded-2xl">
           <ShieldCheck className="size-6 text-gold-500" />
           <span className="absolute -bottom-0.5 -end-0.5 size-3 rounded-full border-2 border-surface bg-emerald-500" />
         </div>
         <div className="min-w-0">
-          <p className="whitespace-nowrap text-lg font-extrabold leading-none tracking-tight text-ink">{t("appName")}</p>
+          <p className="whitespace-nowrap text-base font-extrabold sm:text-lg leading-none tracking-tight text-ink">{t("appName")}</p>
           <p className="mt-1 whitespace-nowrap text-xs font-medium text-ink-soft/80">{t("appTagline")}</p>
         </div>
 

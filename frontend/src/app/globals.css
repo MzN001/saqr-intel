@@ -17,6 +17,10 @@
   /* Night Grid: the dot of the city map texture (warm grey on cream; see dark below). */
   --color-grid-dot: #d9ccb4;
   --color-scam: #e11d48;
+  /* Crimson for TEXT (fills stay --color-scam): AA on both grounds. */
+  --color-scam-ink: #be123c;
+  /* Gold for TEXT on the cream ground (fills and buttons keep --color-gold-500). */
+  --color-gold-ink: #7a5a1f;
 
   --color-navy-950: #060f1c;
   --color-navy-900: #0b192c;
@@ -31,8 +35,8 @@
   --color-gold-500: #c5a572;
   --color-gold-100: #f6efe2;
 
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --font-arabic: "Noto Kufi Arabic", "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
+  --font-sans: var(--font-barlow), "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-arabic: var(--font-kufi), "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
 
   --animate-sweep: sweep 4s linear infinite;
   --animate-ping-slow: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -87,6 +91,8 @@
   --color-ink: #e8eef7;
   --color-ink-soft: #a3b3c8;
   --color-grid-dot: #1f2e47;
+  --color-scam-ink: #fb7185;
+  --color-gold-ink: #d8bd8c;
 }
 
 /* The city at night: a dot-matrix ground. Used behind the map tiles and the citizen hero. */
@@ -107,6 +113,11 @@ body {
 }
 
 html[lang="ar"] body {
+  font-family: var(--font-arabic);
+}
+
+/* Arabic inside English pages (e.g. the police wordmark) still gets the Arabic face. */
+:lang(ar) {
   font-family: var(--font-arabic);
 }
 

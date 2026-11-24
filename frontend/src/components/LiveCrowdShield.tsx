@@ -199,7 +199,7 @@ export function LiveCrowdShield() {
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-x-2 text-sm font-bold text-ink">
                     <span className="truncate">{entity ?? t("unknownEntity")}</span>
-                    <span className={`rounded px-1.5 py-px text-[10px] font-extrabold uppercase ${blocked ? "bg-crimson-600 text-white" : "bg-amber-500 text-white"}`}>
+                    <span className={`rounded px-1.5 py-px text-[11px] font-extrabold uppercase ${blocked ? "bg-crimson-600 text-white" : "bg-amber-500 text-white"}`}>
                       {blocked ? t("liveBlocked") : t("liveFlagged")} · {b.riskScore}
                     </span>
                   </p>

@@ -53,10 +53,22 @@ export function project(lat: number, lng: number): { x: number; y: number } {
   return { x: Math.min(97, Math.max(3, x)), y: Math.min(95, Math.max(5, y)) };
 }
 
+/** District names printed on the map so "where" reads at a glance (bilingual). */
+const DISTRICTS: { en: string; ar: string; lat: number; lng: number }[] = [
+  { en: "Corniche", ar: "الكورنيش", lat: 24.452, lng: 54.335 },
+  { en: "Al Maryah", ar: "المارية", lat: 24.522, lng: 54.37 },
+  { en: "Saadiyat", ar: "السعديات", lat: 24.566, lng: 54.44 },
+  { en: "Yas", ar: "ياس", lat: 24.517, lng: 54.612 },
+  { en: "Mussafah", ar: "مصفح", lat: 24.33, lng: 54.5 },
+  { en: "Khalifa City", ar: "مدينة خليفة", lat: 24.4, lng: 54.6 },
+];
+
 const COLS = 64;
 const ROWS = Math.round((COLS * H) / W);
+/** The city's true proportions: give the map box this aspect ratio so dots stay round and pins exact. */
+export const MAP_ASPECT = `${COLS} / ${ROWS}`;
 
-const Dots = memo(function Dots({ glow, strong }: { glow?: { lat: number; lng: number; r: number }; strong?: boolean }) {
+const Dots = memo(function Dots({ glow, strong, crop }: { glow?: { lat: number; lng: number; r: number }; strong?: boolean; crop?: boolean }) {
   const dots = useMemo(() => {
     const out: { cx: number; cy: number; land: boolean; lit: boolean }[] = [];
     for (let r = 0; r < ROWS; r++) {
@@ -71,7 +83,7 @@ const Dots = memo(function Dots({ glow, strong }: { glow?: { lat: number; lng: n
     return out;
   }, [glow]);
   return (
-    <svg viewBox={`0 0 ${COLS} ${ROWS}`} preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
+    <svg viewBox={`0 0 ${COLS} ${ROWS}`} preserveAspectRatio={crop ? "xMidYMid slice" : "none"} className="absolute inset-0 size-full" aria-hidden>
       {dots.map((d, i) => (
         <circle
           key={i}
@@ -91,15 +103,31 @@ export function CityGridMap({
   selectedId,
   onSelect,
   label,
+  lang = "en",
 }: {
   pins: GridPin[];
   selectedId: string | null;
   onSelect: (pin: GridPin) => void;
   label: string;
+  lang?: "en" | "ar";
 }) {
   return (
     <div className="relative size-full" dir="ltr" role="group" aria-label={label}>
       <Dots />
+      {DISTRICTS.map((d) => {
+        const { x, y } = project(d.lat, d.lng);
+        return (
+          <span
+            key={d.en}
+            aria-hidden
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-canvas/90 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft"
+            style={{ left: `${x}%`, top: `${y}%` }}
+            lang={lang}
+          >
+            {lang === "ar" ? d.ar : d.en}
+          </span>
+        );
+      })}
       {pins.map((p) => {
         const { x, y } = project(p.lat, p.lng);
         const scam = p.type === "SPOOFED";
@@ -133,7 +161,7 @@ export function CityGridMap({
 export function CityGridBackdrop() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden dir="ltr">
-      <Dots strong glow={{ lat: 24.465, lng: 54.385, r: 0.05 }} />
+      <Dots strong crop glow={{ lat: 24.465, lng: 54.385, r: 0.05 }} />
     </div>
   );
 }
