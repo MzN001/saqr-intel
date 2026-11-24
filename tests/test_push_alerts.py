@@ -255,3 +255,30 @@ def test_device_tag_goes_into_the_dns_settings(client):
     prof = client.get("/api/ios-dns-profile", params={"nextdns_id": "abc123", "device": "saqriphone1"}).text
     assert "https://dns.nextdns.io/abc123/saqriphone1" in prof
     assert client.get("/api/android-dns-config", params={"device": "Bad Tag!"}).status_code == 422
+
+
+def test_open_tab_retries_do_not_repeat_the_alert(client, sent):
+    """Safari retries a blocked scam tab every few minutes: one alert, until the phone leaves it alone."""
+    client.post("/api/push/subscribe", json={"subscription": IPHONE, "lang": "en", "device": "saqriphone1"})
+    line = {"domain": "saqr-demo-scam.vercel.app", "status": "blocked", "device": {"name": "saqriphone1"}}
+    key = "saqr-demo-scam.vercel.app|saqriphone1"
+
+    async def go():
+        import time as t
+        w = BlockWatcher()
+        first = await w.handle([{**line, "timestamp": "a"}])
+        # 3 minutes later the open tab retries (the 2-minute repeat window has passed):
+        w._recent[key] -= 180
+        w._last_attempt[key] -= 180
+        retry = await w.handle([{**line, "timestamp": "b"}])
+        # 15 minutes of quiet, then a fresh test on the same phone:
+        w._recent[key] = t.monotonic() - 1000
+        w._last_attempt[key] = t.monotonic() - 900
+        fresh = await w.handle([{**line, "timestamp": "c"}])
+        return first, retry, fresh
+
+    before = len(sent)
+    first, retry, fresh = client.portal.call(go)
+    assert first == ["saqr-demo-scam.vercel.app"] and retry == [] and fresh == ["saqr-demo-scam.vercel.app"]
+    assert len(sent[before:]) == 2
+    client.post("/api/push/unsubscribe", json={"endpoint": IPHONE["endpoint"]})

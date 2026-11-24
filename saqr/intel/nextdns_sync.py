@@ -165,6 +165,9 @@ class BlockWatcher:
     POLL_SECONDS = 2.5
     STREAM_RETRY_SECONDS = 60.0
     REPEAT_AFTER_SECONDS = 120
+    # A tab left open on a blocked scam (Safari) retries it every few minutes. Those retries are the
+    # same attempt, not a new one: a phone is alerted again only after it left the site alone this long.
+    QUIET_SECONDS = 600
     RETRY_DELAYS = (2.0, 5.0, 15.0)
 
     def __init__(self) -> None:
@@ -176,6 +179,7 @@ class BlockWatcher:
         self._retrying: set[str] = set()
         self.alerts_failed = 0
         self._recent: dict[str, float] = {}
+        self._last_attempt: dict[str, float] = {}  # domain|device -> when that phone last asked for it
         self.alerts_sent = 0
         self.last_alert: str | None = None
         self.last_error: str | None = None
@@ -344,10 +348,18 @@ class BlockWatcher:
                 self._flagged_at = -1e9
                 flagged = await self._flagged()
                 hit = next((n for n in names if n in flagged), None)
+            if not hit:
+                continue
             device = self._device(item)
             key = f"{hit}|{device or ''}"  # each phone gets its own alert, and only its own
-            if (not hit or now - self._recent.get(key, -1e9) < self.REPEAT_AFTER_SECONDS or key in done
-                    or key in self._retrying):
+            previous = self._last_attempt.get(key)
+            self._last_attempt[key] = now
+            if len(self._last_attempt) > 2000:
+                for old in list(self._last_attempt)[:1000]:
+                    del self._last_attempt[old]
+            if key in self._recent and previous is not None and now - previous < self.QUIET_SECONDS:
+                continue  # the same phone still retrying the same scam (open tab): already alerted
+            if now - self._recent.get(key, -1e9) < self.REPEAT_AFTER_SECONDS or key in done or key in self._retrying:
                 continue
             if not await self._deliver(hit, flagged[hit].get("impersonated_entity"), device):
                 continue  # retried in the background; a later blocked attempt may also retry
