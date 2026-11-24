@@ -1,0 +1,4 @@
+FILENAME,URL,URLLength,Domain,label
+1.txt,https://www.unknown-legit-one.example,30,www.unknown-legit-one.example,1
+2.txt,http://phish-kit.example.top/login/index.php,40,phish-kit.example.top,0
+3.txt,https://www.unknown-legit-two.example,30,www.unknown-legit-two.example,1

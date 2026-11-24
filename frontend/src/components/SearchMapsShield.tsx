@@ -1,9 +1,32 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bookmark, Globe, Mic, Navigation, Phone, Search, Star } from "lucide-react";
-import type { MouseEvent } from "react";
-import { analyzeUrl, scanMaps, type ScanVerdict } from "@/lib/api";
+import {
+  BadgeCheck,
+  Bookmark,
+  Globe,
+  LoaderCircle,
+  Mic,
+  Navigation,
+  Phone,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  Star,
+  TriangleAlert,
+  WifiOff,
+} from "lucide-react";
+import { useEffect, useState, type MouseEvent } from "react";
+import {
+  analyzeUrl,
+  batchVerdict,
+  checkPhone,
+  scanMaps,
+  type BatchVerdictItem,
+  type PhoneCheck,
+  type ScanVerdict,
+} from "@/lib/api";
+import type { Lang } from "@/lib/i18n";
 import { useLang } from "@/lib/i18n";
 import { useHydrated } from "@/lib/useHydrated";
 import { PhoneFrame } from "./Chrome";
@@ -11,8 +34,143 @@ import { PhoneFrame } from "./Chrome";
 export const SCAM_FINE_URL = "http://127.0.0.1:8000/mock-scam/tamm-fine";
 export const SCAM_POST_URL = "http://127.0.0.1:8000/mock-scam/emiratespost";
 const OFFICIAL_URL = "https://www.adpolice.gov.ae/";
+const MAPS_NAME = "Emirates Post Customer Center - Abu Dhabi";
+const MAPS_PHONE = "+971 50 000 7781";
 
 type RunScan = (target: string, job: () => Promise<ScanVerdict>) => void;
+
+// ---------------------------------------------------------------------------------------------
+// Pre-click badges: the same live verdicts the browser extension paints on Google / Bing / Maps
+// (POST /api/batch-verdict + /api/check-phone), fetched when the screen opens, before any tap.
+// ---------------------------------------------------------------------------------------------
+type PreClick =
+  | { state: "checking" }
+  | { state: "live"; links: Record<string, BatchVerdictItem>; phone: PhoneCheck | null }
+  | { state: "offline" };
+
+function usePreClickVerdicts(): PreClick {
+  const [live, setLive] = useState<PreClick>({ state: "checking" });
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [items, phone] = await Promise.all([
+          batchVerdict([SCAM_FINE_URL, SCAM_POST_URL, OFFICIAL_URL]),
+          checkPhone(MAPS_PHONE, MAPS_NAME, "maps").catch(() => null),
+        ]);
+        if (!cancelled) setLive({ state: "live", links: Object.fromEntries(items.map((i) => [i.url, i])), phone });
+      } catch {
+        if (!cancelled) setLive({ state: "offline" });
+      }
+    };
+    const id = window.setTimeout(() => void load(), 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, []);
+  return live;
+}
+
+interface Badge {
+  level: "danger" | "warn" | "official";
+  label: string;
+  reason: string | null;
+  tip: string;
+}
+
+const entityName = (e: BatchVerdictItem["entity"], lang: Lang) => (e ? (lang === "ar" ? e.name_ar : e.name_en) : "");
+const reasonText = (r: { en: string; ar: string }, lang: Lang) => (lang === "ar" ? r.ar : r.en);
+
+/** Same rules as the extension: red for scams, amber for suspicious, green only for official UAE sites. */
+function linkBadge(v: BatchVerdictItem | undefined, lang: Lang): Badge | null {
+  if (!v || !v.verdict) return null;
+  const name = entityName(v.entity, lang);
+  const reasons = v.reasons.map((r) => reasonText(r, lang));
+  const tip = reasons.map((r) => `• ${r}`).join("\n");
+  if (v.verdict === "HIGH-RISK SCAM" || v.score >= 65) {
+    const label = lang === "ar" ? `صقر: احتيال${name ? ` — ينتحل صفة ${name}` : ""}` : `SAQR: scam${name ? ` — imitates ${name}` : ""}`;
+    return { level: "danger", label, reason: reasons[0] ?? null, tip };
+  }
+  if (v.verdict === "SUSPICIOUS" || v.score >= 30) {
+    return { level: "warn", label: lang === "ar" ? "صقر: مشبوه" : "SAQR: suspicious", reason: reasons[0] ?? null, tip };
+  }
+  if (v.official) {
+    const label = name ? (lang === "ar" ? `رسمي: ${name}` : `Official: ${name}`) : lang === "ar" ? "موقع إماراتي رسمي" : "Official UAE website";
+    return { level: "official", label, reason: null, tip };
+  }
+  return null;
+}
+
+function phoneBadge(p: PhoneCheck | null, lang: Lang): Badge | null {
+  if (!p || p.level === "none") return null;
+  const official = p.entity?.official_phones_display.join(", ") ?? "";
+  const tip = p.reasons.map((r) => `• ${reasonText(r, lang)}`).join("\n");
+  const reason = p.reasons[0] ? reasonText(p.reasons[0], lang) : null;
+  if (p.level === "official") {
+    return { level: "official", label: lang === "ar" ? "رقم رسمي" : "Official number", reason: null, tip };
+  }
+  if (p.level === "danger") {
+    const label = official
+      ? lang === "ar" ? `ليس الرقم الرسمي (الرسمي: ${official})` : `Not the official number (official: ${official})`
+      : lang === "ar" ? "رقم احتيالي" : "Scam number";
+    return { level: "danger", label, reason, tip };
+  }
+  const label = lang === "ar" ? `غير مدرج رسمياً (الرسمي: ${official})` : `Not on the official list (official: ${official})`;
+  return { level: "warn", label, reason, tip };
+}
+
+const BADGE_TONE: Record<Badge["level"], string> = {
+  danger: "border-red-900 bg-red-700 text-white",
+  warn: "border-amber-500 bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100",
+  official: "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100",
+};
+const BADGE_ICON = { danger: ShieldAlert, warn: TriangleAlert, official: BadgeCheck };
+
+function PreClickBadge({ badge, showReason = false }: { badge: Badge | null; showReason?: boolean }) {
+  if (!badge) return null;
+  const Icon = BADGE_ICON[badge.level];
+  return (
+    <motion.span
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="mt-1 flex flex-col items-start gap-0.5"
+      title={badge.tip || undefined}
+    >
+      <span role="note" className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11.5px] font-semibold leading-tight ${BADGE_TONE[badge.level]}`}>
+        <Icon className="size-3.5 shrink-0" aria-hidden />
+        {badge.label}
+      </span>
+      {showReason && badge.reason ? <span className="text-[11.5px] leading-snug text-red-700 dark:text-red-300">{badge.reason}</span> : null}
+    </motion.span>
+  );
+}
+
+function PreClickStatus({ live, lang }: { live: PreClick; lang: Lang }) {
+  const ar = lang === "ar";
+  if (live.state === "checking") {
+    return (
+      <p className="mt-3 flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-gray-400">
+        <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
+        {ar ? "صقر يفحص هذه النتائج قبل أن تنقر…" : "SAQR is checking these results before you tap…"}
+      </p>
+    );
+  }
+  if (live.state === "offline") {
+    return (
+      <p className="mt-3 flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-gray-400">
+        <WifiOff className="size-3.5" aria-hidden />
+        {ar ? "الفحص المسبق غير متاح الآن. انقر على أي نتيجة لفحصها." : "Live pre-check unavailable right now. Tap any result to scan it."}
+      </p>
+    );
+  }
+  return (
+    <p className="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-emerald-700 dark:text-emerald-300">
+      <ShieldCheck className="size-3.5" aria-hidden />
+      {ar ? "فحص صقر كل نتيجة وإعلان ورقم قبل أن تنقر" : "SAQR checked every result, ad and phone number before you tap"}
+    </p>
+  );
+}
 
 function GoogleWordmark() {
   const letters: [string, string][] = [
@@ -38,6 +196,12 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
   const { t, lang } = useLang();
   const hydrated = useHydrated();
   const link = (url: string) => (hydrated ? url : undefined);
+  const live = usePreClickVerdicts();
+  const links = live.state === "live" ? live.links : {};
+  const adBadge = linkBadge(links[SCAM_FINE_URL], lang);
+  const mapsSiteBadge = linkBadge(links[SCAM_POST_URL], lang);
+  const officialBadge = linkBadge(links[OFFICIAL_URL], lang);
+  const mapsPhoneBadge = phoneBadge(live.state === "live" ? live.phone : null, lang);
 
   const interceptAd = (e: MouseEvent) => {
     e.preventDefault();
@@ -86,6 +250,9 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
             </span>
           ))}
         </div>
+        <div dir={lang === "ar" ? "rtl" : "ltr"}>
+          <PreClickStatus live={live} lang={lang} />
+        </div>
 
         <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-4" dir={lang === "ar" ? "rtl" : "ltr"}>
           <motion.a variants={item} href={link(SCAM_FINE_URL)} onClick={interceptAd} className="group block cursor-pointer rounded-2xl p-1 transition active:scale-[0.99]">
@@ -97,7 +264,12 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
                 <p className="truncate text-[12px] text-gray-600 dark:text-gray-400">https://tamm-smart-pay.net › traffic-fines</p>
               </div>
             </div>
-            <p className="mt-1.5 text-[19px] leading-snug text-[#1a0dab] group-hover:underline dark:text-[#8ab4f8]">{t("adTitle")}</p>
+            <PreClickBadge badge={adBadge} showReason />
+            <p
+              className={`mt-1.5 text-[19px] leading-snug text-[#1a0dab] group-hover:underline dark:text-[#8ab4f8] ${adBadge?.level === "danger" ? "line-through decoration-red-600" : ""}`}
+            >
+              {t("adTitle")}
+            </p>
             <p className="mt-1 text-[14px] leading-snug text-gray-600 dark:text-[#bdc1c6]">{t("adBody")}</p>
           </motion.a>
 
@@ -128,6 +300,13 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
               </div>
               <p className="mt-0.5 text-[13px] text-gray-600 dark:text-gray-400">{t("mapsCategory")}</p>
               <p className="mt-0.5 text-[13px] font-medium text-[#188038] dark:text-[#81c995]">{t("openNow")}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[13px] text-gray-700 dark:text-gray-300">
+                <span className="inline-flex items-center gap-1" dir="ltr">
+                  <Phone className="size-3.5" aria-hidden /> {MAPS_PHONE}
+                </span>
+                <PreClickBadge badge={mapsPhoneBadge} />
+              </div>
+              <PreClickBadge badge={mapsSiteBadge} showReason />
               <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
                 <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#0b57d0] px-3.5 py-2 text-[13px] font-medium text-white dark:bg-[#a8c7fa] dark:text-[#062e6f]">
                   <Navigation className="size-3.5" /> {t("directions")}
@@ -159,6 +338,7 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
                 <p className="truncate text-[12px] text-gray-600 dark:text-gray-400">https://www.adpolice.gov.ae</p>
               </div>
             </div>
+            <PreClickBadge badge={officialBadge} />
             <p className="mt-1.5 text-[19px] leading-snug text-[#1a0dab] group-hover:underline dark:text-[#8ab4f8]">{t("organicTitle")}</p>
             <p className="mt-1 text-[14px] leading-snug text-gray-600 dark:text-[#bdc1c6]">{t("organicBody")}</p>
           </motion.a>

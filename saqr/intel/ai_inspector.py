@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from ..config import settings
 from .domain_intel import LexicalReport, RedFlag, human_age
-from . import url_model
+from . import page_signals, url_model
 from .registry import ALL_BRANDS, ENTITIES, Entity
 from .threat_feeds import on_free_hosting, popularity_rank, threat_feeds
 from .sandbox import SENSITIVE
@@ -49,19 +49,36 @@ FIELD_LABELS = {
 STRONG_LEXICAL = {"HOMOGLYPH_SPOOF", "TLD_SWAP", "BRAND_IMPERSONATION", "TYPOSQUAT", "PUNYCODE", "RAW_IP_HOST"}
 STRONG_FIELDS = {"OTP", "CARD_NUMBER", "CVV", "ATM_PIN"}
 STRONG_SIGNALS = {"NEWLY_REGISTERED", "YOUNG_DOMAIN", "FRESH_CERTIFICATE", "KNOWN_SYNDICATE_INFRA",
-                  "KNOWN_PHISHING_FEED", "AI_PHISHING_URL"}
+                  "KNOWN_PHISHING_FEED", "AI_PHISHING_URL",
+                  # page evidence that is specific to phishing (saqr/intel/page_signals.py)
+                  "PROVIDER_PHISHING_WARNING", "SHORTLINK_DISABLED", "FORM_SERVICE_CREDENTIALS", "BRAND_LOGIN_PAGE"}
 # Evidence that ordinary, legitimate sites show all the time (a login box, a "Sign in with UAE PASS"
 # button, JavaScript-built pages, words like "expire"). It only adds risk next to strong evidence.
 WEAK_PAGE_SIGNALS = {"BRAND_CONTENT", "URGENCY_PRESSURE", "CLOAKING", "EXFIL_FORM", "NO_HTTPS"}
 
-# Trained URL classifier thresholds (held-out data: at 0.98 about 1 false alarm per 1,250 real sites).
-ML_CERTAIN = 0.98
-ML_STRONG = 0.92
-ML_SUSPECT = 0.80
+# Trained URL classifier thresholds, picked by tools/train_url_model.py on legitimate sites it never saw
+# (grouped validation split + the false-positive suite of UAE / bank / long-tail sites): CERTAIN = at most
+# 0.1% of them reach it, STRONG = 0.5%, SUSPECT = 2%. Measured numbers: docs/MODEL_CARD.md.
+ML_DEFAULTS = {"certain": 0.98, "strong": 0.92, "suspect": 0.80}
+
+
+def _ml_thresholds() -> dict[str, float]:
+    try:
+        stored = json.loads(url_model.METRICS_PATH.read_text(encoding="utf-8")).get("thresholds") or {}
+        return {k: float(stored.get(k, v)) for k, v in ML_DEFAULTS.items()}
+    except (OSError, ValueError, TypeError):
+        return dict(ML_DEFAULTS)
+
+
+_ML = _ml_thresholds()
+ML_CERTAIN = _ML["certain"]
+ML_STRONG = _ML["strong"]
+ML_SUSPECT = _ML["suspect"]
 # Independent evidence that turns a confident classifier verdict into HIGH-RISK.
 ML_CORROBORATION = {"FRESH_CERTIFICATE", "NEWLY_REGISTERED", "YOUNG_DOMAIN", "BRAND_CONTENT", "BRAND_IMPERSONATION",
                     "CREDENTIAL_HARVESTING", "EXFIL_FORM", "SUSPICIOUS_TLD", "URGENCY_PRESSURE", "LURE_KEYWORDS",
-                    "CLOAKING", "TYPOSQUAT", "HOMOGLYPH_SPOOF", "PUNYCODE", "RAW_IP_HOST"}
+                    "CLOAKING", "TYPOSQUAT", "HOMOGLYPH_SPOOF", "PUNYCODE", "RAW_IP_HOST", "BRAND_LOGIN_PAGE",
+                    "FORM_SERVICE_CREDENTIALS"}
 
 URGENCY = re.compile(
     r"24\s*hours|within \d+ (hours|minutes)|immediately|expire|expires today|suspend|blocked|impound|last chance|"
@@ -101,12 +118,23 @@ def _entity_in_text(text: str) -> Entity | None:
     return None
 
 
-def url_model_probability(lex: LexicalReport) -> float | None:
-    """Trained classifier's phishing probability for this host, or None when it must not judge it:
-    popular sites (Tranco top 100k) unless the page sits on a free-hosting platform."""
-    if lex.is_whitelisted or (popularity_rank(lex.registered_domain) and not on_free_hosting(lex.host)):
+def _owns(ent: Entity, lex: LexicalReport) -> bool:
+    return any(lex.registered_domain == d or lex.host == d or lex.host.endswith("." + d) for d in ent.domains)
+
+
+def url_model_result(lex: LexicalReport) -> dict | None:
+    """Trained classifier's verdict on the full address ({probability, reasons}), or None when it must
+    not judge it: official / trusted sites, and popular sites (Tranco top 100k) unless the page sits on
+    a free-hosting / user-content platform (a popular site's own pages are not phishing; its users' pages
+    may be: page_signals.user_content)."""
+    if lex.is_whitelisted or (popularity_rank(lex.registered_domain) and not page_signals.user_content(lex.host)):
         return None
-    return url_model.phishing_probability(lex.host)
+    return url_model.score_url(lex.normalized_url or lex.host)
+
+
+def url_model_probability(lex: LexicalReport) -> float | None:
+    res = url_model_result(lex)
+    return None if res is None else res["probability"]
 
 
 def intel_flags(lex: LexicalReport) -> list[RedFlag]:
@@ -117,9 +145,12 @@ def intel_flags(lex: LexicalReport) -> list[RedFlag]:
         out.append(RedFlag("KNOWN_PHISHING_FEED", "critical", 70,
                            f"Listed as an active phishing site by global threat intelligence ({feed}).",
                            f"مُدرج كموقع تصيّد نشط في قوائم استخبارات التهديدات العالمية ({feed})."))
-    p = url_model_probability(lex)
+    res = url_model_result(lex)
+    p = None if res is None else res["probability"]
     if p is not None and p >= ML_SUSPECT:
         pct = round(p * 100)
+        why_en = "; ".join(r["en"] for r in res["reasons"])
+        why_ar = "؛ ".join(r["ar"] for r in res["reasons"])
         if p >= ML_CERTAIN and not on_free_hosting(lex.host):
             pts = 65  # enough on its own; random free-hosting names (x-y-1a2b.netlify.app) need more
         elif p >= ML_STRONG:
@@ -128,10 +159,10 @@ def intel_flags(lex: LexicalReport) -> list[RedFlag]:
             pts = 20
         out.append(RedFlag("AI_PHISHING_URL" if p >= ML_STRONG else "AI_SUSPICIOUS_URL",
                            "critical" if p >= ML_CERTAIN else "high" if p >= ML_STRONG else "medium", pts,
-                           f"SAQR's AI model, trained on 760,000 real and phishing websites, rates this address "
-                           f"{pct}% likely to be phishing.",
-                           f"يُقدّر نموذج صقر الذكي، المُدرَّب على 760 ألف موقع حقيقي واحتيالي، أن هذا العنوان "
-                           f"احتيالي بنسبة {pct}٪."))
+                           f"SAQR's AI model rates this address {pct}% likely to be phishing"
+                           + (f". Main reasons: {why_en}." if why_en else "."),
+                           f"يُقدّر نموذج صقر الذكي أن هذا العنوان احتيالي بنسبة {pct}٪"
+                           + (f". أهم الأسباب: {why_ar}." if why_ar else ".")))
     return out
 
 
@@ -147,6 +178,11 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
     entity = lex.impersonated
     page = page or {}
     flags += intel_flags(lex)
+    if entity and page_signals.platform_named_only(lex) and not any(f.code == "AI_PHISHING_URL" for f in flags):
+        # "tenant.sharepoint.com": the brand word is the platform's own name, not the customer's. It only
+        # still counts as corroboration when the URL model independently says phishing.
+        flags = [RedFlag(f.code, "info", 0, f.en, f.ar) if f.code == "BRAND_IMPERSONATION" else f for f in flags]
+        entity = None
 
     # -- domain / certificate age -------------------------------------------------
     age = net.get("domain_age_hours")
@@ -159,7 +195,11 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
             flags.append(RedFlag("YOUNG_DOMAIN", "medium", 15,
                                  f"The domain is very new (registered {en}).", f"النطاق حديث جداً (سُجّل {ar})."))
     cert_age = net.get("cert_age_hours")
-    if cert_age is not None and cert_age < 48:
+    if cert_age is not None and cert_age < 48 and age is not None and age > 24 * 365:
+        # an old domain whose certificate was just renewed (Let's Encrypt renews every 60-90 days)
+        flags.append(RedFlag("CERT_RENEWED", "info", 0, "Its security certificate was renewed in the last 48 hours.",
+                             "تم تجديد شهادة الأمان الخاصة به خلال آخر 48 ساعة."))
+    elif cert_age is not None and cert_age < 48:
         flags.append(RedFlag("FRESH_CERTIFICATE", "medium", 10,
                              "Its security certificate was issued in the last 48 hours (zero-hour site).",
                              "صدرت شهادة الأمان الخاصة به خلال آخر 48 ساعة (موقع حديث الإنشاء)."))
@@ -182,6 +222,15 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
         flags.append(RedFlag("BRAND_CONTENT", "high", 15,
                              f"The page uses {page_ent.name_en} branding on an unofficial website.",
                              f"تستخدم الصفحة شعار وهوية {page_ent.name_ar} على موقع غير رسمي."))
+    title = page_signals.fold(page.get("page_title") or "")
+    title_ent = _entity_in_text(title) if title.strip() else None
+    if title_ent and _owns(title_ent, lex):
+        title_ent = None
+    popular = bool(popularity_rank(lex.registered_domain)) and not page_signals.user_content(lex.host)
+    page_ev = page_signals.page_flags(lex.host, page, title_ent, popular) if page else []
+    if any(f.code == "BRAND_LOGIN_PAGE" for f in page_ev) and not entity:
+        entity = title_ent
+    flags += page_ev
     if URGENCY.search(text):
         flags.append(RedFlag("URGENCY_PRESSURE", "medium", 10,
                              "It pressures you with deadlines or threats (fines, impound, suspension).",
@@ -207,12 +256,25 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
                              f"It runs on infrastructure linked to a known criminal network ({syndicate['name']}).",
                              f"يعمل على بنية تحتية مرتبطة بشبكة إجرامية معروفة ({syndicate.get('name_ar') or syndicate['name']})."))
 
+    # -- the address model and other evidence agree -----------------------------------
+    ml = next((f for f in flags if f.code in ("AI_PHISHING_URL", "AI_SUSPICIOUS_URL")), None)
+    p = url_model_probability(lex)
+    if ml is None and age is not None and age < 24 * 30 and p is not None and p >= 0.5:
+        flags.append(RedFlag("AI_NEW_DOMAIN", "medium", 15,
+                             f"A brand-new domain whose address SAQR's AI model already leans towards phishing ({round(p * 100)}%).",
+                             f"نطاق جديد جداً يميل نموذج صقر الذكي إلى اعتبار عنوانه احتيالياً ({round(p * 100)}٪)."))
+    if ml is not None and net.get("dns_status") == "nxdomain" and not net.get("ip_addresses"):
+        flags.append(RedFlag("SITE_TAKEN_DOWN", "medium", 15,
+                             "The domain no longer exists (phishing domains are often taken down within days) and its address looks like phishing.",
+                             "النطاق لم يعد موجوداً (نطاقات التصيّد تُحذف غالباً خلال أيام) وعنوانه يشبه عناوين التصيّد."))
+
     # -- corroboration -----------------------------------------------------------------
     # Weak page signals (and a form that only asks for a password / UAE PASS / Emirates ID)
     # are kept for analysts but score 0 unless at least one strong signal is present.
     strong_fields = [h for h in sens if h in STRONG_FIELDS]
     corroborated = bool(strong_fields) or any(
-        f.code in STRONG_LEXICAL or f.code in STRONG_SIGNALS for f in flags)
+        f.code in STRONG_LEXICAL or f.code in STRONG_SIGNALS for f in flags) or (
+        ml is not None and page_ent is not None)  # the address model and the page's branding agree
     if not corroborated:
         flags = [RedFlag(f.code, "info", 0, f.en, f.ar)
                  if f.code in WEAK_PAGE_SIGNALS or f.code == "CREDENTIAL_HARVESTING" else f

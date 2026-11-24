@@ -14,7 +14,7 @@ import asyncio
 import json
 import logging
 import random
-from typing import Any
+from typing import Any, Callable
 
 from ..config import settings
 from ..db import db, iso
@@ -42,6 +42,7 @@ class CTMonitor:
         self.detections = 0
         self.connected = False
         self._recent: set[str] = set()
+        self.listeners: list[Callable[[dict[str, Any]], None]] = []  # called with every detection (hunter)
 
     def start(self) -> None:
         if self.mode == "off" or self.task:
@@ -94,6 +95,8 @@ class CTMonitor:
             (domain, event["seen_at"], lex.score, lex.impersonated.name_en, source,
              json.dumps({"issuer": issuer, "flags": event["flags"]})))
         await hub.broadcast("ct.detection", event)
+        for listener in self.listeners:
+            listener(event)
         if self.detections % 200 == 0:  # keep the table (and every blocklist build that reads it) small
             await db.execute("DELETE FROM ct_events WHERE id NOT IN (SELECT id FROM ct_events ORDER BY id DESC LIMIT 1500)")
         return event

@@ -1,0 +1,52 @@
+[
+ {
+  "url": "https://www.adcb.com/en/personal/accounts/",
+  "probability": 0.022241,
+  "stage1": -0.759524
+ },
+ {
+  "url": "http://adcb-secure-login.xyz/verify/index.php?email=a@b.com",
+  "probability": 0.999653,
+  "stage1": 17.575916
+ },
+ {
+  "url": "https://paypal.com.secure-update.info/webscr?cmd=login",
+  "probability": 0.99934,
+  "stage1": 6.081084
+ },
+ {
+  "url": "https://microsoft-office365-signin.web.app/",
+  "probability": 0.999899,
+  "stage1": 6.891205
+ },
+ {
+  "url": "http://192.168.1.1:8080/a",
+  "probability": 0.999346,
+  "stage1": 5.233591
+ },
+ {
+  "url": "https://xn--pypal-4ve.com/",
+  "probability": 0.988467,
+  "stage1": 0.769248
+ },
+ {
+  "url": "https://bit.ly/3abc",
+  "probability": 0.599726,
+  "stage1": 5.224773
+ },
+ {
+  "url": "https://wikipedia.org/",
+  "probability": 0.005959,
+  "stage1": -5.004691
+ },
+ {
+  "url": "https://tamm-fines-pay.top/ae/pay",
+  "probability": 0.999018,
+  "stage1": 5.997712
+ },
+ {
+  "url": "https://my-portfolio.netlify.app/projects/2024",
+  "probability": 0.76029,
+  "stage1": 1.277926
+ }
+]

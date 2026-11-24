@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckCircle2, Download, FileText, Loader2, Megaphone, Printer, RadioTower } from "lucide-react";
+import { CheckCircle2, FileText, Loader2, Megaphone, RadioTower } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "@/components/Modal";
 import { useLang } from "@/lib/i18n";
-import { P, broadcastWarning, getTakedown, syncTelecom, type Campaign, type TakedownDossier } from "@/lib/police";
+import { P, STATUS_LABEL, broadcastWarning, getTakedown, syncTelecom, type Campaign, type TakedownDossier } from "@/lib/police";
+import { DossierActions, EvidenceView, ReasonList, Rows } from "./EvidenceDossier";
 
 type Busy = "sync" | "warn" | "dossier" | null;
 
@@ -123,86 +124,64 @@ function DossierModal({ dossier, onClose }: { dossier: TakedownDossier | null; o
   const { lang } = useLang();
   const L = (k: keyof typeof P) => P[k][lang];
   const d = dossier;
-
-  const downloadJson = () => {
-    if (!d) return;
-    const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${d.aman_ref_id}-takedown-dossier.json`;
-    a.click();
-    window.setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  };
-
-  const row = (label: string, value: string | number | null | undefined) => (
-    <div className="grid grid-cols-[minmax(0,10rem)_1fr] gap-3 border-b border-line py-1.5 text-sm last:border-0">
-      <dt className="font-semibold text-ink-soft">{label}</dt>
-      <dd className="break-all font-mono text-ink" dir="ltr">{value ?? "—"}</dd>
-    </div>
-  );
+  const st = d ? STATUS_LABEL[d.status] : null;
 
   return (
     <Modal open={Boolean(d)} onClose={onClose} title={L("dossierTitle")} wide>
       {d && (
         <div className="space-y-4">
           <div className="print-area space-y-4 rounded-2xl bg-surface">
-            <div className="flex items-start justify-between gap-4 border-b-4 border-navy-900 pb-3">
+            <div className="flex items-start justify-between gap-4 border-b-4 border-navy-900 pb-3 dark:border-white/70">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-ink-soft">{d.issuing_unit}</p>
                 <p className="text-xs font-bold text-ink-soft" dir="rtl">{d.issuing_unit_ar}</p>
                 <h3 className="mt-1 text-xl font-extrabold text-ink">Takedown Dossier · ملف طلب الإزالة</h3>
               </div>
               <div className="text-end">
-                <p className="text-[11px] font-semibold uppercase text-ink-soft">Aman reference</p>
+                <p className="text-[11px] font-semibold uppercase text-ink-soft">{L("amanRef")}</p>
                 <p className="font-mono text-base font-extrabold text-ink" dir="ltr">{d.aman_ref_id}</p>
               </div>
             </div>
-            <dl>
-              {row("Target domain", d.target_domain)}
-              {row("Defanged", d.defanged_domain)}
-              {row("Impersonated entity", d.impersonated_entity)}
-              {row("Risk score", `${d.risk_score} / 100`)}
-              {row("IP address", d.all_ip_addresses.join(", ") || d.ip_address)}
-              {row("ASN", d.asn)}
-              {row("Registrar", d.registrar)}
-              {row("Registrar abuse email", d.all_abuse_contacts.join(", ") || d.registrar_abuse_email)}
-              {row("SSL certificate age", d.ssl_age)}
-              {row("Citizen reports", d.citizen_reports_count)}
-              {row("Interception channels", d.channels.join(", "))}
-              {row("Campaign status", d.status)}
-              {row("Generated", new Date(d.generated_at).toLocaleString("en-GB"))}
-            </dl>
+            <Rows
+              rows={[
+                [L("targetDomain"), d.defanged_domain],
+                [L("impersonated"), d.impersonated_entity],
+                [L("riskScore"), `${d.risk_score} / 100`],
+                [L("registrarAbuse"), d.all_abuse_contacts.join(", ") || d.registrar_abuse_email],
+                [L("citizenReports"), d.citizen_reports_count],
+                [L("channels"), d.channels.join(", ")],
+                [L("campaignStatus"), st ? st[lang] : d.status],
+                [L("generatedAt"), d.generated_at],
+              ]}
+            />
+            {d.evidence ? (
+              <EvidenceView ev={d.evidence} lang={lang} L={L} />
+            ) : (
+              <>
+                <Rows
+                  rows={[
+                    [L("ipAddresses"), d.all_ip_addresses.join(", ") || d.ip_address],
+                    [L("asn"), d.asn],
+                    [L("registrar"), d.registrar],
+                    [L("sslAge"), d.ssl_age],
+                  ]}
+                />
+                <div>
+                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-soft">{L("redFlags")}</p>
+                  <ReasonList flags={d.red_flags} lang={lang} L={L} />
+                </div>
+              </>
+            )}
             <div>
-              <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-soft">Red flags · علامات الخطر</p>
-              <ul className="space-y-1.5 text-sm">
-                {d.red_flags.map((f) => (
-                  <li key={f.code} className="rounded-xl bg-muted px-3 py-2">
-                    <span className="me-2 rounded bg-crimson-600 px-1.5 py-0.5 font-mono text-[11px] font-bold text-white">{f.code}</span>
-                    {f.en}
-                    <span className="mt-0.5 block text-ink-soft" dir="rtl">{f.ar}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-soft">Requested actions</p>
-              <ol className="list-decimal space-y-1 ps-5 text-sm text-ink">
+              <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-soft">{L("requestedActions")}</p>
+              <ol className="list-decimal space-y-1 ps-5 text-sm text-ink" dir="ltr">
                 {d.requested_actions.map((a) => (
                   <li key={a}>{a}</li>
                 ))}
               </ol>
             </div>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <button type="button" onClick={downloadJson}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white hover:bg-navy-800 dark:bg-white dark:text-navy-900">
-              <Download className="size-4" /> {L("downloadJson")}
-            </button>
-            <button type="button" onClick={() => window.print()}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm font-bold text-ink ring-1 ring-line hover:bg-line">
-              <Printer className="size-4" /> {L("printPdf")}
-            </button>
-          </div>
+          <DossierActions data={d} L={L} dossierId={d.evidence?.dossier_id} fileName={`${d.aman_ref_id}-takedown-dossier.json`} />
         </div>
       )}
     </Modal>

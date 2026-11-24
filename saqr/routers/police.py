@@ -4,7 +4,8 @@ GET  /api/police/state                 KPIs, clustered campaigns, last 25 interc
 POST /api/police/log-x-alert           a citizen opened X to post a warning (public, rate limited)
 POST /api/police/sync-telecom          publish a campaign's domain to the e& / du RPZ feed + NextDNS
 POST /api/police/broadcast-warning     push an official bilingual warning to every open /citizen page
-GET  /api/police/takedown/{campaign}   court / registrar takedown dossier (JSON)
+GET  /api/police/takedown/{campaign}   court / registrar takedown dossier (JSON) + the full evidence dossier
+GET  /api/police/detections/{id}/dossier  evidence for a Proactive Hunter detection (lead time, triage reasons)
 GET  /api/police/warning/latest        latest official warning (public; /citizen polls it)
 
 Officer actions need the X-API-Key header when POLICE_API_KEY is set (open in the demo otherwise).
@@ -19,6 +20,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ..db import db, iso
+from ..intel import ai_inspector, takedown as takedown_intel
+from ..intel.domain_intel import analyze_lexical
 from ..intel.nextdns_sync import nextdns_sync
 from ..police_state import campaign_id_for, defang, police_state
 from ..security import rate_limit, require_police
@@ -53,9 +56,23 @@ def _clean_domain(raw: str) -> str:
     return d[4:] if d.startswith("www.") else d
 
 
+async def _evidence(scan_id: str | None, detection: dict | None = None) -> dict | None:
+    """The full takedown dossier (WHOIS, DNS, TLS, redirect chain, hashes, notices) of a flagged scan."""
+    scan = await db.get_scan(scan_id, with_screenshot=False) if scan_id else None
+    if not scan or scan.get("verdict") == "SAFE":
+        return None
+    return await takedown_intel.build_dossier(scan, detection=detection)
+
+
 @router.get("/state", dependencies=[Depends(require_police)])
 async def state():
-    return await police_state.snapshot()
+    snap = await police_state.snapshot()
+    for det in snap.get("proactive_detections", []):  # "all blocked" must be measured, not assumed
+        det["citizen_visits_blocked"] = 0
+        if det.get("citizen_visits"):
+            ctx = await takedown_intel.detection_context(detection_id=det["id"])
+            det["citizen_visits_blocked"] = ctx["citizen_visits_blocked"] if ctx else 0
+    return snap
 
 
 @router.post("/log-x-alert", dependencies=[Depends(rate_limit)])
@@ -113,6 +130,9 @@ async def takedown(campaign_id: str):
         flags = [{"code": "BRAND_IMPERSONATION", "severity": "critical",
                   "en": f"Impersonates {camp['impersonated_entity'] or 'a UAE entity'} on an unofficial domain.",
                   "ar": "ينتحل صفة جهة إماراتية على نطاق غير رسمي."}]
+    best = await db.fetchone("SELECT id FROM scans WHERE domain=? AND verdict != 'SAFE' "
+                             "ORDER BY risk_score DESC, created_at DESC LIMIT 1", (dom,))
+    evidence = await _evidence(best["id"] if best else None)
     ips = net.get("ip_addresses") or ([intel["ip"]] if intel.get("ip") else [])
     abuse = net.get("abuse_emails") or intel.get("abuse_emails") or []
     year = iso()[:4]
@@ -134,4 +154,28 @@ async def takedown(campaign_id: str):
             "Preserve WHOIS, hosting and payment logs for the Abu Dhabi Public Prosecution.",
         ],
         "generated_at": iso(),
+        "scan_id": best["id"] if best else None,
+        "evidence": evidence,
     }
+
+
+@router.get("/detections/{detection_id}/dossier", dependencies=[Depends(require_police)])
+async def detection_dossier(detection_id: int):
+    """A Proactive Hunter detection: where and when SAQR found it, how many citizens met it since,
+    the triage reasons (offline lexical rules + URL model, EN/AR) and, when it was fully scanned,
+    the full evidence dossier. Simulated leads have no scan and say so."""
+    det = await takedown_intel.detection_context(detection_id=detection_id)
+    if not det:
+        raise HTTPException(404, "Detection not found")
+    try:
+        lex = analyze_lexical(det["domain"])
+        reasons = [{"code": f.code, "severity": f.severity, "points": f.points, "en": f.en, "ar": f.ar}
+                   for f in [*lex.flags, *ai_inspector.intel_flags(lex)]]
+    except ValueError:
+        reasons = []
+    evidence = await _evidence(det["scan_id"], det)
+    note = None
+    if not evidence:
+        note = ("Simulated lead (HUNTER_MODE=simulated): no live WHOIS / DNS / TLS / page evidence exists."
+                if det["simulated"] else "This lead has no flagged full scan yet; only the triage evidence is shown.")
+    return {"detection": det, "triage_reasons": reasons, "evidence": evidence, "note": note, "generated_at": iso()}

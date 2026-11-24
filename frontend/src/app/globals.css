@@ -258,3 +258,17 @@ html.theme-fading *::after {
     transform: scale(1.12);
   }
 }
+
+/* /police dossier print: let the dialog grow to the full dossier instead of clipping at the modal height. */
+@media print {
+  [role="dialog"] {
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+  .print-area pre {
+    white-space: pre-wrap !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}

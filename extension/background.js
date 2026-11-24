@@ -4,6 +4,9 @@
 // by blocked.html before the user can type anything. Results are cached per site so normal
 // browsing stays fast and the backend's rate limit (30 scans / minute) is respected.
 //
+// Search & Maps shield (Google / Bing results, ads, Maps cards): content/search.js asks for badges
+// before the user clicks; links go to POST /api/batch-verdict, phones to POST /api/check-phone.
+//
 // Email Shield (Gmail / Outlook): content/*.js capture the open email and ask this worker to scan
 // it (message protocol: frozen email contract, section 5). Scans go to POST /api/analyze-email
 // through a small queue, verdicts are cached per message in chrome.storage.session, and the
@@ -12,7 +15,7 @@
 
 // Shared with the content scripts and node tests (no build step): feature hashing, personal
 // model and campaign matching. Must be loaded synchronously at the top of an MV3 worker.
-importScripts("lib/config.js", "lib/email_features.js", "lib/user_model.js", "lib/campaign_match.js");
+importScripts("lib/config.js", "lib/email_features.js", "lib/user_model.js", "lib/campaign_match.js", "lib/search_core.js");
 
 const DEFAULT_API = SaqrConfig.DEFAULT_API;
 const OLD_LOCAL_DEFAULT = "http://127.0.0.1:8000";
@@ -344,6 +347,7 @@ const PRIVILEGED_TYPES = new Set([
   "modelReset",
   "modelStats",
   "saveEmailSettings",
+  "saveSearchSettings",
 ]);
 // Content scripts on the webmail hosts may only use these.
 const CONTENT_TYPES = new Set([
@@ -358,6 +362,9 @@ const CONTENT_TYPES = new Set([
   "modelLabel",
   "emailSettings",
 ]);
+
+// Content scripts on the search engines (content/search.js) may only use these.
+const SEARCH_TYPES = new Set(["searchSettings", "searchVerdicts", "checkPhones"]);
 
 function isExtensionPage(sender) {
   return (
@@ -395,7 +402,9 @@ async function handleMessage(msg, sender) {
   if (!trusted) {
     if (sender?.id !== chrome.runtime.id) return { ok: false, error: "Not allowed" };
     if (PRIVILEGED_TYPES.has(msg.type)) return { ok: false, error: "Not allowed from a web page" };
-    if (!CONTENT_TYPES.has(msg.type) || !mailProviderOf(sender)) return { ok: false, error: "Not allowed" };
+    const fromMail = CONTENT_TYPES.has(msg.type) && !!mailProviderOf(sender);
+    const fromSearch = SEARCH_TYPES.has(msg.type) && !!searchEngineOf(sender);
+    if (!fromMail && !fromSearch) return { ok: false, error: "Not allowed" };
   }
   try {
     return await dispatch(msg, sender, trusted);
@@ -530,6 +539,19 @@ async function dispatch(msg, sender, trusted) {
       return { ok: true, ...(await publicEmailSettings()) };
     case "saveEmailSettings":
       return saveEmailSettings(msg);
+
+    // ----------------------------------------------------------------- Search & Maps shield
+    case "searchSettings":
+      return { ok: true, ...(await searchSettings()) };
+    case "saveSearchSettings": {
+      if (typeof msg.enabled !== "boolean") bad("enabled must be true or false");
+      await chrome.storage.local.set({ searchSettings: { enabled: msg.enabled } });
+      return { ok: true, enabled: msg.enabled };
+    }
+    case "searchVerdicts":
+      return searchVerdicts(msg).catch(backendDown);
+    case "checkPhones":
+      return checkPhones(msg).catch(backendDown);
     default:
       return { ok: false, error: "Unknown message" };
   }
@@ -1252,6 +1274,145 @@ async function syncServer(method, body, mode) {
     console.warn("[SAQR] model sync failed", err?.message || err);
     return "failed";
   }
+}
+
+// ---------------------------------------------------------------------------
+// Search & Maps shield: pre-click badges on Google / Bing results, ads and Maps cards
+// ---------------------------------------------------------------------------
+const SEARCH_DEFAULTS = Object.freeze({ enabled: true });
+const SEARCH_BATCH = 50; // URLs per POST /api/batch-verdict
+const SEARCH_MAX_URLS = 200; // per message
+const SEARCH_TIMEOUT_MS = 12_000;
+const SEARCH_CACHE_MAX = 3000;
+const PHONES_MAX = 20; // per message
+const PHONE_CONTEXTS = new Set(["ad", "maps", "panel", "result"]);
+// Verdicts per URL / phone, shared by every search tab while the worker is awake.
+const searchCache = new Map();
+
+/** The backend could not answer: the content script shows nothing and asks again later. */
+function backendDown(err) {
+  if (err instanceof BadInput) throw err;
+  return { ok: false, error: String(err?.message || err), status: err?.status ?? 0 };
+}
+
+/** "google" | "bing" | null for the page a content-script message came from. */
+function searchEngineOf(sender) {
+  return SaqrSearchCore.engineOfUrl(sender?.url || sender?.tab?.url || "");
+}
+
+async function searchSettings() {
+  const { searchSettings: s = {} } = await chrome.storage.local.get("searchSettings");
+  return { ...SEARCH_DEFAULTS, ...s };
+}
+
+function cacheGet(key) {
+  const hit = searchCache.get(key);
+  if (!hit) return undefined;
+  if (hit.expires <= Date.now()) {
+    searchCache.delete(key);
+    return undefined;
+  }
+  return hit.value;
+}
+
+function cacheSet(key, value, ttl) {
+  searchCache.delete(key);
+  searchCache.set(key, { value, expires: Date.now() + ttl });
+  while (searchCache.size > SEARCH_CACHE_MAX) searchCache.delete(searchCache.keys().next().value);
+}
+
+function compactEntity(e) {
+  if (!e || typeof e !== "object") return null;
+  const strings = (v, n, max) => (Array.isArray(v) ? v.filter((x) => typeof x === "string").slice(0, n).map((x) => x.slice(0, max)) : []);
+  return {
+    id: String(e.id || "").slice(0, 40),
+    nameEn: String(e.name_en || "").slice(0, 80),
+    nameAr: String(e.name_ar || "").slice(0, 80),
+    officialDomains: strings(e.official_domains, 5, 80),
+    officialPhones: strings(e.official_phones_display, 5, 30),
+  };
+}
+
+function compactReasons(reasons) {
+  return (Array.isArray(reasons) ? reasons : []).slice(0, 5).map((r) => ({
+    code: String(r?.code || "").slice(0, 40),
+    en: String(r?.en || "").slice(0, 300),
+    ar: String(r?.ar || "").slice(0, 300),
+  }));
+}
+
+/** Compact, UI-ready link verdict for content/search.js (from one /api/batch-verdict result). */
+function compactLink(r) {
+  if (!r || typeof r !== "object" || !r.verdict) return null;
+  return {
+    url: String(r.url || ""),
+    domain: String(r.domain || "").slice(0, 253),
+    verdict: String(r.verdict),
+    score: Number(r.score) || 0,
+    official: r.official === true,
+    entity: compactEntity(r.entity),
+    reasons: compactReasons(r.reasons),
+  };
+}
+
+function compactPhone(r) {
+  if (!r || typeof r !== "object") return null;
+  return {
+    status: String(r.status || ""),
+    level: String(r.level || "none"),
+    entity: compactEntity(r.entity),
+    reasons: compactReasons(r.reasons),
+  };
+}
+
+async function searchVerdicts(msg) {
+  const urls = [];
+  for (const u of list(msg.urls, SEARCH_MAX_URLS, "urls")) {
+    const s = clip(u, 2048, "url");
+    if (/^https?:\/\//i.test(s) && !urls.includes(s)) urls.push(s);
+  }
+  if (!(await searchSettings()).enabled) return { ok: true, off: true, results: {} };
+  const results = {};
+  const missing = [];
+  for (const u of urls) {
+    const hit = cacheGet("sv:" + u);
+    if (hit === undefined) missing.push(u);
+    else results[u] = hit;
+  }
+  for (let i = 0; i < missing.length; i += SEARCH_BATCH) {
+    const chunk = missing.slice(i, i + SEARCH_BATCH);
+    const res = await postJson("/api/batch-verdict", { urls: chunk }, SEARCH_TIMEOUT_MS);
+    chunk.forEach((u, j) => {
+      const v = compactLink((res.results || [])[j]);
+      results[u] = v;
+      cacheSet("sv:" + u, v, v && v.verdict !== "SAFE" ? RISKY_TTL_MS : SAFE_TTL_MS);
+    });
+  }
+  return { ok: true, results };
+}
+
+async function checkPhones(msg) {
+  const items = list(msg.items, PHONES_MAX, "items").map((it) => {
+    const o = plainObject(it, "item");
+    const context = PHONE_CONTEXTS.has(o.context) ? o.context : null;
+    return { phone: clip(o.phone, 40, "phone"), claimed_entity: clipOrNull(o.claimed_entity, 200, "claimed_entity"), context };
+  });
+  if (!(await searchSettings()).enabled) return { ok: true, off: true, results: items.map(() => null) };
+  const results = await Promise.all(items.map(async (it) => {
+    if (it.phone.replace(/\D/g, "").length < 3) return null;
+    const key = "ph:" + [it.phone, it.claimed_entity || "", it.context || ""].join("|");
+    const hit = cacheGet(key);
+    if (hit !== undefined) return hit;
+    let v = null;
+    try {
+      v = compactPhone(await postJson("/api/check-phone", it, SEARCH_TIMEOUT_MS));
+    } catch (err) {
+      if (err.status === 0 || err.status === 429 || err.status >= 500) throw err; // try again on the next pass
+    }
+    cacheSet(key, v, SAFE_TTL_MS);
+    return v;
+  }));
+  return { ok: true, results };
 }
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,7 @@
+# blocklist header
+! another comment
+
+evil-login.top
+0.0.0.0 hosts-format.xyz
+http://full-url.example/path/kit.php
+evil-login.top

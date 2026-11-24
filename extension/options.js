@@ -1,4 +1,4 @@
-// SAQR-INTEL Email Shield settings page (opened from the popup or chrome://extensions).
+// SAQR-INTEL settings page (Email Shield + Search & Maps shield), opened from the popup or chrome://extensions.
 // Everything goes through background.js, which only accepts these changes from extension pages.
 
 const $ = (id) => document.getElementById(id);
@@ -25,6 +25,18 @@ async function call(msg, msgId) {
 }
 
 // ---------------------------------------------------------------- settings
+async function loadSearchSettings() {
+  const s = await call({ type: "searchSettings" }, "search-msg");
+  if (s) $("search-shield").checked = !!s.enabled;
+}
+
+$("search-shield").addEventListener("change", async (e) => {
+  const res = await call({ type: "saveSearchSettings", enabled: e.target.checked }, "search-msg");
+  if (res) {
+    showMsg("search-msg", res.enabled ? "Search results are checked before you click · تم التفعيل" : "Search & Maps shield is off · تم الإيقاف");
+  }
+});
+
 async function loadSettings() {
   const s = await call({ type: "emailSettings" }, "scan-msg");
   if (!s) return;
@@ -150,4 +162,5 @@ $("reset").addEventListener("click", async () => {
 });
 
 loadSettings();
+loadSearchSettings();
 loadStats();

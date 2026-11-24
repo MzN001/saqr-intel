@@ -1,18 +1,20 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import { ExternalLink, Flag, Loader2, Menu, QrCode, Search, Settings, ShieldCheck, Siren, Users, X, MapPinned } from "lucide-react";
+import { Crosshair, ExternalLink, Flag, Loader2, Menu, QrCode, Search, Settings, ShieldCheck, Siren, Users, X, MapPinned } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CityGridMap, MAP_ASPECT, type GridPin } from "@/components/CityGrid";
 import { Modal } from "@/components/Modal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLang } from "@/lib/i18n";
-import { CHANNEL_LABEL, P, STATUS_LABEL, usePoliceLive, type Campaign, type CampaignStatus, type MapPin, type PoliceEvent } from "@/lib/police";
+import { CHANNEL_LABEL, P, STATUS_LABEL, getModelMetrics, usePoliceLive, type Campaign, type CampaignStatus, type MapPin, type ModelMetrics, type PoliceEvent } from "@/lib/police";
 import { ActionCenter } from "./ActionCenter";
+import { ModelCard } from "./ModelCard";
+import { ProactiveHunt } from "./ProactiveHunt";
 
 type L = (k: keyof typeof P) => string;
-type Section = "desk" | "campaigns" | "map" | "actions";
+type Section = "desk" | "campaigns" | "map" | "hunt" | "actions";
 const noSubscribe = () => () => {};
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -20,6 +22,7 @@ const NAV: { id: Section; en: string; ar: string }[] = [
   { id: "desk", en: "Live desk", ar: "المكتب المباشر" },
   { id: "campaigns", en: "Campaigns", ar: "الحملات" },
   { id: "map", en: "Geo-spoof map", ar: "خريطة التزييف" },
+  { id: "hunt", en: "Proactive hunt", ar: "الرصد الاستباقي" },
   { id: "actions", en: "Takedowns", ar: "الإزالة" },
 ];
 
@@ -242,11 +245,11 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
 
 /* ------------------------------------------------------------------ desk */
 
-function Kpi({ label, short, value, icon, accent, context }: {
-  label: string; short: string; value: number | undefined; icon: ReactNode; accent: string; context?: ReactNode;
+function Kpi({ label, short, value, icon, accent, context, className = "" }: {
+  label: string; short: string; value: number | undefined; icon: ReactNode; accent: string; context?: ReactNode; className?: string;
 }) {
   return (
-    <div className="rounded-[20px] border border-line bg-surface p-4">
+    <div className={`rounded-[20px] border border-line bg-surface p-4 ${className}`}>
       <div className="flex items-center gap-2 text-ink-soft" title={label}>
         <span className={accent}>{icon}</span>
         <p className="min-w-0 text-[11px] font-bold uppercase tracking-[0.1em]"><span className="sm:hidden">{short}</span><span className="hidden sm:inline">{label}</span></p>
@@ -321,6 +324,15 @@ export function CommandCenter() {
   // undefined = show the newest scam pin automatically; null = the officer closed the card.
   const [pinChoice, setPinChoice] = useState<MapPin | null | undefined>(undefined);
   const [query, setQuery] = useState("");
+  const [metrics, setMetrics] = useState<ModelMetrics | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void getModelMetrics().then((m) => alive && setMetrics(m));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const q = query.trim().toLowerCase();
   const match = (s: (string | null | undefined)[]) => !q || s.some((x) => x?.toLowerCase().includes(q));
@@ -369,6 +381,8 @@ export function CommandCenter() {
                 context={state?.map_pins.find((p) => p.type === "SPOOFED")?.title} />
               <Kpi label={L("kX")} short={L("kXShort")} value={state?.kpis.x_alerts_dispatched} icon={<Flag className="size-4" />} accent="text-gold-500"
                 context={lastX ? `${L("lastPost")} ${shortAgo(lastX.ts, lang)} · ${lastX.defanged_domain}` : undefined} />
+              <Kpi label={L("kPreVictim")} short={L("kPreVictimShort")} value={state?.kpis.pre_victim_detections} icon={<Crosshair className="size-4" />} accent="text-emerald-600 dark:text-emerald-400"
+                className="col-span-2 lg:col-span-1" context={L("preVictimContext")} />
               <section className="col-span-2 rounded-[20px] border border-line bg-surface p-4 lg:col-span-1">
                 <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-soft">{L("channelMix")}</h2>
                 <ul className="space-y-2">
@@ -445,6 +459,15 @@ export function CommandCenter() {
             </div>
           </div>
 
+          <div id="hunt" className="grid scroll-mt-40 grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-5">
+            <ProactiveHunt
+              className={metrics ? "lg:col-span-3" : "lg:col-span-5"}
+              detections={state?.proactive_detections ?? []}
+              mode={state?.hunter_mode}
+              onSwept={() => void refresh()}
+            />
+            {metrics && <ModelCard metrics={metrics} className="lg:col-span-2" />}
+          </div>
         </main>
       </div>
     </MotionConfig>
