@@ -3994,7 +3994,7 @@
  },
  "live_c": {
   "date": "2026-11-24",
-  "status": "INCOMPLETE: legitimate half only. 0 phishing URLs qualified (none submitted / first seen after the 2026-11-24T21:10:00Z training cut-off was in PhishTank online-valid (newest submission 21:06:26Z), OpenPhish or Phishing.Database NEW-today when collected at ~22:05Z). Recall, precision and F1 are NOT measured; nothing was back-filled with older phishing.",
+  "status": "INCOMPLETE: phishing half far too small to measure recall. Legitimate half: 460 pages (scored 2026-11-24 ~22:08Z). Phishing half: only 3 URLs qualified (PhishTank verified + online, submitted after the 2026-11-24T21:10:00Z cut-off; OpenPhish and Phishing.Database had no entries absent from the cut-off snapshot) when collected at 22:25:46Z; scored once at ~22:26Z. Recall 2/3 has a 95% CI of 21-94%: not a usable recall estimate. Nothing was back-filled with older phishing.",
   "frozen": {
    "at_utc": "2026-11-24T21:39:11Z",
    "head": "9949a7a",
@@ -4005,7 +4005,7 @@
    "file": "datasets/live3.csv (git-ignored)",
    "sha256": "76e5baa915a7202e04c21a2551cb3f89548cf43e8e4c6848fe29691d57c7bc90",
    "sealed_utc": "2026-11-24T22:05:33Z",
-   "phishing": 0,
+   "phishing": 3,
    "legit": 460,
    "legit_by_source": {
     "c_uae_official": 90,
@@ -4370,6 +4370,235 @@
    "accuracy": 0.98,
    "recall": 0.975,
    "fpr": 0.01
+  },
+  "phishing_half": {
+   "file": "datasets/live3_phish.csv (git-ignored)",
+   "sha256": "5ff1c30a29131a872d9ecd6fe7411b1e1f76fc7c3091ce8ccd092e3a8c46e0c7",
+   "sealed_utc": "2026-11-24T22:26:01Z",
+   "collected_utc": "2026-11-24T22:25:46Z",
+   "submission_window_utc": [
+    "2026-11-24T21:23:32Z",
+    "2026-11-24T22:01:32Z"
+   ],
+   "phishing": 3,
+   "candidates": {
+    "phishtank_submitted_after_cutoff": 5,
+    "openphish_new": 0,
+    "phishing_database_new": 0,
+    "dropped_site_in_local_data": 1,
+    "dropped_duplicate_site": 1
+   },
+   "engine": "same as legitimate half (HTTP only, no LLM, no feeds in the scan, VISUAL_SCREENSHOTS=false, 45 s per URL) but concurrency 20 instead of 30 (30 caused timeouts on the legit half)",
+   "detection_code": "commit 1d9cf1c; saqr/ detection files identical to the frozen state used for the legitimate half (git diff HEAD -- saqr empty; re-judging the saved legit evidence reproduces all 430 judged scores)",
+   "warn_30": {
+    "caught": 2,
+    "total": 3,
+    "recall": 0.6667,
+    "recall_ci95": [
+     0.2077,
+     0.9385
+    ]
+   },
+   "block_65": {
+    "caught": 2,
+    "total": 3,
+    "recall": 0.6667,
+    "recall_ci95": [
+     0.2077,
+     0.9385
+    ]
+   },
+   "missed_by_category": {
+    "dead / unreachable / no DNS": 0,
+    "HTTP 4xx-5xx": 0,
+    "benign-looking own-domain page": 0,
+    "platform-hosted page": 1,
+    "other": 0
+   },
+   "live_only_recall": {
+    "phishing": 3,
+    "warn_30": 0.6667,
+    "block_65": 0.6667,
+    "ci95": [
+     0.2077,
+     0.9385
+    ]
+   },
+   "rows": [
+    {
+     "url": "https://sodstore.vercel.app/products/arbol-navidad-treetopia-addison-spruce-grow-and-stow-39000-mn",
+     "score": 20.0,
+     "verdict": "SAFE",
+     "flags": [
+      "AI_SUSPICIOUS_URL"
+     ]
+    },
+    {
+     "url": "https://allegrolokalnie.8563421.lat",
+     "score": 100.0,
+     "verdict": "HIGH-RISK SCAM",
+     "flags": [
+      "AI_PHISHING_URL",
+      "NEWLY_REGISTERED",
+      "FRESH_CERTIFICATE"
+     ]
+    },
+    {
+     "url": "https://bradesco.beneficios-pj.com/",
+     "score": 80.0,
+     "verdict": "HIGH-RISK SCAM",
+     "flags": [
+      "AI_PHISHING_URL",
+      "YOUNG_DOMAIN",
+      "FRESH_CERTIFICATE",
+      "TLS_INVALID"
+     ]
+    }
+   ],
+   "new_signals_fired": {
+    "MOBILE_CLOAKING_DETECTED": 0,
+    "VISUAL_BRAND_CLONE_DETECTED": 0,
+    "VISUAL_BRAND_SIMILARITY": 0,
+    "per_hop_page_evidence (any hop with page_notes)": 0,
+    "judged_page_from_redirect_hop": 0,
+    "js_redirect_hop": 0,
+    "visual_similarity_computed": 3
+   },
+   "new_signal_delta": "0: re-judging the same evidence with mobile_cloaking + visual_similarity removed changes no score (0 extra phishing caught)",
+   "with_feeds_circular": "identical (0 feed hits)",
+   "scan_ms": {
+    "median": 3837,
+    "p95": 4829,
+    "max": 4829
+   }
+  },
+  "combined": {
+   "rows": 463,
+   "phishing": 3,
+   "legit": 460,
+   "class_balance": "3 phishing : 460 legit (0.65% phishing); precision and F1 are dominated by the free-hosting false alarms and are not comparable to a balanced sample",
+   "no_feeds": {
+    "warn_30": {
+     "threshold": 30.0,
+     "tp": 2,
+     "fp": 19,
+     "fn": 1,
+     "tn": 441,
+     "accuracy": 0.9568,
+     "accuracy_ci95": [
+      0.9342,
+      0.9719
+     ],
+     "precision": 0.0952,
+     "precision_ci95": [
+      0.0265,
+      0.2891
+     ],
+     "recall": 0.6667,
+     "recall_ci95": [
+      0.2077,
+      0.9385
+     ],
+     "fpr": 0.0413,
+     "fpr_ci95": [
+      0.0266,
+      0.0636
+     ],
+     "f1": 0.1667
+    },
+    "block_65": {
+     "threshold": 65.0,
+     "tp": 2,
+     "fp": 3,
+     "fn": 1,
+     "tn": 457,
+     "accuracy": 0.9914,
+     "accuracy_ci95": [
+      0.978,
+      0.9966
+     ],
+     "precision": 0.4,
+     "precision_ci95": [
+      0.1176,
+      0.7693
+     ],
+     "recall": 0.6667,
+     "recall_ci95": [
+      0.2077,
+      0.9385
+     ],
+     "fpr": 0.0065,
+     "fpr_ci95": [
+      0.0022,
+      0.019
+     ],
+     "f1": 0.5
+    }
+   },
+   "with_feeds_circular": {
+    "warn_30": {
+     "threshold": 30.0,
+     "tp": 2,
+     "fp": 19,
+     "fn": 1,
+     "tn": 441,
+     "accuracy": 0.9568,
+     "accuracy_ci95": [
+      0.9342,
+      0.9719
+     ],
+     "precision": 0.0952,
+     "precision_ci95": [
+      0.0265,
+      0.2891
+     ],
+     "recall": 0.6667,
+     "recall_ci95": [
+      0.2077,
+      0.9385
+     ],
+     "fpr": 0.0413,
+     "fpr_ci95": [
+      0.0266,
+      0.0636
+     ],
+     "f1": 0.1667
+    },
+    "block_65": {
+     "threshold": 65.0,
+     "tp": 2,
+     "fp": 3,
+     "fn": 1,
+     "tn": 457,
+     "accuracy": 0.9914,
+     "accuracy_ci95": [
+      0.978,
+      0.9966
+     ],
+     "precision": 0.4,
+     "precision_ci95": [
+      0.1176,
+      0.7693
+     ],
+     "recall": 0.6667,
+     "recall_ci95": [
+      0.2077,
+      0.9385
+     ],
+     "fpr": 0.0065,
+     "fpr_ci95": [
+      0.0022,
+      0.019
+     ],
+     "f1": 0.5
+    }
+   },
+   "scan_ms": {
+    "median": 9562,
+    "p95": 52389,
+    "max": 75270
+   },
+   "errors": 30
   }
  },
  "uae_suite": {

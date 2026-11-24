@@ -214,7 +214,7 @@ Precision 1.00, F1 0.958. Misses (kept in the file): `url-mal-arabic-encoded-pat
 (0: an unexpandable bit.ly from a UK mobile claiming Salik). `tests/test_uae_suite.py` now asserts the honest floor
 46 / 50 detected (below the old 24 / 25 ratio) and 0 false positives.
 
-## Sealed sample C (2026-11-24): legitimate half only
+## Sealed sample C (2026-11-24): 460 legitimate pages + only 3 phishing URLs
 
 Protocol: detection code, rules, weights, thresholds, registry and baselines frozen at 2026-11-24T21:39:11Z
 (`saqr/` tree SHA-256 `544ca45e…f6f756`, unchanged at scoring time); the only changes made in the pre-freeze step were `eand.ae`
@@ -223,11 +223,38 @@ added as e&'s official site (verified: `etisalat.ae` answers 302 to `www.eand.ae
 scored ONCE with `tools/evaluate.py --mode live` (HTTP only, no LLM, no feeds in the scan, `VISUAL_SCREENSHOTS=false`,
 concurrency 30, 45 s per URL).
 
-**Phishing: 0 URLs qualified.** The rule was "submitted / first seen after the 21:10Z training cut-off". At
-collection (~22:05Z) the newest PhishTank online-valid submission was 21:06:26Z, and the OpenPhish feeds and
-Phishing.Database NEW-today list had no entries absent from the cut-off snapshot. Nothing was back-filled with
-older phishing, so **recall, precision, accuracy and F1 were NOT measured on sample C**. This must be redone a day
-or more after a cut-off.
+**Phishing: only 3 URLs qualified, too few to measure recall.** The rule was "submitted / first seen after the
+21:10Z training cut-off", one URL per registered domain, no domain present in any local dataset / holdout /
+hard-negative list. First attempt (~22:05Z): 0 (newest PhishTank online-valid submission 21:06:26Z). Second attempt
+(22:25:46Z, after PhishTank published its 22:21:59Z dump): 5 PhishTank verified + online submissions after the
+cut-off (submitted 21:23-22:03Z), 1 dropped (domain already in local data), 1 dropped (same site twice); OpenPhish and
+Phishing.Database NEW-today still had no entries absent from the cut-off snapshot. Sealed as `datasets/live3_phish.csv`
+(SHA-256 `5ff1c30a29131a872d9ecd6fe7411b1e1f76fc7c3091ce8ccd092e3a8c46e0c7`, 22:26:01Z) and scored once with the same
+settings except concurrency 20 (30 caused timeouts on the legit half). Detection code: commit 1d9cf1c, `git diff HEAD
+-- saqr` empty, and re-judging the saved legit evidence still reproduces all 430 judged scores, so no detection file
+changed between the two halves. Nothing was back-filled with older phishing.
+
+| phishing half (3 URLs, no feeds) | caught | recall | 95% Wilson CI |
+|---|---:|---:|---|
+| warn (>= 30) | 2 / 3 | 66.7% | 20.8% - 93.9% |
+| block (>= 65) | 2 / 3 | 66.7% | 20.8% - 93.9% |
+
+All 3 pages answered HTTP 200 (live-only recall is the same 2 / 3). Caught: `allegrolokalnie.8563421.lat` (100: URL
+model + new domain + fresh certificate) and `bradesco.beneficios-pj.com` (80: URL model + young domain + fresh / invalid
+certificate). Missed: a page on `sodstore.vercel.app` (20, platform-hosted: only AI_SUSPICIOUS_URL). Misses by
+category: dead / no DNS 0, HTTP 4xx-5xx 0, benign-looking own-domain page 0, platform-hosted 1, other 0. Scan time
+median 3.8 s, max 4.8 s. With feeds (circular): identical, 0 feed hits.
+
+Combined sample C (3 phishing : 460 legit, 0.65% phishing; precision and F1 are dominated by the 460 legit pages and
+are not comparable to a balanced sample):
+
+| cut | TP | FP | FN | TN | accuracy (CI) | precision (CI) | recall (CI) | FPR (CI) | F1 |
+|---|---:|---:|---:|---:|---|---|---|---|---:|
+| warn (>= 30) | 2 | 19 | 1 | 441 | 95.7% (93.4-97.2) | 9.5% (2.7-28.9) | 66.7% (20.8-93.9) | 4.13% (2.66-6.36) | 0.17 |
+| block (>= 65) | 2 | 3 | 1 | 457 | 99.1% (97.8-99.7) | 40.0% (11.8-76.9) | 66.7% (20.8-93.9) | 0.65% (0.22-1.90) | 0.50 |
+
+With feeds (circular): identical. A proper phishing half (>= 200, ideally 400) still has to be collected a day or
+more after a cut-off.
 
 **Legitimate: 460 never-trained pages** (none of their URLs in any local dataset / holdout file): 90 UAE official
 deep links, 60 global-brand official pages, 60 log-in pages (banks, government, big services), 70 scam-topic news
@@ -253,9 +280,14 @@ New signals on these 460 legit pages: `MOBILE_CLOAKING_DETECTED` 0, `VISUAL_BRAN
 `VISUAL_BRAND_SIMILARITY` 0 (fingerprint computed on 225 pages), per-hop page evidence on 6 (verdict judged from a
 hop page once), JS-redirect hops 0. No false alarm was caused by a new signal. A/B on identical saved evidence
 (re-judging reproduced all 430 judged scores exactly): removing the cloaking / visual inputs changes 0 scores.
-How often the new signals fire on phishing is unknown (no phishing half). LLM subsample: skipped (time).
+On the 3 phishing URLs: `MOBILE_CLOAKING_DETECTED` 0, `VISUAL_BRAND_CLONE_DETECTED` 0, `VISUAL_BRAND_SIMILARITY` 0
+(fingerprint computed on all 3), per-hop page evidence 0; the A/B re-judge (433 / 433 reproduced) changes 0 scores, so
+the new signals caught 0 extra phishing here. Three URLs say nothing about how often they fire in general.
+LLM subsample: skipped (time).
 
-Against the spec targets (accuracy 98%, recall 97.5%, FPR 1%): recall and accuracy not measured on C; warn-level
+Against the spec targets (accuracy 98%, recall 97.5%, FPR 1%), as measured on C: accuracy 95.7% at warn / 99.1% at
+block (but on a sample that is 99.35% legitimate, so accuracy mostly reflects the false-alarm rate); recall 2 / 3
+(CI 21-94%), not a usable estimate and no evidence either way about 97.5%; warn-level
 FPR 4.13% is above 1%, driven entirely by free-hosting pages; block-level FPR 0.65% is under 1%, but its CI reaches
 1.9%. On sample B (older, see above) warn recall without feeds was 0.75, far below 97.5%.
 
