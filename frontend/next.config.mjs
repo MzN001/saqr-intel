@@ -12,11 +12,17 @@ const nextConfig = {
     },
   },
   async rewrites() {
-    return [
-      { source: "/api/:path*", destination: `${BACKEND}/api/:path*` },
-      // Live feed for the Crowd-Shield radar; same-origin so it also works through HTTPS tunnels.
-      { source: "/ws/:path*", destination: `${BACKEND}/ws/:path*` },
-    ];
+    // `fallback`: checked only after app routes, including the dynamic /api/officer/[...path] proxy
+    // (plain-array rewrites run before dynamic routes and would send officer calls straight to the backend).
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        { source: "/api/:path*", destination: `${BACKEND}/api/:path*` },
+        // Live feed for the Crowd-Shield radar; same-origin so it also works through HTTPS tunnels.
+        { source: "/ws/:path*", destination: `${BACKEND}/ws/:path*` },
+      ],
+    };
   },
   experimental: {
     // Deep scans (sandbox + AI) can take longer than the 30 s default proxy timeout.

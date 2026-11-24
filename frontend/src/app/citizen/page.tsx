@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { CitizenShell } from "@/components/CitizenShell";
+import { WarmUp } from "@/components/WarmUp";
 import { LanguageProvider } from "@/lib/i18n";
 import { extractUrl } from "@/lib/url";
 
@@ -40,6 +41,7 @@ export default function CitizenPage() {
 
   return (
     <LanguageProvider>
+      <WarmUp />
       <Suspense fallback={null}>
         <ShareTargetReader onTarget={onTarget} onAlert={onAlert} />
       </Suspense>

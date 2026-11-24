@@ -333,7 +333,7 @@ export async function getAwareness(params: { entity?: string; useLlm?: boolean }
   const q = new URLSearchParams({ hours: "168" });
   if (params.entity) q.set("entity", params.entity);
   if (params.useLlm === false) q.set("use_llm", "false");
-  return request<AwarenessAlert>(`/api/awareness-alert?${q.toString()}`);
+  return request<AwarenessAlert>(`/api/public/awareness?${q.toString()}`);
 }
 
 // ---------------------------------------------------------------- email scanning (POST /api/analyze-email)
@@ -657,6 +657,26 @@ export async function labelEmail(scanId: string, label: EmailLabel): Promise<Lab
   return request<LabelResult>("/api/email-model/label", {
     method: "POST",
     body: JSON.stringify({ reporter_id: getReporterId(), scan_id: scanId, label }),
+  });
+}
+
+export interface FalseAlarmReceipt {
+  ok: boolean;
+  id: string;
+  status: "open" | "confirmed" | "dismissed";
+  deduplicated: boolean;
+}
+
+/** Longest note the backend accepts with a false-alarm report. */
+export const FALSE_ALARM_NOTE_MAX = 280;
+
+/** "Report a false alarm": the server keeps only the scan's domain, verdict, score and this note
+ *  for an officer to review (429 = too many reports this minute, 404 = scan no longer stored). */
+export async function reportFalseAlarm(scanId: string, note?: string): Promise<FalseAlarmReceipt> {
+  const trimmed = (note ?? "").trim().slice(0, FALSE_ALARM_NOTE_MAX);
+  return request<FalseAlarmReceipt>("/api/feedback/false-alarm", {
+    method: "POST",
+    body: JSON.stringify({ scan_id: scanId, ...(trimmed ? { note: trimmed } : {}) }),
   });
 }
 

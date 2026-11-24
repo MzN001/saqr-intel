@@ -26,6 +26,11 @@ def test_state_is_populated_on_cold_boot(client):
     assert set(s["kpis"]) == {"citizens_protected", "active_entities", "hijacked_pins", "x_alerts_dispatched",
                               "pre_victim_detections"}
     assert s["kpis"]["citizens_protected"] > 0 and s["kpis"]["hijacked_pins"] >= 1
+    # Honest numbers: the demo baseline and the live part are reported separately and add up.
+    assert s["demo_baseline"] == {"citizens_protected": 1284, "x_alerts_dispatched": 37}
+    for k in ("citizens_protected", "x_alerts_dispatched"):
+        assert s["live_counts"][k] >= 0
+        assert s["kpis"][k] == s["demo_baseline"][k] + s["live_counts"][k]
     assert 1 <= len(s["recent_events"]) <= 25
     domains = {c["domain"] for c in s["campaigns"]}
     assert "tamm-smart-pay.net" in domains
@@ -48,6 +53,7 @@ def test_citizen_scan_updates_kpis_stream_and_ws(client):
         assert msg["event"] == "police.event" and msg["data"]["channel"] == "PC_BROWSER_EXTENSION"
     s = client.get("/api/police/state").json()
     assert s["kpis"]["citizens_protected"] == before + 1
+    assert s["live_counts"]["citizens_protected"] == s["kpis"]["citizens_protected"] - 1284 >= 1
     assert s["recent_events"][0]["channel"] == "PC_BROWSER_EXTENSION"
 
 
@@ -67,6 +73,7 @@ def test_x_alert_from_citizen_flags_campaign(client):
         assert ws.receive_json()["event"] == "police.x_alert"
     s = client.get("/api/police/state").json()
     assert s["kpis"]["x_alerts_dispatched"] == before + 1
+    assert s["live_counts"]["x_alerts_dispatched"] >= 1
     c = next(c for c in s["campaigns"] if c["domain"] == "emiratespost-track-uae.com")
     assert c["status"] == "COMMUNITY_FLAGGED_X" and "X_COMMUNITY_ALERT" in c["channels"]
     assert s["recent_events"][0]["channel"] == "X_COMMUNITY_ALERT"

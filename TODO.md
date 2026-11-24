@@ -14,8 +14,10 @@ The **Abu Dhabi Police Cyber-Patrol Command Center** is merged into `main` (bran
 and was put live on 2026-11-23: https://saqr-intel.vercel.app/police
 
 Open items:
-- [ ] Before real (non-demo) use: protect `/police` with `POLICE_API_KEY` **and** make `frontend/src/lib/police.ts` send it (see step 1.2).
+- [ ] **Turn on the `/police` lock in the cloud** (branch `feature/police-lock`, after it is merged): follow
+  "0. Lock `/police`" below. Do the steps in that order.
 - [ ] Police state is in memory: move it to a real database if counters/warnings must survive Render restarts.
+- [ ] Before a real pilot: personal officer accounts (police single sign-on) and an audit log instead of one shared passcode.
 
 How to deploy it again after changes:
 
@@ -26,14 +28,36 @@ How to deploy it again after changes:
 
 ---
 
+### 0. Lock `/police` (one time)
+
+Pick two different long random strings (for example from a password manager). Keep them private.
+- `POLICE_PASSCODE` = what officers type on the sign-in page.
+- `POLICE_API_KEY` = the secret the website uses to talk to the backend. Nobody types it.
+
+Do these steps **in this order**:
+
+1. **Vercel** → project `saqr-intel` → Settings → Environment Variables → add `POLICE_PASSCODE` and
+   `POLICE_API_KEY` for Production (and Preview). Do **not** tick anything that makes them public, and never name them `NEXT_PUBLIC_...`.
+2. **Redeploy Vercel** (step 2 below). Environment changes only apply after a new deploy.
+3. **Check the sign-in:** open https://saqr-intel.vercel.app/police. You should land on **Officer sign-in**.
+   Type the passcode → the Command Center loads and fills. (Still open in the backend at this point: that is fine.)
+4. **Render** → `saqr-intel-api` → Environment → add `POLICE_API_KEY` with **exactly the same value** as in
+   Vercel → Save (Render restarts the backend, about 2 minutes).
+5. Check `/police` again: it still loads. Then open https://saqr-intel-api.onrender.com/api/police/state directly:
+   it should now answer `401`. That means nobody can skip the sign-in page.
+
+Why this order: the website sends the key with every officer call. If Render gets the key first, the backend
+starts refusing the website (which does not have the key yet) and `/police` stops working until Vercel is
+redeployed. Vercel first means there is never a broken moment.
+
+If `/police` stays on **RECONNECTING TO BACKEND…** after step 4 (and Render is awake), the two `POLICE_API_KEY` values are probably different: copy the value again into both places and redeploy Vercel.
+
 ### 1. Render (backend): check it is live
 
-1. Open https://saqr-intel-api.onrender.com/api/police/state in a browser.
-   - You should see JSON with `kpis`, `campaigns`, `recent_events`, `map_pins`.
-   - `404 Not Found` = the deploy hasn't finished yet. Render dashboard → `saqr-intel-api` → **Events**: wait for "Deploy live" (about 2–4 min), or click **Manual Deploy → Deploy latest commit**.
-2. Optional but recommended before real use: Render → `saqr-intel-api` → **Environment** → add `POLICE_API_KEY` (any long random string).
-   Without it, the officer buttons (sync to telecom, broadcast warning, takedown) are open to anyone who finds `/police`.
-   **Warning:** the `/police` page does not send this key yet. If you set it, the whole dashboard stops loading (401 on `/api/police/state` and the live feed) until `frontend/src/lib/police.ts` sends an `X-API-Key` header (plus `?token=` on the WebSocket). For the hackathon demo, **leave it unset**.
+1. Open https://saqr-intel-api.onrender.com/health in a browser.
+   - You should see JSON with `"status"`. (Before the lock, `/api/police/state` also shows JSON; after step 0 it answers `401`, which is correct.)
+   - `404 Not Found` on a new endpoint = the deploy hasn't finished yet. Render dashboard → `saqr-intel-api` → **Events**: wait for "Deploy live" (about 2–4 min), or click **Manual Deploy → Deploy latest commit**.
+2. `POLICE_API_KEY` on Render: only as step 4 of "0. Lock `/police`" above, never before Vercel has it.
 
 ### 2. Vercel (website): redeploy so `/police` exists
 
@@ -49,13 +73,15 @@ npx vercel@latest deploy --prod --yes
 - `NEXT_PUBLIC_API_URL` is already saved in Vercel (Production + Preview) → `https://saqr-intel-api.onrender.com`. Do **not** change it.
 - Do **not** run `deploy-vercel.ps1`. That script switches the site back to a laptop tunnel.
 
-Then open **https://saqr-intel.vercel.app/police**.
+Then open **https://saqr-intel.vercel.app/police** and sign in with the passcode.
 
 ### 3. Smoke test (2 minutes, two tabs)
 
-1. Tab A: https://saqr-intel.vercel.app/police. The header badge should say **● LIVE SYNCED WITH CITIZEN SHIELD**. The KPIs, stream, map and campaigns should be filled (demo data is loaded on every start).
+The full rehearsable version (with what to say and what to do when something fails) is `docs/DEMO_SCRIPT.md`.
+
+1. Tab A: https://saqr-intel.vercel.app/police (sign in). The header badge should say **● LIVE SYNCED WITH CITIZEN SHIELD**. The KPIs, stream, map and campaigns should be filled (demo data is loaded on every start).
 2. Tab B: https://saqr-intel.vercel.app/citizen. Click **Test Fake TAMM Fine**.
-   → In Tab A, **Citizens Protected Today** goes up by 1 and a new row appears at the top of the stream.
+   → In Tab A (within 4 seconds), **Citizens Protected Today** goes up by 1, the line under it ("· N live") goes up, and a new row without the **Demo** tag appears at the top of the stream.
 3. Tab B: on the red verdict screen, open the X warning and press **Open X to Post** (you don't have to actually post).
    → In Tab A, **Community X Alerts Dispatched** goes up by 1, and the campaign shows "Community-flagged on X".
 4. Tab A: select a campaign, then click **Broadcast Official Warning to /citizen**.
@@ -69,13 +95,10 @@ Then open **https://saqr-intel.vercel.app/police**.
 - **"Sync to e& / du Telecom Blocklist" is real.** It adds the domain to `/api/dns-blocklist` and to the NextDNS phone shield, so shielded phones block it within seconds. Official sites, SAQR's own sites and IPs are refused.
 - **Every Render redeploy clears the phone push-alert sign-ups.** After deploying, open the SAQR app on each demo phone once.
 - **Never run a local backend with the real NextDNS keys** in `.env` while Render is live: it double-syncs the block list and sends double alerts. The local test setup forces NextDNS off.
-- **Tests:** `pytest -q` in the project root (123 pass). `cd frontend; npm run build` builds cleanly.
-- **Map tiles:** OpenStreetMap, darkened with CSS. CARTO's dark tiles now require an API key.
+- **Tests:** `.venv\Scripts\python -m pytest -q` in the project root (about 940 pass). `cd frontend; npm run lint; npx tsc --noEmit; npm run build`.
+- **Map:** the `/police` map is drawn by SAQR itself (no map service, no API key).
 
 ## ScamShield submission (2026-11-24)
-- [ ] Merge `feature/scamshield-model` into `main`, then check https://saqr-intel-api.onrender.com/api/hunter/status (it was 404 before the merge) and redeploy Vercel so `/police` shows the Proactive Hunt and model cards.
-- [ ] Paste the measured model table at the `<!-- METRICS -->` line in `README.md`.
-- [ ] Fix `.env.example`: `GEMINI_MODEL=gemini-2.5-flash` is a retired model (remove the line so the built-in model list is used).
 - [ ] Test the Search & Maps content script against live Google / Bing / Maps pages (only HTML fixtures so far).
 - [ ] crt.sh answered HTTP 502 on 2026-11-24: add a second certificate source (e.g. a self-hosted CertStream server) and test `CT_MODE=certstream`.
 - [ ] Cloud page checks have no browser: no screenshots in cloud dossiers, no JavaScript rendering. Needs a Playwright worker, ideally behind a UAE egress (`SANDBOX_PROXY_SERVER`).

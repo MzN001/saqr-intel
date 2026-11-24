@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { apiUrl, getWsUrl } from "./api";
+import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "./api";
 
 /* ---------- types (mirror saqr/police_state.py) ---------- */
 export type PoliceChannel =
@@ -26,6 +26,8 @@ export interface PoliceEvent {
   impersonated_entity: string | null;
   campaign_id: string | null;
   title: string | null;
+  /** true = pre-loaded demo event (saqr/police_state.seed), not a real interception. */
+  seeded?: boolean;
 }
 
 export interface Campaign {
@@ -103,6 +105,10 @@ export interface PoliceState {
     x_alerts_dispatched: number;
     pre_victim_detections?: number;
   };
+  /** The fixed demo numbers inside kpis.citizens_protected / x_alerts_dispatched (kpi = demo_baseline + live_counts). */
+  demo_baseline?: { citizens_protected: number; x_alerts_dispatched: number };
+  /** What really happened since the backend started. */
+  live_counts?: { citizens_protected: number; x_alerts_dispatched: number };
   proactive_detections?: ProactiveDetection[];
   hunter_mode?: HunterMode;
   campaigns: Campaign[];
@@ -271,12 +277,34 @@ export interface SweepCycle {
 }
 
 /* ---------- API ---------- */
+/** Officer-only calls go through the same-origin proxy (/api/officer/*), which adds the police key on the server. */
+export function officerUrl(p: string): string {
+  return p.startsWith("/api/") ? `/api/officer/${p.slice("/api/".length)}` : p;
+}
+
+function toLogin(): void {
+  if (typeof window === "undefined" || window.location.pathname.startsWith("/police/login")) return;
+  const next = window.location.pathname + window.location.search;
+  window.location.replace(`/police/login?next=${encodeURIComponent(next)}`);
+}
+
+/** Officer call (cookie session). A 401 means the session expired: back to the sign-in page. */
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(apiUrl(path), {
+  const res = await fetch(officerUrl(path), {
     ...init,
     headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
+    credentials: "same-origin",
     cache: "no-store",
   });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401) toLogin();
+  if (!res.ok) throw new Error(typeof body?.detail === "string" ? body.detail : `Request failed (${res.status})`);
+  return body as T;
+}
+
+/** Public backend call (citizen pages import these too). */
+async function publicCall<T>(path: string): Promise<T> {
+  const res = await fetch(apiUrl(path), { cache: "no-store" });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(typeof body?.detail === "string" ? body.detail : `Request failed (${res.status})`);
   return body as T;
@@ -292,10 +320,34 @@ export const broadcastWarning = (w: { title_en: string; title_ar: string; messag
   call<{ ok: boolean; warning: OfficialWarning }>("/api/police/broadcast-warning", { method: "POST", body: JSON.stringify(w) });
 export const getTakedown = (campaignId: string) => call<TakedownDossier>(`/api/police/takedown/${encodeURIComponent(campaignId)}`);
 export const getDetectionDossier = (id: number) => call<DetectionDossier>(`/api/police/detections/${id}/dossier`);
-export const evidencePackUrl = (dossierId: string) => apiUrl(`/api/dossiers/${encodeURIComponent(dossierId)}/evidence-pack`);
-export const screenshotUrl = (scanId: string) => apiUrl(`/api/scans/${encodeURIComponent(scanId)}/screenshot`);
+export const evidencePackUrl = (dossierId: string) => officerUrl(`/api/dossiers/${encodeURIComponent(dossierId)}/evidence-pack`);
+export const screenshotUrl = (scanId: string) => officerUrl(`/api/scans/${encodeURIComponent(scanId)}/screenshot`);
 export const startHunterSweep = () =>
   call<{ started: boolean; reason?: string; mode: HunterMode; cycle: SweepCycle | null }>("/api/hunter/sweep", { method: "POST" });
+/** Citizen "false alarm" reports. Stores only the domain (or "email message"), never the full URL. */
+export type FalseAlarmStatus = "open" | "confirmed" | "dismissed";
+export interface FalseAlarm {
+  id: string;
+  scan_id: string;
+  kind: "url" | "maps" | "email" | string;
+  label: string;
+  verdict: string;
+  score: number;
+  note: string;
+  reports: number;
+  status: FalseAlarmStatus;
+  created_at: string;
+  last_reported_at: string;
+  resolved_at: string | null;
+}
+export interface FalseAlarmList {
+  items: FalseAlarm[];
+  counts: Record<FalseAlarmStatus, number> & { total: number };
+}
+export const getFalseAlarms = () => call<FalseAlarmList>("/api/feedback/false-alarms");
+/** Records the officer's decision only: nothing is whitelisted or unblocked automatically. */
+export const resolveFalseAlarm = (id: string, status: Exclude<FalseAlarmStatus, "open">) =>
+  call<FalseAlarm>(`/api/feedback/false-alarms/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify({ status }) });
 export const getHunterStatus = () => call<{ mode: HunterMode; cycle_running: boolean; last_cycle: SweepCycle | null }>("/api/hunter/status");
 
 /** null when the backend has no metrics endpoint (404) or is unreachable: the card is then hidden. */
@@ -309,7 +361,7 @@ export async function getModelMetrics(): Promise<ModelMetrics | null> {
     return null;
   }
 }
-export const getLatestWarning = () => call<{ warning: OfficialWarning | null }>("/api/police/warning/latest");
+export const getLatestWarning = () => publicCall<{ warning: OfficialWarning | null }>("/api/police/warning/latest");
 
 /** Citizen side: count an X warning on /police. Fire-and-forget; never blocks or throws. */
 export function logXAlert(domain: string | null, impersonatedEntity: string | null): void {
@@ -330,81 +382,34 @@ export function logXAlert(domain: string | null, impersonatedEntity: string | nu
 export type LinkState = "live" | "polling" | "offline";
 
 /**
- * Live /police state: WebSocket (`police.*` + scan events) for instant updates, plus a 4-second
- * GET /api/police/state poll so a Render free-tier restart or a dropped socket never loses state.
+ * Live /police state: a 4-second GET /api/officer/police/state poll (cookie session, no WebSocket:
+ * the socket could not carry the officer key). "live" = the last poll succeeded.
  */
 export function usePoliceLive() {
   const [state, setState] = useState<PoliceState | null>(null);
   const [link, setLink] = useState<LinkState>("polling");
   const [error, setError] = useState<string | null>(null);
-  const wsUp = useRef(false);
-  const refreshTimer = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       const s = await getPoliceState();
       setState(s);
       setError(null);
-      setLink(wsUp.current ? "live" : "polling");
+      setLink("live");
     } catch (e) {
       setError(e instanceof Error ? e.message : "offline");
-      if (!wsUp.current) setLink("offline");
+      setLink("offline");
     }
   }, []);
-
-  const refreshSoon = useCallback(() => {
-    if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
-    refreshTimer.current = window.setTimeout(() => void refresh(), 250);
-  }, [refresh]);
 
   useEffect(() => {
     const first = window.setTimeout(() => void refresh(), 0);
     const poll = window.setInterval(() => void refresh(), 4000);
-    let ws: WebSocket | null = null;
-    let retry: number | null = null;
-    let closed = false;
-    let backoff = 1000;
-
-    const connect = () => {
-      try {
-        ws = new WebSocket(`${getWsUrl()}?topics=police,url_scan,maps_scan,hunter.cycle`);
-      } catch {
-        return;
-      }
-      ws.onopen = () => {
-        wsUp.current = true;
-        backoff = 1000;
-        setLink("live");
-      };
-      ws.onmessage = (m) => {
-        try {
-          const msg = JSON.parse(m.data) as { event: string; data: unknown };
-          if (msg.event === "police.event") {
-            const ev = msg.data as PoliceEvent;
-            setState((s) => (s ? { ...s, recent_events: [ev, ...s.recent_events.filter((e) => e.id !== ev.id)].slice(0, 25) } : s));
-          }
-          if (msg.event.startsWith("police.") || msg.event.endsWith(".completed") || msg.event === "hunter.cycle") refreshSoon();
-        } catch {
-          /* ignore */
-        }
-      };
-      ws.onclose = () => {
-        wsUp.current = false;
-        setLink((l) => (l === "live" ? "polling" : l));
-        if (!closed) retry = window.setTimeout(connect, (backoff = Math.min(backoff * 2, 15000)));
-      };
-      ws.onerror = () => ws?.close();
-    };
-    connect();
     return () => {
-      closed = true;
       window.clearTimeout(first);
       window.clearInterval(poll);
-      if (retry) window.clearTimeout(retry);
-      if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
-      ws?.close();
     };
-  }, [refresh, refreshSoon]);
+  }, [refresh]);
 
   return { state, link, error, refresh };
 }
@@ -453,6 +458,9 @@ export const P = {
   lastPost: { en: "Last post", ar: "آخر منشور" },
   channelMix: { en: "Where interceptions come from", ar: "مصادر عمليات الاعتراض" },
   demoData: { en: "Demo data · resets on restart", ar: "بيانات تجريبية · تُعاد عند إعادة التشغيل" },
+  includesDemo: { en: "Includes {demo} demo baseline · {live} live", ar: "يشمل {demo} رقماً تجريبياً · {live} مباشرة" },
+  demoRow: { en: "Demo", ar: "تجريبي" },
+  demoRowHint: { en: "Pre-loaded demo event, not a real interception", ar: "حدث تجريبي محمّل مسبقاً، وليس اعتراضاً حقيقياً" },
   stream: { en: "Live Citizen Interception Stream", ar: "بث مباشر لعمليات اعتراض المواطنين" },
   streamHint: { en: "Click an interception to inspect its campaign", ar: "اضغط على أي عملية لفحص الحملة المرتبطة بها" },
   map: { en: "Abu Dhabi Geo-Spoof Sentinel", ar: "رادار تزييف المواقع الجغرافية في أبوظبي" },
@@ -513,6 +521,20 @@ export const P = {
   sweepScanned: { en: "scanned", ar: "تم فحصها" },
   sweepConfirmed: { en: "confirmed", ar: "مؤكدة" },
   noDetections: { en: "No proactive detections yet. Run a sweep.", ar: "لا توجد عمليات رصد استباقي بعد. شغّل المسح." },
+  faQueue: { en: "False-alarm reports", ar: "بلاغات الإنذار الخاطئ" },
+  faHint: {
+    en: "Citizens who think a warning was wrong. Confirming only records your decision: nothing is unblocked or whitelisted automatically.",
+    ar: "مواطنون يعتقدون أن التحذير خاطئ. التأكيد يسجّل قرارك فقط: لا يُرفع أي حظر ولا يُضاف أي موقع إلى القائمة الآمنة تلقائياً.",
+  },
+  faOpen: { en: "open", ar: "مفتوح" },
+  faEmpty: { en: "No false-alarm reports. Citizens can send one from a warning screen.", ar: "لا توجد بلاغات إنذار خاطئ. يمكن للمواطن إرسال بلاغ من شاشة التحذير." },
+  faConfirm: { en: "Confirm false alarm", ar: "تأكيد أنه إنذار خاطئ" },
+  faDismiss: { en: "Dismiss", ar: "رفض" },
+  faConfirmed: { en: "Confirmed false alarm", ar: "إنذار خاطئ مؤكَّد" },
+  faDismissed: { en: "Dismissed", ar: "مرفوض" },
+  faNoNote: { en: "No note", ar: "بلا ملاحظة" },
+  faReports: { en: "reports", ar: "بلاغات" },
+  faLoadFailed: { en: "Could not load reports", ar: "تعذّر تحميل البلاغات" },
   statusConfirmed: { en: "Confirmed scam", ar: "احتيال مؤكد" },
   statusSuspicious: { en: "Suspicious", ar: "مشبوه" },
   openDossier: { en: "Evidence dossier", ar: "ملف الأدلة" },
@@ -607,4 +629,24 @@ export const P = {
   falseAlarms: { en: "false alarms", ar: "إنذارات كاذبة" },
   datasets: { en: "Datasets", ar: "مجموعات البيانات" },
   rows: { en: "rows", ar: "صف" },
+
+  /* Officer sign-in */
+  loginTitle: { en: "Officer sign-in", ar: "دخول الضباط" },
+  loginIntro: { en: "Enter the Command Center passcode to continue.", ar: "أدخل رمز الدخول إلى مركز القيادة للمتابعة." },
+  passcode: { en: "Officer passcode", ar: "رمز دخول الضابط" },
+  signIn: { en: "Sign in", ar: "تسجيل الدخول" },
+  signingIn: { en: "Checking…", ar: "جارٍ التحقق…" },
+  wrongPasscode: { en: "That passcode is not correct.", ar: "رمز الدخول غير صحيح." },
+  tooManyTries: { en: "Too many attempts. Try again in a few minutes.", ar: "محاولات كثيرة. حاول مرة أخرى بعد بضع دقائق." },
+  loginFailed: { en: "Sign-in failed. Check the connection and try again.", ar: "تعذّر تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى." },
+  notConfigured: {
+    en: "Police access is not configured on this server.",
+    ar: "لم يتم إعداد دخول الشرطة على هذا الخادم.",
+  },
+  hackathonNote: {
+    en: "Hackathon access. A real rollout would use police single sign-on.",
+    ar: "دخول خاص بالهاكاثون. النشر الفعلي سيستخدم الدخول الموحّد للشرطة.",
+  },
+  logout: { en: "Sign out", ar: "تسجيل الخروج" },
+  devUnlocked: { en: "Dev: unlocked", ar: "تطوير: بدون قفل" },
 } as const;

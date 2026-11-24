@@ -26,9 +26,10 @@ from saqr.intel.sandbox import sandbox
 from saqr.intel.threat_feeds import threat_feeds
 from saqr.pipeline import seed_historical_scans
 from saqr.seed_data import MOCK_SCAM_SLUGS, replica_html
+from saqr.feedback_state import feedback_state
 from saqr.police_state import police_state
-from saqr.routers import (analysis, batch, blocklist, campaigns, ct, email, graph, live, maps, mobile, police, push,
-                          system, takedown, user_model)
+from saqr.routers import (analysis, batch, blocklist, campaigns, ct, email, feedback, graph, live, maps, mobile, police,
+                          public, push, system, takedown, user_model)
 from saqr.routers import hunter as hunter_router
 from saqr.routers import model as model_router
 
@@ -36,12 +37,25 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("saqr")
 
 
+async def _retention_loop() -> None:
+    """Privacy: prune old scans (SCAN_RETENTION_DAYS) on start, then every 6 hours."""
+    while True:
+        try:
+            if n := await db.prune_scans():
+                log.info("Retention: deleted %d scans older than %d days", n, settings.scan_retention_days)
+        except Exception:  # noqa: BLE001
+            log.warning("scan retention prune failed", exc_info=True)
+        await asyncio.sleep(6 * 3600)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await db.connect()
     if await seed_if_empty():
         log.info("Seeded syndicate intelligence (Sand Viper, Desert Mirage)")
+    await feedback_state.load()
     seed_task = asyncio.create_task(seed_historical_scans(), name="seed-scans")
+    retention_task = asyncio.create_task(_retention_loop(), name="scan-retention")
     police_state.seed()  # /police looks active on a cold boot
     ct_monitor.start()
     threat_feeds.start()
@@ -56,6 +70,7 @@ async def lifespan(_: FastAPI):
         yield
     finally:
         seed_task.cancel()
+        retention_task.cancel()
         keepalive_task.cancel()
         await hunter.stop()
         await ct_monitor.stop()
@@ -127,7 +142,7 @@ async def mock_scam(slug: str):
 
 for r in (system.router, analysis.router, maps.router, ct.router, graph.router, takedown.router, live.router,
           mobile.router, blocklist.router, push.router, email.router, campaigns.router, user_model.router,
-          police.router, hunter_router.router, batch.router):
+          police.router, hunter_router.router, batch.router, public.router, feedback.router):
     app.include_router(r)
 app.include_router(model_router.router)
 

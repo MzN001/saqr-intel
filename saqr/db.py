@@ -108,7 +108,33 @@ CREATE TABLE IF NOT EXISTS user_models (      -- personal email model per citize
     labelled_json TEXT NOT NULL DEFAULT '{}',  -- {scan_id: "scam"|"ham"} so relabelling a scan replaces its label
     updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS false_alarms (     -- citizen "Report a false alarm": domain + result only, never the full URL
+    id TEXT PRIMARY KEY,
+    scan_id TEXT NOT NULL UNIQUE,              -- one row per scan; repeat reports raise `reports`
+    kind TEXT NOT NULL,                        -- url | maps | email
+    label TEXT NOT NULL,                       -- the scan's domain, or a neutral label ("email message")
+    verdict TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    reports INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'open',       -- open | confirmed | dismissed (a decision record only)
+    created_at TEXT NOT NULL,
+    last_reported_at TEXT NOT NULL,
+    resolved_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_false_alarms_created ON false_alarms(created_at);
 """
+
+# Scans made by SAQR itself (seeded demo history, the phone-demo pages, the proactive hunter): never
+# pruned, they are demo data / police evidence rather than a citizen's check.
+NON_CITIZEN_REPORTERS = ("seed", "demo-seed", "hunter")
+
+
+def strip_query(url: str | None) -> str | None:
+    """`url` without its ?query and #fragment (they can carry personal tokens)."""
+    if not isinstance(url, str):
+        return url
+    return url.split("#", 1)[0].split("?", 1)[0]
 
 
 def utcnow() -> datetime:
@@ -160,6 +186,11 @@ class Database:
 
     # -- scans ------------------------------------------------------------
     async def save_scan(self, scan: dict[str, Any], screenshot_b64: str | None = None) -> None:
+        if scan.get("kind") == "url" and scan.get("verdict") == "SAFE":
+            # Privacy: a safe link's query string is not needed by anything (blocklist, graph and
+            # dossiers only use non-SAFE scans), so it is never written to disk.
+            scan = {**scan, **{k: strip_query(scan.get(k)) for k in ("target", "input_url", "normalized_url")
+                               if scan.get(k)}}
         await self.conn.execute(
             """INSERT OR REPLACE INTO scans (id, kind, target, domain, created_at, risk_score, verdict,
                impersonated_entity, channel, reporter, result_json, screenshot_b64)
@@ -188,6 +219,37 @@ class Database:
             params = (kind,)
         sql += " ORDER BY created_at DESC LIMIT ?"
         return await self.fetchall(sql, params + (limit,))
+
+    async def prune_scans(self, days: int | None = None) -> int:
+        """Privacy retention. Scans older than `days` (default SCAN_RETENTION_DAYS; 0 = keep forever):
+        safe results, email checks and scans without a domain are deleted; non-SAFE link / Maps scans
+        stay (they back the DNS blocklist, police map and dossiers) but lose the citizen's pasted
+        message text. SAQR's own scans (seed, demo-seed, hunter) are never touched. Returns rows deleted."""
+        days = settings.scan_retention_days if days is None else days
+        if days <= 0:
+            return 0
+        cutoff = iso(utcnow() - timedelta(days=days))
+        own = ",".join("?" for _ in NON_CITIZEN_REPORTERS)
+        base = (f"created_at < ? AND COALESCE(reporter,'') NOT IN ({own}) "
+                "AND id NOT LIKE 'SCN-SEED-%' AND id NOT LIKE 'SCN-DEMO-%'")
+        params = (cutoff, *NON_CITIZEN_REPORTERS)
+        cur = await self.conn.execute(
+            f"DELETE FROM scans WHERE {base} AND (verdict = 'SAFE' OR kind = 'email' OR domain IS NULL OR domain = '')",
+            params)
+        deleted = cur.rowcount or 0
+        rows = await self.fetchall(
+            f"SELECT id, result_json FROM scans WHERE {base} AND result_json LIKE '%\"message_text\": \"%'", params)
+        for row in rows:
+            try:
+                data = json.loads(row["result_json"])
+            except (TypeError, ValueError):
+                continue
+            if data.get("message_text"):
+                data["message_text"] = None
+                await self.conn.execute("UPDATE scans SET result_json=? WHERE id=?",
+                                        (json.dumps(data, ensure_ascii=False, default=str), row["id"]))
+        await self.conn.commit()
+        return deleted
 
     # -- graph ------------------------------------------------------------
     async def upsert_node(self, node_id: str, ntype: str, label: str, risk: int = 0,

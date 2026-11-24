@@ -33,6 +33,8 @@ const dict = {
   checkTry: { en: "Try:", ar: "جرّب:" },
   exampleScam: { en: "Test Fake TAMM Fine", ar: "اختبر مخالفة تم المزيفة" },
   exampleSafe: { en: "Test Verified adpolice.gov.ae", ar: "اختبر adpolice.gov.ae الموثّق" },
+  // Shown instead of the raw demo address (http://127.0.0.1:8000/mock-scam/...), which looks broken to judges.
+  exampleScamLabel: { en: "Example scam page (safe demo)", ar: "صفحة احتيال تجريبية (عرض آمن)" },
   bgTitle: { en: "Activate System-Wide Background Shield (Zero App Required)", ar: "فعّل الدرع الخلفي على مستوى الجهاز (بدون أي تطبيق)" },
   bgIntro: {
     en: "One-time setup. Your phone then checks every website in every app (Chrome, Safari, Maps, WhatsApp) through an encrypted security DNS that blocks known phishing sites.",
@@ -292,10 +294,61 @@ const dict = {
   verdictSafe: { en: "SAFE", ar: "آمن" },
   lastUpdated: { en: "Updated", ar: "آخر تحديث" },
   sharedLink: { en: "Shared to SAQR Verify", ar: "تمت المشاركة إلى صقر للتحقق" },
-  commandCenter: { en: "Command Center", ar: "مركز القيادة" },
   footer: {
     en: "Report fraud: Aman 8002626 · SMS 2828 · Emergency 999",
     ar: "للإبلاغ عن الاحتيال: أمان 8002626 · رسالة نصية 2828 · الطوارئ 999",
+  },
+  // ---------------------------------------------------------------- privacy + "report a false alarm"
+  privacyLine: {
+    en: "SAQR keeps this check and its result for 30 days to help protect others; links found to be scams stay longer as police evidence. No account needed.",
+    ar: "يحتفظ صقر بهذا الفحص ونتيجته 30 يوماً لحماية الآخرين، وتبقى الروابط الاحتيالية مدة أطول كدليل لدى الشرطة. لا حاجة إلى حساب.",
+  },
+  privTitle: { en: "Privacy: what SAQR keeps", ar: "الخصوصية: ما يحتفظ به صقر" },
+  privStored: {
+    en: "What is stored: the address of the link you check and its result, any message text you paste with it, and for emails the sender, subject and a short excerpt (never the full email or its files). For a safe link the part after “?” is not stored.",
+    ar: "ما يُحفظ: عنوان الرابط الذي تفحصه ونتيجته، وأي نص رسالة تلصقه معه، وفي البريد المرسل والموضوع ومقتطف قصير (لا الرسالة كاملة ولا مرفقاتها). في الرابط الآمن لا يُحفظ الجزء الذي بعد «؟».",
+  },
+  privRetention: {
+    en: "How long: safe results and email checks are deleted after 30 days. Links found to be scams are kept as police evidence for the blocklist, and the message text you pasted is removed from them after 30 days.",
+    ar: "المدة: تُحذف النتائج الآمنة وفحوص البريد بعد 30 يوماً. تُحفظ الروابط الاحتيالية دليلاً لدى الشرطة لقائمة الحظر، ويُحذف منها نص الرسالة الذي لصقته بعد 30 يوماً.",
+  },
+  privReports: {
+    en: "Reports: “Report a false alarm” sends only the website name, the result and your optional note to SAQR officers for review.",
+    ar: "البلاغات: «الإبلاغ عن إنذار خاطئ» يرسل اسم الموقع والنتيجة وملاحظتك الاختيارية فقط إلى ضباط صقر للمراجعة.",
+  },
+  privNoAccount: {
+    en: "No account, name or phone number is ever asked for.",
+    ar: "لا نطلب أبداً حساباً أو اسماً أو رقم هاتف.",
+  },
+  faReport: { en: "Report a false alarm", ar: "الإبلاغ عن إنذار خاطئ" },
+  faNoteLabel: { en: "Why do you think this is a mistake? (optional)", ar: "لماذا تعتقد أن هذا خطأ؟ (اختياري)" },
+  faNotePlaceholder: { en: "e.g. This is my bank's real website", ar: "مثال: هذا الموقع الرسمي لبنكي" },
+  faSend: { en: "Send for review", ar: "أرسل للمراجعة" },
+  faSending: { en: "Sending…", ar: "جارٍ الإرسال…" },
+  faCancel: { en: "Cancel", ar: "إلغاء" },
+  faSentWhat: {
+    en: "Only the website name, the result and your note are sent. Keep the warning in mind until an officer has looked.",
+    ar: "يُرسل اسم الموقع والنتيجة وملاحظتك فقط. خذ التحذير بعين الاعتبار حتى يراجعه ضابط.",
+  },
+  faThanks: {
+    en: "Thank you. An officer will review this report.",
+    ar: "شكراً لك. سيراجع أحد الضباط هذا البلاغ.",
+  },
+  faAlready: {
+    en: "Thanks, your report for this check is already with an officer for review.",
+    ar: "شكراً، بلاغك عن هذا الفحص لدى أحد الضباط للمراجعة.",
+  },
+  faRateLimited: {
+    en: "Too many reports in one minute. Please try again shortly.",
+    ar: "بلاغات كثيرة خلال دقيقة. حاول مرة أخرى بعد قليل.",
+  },
+  faNotFound: {
+    en: "This check is no longer stored, so it can't be reported.",
+    ar: "لم يعد هذا الفحص محفوظاً، لذا لا يمكن الإبلاغ عنه.",
+  },
+  faFailed: {
+    en: "Couldn't send the report. Check your connection and try again.",
+    ar: "تعذّر إرسال البلاغ. تحقق من اتصالك وحاول مرة أخرى.",
   },
   // ---------------------------------------------------------------- email scanning (EmailGuard + verdict)
   emTab: { en: "Email Scam Check", ar: "فحص البريد الاحتيالي" },

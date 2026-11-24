@@ -6,7 +6,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { CityGridBackdrop, MAP_ASPECT } from "./CityGrid";
 import { useLang } from "@/lib/i18n";
 import { extractUrl } from "@/lib/url";
-import { SCAM_FINE_URL } from "./SearchMapsShield";
+import { SCAM_FINE_URL, isDemoScamUrl } from "./SearchMapsShield";
 
 const OFFICIAL_EXAMPLE = "https://www.adpolice.gov.ae/";
 
@@ -22,10 +22,16 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
   const { t, lang } = useLang();
   const [value, setValue] = useState("");
   const [invalid, setInvalid] = useState(false);
+  // The demo scam example shows a friendly label in the box; the real (replica) address stays here.
+  const [example, setExample] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    if (example) {
+      onCheck(example);
+      return;
+    }
     const url = toUrl(value);
     if (!url) {
       setInvalid(true);
@@ -38,7 +44,9 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
   };
 
   const tryExample = (url: string) => {
-    setValue(url);
+    const demo = isDemoScamUrl(url);
+    setExample(demo ? url : null);
+    setValue(demo ? t("exampleScamLabel") : url);
     setInvalid(false);
     onCheck(url);
   };
@@ -82,18 +90,20 @@ export function LinkChecker({ onCheck }: { onCheck: (url: string, rawText?: stri
             value={value}
             onChange={(e) => {
               setValue(e.target.value);
+              setExample(null);
               if (invalid) setInvalid(false);
             }}
             placeholder={t("checkPlaceholder")}
             aria-invalid={invalid}
             aria-describedby={invalid ? "link-checker-error" : undefined}
-            className="min-w-0 flex-1 bg-transparent py-3 text-[15px] text-ink outline-none placeholder:text-ink-soft/80"
+            className="min-w-0 flex-1 bg-transparent py-3 text-[15px] text-ink outline-hidden placeholder:text-ink-soft/80"
           />
           {value && (
             <button
               type="button"
               onClick={() => {
                 setValue("");
+                setExample(null);
                 setInvalid(false);
                 input.current?.focus();
               }}

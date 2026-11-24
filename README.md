@@ -1,7 +1,7 @@
 # SAQR-INTEL: ScamShield for Abu Dhabi
 
-**Live:** citizen app https://saqr-intel.vercel.app/citizen · police command center https://saqr-intel.vercel.app/police ·
-API https://saqr-intel-api.onrender.com (`/docs`, `/health`)
+**Live:** citizen app https://saqr-intel.vercel.app/citizen · police command center https://saqr-intel.vercel.app/police (officer passcode) ·
+API https://saqr-intel-api.onrender.com (`/docs`, `/health`) · 5-minute demo script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
 
 ## 1. Problem and solution
 
@@ -180,7 +180,8 @@ If PowerShell refuses `activate`, run `Set-ExecutionPolicy -Scope CurrentUser Re
 **Linux / macOS**: same steps with `python3 -m venv .venv`, `source .venv/bin/activate`, `cp .env.example .env`.
 
 Frontend (second terminal): `cd frontend`, `npm install`, `npm run dev` → http://localhost:3000/citizen and
-http://localhost:3000/police. `/api/*` is proxied to `http://127.0.0.1:8000` (or `NEXT_PUBLIC_API_URL`).
+http://localhost:3000/police (open on a laptop when no `POLICE_PASSCODE` is set, marked "Dev: unlocked").
+`/api/*` is proxied to `http://127.0.0.1:8000` (or `NEXT_PUBLIC_API_URL`).
 
 `.env` notes: all keys are optional (without an LLM key the rules engine decides). Leave `NEXTDNS_PROFILE_ID` / `NEXTDNS_API_KEY` empty on a laptop while the cloud backend uses
 them. `OFFLINE_MODE=true` runs a demo with no internet (seeded data, simulated CT and hunter).
@@ -211,7 +212,9 @@ Cloud: `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=fals
 | Proactive Hunter | `HUNTER_MODE=live` by default: real DNS sweep, whoisds list and crt.sh. crt.sh answered HTTP 502 when tested on 2026-11-24 (the source backs off). `OFFLINE_MODE` or `HUNTER_MODE=simulated` = synthetic leads, labelled "simulated", never published |
 | CT monitor | `CT_MODE=simulated` by default and on Render: synthetic certificate stream. `certstream` mode exists, not tested here; synthetic CT leads are ignored by the live hunter |
 | Syndicates Sand Viper / Desert Mirage, seeded scans `SCN-SEED-*`, map pins, citizen reports | Fictitious demo data (`saqr/seed_data.py`); replica scam pages are rendered from stored HTML |
-| Police command center counters, campaigns, warnings | In memory, pre-seeded with demo data, reset on every restart |
+| Police command center counters, campaigns, warnings | In memory, reset on every restart. "Citizens Protected Today" and "Community X Alerts Dispatched" start from a fixed demo baseline (1,284 and 37); the tile shows "Includes 1,284 demo baseline · N live" and the API returns `demo_baseline` and `live_counts` separately. Pre-loaded stream rows are tagged "Demo" |
+| `/police` sign-in | Real: one shared passcode, signed httpOnly cookie, police key added on the web server (see section 10). Not per-officer accounts |
+| "Report a false alarm" | Real: stored in SQLite, reviewed in the `/police` queue; the officer's decision is recorded only (nothing is unblocked or whitelisted automatically) |
 | Official phone numbers and branch coordinates | Demo reference data; must be checked against official sources |
 | Maps listing lookup | Google Places only with `GOOGLE_MAPS_API_KEY` (not set in `render.yaml`); otherwise seeded listings + OSM reverse geocoding |
 | Screenshots | Only with Playwright (laptop). Render has no browser: no screenshots, cloaking check = two HTTP views |
@@ -221,13 +224,30 @@ Cloud: `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=fals
 
 ## 10. Limitations and route to a police pilot
 
+Security and privacy today:
+- **`/police` is private.** `/police/login` asks for one shared passcode (`POLICE_PASSCODE`, 5 tries per 10 minutes);
+  the browser then gets a signed, httpOnly cookie for 12 hours. Every officer call goes through the website's own
+  `/api/officer/...` route, which adds the police API key (`POLICE_API_KEY`) on the server, so the key never reaches
+  a browser. With the same key set on the backend, police endpoints refuse direct calls, and citizen pages only get
+  public live events (official warnings and anonymised scan results, no IPs or email senders). The officer page
+  refreshes every 4 seconds.
+- **Retention.** Safe results and email checks are deleted after `SCAN_RETENTION_DAYS` (30). Links judged to be
+  scams are kept as blocklist / dossier evidence, but the message text a citizen pasted is removed after 30 days.
+  A safe link's query string (the part after "?") is never stored. Emails keep only sender, subject and a
+  500-character excerpt. No account, name or phone number is asked for. The citizen app explains this next to
+  every verdict and in the footer.
+- **False alarms.** Any warning has "Report a false alarm" (domain, verdict, score and an optional note; no full
+  URL). Reports are rate limited and appear in the `/police` "False-alarm reports" queue, where an officer
+  confirms or dismisses them.
+
 Limitations (known, not hidden):
 - Measured accuracy is on public international datasets; there is no labelled UAE scam set yet, so the hidden
   test set may behave differently. A brand-new scam on an innocent-looking, aged domain needs page evidence.
 - The cloud runs without a browser: JavaScript-built scam pages, IP / geo cloaking and screenshot evidence need
   Playwright workers with a UAE egress (`SANDBOX_PROXY_SERVER` exists but is not configured).
 - WHOIS is often redacted or rate-limited; crt.sh is unreliable; whoisds covers only domains it publishes.
-- Demo security: `POLICE_API_KEY` is unset, so police endpoints are open, and `/police` does not send the key yet.
+- `/police` uses one shared passcode, not personal officer accounts, and there is no audit log of officer actions.
+  Police endpoints are locked on the backend only once `POLICE_API_KEY` is also set on Render.
   SQLite on Render's ephemeral disk and the in-memory police state are lost on restart.
 - Phishing Army (CC BY-NC) and OpenPhish (community, non-commercial) licences need clearing for operational use.
 
@@ -237,8 +257,8 @@ Route to a pilot (each step uses what exists today):
    calibrate the 30 / 65 thresholds and retrain with `tools/train_url_model.py --data <ADP labels>`.
 2. **Official data**: replace demo registry phone numbers / branches with entity-verified lists; extend the
    registry to more UAE banks and government services.
-3. **Hardening**: police SSO in place of the shared key, Postgres in place of SQLite, audit log of officer
-   actions, Playwright workers behind a UAE egress, data-retention rules for citizen submissions.
+3. **Hardening**: police SSO in place of the shared passcode, Postgres in place of SQLite, audit log of officer
+   actions, Playwright workers behind a UAE egress, a retention period agreed with the police legal team.
 4. **Enforcement loop**: officer-approved domains published as RPZ to telecom resolvers through TDRA; dossiers
    and abuse notices sent to registrars / hosts by the cyber-crime unit (a human approves every send).
 5. **Citizen rollout**: the extension through the Chrome / Edge stores, the DNS profile and PWA through official

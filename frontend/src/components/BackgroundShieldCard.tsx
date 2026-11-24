@@ -232,7 +232,7 @@ export function BackgroundShieldCard() {
           spellCheck={false}
           maxLength={16}
           aria-invalid={!idValid}
-          className={`mt-1.5 w-full rounded-2xl bg-muted px-3.5 py-2.5 font-mono text-sm text-ink outline-none ring-1 focus:ring-2 sm:max-w-xs ${
+          className={`mt-1.5 w-full rounded-2xl bg-muted px-3.5 py-2.5 font-mono text-sm text-ink outline-hidden ring-1 focus:ring-2 sm:max-w-xs ${
             idValid ? "ring-line focus:ring-emerald-600" : "ring-crimson-600"
           }`}
         />

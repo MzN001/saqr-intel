@@ -151,7 +151,7 @@ function LlmPanel({ open, onToggle, error }: { open: boolean; onToggle: () => vo
         autoCorrect="off"
         spellCheck={false}
         dir="ltr"
-        className="mt-1 w-full rounded-xl bg-muted px-3 py-2.5 font-mono text-sm text-ink outline-none ring-1 ring-line placeholder:text-ink-soft/80 focus:ring-2 focus:ring-emerald-600"
+        className="mt-1 w-full rounded-xl bg-muted px-3 py-2.5 font-mono text-sm text-ink outline-hidden ring-1 ring-line placeholder:text-ink-soft/80 focus:ring-2 focus:ring-emerald-600"
       />
     </label>
   );
@@ -379,7 +379,7 @@ export function EmailGuard({ onScan }: { onScan: (input: EmailScanInput, target:
                 placeholder={t(mode === "raw" ? "emRawPlaceholder" : "emTextPlaceholder")}
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? "email-guard-error" : undefined}
-                className={`block w-full resize-y rounded-2xl bg-transparent p-3.5 text-ink outline-none placeholder:text-ink-soft/80 ${
+                className={`block w-full resize-y rounded-2xl bg-transparent p-3.5 text-ink outline-hidden placeholder:text-ink-soft/80 ${
                   mode === "raw" ? "font-mono text-xs leading-relaxed" : "text-[15px] leading-relaxed"
                 }`}
               />

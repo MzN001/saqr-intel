@@ -153,6 +153,14 @@ class Settings:
     # --- Security ------------------------------------------------------------
     police_api_key: str = os.getenv("POLICE_API_KEY", "")  # empty = open demo mode
     rate_limit_per_minute: int = _int("RATE_LIMIT_PER_MINUTE", 30)
+    # Own, tighter bucket for POST /api/feedback/false-alarm (0 = off).
+    feedback_rate_limit_per_minute: int = _int("FEEDBACK_RATE_LIMIT_PER_MINUTE", 3)
+
+    # --- Privacy -------------------------------------------------------------
+    # Safe results and email checks older than this are deleted (0 = keep forever). Links judged to be
+    # scams are kept as evidence (blocklist, dossiers); their pasted message text is removed. Seeded
+    # demo scans are never pruned.
+    scan_retention_days: int = _int("SCAN_RETENTION_DAYS", 30)
 
     @property
     def active_llm(self) -> str:

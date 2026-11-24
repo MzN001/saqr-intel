@@ -33,6 +33,12 @@ import { PhoneFrame } from "./Chrome";
 
 export const SCAM_FINE_URL = "http://127.0.0.1:8000/mock-scam/tamm-fine";
 export const SCAM_POST_URL = "http://127.0.0.1:8000/mock-scam/emiratespost";
+/**
+ * The example scam links point at the backend's built-in replica pages. The backend (local or Render)
+ * resolves `/mock-scam/<slug>` on a loopback host in memory to the seeded scam domain, so the address
+ * itself never has to load. Never show it raw to a citizen: use the `exampleScamLabel` text instead.
+ */
+export const isDemoScamUrl = (url: string): boolean => /\/mock-scam\//i.test(url);
 const OFFICIAL_URL = "https://www.adpolice.gov.ae/";
 const MAPS_NAME = "Emirates Post Customer Center - Abu Dhabi";
 const MAPS_PHONE = "+971 50 000 7781";

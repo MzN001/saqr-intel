@@ -45,7 +45,7 @@ def test_analyze_seeded_scam_broadcasts(client):
         assert body["impersonated_entity"] == "TAMM Abu Dhabi"
         assert body["citizen_explanation_ar"] and body["citizen_explanation_en"]
         assert "OTP" in body["technical_indicators"]["harvested_fields"]
-        assert body["technical_indicators"]["ip_addresses"] == ["185.220.101.44"]
+        assert body["technical_indicators"]["ip_addresses"] == ["203.0.113.44"]
         assert body["syndicate"]["id"] == "SYN-SANDVIPER"
         events = [ws.receive_json()["event"] for _ in range(3)]
         assert events[0] == "citizen_report.received"

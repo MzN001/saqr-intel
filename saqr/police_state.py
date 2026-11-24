@@ -35,6 +35,8 @@ ENTITY_OF_DOMAIN = {
 _SEQ = itertools.count(1)
 
 # Demo baselines: "today" at the moment the backend booted (demo numbers, not real statistics).
+# The KPIs add the live counts on top; /api/police/state also returns both parts separately
+# (`demo_baseline`, `live_counts`) so the dashboard can say how much of each figure is real.
 BASE_PROTECTED = 1284
 BASE_X_ALERTS = 37
 
@@ -215,6 +217,10 @@ class PoliceState:
                      "hijacked_pins": sum(1 for p in pins if p["type"] == "SPOOFED"),
                      "x_alerts_dispatched": self.x_alerts,
                      "pre_victim_detections": await hunter.pre_victim_count()},
+            # kpis.citizens_protected / x_alerts_dispatched = demo_baseline + live_counts.
+            "demo_baseline": {"citizens_protected": BASE_PROTECTED, "x_alerts_dispatched": BASE_X_ALERTS},
+            "live_counts": {"citizens_protected": max(0, self.protected - BASE_PROTECTED),
+                            "x_alerts_dispatched": max(0, self.x_alerts - BASE_X_ALERTS)},
             "proactive_detections": await hunter.latest_detections(20),
             "hunter_mode": hunter.hunter.mode,
             "campaigns": campaigns,

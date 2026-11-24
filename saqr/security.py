@@ -78,6 +78,15 @@ async def rate_limit(request: Request) -> None:
 # ---------------------------------------------------------------------------
 # Police-only endpoints (graph, dossiers). Open when POLICE_API_KEY is unset.
 # ---------------------------------------------------------------------------
+# WebSocket topics a citizen (keyless) client may receive once POLICE_API_KEY is set. Payloads are
+# trimmed by `ws_hub.public_view` before they reach such a client.
+PUBLIC_WS_TOPICS = frozenset({"police.warning", "url_scan", "maps_scan", "email_scan"})
+
+
+def police_key_configured() -> bool:
+    return bool(settings.police_api_key)
+
+
 def _key_ok(provided: str | None) -> bool:
     if not settings.police_api_key:
         return True

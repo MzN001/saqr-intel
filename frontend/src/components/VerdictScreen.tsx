@@ -14,10 +14,12 @@ import {
   EyeOff,
   FileText,
   Fingerprint,
+  Flag,
   Info,
   KeyRound,
   Languages,
   Link2Off,
+  Lock,
   Mail,
   Megaphone,
   Network,
@@ -37,9 +39,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import {
+  ApiError,
   emailModelDownloadUrl,
+  FALSE_ALARM_NOTE_MAX,
   getCampaigns,
   labelEmail,
+  reportFalseAlarm,
   type CampaignMatch,
   type CampaignReference,
   type EmailAttachment,
@@ -746,6 +751,105 @@ function ScanningView({ target, interception, kind }: { target: string; intercep
   );
 }
 
+type ReportState = "closed" | "open" | "sending" | "sent" | "already" | "error";
+
+/** One-line privacy note, plus (for warnings only) a quiet "Report a false alarm" control. */
+function PrivacyAndFeedback({ scanId, canReport }: { scanId: string; canReport: boolean }) {
+  const { t } = useLang();
+  const [state, setState] = useState<ReportState>("closed");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<DictKey>("faFailed");
+  const showReport = canReport && Boolean(scanId);
+
+  const send = async () => {
+    setState("sending");
+    try {
+      const r = await reportFalseAlarm(scanId, note);
+      setState(r.deduplicated ? "already" : "sent");
+    } catch (e) {
+      const status = e instanceof ApiError ? e.status : 0;
+      setError(status === 429 ? "faRateLimited" : status === 404 ? "faNotFound" : "faFailed");
+      setState("error");
+    }
+  };
+
+  return (
+    <section className="space-y-3 border-t border-line pt-4">
+      <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-soft">
+        <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {t("privacyLine")}
+      </p>
+      {showReport && (
+        <div aria-live="polite">
+          {state === "closed" && (
+            <button
+              type="button"
+              onClick={() => setState("open")}
+              className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-xs font-semibold text-ink-soft underline-offset-2 hover:bg-muted hover:text-ink hover:underline"
+            >
+              <Flag className="size-3.5" aria-hidden /> {t("faReport")}
+            </button>
+          )}
+          {(state === "open" || state === "sending" || state === "error") && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void send();
+              }}
+              className="space-y-2"
+            >
+              <label htmlFor={`fa-note-${scanId}`} className="block text-xs font-semibold text-ink">
+                {t("faNoteLabel")}
+              </label>
+              <textarea
+                id={`fa-note-${scanId}`}
+                value={note}
+                onChange={(e) => setNote(e.target.value.slice(0, FALSE_ALARM_NOTE_MAX))}
+                maxLength={FALSE_ALARM_NOTE_MAX}
+                rows={2}
+                dir="auto"
+                placeholder={t("faNotePlaceholder")}
+                className="w-full resize-none rounded-xl bg-surface px-[13px] py-[9px] text-sm text-ink outline-hidden ring-1 ring-line transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-emerald-600"
+              />
+              <p className="flex justify-between gap-3 text-[11px] text-ink-soft">
+                <span>{t("faSentWhat")}</span>
+                <span className="shrink-0 tabular-nums" dir="ltr">
+                  {note.length}/{FALSE_ALARM_NOTE_MAX}
+                </span>
+              </p>
+              {state === "error" && (
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+                  <TriangleAlert className="size-3.5 shrink-0" aria-hidden /> {t(error)}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={state === "sending"}
+                  className="rounded-xl border border-line px-3 py-2 text-xs font-bold text-ink hover:bg-muted disabled:opacity-60"
+                >
+                  {t(state === "sending" ? "faSending" : "faSend")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setState("closed")}
+                  className="rounded-xl px-3 py-2 text-xs font-semibold text-ink-soft hover:text-ink"
+                >
+                  {t("faCancel")}
+                </button>
+              </div>
+            </form>
+          )}
+          {(state === "sent" || state === "already") && (
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+              <CircleCheck className="size-3.5 shrink-0" aria-hidden /> {t(state === "sent" ? "faThanks" : "faAlready")}
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => void }) {
   const { t, lang } = useLang();
   const [showOther, setShowOther] = useState(false);
@@ -1015,6 +1119,8 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
             </div>
           </div>
         )}
+
+        <PrivacyAndFeedback key={result.scanId} scanId={result.scanId} canReport={tone !== "safe"} />
 
         <div className="sticky bottom-0 -mx-4 space-y-2 bg-gradient-to-t from-canvas via-canvas to-transparent px-4 pb-4 pt-6">
           <button

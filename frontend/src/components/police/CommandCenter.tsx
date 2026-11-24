@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import { Crosshair, ExternalLink, Flag, Loader2, Menu, QrCode, Search, Settings, ShieldCheck, Siren, Users, X, MapPinned } from "lucide-react";
+import { Crosshair, ExternalLink, Flag, Loader2, LogOut, Menu, QrCode, Search, Settings, ShieldCheck, Siren, Users, X, MapPinned } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CityGridMap, MAP_ASPECT, type GridPin } from "@/components/CityGrid";
@@ -10,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLang } from "@/lib/i18n";
 import { CHANNEL_LABEL, P, STATUS_LABEL, getModelMetrics, usePoliceLive, type Campaign, type CampaignStatus, type MapPin, type ModelMetrics, type PoliceEvent } from "@/lib/police";
 import { ActionCenter } from "./ActionCenter";
+import { FalseAlarmQueue } from "./FalseAlarmQueue";
 import { ModelCard } from "./ModelCard";
 import { ProactiveHunt } from "./ProactiveHunt";
 
@@ -76,7 +78,7 @@ function Tile({ title, icon, right, children, className = "", id }: { title: str
 
 /* ------------------------------------------------------------------ top bar (Abu Dhabi Police site style) */
 
-function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: string; setQuery: (q: string) => void }) {
+function TopBar({ L, link, query, setQuery, devOpen }: { L: L; link: string; query: string; setQuery: (q: string) => void; devOpen: boolean }) {
   const { lang, setLang } = useLang();
   const [active, setActive] = useState<Section>("desk");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -85,6 +87,16 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
   const [qrOpen, setQrOpen] = useState(false);
   const origin = useSyncExternalStore(noSubscribe, () => window.location.origin, () => "");
   const searchRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  const signOut = async () => {
+    try {
+      await fetch("/api/officer/logout", { method: "POST", credentials: "same-origin" });
+    } catch {
+      /* the cookie may already be gone; go to the sign-in page anyway */
+    }
+    router.replace("/police/login");
+  };
 
   useEffect(() => {
     if (searchOpen) searchRef.current?.focus();
@@ -150,7 +162,7 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Escape" && (setQuery(""), setSearchOpen(false))}
                 placeholder={lang === "ar" ? "ابحث عن نطاق أو جهة…" : "Search domain or entity…"}
-                className="h-9 rounded-full border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-emerald-600"
+                className="h-9 rounded-full bg-canvas px-[13px] text-sm text-ink outline-hidden ring-1 ring-line transition-shadow focus:ring-2 focus:ring-emerald-600"
                 dir="ltr"
               />
             )}
@@ -194,6 +206,7 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
           </span>
           <span className="hidden text-xs text-ink-soft sm:inline">{L("title")}</span>
           <span className="rounded-md border border-gold-500/60 px-2 py-1 text-xs font-bold leading-none text-gold-ink">{L("demoData")}</span>
+          {devOpen && <span className="rounded-md border border-line px-2 py-1 text-[11px] font-bold leading-none text-ink-soft">{L("devUnlocked")}</span>}
           <div className="ms-auto flex items-center gap-2">
             <a href="/citizen" target="_blank" rel="noopener" className="press inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-bold text-ink hover:bg-muted">
               {L("citizenPortal")} <ExternalLink className="size-3.5" />
@@ -202,6 +215,11 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
               <QrCode className="size-3.5" /> {L("stageQr")}
             </button>
             <span className="hidden xl:block"><ThemeToggle /></span>
+            {!devOpen && (
+              <button type="button" onClick={() => void signOut()} className="press inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-bold text-ink hover:bg-muted">
+                <LogOut className="size-3.5" /> {L("logout")}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -245,8 +263,8 @@ function TopBar({ L, link, query, setQuery }: { L: L; link: string; query: strin
 
 /* ------------------------------------------------------------------ desk */
 
-function Kpi({ label, short, value, icon, accent, context, className = "" }: {
-  label: string; short: string; value: number | undefined; icon: ReactNode; accent: string; context?: ReactNode; className?: string;
+function Kpi({ label, short, value, icon, accent, context, note, className = "" }: {
+  label: string; short: string; value: number | undefined; icon: ReactNode; accent: string; context?: ReactNode; note?: string; className?: string;
 }) {
   return (
     <div className={`rounded-[20px] border border-line bg-surface p-4 ${className}`}>
@@ -257,6 +275,8 @@ function Kpi({ label, short, value, icon, accent, context, className = "" }: {
       <motion.p key={value} initial={{ opacity: 0.35 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="mt-2 text-[42px] font-light leading-none tracking-tight text-ink tabular-nums" dir="ltr">
         {value === undefined ? "—" : value.toLocaleString("en-US")}
       </motion.p>
+      {/* Honest numbers: how much of the figure is the fixed demo baseline and how much is live. */}
+      {note && <p className="mt-1.5 text-[11px] font-semibold leading-snug text-ink-soft">{note}</p>}
       {context && <p className="mt-2 line-clamp-2 text-xs leading-snug text-ink-soft">{context}</p>}
     </div>
   );
@@ -278,6 +298,11 @@ function Stream({ events, selected, onPick, lang, L }: { events: PoliceEvent[]; 
                   <span className="block truncate font-mono text-[13px] font-bold text-ink" dir="ltr">{e.title ?? e.defanged_domain}</span>
                   <span className="block truncate text-xs text-ink-soft">{e.impersonated_entity ?? "—"}</span>
                 </span>
+                {e.seeded && (
+                  <span className="shrink-0 rounded-md border border-line px-1.5 py-0.5 text-[11px] font-bold leading-none text-ink-soft" title={L("demoRowHint")}>
+                    {L("demoRow")}
+                  </span>
+                )}
                 <span className="shrink-0 text-xs tabular-nums text-ink-soft">{shortAgo(e.ts, lang)}</span>
                 <Score v={e.risk_score} />
               </button>
@@ -316,7 +341,7 @@ function Roster({ list, selected, onPick, lang, L }: { list: Campaign[]; selecte
   );
 }
 
-export function CommandCenter() {
+export function CommandCenter({ devOpen = false }: { devOpen?: boolean }) {
   const { lang } = useLang();
   const L: L = (k) => P[k][lang];
   const { state, link, refresh } = usePoliceLive();
@@ -350,6 +375,13 @@ export function CommandCenter() {
     (state?.recent_events ?? []).reduce<Record<string, number>>((m, e) => ((m[e.channel] = (m[e.channel] ?? 0) + 1), m), {}),
   ).sort((a, b) => b[1] - a[1]);
   const mixMax = Math.max(1, ...mix.map(([, n]) => n));
+  // "Includes 1,284 demo baseline · 3 live": shown only when the backend reports the split.
+  const demoNote = (k: "citizens_protected" | "x_alerts_dispatched") => {
+    const base = state?.demo_baseline?.[k];
+    const live = state?.live_counts?.[k];
+    if (base === undefined || live === undefined) return undefined;
+    return L("includesDemo").replace("{demo}", base.toLocaleString("en-US")).replace("{live}", live.toLocaleString("en-US"));
+  };
   const entityNames = [...new Set(campaigns.map((c) => c.impersonated_entity).filter(Boolean))].slice(0, 3).join(" · ");
 
   const pickPin = (g: GridPin) => {
@@ -362,7 +394,7 @@ export function CommandCenter() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-dvh bg-canvas text-ink">
-        <TopBar L={L} link={link} query={query} setQuery={setQuery} />
+        <TopBar L={L} link={link} query={query} setQuery={setQuery} devOpen={devOpen} />
 
         <main id="desk" className="mx-auto max-w-[1500px] scroll-mt-40 space-y-4 px-4 py-5 sm:px-6">
           {!state && (
@@ -374,12 +406,14 @@ export function CommandCenter() {
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[260px_minmax(0,1fr)_380px]">
             <div className="grid min-w-0 grid-cols-[repeat(2,minmax(0,1fr))] gap-3 sm:gap-4 lg:grid-cols-1 lg:content-start">
               <Kpi label={L("kProtected")} short={L("kProtectedShort")} value={state?.kpis.citizens_protected} icon={<Users className="size-4" />} accent="text-emerald-600 dark:text-emerald-400"
+                note={demoNote("citizens_protected")}
                 context={latest ? `${L("lastBlock")} ${shortAgo(latest.ts, lang)} · ${(CHANNEL_LABEL[latest.channel] ?? CHANNEL_LABEL.CITIZEN_MANUAL_CHECK)[lang]}` : undefined} />
               <Kpi label={L("kEntities")} short={L("kEntitiesShort")} value={state?.kpis.active_entities} icon={<Siren className="size-4" />} accent="text-scam-ink"
                 context={entityNames} />
               <Kpi label={L("kPins")} short={L("kPinsShort")} value={state?.kpis.hijacked_pins} icon={<MapPinned className="size-4" />} accent="text-scam-ink"
                 context={state?.map_pins.find((p) => p.type === "SPOOFED")?.title} />
               <Kpi label={L("kX")} short={L("kXShort")} value={state?.kpis.x_alerts_dispatched} icon={<Flag className="size-4" />} accent="text-gold-500"
+                note={demoNote("x_alerts_dispatched")}
                 context={lastX ? `${L("lastPost")} ${shortAgo(lastX.ts, lang)} · ${lastX.defanged_domain}` : undefined} />
               <Kpi label={L("kPreVictim")} short={L("kPreVictimShort")} value={state?.kpis.pre_victim_detections} icon={<Crosshair className="size-4" />} accent="text-emerald-600 dark:text-emerald-400"
                 className="col-span-2 lg:col-span-1" context={L("preVictimContext")} />
@@ -468,6 +502,9 @@ export function CommandCenter() {
             />
             {metrics && <ModelCard metrics={metrics} className="lg:col-span-2" />}
           </div>
+
+          <FalseAlarmQueue />
+
         </main>
       </div>
     </MotionConfig>

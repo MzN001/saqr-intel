@@ -131,7 +131,7 @@ export function XWarningModal({
             rows={7}
             aria-invalid={tooLong}
             aria-describedby="x-count"
-            className={`w-full resize-none rounded-2xl bg-muted p-3.5 text-[15px] leading-relaxed text-ink outline-none ring-1 focus:ring-2 ${
+            className={`w-full resize-none rounded-2xl bg-muted p-3.5 text-[15px] leading-relaxed text-ink outline-hidden ring-1 focus:ring-2 ${
               tooLong ? "ring-crimson-600" : "ring-line focus:ring-emerald-600"
             }`}
           />

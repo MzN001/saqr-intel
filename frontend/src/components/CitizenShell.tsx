@@ -12,9 +12,10 @@ import { BackgroundShieldCard } from "./BackgroundShieldCard";
 import { Header, StatusBanner } from "./Chrome";
 import { EmailGuard } from "./EmailGuard";
 import { OfficialWarningBanner } from "./OfficialWarningBanner";
+import { PrivacyNote } from "./PrivacyNote";
 import { LinkChecker } from "./LinkChecker";
 import { ScamAlertsCard } from "./ScamAlertsCard";
-import { SearchMapsShield } from "./SearchMapsShield";
+import { SearchMapsShield, isDemoScamUrl } from "./SearchMapsShield";
 import { SmsGuard } from "./SmsGuard";
 import { VerdictScreen, type ScanState } from "./VerdictScreen";
 
@@ -190,9 +191,9 @@ export function CitizenShell({
       const job = maps
         ? () => scanMaps({ maps_url: url }, "CITIZEN_MANUAL_CHECK")
         : () => analyzeUrl(url, "CITIZEN_MANUAL_CHECK", rawText ? "sms" : "web", rawText);
-      void execute(maps ? "Google Maps listing" : hostOf(url), "CITIZEN_MANUAL_CHECK", job);
+      void execute(maps ? "Google Maps listing" : isDemoScamUrl(url) ? t("exampleScamLabel") : hostOf(url), "CITIZEN_MANUAL_CHECK", job);
     },
-    [execute],
+    [execute, t],
   );
 
   const runEmailScan = useCallback(
@@ -326,9 +327,7 @@ export function CitizenShell({
       <footer className="border-t border-line bg-surface">
         <div className="mx-auto max-w-7xl px-4 py-5 text-center text-xs font-medium text-ink-soft sm:px-6">
           {t("footer")}
-          <a href="/police" className="ms-3 text-ink-soft/80 underline-offset-2 hover:text-ink hover:underline">
-            {t("commandCenter")}
-          </a>
+          <PrivacyNote />
         </div>
       </footer>
 

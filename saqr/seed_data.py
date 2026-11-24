@@ -14,7 +14,7 @@ SYNDICATES = [
         "id": "SYN-SANDVIPER",
         "name": "Sand Viper Syndicate",
         "name_ar": "شبكة أفعى الرمال",
-        "seed_node": "ip:185.220.101.44",
+        "seed_node": "ip:203.0.113.44",
         "description": "Multi-brand government & courier impersonation ring sharing one bulletproof VPS, "
                        "one Let's Encrypt issuance pattern and a hijacked Google Maps pin in Mussafah.",
     },
@@ -30,7 +30,7 @@ SYNDICATES = [
 # Hostile infrastructure — used both for the graph and as offline evidence.
 DEMO_INTEL: dict[str, dict] = {
     "adpolice-fines-ae.info": {
-        "ip": "185.220.101.44", "asn": "AS64512", "asn_org": "OFFSHORE-VPS-LTD (seed data)", "country": "SC",
+        "ip": "203.0.113.44", "asn": "AS64512", "asn_org": "OFFSHORE-VPS-LTD (seed data)", "country": "SC",
         "registrar": "NameSilo-like Budget Registrar (seed)", "registered_hours_ago": 3,
         "abuse_emails": ["abuse@budget-registrar.example"], "name_servers": ["ns1.fastdns-park.example", "ns2.fastdns-park.example"],
         "ssl_issuer": "commonName=R11, organizationName=Let's Encrypt", "cert_age_hours": 2.5,
@@ -38,12 +38,12 @@ DEMO_INTEL: dict[str, dict] = {
         "page_text": "Abu Dhabi Police — Traffic Fines Payment. You have 2 unpaid fines (AED 1,250). Pay within 24 hours "
                      "to avoid vehicle impoundment and a 50% discount loss. شرطة أبوظبي - لديك مخالفات غير مدفوعة. "
                      "ادفع خلال 24 ساعة لتجنب حجز المركبة. Enter Emirates ID, card number, expiry, CVV and the OTP sent to you.",
-        "forms": [{"action": "https://185.220.101.44/gate/collect.php", "method": "post",
+        "forms": [{"action": "https://203.0.113.44/gate/collect.php", "method": "post",
                    "fields": ["emirates_id", "full_name", "card_number", "exp_date", "cvv", "otp"]}],
         "entity": "adpolice", "cloaking": True, "accent": "#0b3d2e",
     },
     "emiratespost-track-uae.com": {
-        "ip": "185.220.101.44", "asn": "AS64512", "asn_org": "OFFSHORE-VPS-LTD (seed data)", "country": "SC",
+        "ip": "203.0.113.44", "asn": "AS64512", "asn_org": "OFFSHORE-VPS-LTD (seed data)", "country": "SC",
         "registrar": "NameSilo-like Budget Registrar (seed)", "registered_hours_ago": 30,
         "abuse_emails": ["abuse@budget-registrar.example"], "name_servers": ["ns1.fastdns-park.example", "ns2.fastdns-park.example"],
         "ssl_issuer": "commonName=R11, organizationName=Let's Encrypt", "cert_age_hours": 29,
@@ -51,12 +51,12 @@ DEMO_INTEL: dict[str, dict] = {
         "page_text": "Emirates Post: Your parcel AE-77812 is on hold due to an incomplete address. Pay AED 7.50 redelivery fee "
                      "to release your shipment. بريد الإمارات: شحنتك محتجزة. ادفع 7.50 درهم رسوم إعادة التوصيل. "
                      "Card number, CVV, OTP verification required.",
-        "forms": [{"action": "https://185.220.101.44/gate/collect.php", "method": "post",
+        "forms": [{"action": "https://203.0.113.44/gate/collect.php", "method": "post",
                    "fields": ["full_name", "phone", "card_number", "exp_date", "cvv", "otp"]}],
         "entity": "emiratespost", "cloaking": True, "accent": "#c8102e",
     },
     "tamm-smart-pay.net": {
-        "ip": "185.220.101.44", "asn": "AS64512", "asn_org": "OFFSHORE-VPS-LTD (seed data)", "country": "SC",
+        "ip": "203.0.113.44", "asn": "AS64512", "asn_org": "OFFSHORE-VPS-LTD (seed data)", "country": "SC",
         "registrar": "NameSilo-like Budget Registrar (seed)", "registered_hours_ago": 5,
         "abuse_emails": ["abuse@budget-registrar.example"], "name_servers": ["ns1.fastdns-park.example", "ns2.fastdns-park.example"],
         "ssl_issuer": "commonName=R11, organizationName=Let's Encrypt", "cert_age_hours": 4,
@@ -64,7 +64,7 @@ DEMO_INTEL: dict[str, dict] = {
         "page_text": "TAMM Abu Dhabi Government Services — your service fee refund of AED 340 is waiting. Sign in with UAE PASS "
                      "to claim before it expires today. منصة تم: لديك مبلغ مسترد. سجل الدخول عبر UAE PASS. "
                      "UAE PASS username, password and OTP required.",
-        "forms": [{"action": "https://185.220.101.44/gate/uaepass.php", "method": "post",
+        "forms": [{"action": "https://203.0.113.44/gate/uaepass.php", "method": "post",
                    "fields": ["uaepass_username", "password", "otp", "card_number", "cvv"]}],
         "entity": "tamm", "cloaking": True, "accent": "#5b2c83",
     },
