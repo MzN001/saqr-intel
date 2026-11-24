@@ -15,6 +15,7 @@ import logging
 import re
 import ssl
 import unicodedata
+from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -46,6 +47,12 @@ def shutdown_pools() -> None:
 
 # Offline-capable PSL extractor (bundled snapshot, no network fetch).
 _EXTRACT = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
+
+
+@lru_cache(maxsize=512)
+def _official_parts(domain: str):
+    """tldextract of an official brand domain, parsed once (it ran ~170x per lexical check)."""
+    return _EXTRACT(domain)
 
 # Confusable characters -> Latin skeleton (subset of Unicode TR39 most used in phishing)
 CONFUSABLES = {
@@ -229,7 +236,7 @@ def analyze_lexical(raw: str) -> LexicalReport:
     for ent in ALL_BRANDS:
         is_global = ent.category == "global"
         for od in ent.domains:
-            od_ext = _EXTRACT(od)
+            od_ext = _official_parts(od)
             od_label = od_ext.domain
             sim = fuzz.ratio(label_skel, od_label)
             # Global brands: only long names count as typos (steamcommunite ~ steamcommunity), short

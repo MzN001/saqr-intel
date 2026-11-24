@@ -94,6 +94,8 @@ class CTMonitor:
             (domain, event["seen_at"], lex.score, lex.impersonated.name_en, source,
              json.dumps({"issuer": issuer, "flags": event["flags"]})))
         await hub.broadcast("ct.detection", event)
+        if self.detections % 200 == 0:  # keep the table (and every blocklist build that reads it) small
+            await db.execute("DELETE FROM ct_events WHERE id NOT IN (SELECT id FROM ct_events ORDER BY id DESC LIMIT 1500)")
         return event
 
     async def _certstream(self) -> None:
@@ -130,9 +132,10 @@ class CTMonitor:
         while True:
             await asyncio.sleep(max(2.0, rng.gauss(settings.ct_sim_interval_s, 2)))
             # Each tick = a batch of benign certs + occasionally a lookalike
-            for _ in range(rng.randint(20, 60)):
+            for _ in range(rng.randint(8, 20)):
                 await self.evaluate(rng.choice(_BENIGN).format(n=rng.randint(10, 9999)), rng.choice(_ISSUERS),
                                     "simulated")
+                await asyncio.sleep(0)  # never hold the event loop for a whole batch (Render: 0.1 CPU)
             if rng.random() < 0.7:
                 ent = rng.choice(ENTITIES)
                 kw = rng.choice([k for k in ent.keywords if len(k) > 3] or [ent.keywords[0]])
