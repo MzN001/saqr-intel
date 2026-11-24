@@ -3,17 +3,22 @@ package ae.saqrintel.shield.ui
 import ae.saqrintel.shield.R
 import ae.saqrintel.shield.data.AlertRecord
 import ae.saqrintel.shield.data.ApiJson
+import ae.saqrintel.shield.data.Verdict
 import ae.saqrintel.shield.guard.SaqrBrowserGuardService
 import ae.saqrintel.shield.guard.WebSession
 import ae.saqrintel.shield.locale.LocaleController
 import ae.saqrintel.shield.settings.ThemeController
 import ae.saqrintel.shield.settings.ThemeMode
 import ae.saqrintel.shield.ui.common.PrimaryButton
+import ae.saqrintel.shield.ui.common.RiskMeter
+import ae.saqrintel.shield.ui.common.SaqrCard
+import ae.saqrintel.shield.ui.common.SaqrLockup
 import ae.saqrintel.shield.ui.common.SecondaryButton
-import ae.saqrintel.shield.ui.common.Tile
+import ae.saqrintel.shield.ui.common.VerdictChip
+import ae.saqrintel.shield.ui.common.bilingualVerdict
 import ae.saqrintel.shield.ui.common.isArabic
 import ae.saqrintel.shield.ui.common.tabular
-import ae.saqrintel.shield.ui.theme.SaqrPalette
+import ae.saqrintel.shield.ui.common.verdictFill
 import ae.saqrintel.shield.ui.theme.SaqrShieldTheme
 import ae.saqrintel.shield.ui.theme.SaqrTheme
 import ae.saqrintel.shield.ui.verdict.VerdictActions
@@ -33,7 +38,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,8 +51,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,13 +65,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -77,7 +80,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.math.roundToInt
 
 /**
- * "Blocked by SAQR-INTEL": full screen over the browser when the web blocker finds a HIGH-RISK
+ * "Blocked by Saqr": full screen over the browser when the web blocker finds a HIGH-RISK
  * site. Not exported, excluded from recents, its own task (so finishing returns to the browser).
  * Back = "Close & stay safe".
  */
@@ -103,7 +106,7 @@ class BlockAlertActivity : ComponentActivity() {
         val themeController = ThemeController(applicationContext)
 
         setContent {
-            val mode by themeController.mode.collectAsStateWithLifecycle(initialValue = ThemeMode.DARK)
+            val mode by themeController.mode.collectAsStateWithLifecycle(initialValue = ThemeMode.LIGHT)
             val dark = mode == ThemeMode.DARK
             LaunchedEffect(dark) {
                 val bars = if (dark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
@@ -213,7 +216,8 @@ private fun BlockScreen(
     val arabic = isArabic()
     var confirmContinue by remember { mutableStateOf(false) }
     val entity = if (arabic) record.entityAr ?: record.entityEn?.let { XAlert.ENTITY_AR[it] ?: it } else record.entityEn
-    val reasons = (if (arabic) record.reasonsAr else record.reasonsEn).filter { it.isNotBlank() }.take(2)
+    val reasons = (if (arabic) record.reasonsAr else record.reasonsEn).filter { it.isNotBlank() }.take(3)
+    val verdict = record.verdictValue
 
     Box(
         Modifier
@@ -225,39 +229,53 @@ private fun BlockScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .systemBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painterResource(R.drawable.ic_shield_alert),
-                    contentDescription = null,
-                    tint = c.scamInk,
-                    modifier = Modifier.size(28.dp),
-                )
-                Spacer(Modifier.width(10.dp))
+            SaqrLockup(falcon = 28.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
+
+            SaqrCard(padding = 20.dp, spacing = 14.dp) {
                 Text(
                     stringResource(R.string.block_title),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = c.scamInk,
+                    color = c.ink,
                     modifier = Modifier.semantics { heading() },
                 )
-            }
-            Text(stringResource(R.string.block_sub), style = MaterialTheme.typography.bodyMedium, color = c.inkSoft)
-
-            Tile {
-                ScoreRing(record.score ?: 0, Modifier.align(Alignment.CenterHorizontally))
-                Field(stringResource(R.string.verdict_address), Defang.defangUrl(url), ltr = true)
-                if (entity != null) Field(stringResource(R.string.verdict_pretends), entity)
-                if (!record.officialDomain.isNullOrBlank()) {
-                    Field(stringResource(R.string.verdict_official_site), record.officialDomain, ltr = true, safe = true)
+                Text(stringResource(R.string.block_sub), style = MaterialTheme.typography.bodyMedium, color = c.inkSoft)
+                Text(
+                    Defang.defangUrl(url),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 14.sp,
+                        textDirection = TextDirection.Ltr,
+                    ),
+                    color = c.ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(c.muted, SaqrTheme.shapes.control)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                )
+                AnimatedScore(record.score ?: 0, verdict)
+                if (entity != null || !record.officialDomain.isNullOrBlank()) {
+                    HorizontalDivider(color = c.line)
+                    if (entity != null) Field(stringResource(R.string.verdict_pretends), entity)
+                    if (!record.officialDomain.isNullOrBlank()) {
+                        Field(stringResource(R.string.verdict_official_site), record.officialDomain, ltr = true)
+                    }
                 }
                 if (reasons.isNotEmpty()) {
-                    Text(stringResource(R.string.verdict_reasons), style = MaterialTheme.typography.labelLarge, color = c.inkSoft)
+                    HorizontalDivider(color = c.line)
                     reasons.forEach { r ->
-                        Row {
-                            Text("•", color = c.scamInk, style = MaterialTheme.typography.bodyMedium)
-                            Spacer(Modifier.width(8.dp))
+                        Row(verticalAlignment = Alignment.Top) {
+                            Box(
+                                Modifier
+                                    .padding(top = 8.dp)
+                                    .size(6.dp)
+                                    .background(verdictFill(verdict), CircleShape),
+                            )
+                            Spacer(Modifier.width(10.dp))
                             Text(
                                 r,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -270,8 +288,8 @@ private fun BlockScreen(
                 }
             }
 
-            PrimaryButton(stringResource(R.string.block_close), onClick = onClose)
-            if (record.verdictValue != ae.saqrintel.shield.data.Verdict.SAFE && (record.score ?: 0) >= 60) {
+            PrimaryButton(stringResource(R.string.block_close), onClick = onClose, minHeight = 52.dp)
+            if (verdict != Verdict.SAFE && (record.score ?: 0) >= 60) {
                 SecondaryButton(stringResource(R.string.block_warn_x), onClick = { onWarnX(arabic) })
             }
             SecondaryButton(stringResource(R.string.action_call_aman), onClick = onCallAman)
@@ -282,19 +300,12 @@ private fun BlockScreen(
                 Text(
                     stringResource(if (confirmContinue) R.string.block_continue_confirm else R.string.block_continue),
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (confirmContinue) c.caution else c.inkSoft,
+                    color = if (confirmContinue) c.scamInk else c.inkSoft,
                     textAlign = TextAlign.Center,
                 )
             }
             Text(
                 stringResource(R.string.block_privacy),
-                style = MaterialTheme.typography.labelSmall,
-                color = c.inkSoft,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                stringResource(R.string.aman_footer),
                 style = MaterialTheme.typography.labelMedium,
                 color = c.inkSoft,
                 modifier = Modifier.fillMaxWidth(),
@@ -304,40 +315,42 @@ private fun BlockScreen(
     }
 }
 
-/** Crimson ring that fills to the risk score (crimson = scam, which this screen always is). */
+/** Bold score counting up to the real value, the EN · AR verdict chip and the three-zone meter. */
 @Composable
-private fun ScoreRing(score: Int, modifier: Modifier = Modifier) {
+private fun AnimatedScore(score: Int, verdict: Verdict) {
     val c = SaqrTheme.colors
     val progress = remember { Animatable(0f) }
     LaunchedEffect(score) {
-        progress.animateTo(score.coerceIn(0, 100) / 100f, tween(durationMillis = 900, easing = FastOutSlowInEasing))
+        progress.animateTo(score.coerceIn(0, 100) / 100f, tween(durationMillis = 700, easing = FastOutSlowInEasing))
     }
     val shown = (progress.value * 100).roundToInt()
     val label = stringResource(R.string.block_risk)
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .size(156.dp)
-            .semantics(mergeDescendants = true) { contentDescription = "$label $score / 100" },
-    ) {
-        Canvas(Modifier.size(156.dp)) {
-            val w = 12.dp.toPx()
-            drawArc(c.muted, 0f, 360f, false, style = Stroke(w))
-            drawArc(SaqrPalette.ScamFill, -90f, 360f * progress.value, false, style = Stroke(w, cap = StrokeCap.Round))
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "$label $score / 100" },
+        ) {
             Text(
                 shown.toString(), // Western digits in both languages
-                style = MaterialTheme.typography.displaySmall.tabular().copy(fontSize = 48.sp, lineHeight = 52.sp),
-                color = c.scamInk,
+                style = MaterialTheme.typography.displaySmall.tabular().copy(fontSize = 52.sp, lineHeight = 56.sp),
+                color = c.ink,
+                softWrap = false,
             )
-            Text(label, style = MaterialTheme.typography.labelMedium.tabular(), color = c.inkSoft)
+            Text(
+                " / 100",
+                style = MaterialTheme.typography.titleMedium.tabular(),
+                color = c.inkSoft,
+                softWrap = false,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
         }
+        VerdictChip(bilingualVerdict(verdict), verdict)
+        RiskMeter(shown, verdict)
     }
 }
 
 @Composable
-private fun Field(label: String, value: String, ltr: Boolean = false, safe: Boolean = false) {
+private fun Field(label: String, value: String, ltr: Boolean = false) {
     val c = SaqrTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = c.inkSoft)
@@ -347,7 +360,7 @@ private fun Field(label: String, value: String, ltr: Boolean = false, safe: Bool
                 fontWeight = FontWeight.SemiBold,
                 textDirection = if (ltr) TextDirection.Ltr else TextDirection.Content,
             ),
-            color = if (safe) c.shield else c.ink,
+            color = c.ink,
         )
     }
 }

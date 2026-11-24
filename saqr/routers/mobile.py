@@ -53,9 +53,9 @@ def build_mobileconfig(doh_url: str, label: str) -> str:
     profile_uuid = str(uuid.uuid5(PROFILE_NAMESPACE, f"profile:{doh_url}")).upper()
     payload_uuid = str(uuid.uuid5(PROFILE_NAMESPACE, f"dns:{doh_url}")).upper()
     url = escape(doh_url)
-    name = "SAQR-INTEL Citizen DNS Shield"
+    name = "Saqr Shield"
     desc = escape(f"Encrypted DNS ({label}) that blocks known phishing and scam websites in every app. "
-                  "Abu Dhabi Police SAQR-INTEL citizen shield. Remove any time in Settings.")
+                  "Saqr — Abu Dhabi Scam Shield. Remove any time in Settings.")
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -93,7 +93,7 @@ def build_mobileconfig(doh_url: str, label: str) -> str:
   <key>PayloadIdentifier</key>
   <string>ae.saqr-intel.dns.profile</string>
   <key>PayloadOrganization</key>
-  <string>SAQR-INTEL</string>
+  <string>Saqr</string>
   <key>PayloadRemovalDisallowed</key>
   <false/>
   <key>PayloadType</key>
@@ -120,7 +120,7 @@ async def ios_dns_profile(
     if nid:
         # The device name in the path makes NextDNS log which phone it was -> alerts reach only that phone.
         doh = f"https://dns.nextdns.io/{nid}/{device}" if device else f"https://dns.nextdns.io/{nid}"
-        label = f"SAQR live feed via NextDNS {nid}"
+        label = f"Saqr live feed via NextDNS {nid}"
     else:
         doh = _checked_doh(doh_url)
         label = urlsplit(doh).hostname or "DoH"

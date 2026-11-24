@@ -10,7 +10,12 @@ import { prefersReducedMotion, useTheme } from "@/lib/theme";
 // Frame 0 is the moon (dark mode), the last frame is the sun (light mode).
 const PLAYBACK_SPEED = 2.4;
 
-export function ThemeToggle() {
+/**
+ * `variant="legacy"` (default) keeps the Night Grid look used on /police. `variant="saqr"` is the citizen
+ * header button: an obsidian disc in both themes (the Lottie moon / sun is drawn for a dark ground) with a
+ * hairline ring, and the shared ink focus ring.
+ */
+export function ThemeToggle({ variant = "legacy", className = "" }: { variant?: "legacy" | "saqr"; className?: string }) {
   const { t } = useLang();
   const { theme, toggle } = useTheme();
   const box = useRef<HTMLSpanElement>(null);
@@ -66,7 +71,12 @@ export function ThemeToggle() {
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="grid size-9 shrink-0 place-items-center rounded-full bg-navy-900 shadow-sm transition-transform hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 ring-1 ring-gold-500/40 dark:bg-navy-800"
+      data-testid="theme-toggle"
+      className={
+        variant === "saqr"
+          ? `grid size-10 shrink-0 place-items-center rounded-full bg-obsidian ring-1 ring-line transition-transform hover:scale-105 active:scale-95 ${className}`
+          : `grid size-9 shrink-0 place-items-center rounded-full bg-navy-900 shadow-sm transition-transform hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 ring-1 ring-gold-500/40 dark:bg-navy-800 ${className}`
+      }
     >
       <span ref={box} aria-hidden className="block size-7" />
     </button>

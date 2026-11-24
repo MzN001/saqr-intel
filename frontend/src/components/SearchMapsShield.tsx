@@ -95,11 +95,11 @@ function linkBadge(v: BatchVerdictItem | undefined, lang: Lang): Badge | null {
   const reasons = v.reasons.map((r) => reasonText(r, lang));
   const tip = reasons.map((r) => `• ${r}`).join("\n");
   if (v.verdict === "HIGH-RISK SCAM" || v.score >= 65) {
-    const label = lang === "ar" ? `صقر: احتيال${name ? ` — ينتحل صفة ${name}` : ""}` : `SAQR: scam${name ? ` — imitates ${name}` : ""}`;
+    const label = lang === "ar" ? `صقر: احتيال${name ? ` — ينتحل صفة ${name}` : ""}` : `Saqr: scam${name ? ` — imitates ${name}` : ""}`;
     return { level: "danger", label, reason: reasons[0] ?? null, tip };
   }
   if (v.verdict === "SUSPICIOUS" || v.score >= 30) {
-    return { level: "warn", label: lang === "ar" ? "صقر: مشبوه" : "SAQR: suspicious", reason: reasons[0] ?? null, tip };
+    return { level: "warn", label: lang === "ar" ? "صقر: مشبوه" : "Saqr: suspicious", reason: reasons[0] ?? null, tip };
   }
   if (v.official) {
     const label = name ? (lang === "ar" ? `رسمي: ${name}` : `Official: ${name}`) : lang === "ar" ? "موقع إماراتي رسمي" : "Official UAE website";
@@ -126,10 +126,11 @@ function phoneBadge(p: PhoneCheck | null, lang: Lang): Badge | null {
   return { level: "warn", label, reason, tip };
 }
 
+/** Saqr verdict colours inside the simulated Google screen: crimson scam, amber suspicious, emerald official. */
 const BADGE_TONE: Record<Badge["level"], string> = {
-  danger: "border-red-900 bg-red-700 text-white",
-  warn: "border-amber-500 bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100",
-  official: "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100",
+  danger: "border-scam bg-scam text-on-scam",
+  warn: "border-suspicious bg-suspicious-soft text-suspicious-ink",
+  official: "border-safe bg-safe-soft text-safe-ink",
 };
 const BADGE_ICON = { danger: ShieldAlert, warn: TriangleAlert, official: BadgeCheck };
 
@@ -143,11 +144,11 @@ function PreClickBadge({ badge, showReason = false }: { badge: Badge | null; sho
       className="mt-1 flex flex-col items-start gap-0.5"
       title={badge.tip || undefined}
     >
-      <span role="note" className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11.5px] font-semibold leading-tight ${BADGE_TONE[badge.level]}`}>
+      <span role="note" className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-semibold leading-tight ${BADGE_TONE[badge.level]}`}>
         <Icon className="size-3.5 shrink-0" aria-hidden />
         {badge.label}
       </span>
-      {showReason && badge.reason ? <span className="text-[11.5px] leading-snug text-red-700 dark:text-red-300">{badge.reason}</span> : null}
+      {showReason && badge.reason ? <span className="text-[12px] leading-snug text-scam-ink">{badge.reason}</span> : null}
     </motion.span>
   );
 }
@@ -158,7 +159,7 @@ function PreClickStatus({ live, lang }: { live: PreClick; lang: Lang }) {
     return (
       <p className="mt-3 flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-gray-400">
         <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
-        {ar ? "صقر يفحص هذه النتائج قبل أن تنقر…" : "SAQR is checking these results before you tap…"}
+        {ar ? "صقر يفحص هذه النتائج قبل أن تنقر…" : "Saqr is checking these results before you tap…"}
       </p>
     );
   }
@@ -171,9 +172,9 @@ function PreClickStatus({ live, lang }: { live: PreClick; lang: Lang }) {
     );
   }
   return (
-    <p className="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-emerald-700 dark:text-emerald-300">
+    <p className="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-gray-700 dark:text-gray-300">
       <ShieldCheck className="size-3.5" aria-hidden />
-      {ar ? "فحص صقر كل نتيجة وإعلان ورقم قبل أن تنقر" : "SAQR checked every result, ad and phone number before you tap"}
+      {ar ? "فحص صقر كل نتيجة وإعلان ورقم قبل أن تنقر" : "Saqr checked every result, ad and phone number before you tap"}
     </p>
   );
 }
@@ -272,7 +273,7 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
             </div>
             <PreClickBadge badge={adBadge} showReason />
             <p
-              className={`mt-1.5 text-[19px] leading-snug text-[#1a0dab] group-hover:underline dark:text-[#8ab4f8] ${adBadge?.level === "danger" ? "line-through decoration-red-600" : ""}`}
+              className={`mt-1.5 text-[19px] leading-snug text-[#1a0dab] group-hover:underline dark:text-[#8ab4f8] ${adBadge?.level === "danger" ? "line-through decoration-scam" : ""}`}
             >
               {t("adTitle")}
             </p>
@@ -338,7 +339,7 @@ export function SearchMapsShield({ runScan }: { runScan: RunScan }) {
 
           <motion.a variants={item} href={link(OFFICIAL_URL)} onClick={interceptOfficial} className="group block cursor-pointer rounded-2xl p-1">
             <div className="flex items-center gap-2.5">
-              <span className="grid size-7 place-items-center rounded-full bg-navy-900 text-[11px] font-bold text-gold-500">ADP</span>
+              <span className="grid size-7 place-items-center rounded-full bg-obsidian text-[11px] font-bold text-ivory">ADP</span>
               <div className="min-w-0 leading-tight" dir="ltr">
                 <p className="truncate text-[13px] text-gray-900 dark:text-gray-200">Abu Dhabi Police</p>
                 <p className="truncate text-[12px] text-gray-600 dark:text-gray-400">https://www.adpolice.gov.ae</p>

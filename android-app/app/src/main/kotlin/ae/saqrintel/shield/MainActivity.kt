@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) handleIntent(intent)
 
         setContent {
-            val mode by themeController.mode.collectAsStateWithLifecycle(initialValue = ThemeMode.DARK)
+            val mode by themeController.mode.collectAsStateWithLifecycle(initialValue = ThemeMode.LIGHT)
             val alertId by openAlert.collectAsStateWithLifecycle()
             val dark = mode == ThemeMode.DARK
             val scope = rememberCoroutineScope()

@@ -13,7 +13,7 @@ web
 
 ## Product Purpose
 
-SAQR-INTEL ("صقر") is an anti-fraud shield for Abu Dhabi. The citizen portal (`/citizen`) checks links, SMS, emails and Maps pins and sets up a phone-wide DNS shield that blocks scam sites in every app; the police Command Center (`/police`) sees every interception live, clusters them into campaigns and lets officers act in one click. Success: a citizen never enters card, OTP or UAE PASS details on a fake site, and police see and stop a campaign while it is still spreading.
+Saqr ("صقر", formerly SAQR-INTEL) is an anti-fraud shield for Abu Dhabi. The citizen portal (`/citizen`) checks links, SMS, emails and Maps pins and sets up a phone-wide DNS shield that blocks scam sites in every app; the police Command Center (`/police`) sees every interception live, clusters them into campaigns and lets officers act in one click. Success: a citizen never enters card, OTP or UAE PASS details on a fake site, and police see and stop a campaign while it is still spreading.
 
 ## Positioning
 
@@ -28,16 +28,17 @@ Two-way and live: what a citizen intercepts appears on the police desk within se
 ## Capabilities and Constraints
 
 - Bilingual English / Arabic with full right-to-left layout on both pages.
-- `/citizen`: link check, Search & Maps shield demo, SMS Guard demo, Email scan, Crowd-Shield Radar, phone DNS shield setup (Android / iPhone, with setup videos), scam-alert push notifications, verdict screen, X warning composer, official police warning banner.
+- `/citizen`: one page with five windows (`?view=check|maps|sms|email|live`: Link checker, Search & Maps, SMS, Email, Live shield); inline verdict card for checks the resident starts, full-screen block page when they were about to open a scam (share target, `?alert=` links, Search & Maps and demo-SMS taps); phone DNS shield and scam-alert setup in slide-over drawers (Android / iPhone, with setup videos); X warning composer; official police warning banner. No link to `/police`.
 - `/police`: live KPIs, interception stream, campaigns, Abu Dhabi geo-spoof map, 1-click action center, takedown dossier (JSON / PDF).
 - Numbers shown on `/police` before real traffic are labeled demo data and reset when the backend restarts.
 
 ## Brand Commitments
 
-- Name: SAQR-INTEL / صقر; Abu Dhabi Police context (Aman 8002626, SMS 2828).
-- Identity colors stay SAQR's own: navy with **emerald and gold** accents; crimson is reserved for scam / danger states.
-- Theme: **dark by default**, with a light version of the same design behind the toggle on `/citizen`.
-- Visual reference supplied by the owner (2026-11-23): a dark "bento" ride-sharing dashboard (Pinterest pin "Farider"), to be used as **inspiration only**, not copied.
+- Name: **Saqr** / صقر (product name "Saqr — Abu Dhabi Anti-Scam Shield"; formerly SAQR-INTEL); Abu Dhabi Police context (Aman 8002626, SMS 2828). Saqr is not an official police brand: never use a police emblem.
+- Identity: the faceted Saqr falcon + Gloock serif wordmark, obsidian ink on warm ivory (see `DESIGN.md`). Verdict colours carry one meaning each: emerald = safe / verified, amber = suspicious, crimson = scam.
+- Theme: **light by default** (ivory canvas), dark version behind the toggle; a saved choice is kept.
+- `/police` keeps the legacy Night Grid look (navy, emerald, gold; dark by default) until the owner supplies its new format.
+- Visual references supplied by the owner: the Saqr logo and citizen wireframe in `design-refs/` (2026-11-24); earlier, a dark "bento" dashboard (Pinterest "Farider"), inspiration only.
 
 ## Evidence on Hand
 

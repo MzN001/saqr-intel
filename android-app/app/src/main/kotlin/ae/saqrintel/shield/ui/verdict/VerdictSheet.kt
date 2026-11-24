@@ -7,12 +7,17 @@ import ae.saqrintel.shield.data.ScanKind
 import ae.saqrintel.shield.data.Verdict
 import ae.saqrintel.shield.data.VerdictInfo
 import ae.saqrintel.shield.ui.common.PrimaryButton
+import ae.saqrintel.shield.ui.common.RiskMeter
+import ae.saqrintel.shield.ui.common.SaqrCard
 import ae.saqrintel.shield.ui.common.SecondaryButton
+import ae.saqrintel.shield.ui.common.VerdictChip
+import ae.saqrintel.shield.ui.common.bilingualVerdict
 import ae.saqrintel.shield.ui.common.isArabic
 import ae.saqrintel.shield.ui.common.tabular
 import ae.saqrintel.shield.ui.common.verdictFill
 import ae.saqrintel.shield.ui.common.verdictInk
 import ae.saqrintel.shield.ui.common.verdictLabel
+import ae.saqrintel.shield.ui.theme.SaqrPalette
 import ae.saqrintel.shield.ui.theme.SaqrTheme
 import ae.saqrintel.shield.util.Aman
 import ae.saqrintel.shield.util.Defang
@@ -22,17 +27,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -53,13 +61,72 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 private enum class FalseAlarmState { IDLE, SENDING, THANKS, FAILED }
+
+/**
+ * Inline verdict card (Scanner tab): defanged target, bold score / 100, EN + AR verdict, the
+ * three-zone meter, up to three reasons in the current language, and the short actions.
+ */
+@Composable
+fun VerdictCard(info: VerdictInfo, onDetails: () -> Unit, modifier: Modifier = Modifier) {
+    val c = SaqrTheme.colors
+    val context = LocalContext.current
+    val arabic = isArabic()
+    val noAppText = stringResource(R.string.toast_no_app)
+    val copiedText = stringResource(R.string.toast_aman_copied)
+
+    SaqrCard(modifier, spacing = 14.dp) {
+        TargetLine(info)
+        ScoreLine(info, big = 40)
+        RiskMeter(info.score, info.verdict)
+        Text(stringResource(instruction(info)), style = MaterialTheme.typography.titleSmall, color = c.ink)
+        if (info.reasons.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                info.reasons.take(3).forEach { r -> ReasonRow(if (arabic) r.ar else r.en, info.verdict, maxLines = 2) }
+            }
+        }
+        HorizontalDivider(color = c.line)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (info.xEligible) {
+                SecondaryButton(
+                    text = stringResource(R.string.notif_action_x),
+                    fill = false,
+                    onClick = {
+                        if (!VerdictActions.warnOnX(context, info, arabic)) {
+                            Toast.makeText(context, noAppText, Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                )
+            }
+            if (info.verdict != Verdict.SAFE) {
+                SecondaryButton(
+                    text = stringResource(R.string.action_copy_aman),
+                    fill = false,
+                    onClick = {
+                        if (Aman.copy(context, "Saqr report", Aman.reportText(info, arabic))) {
+                            Toast.makeText(context, copiedText, Toast.LENGTH_LONG).show()
+                        }
+                    },
+                )
+            }
+        }
+        TextButton(onClick = onDetails, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)) {
+            Text(
+                stringResource(R.string.action_full_details) + if (arabic) "  ←" else "  →",
+                style = MaterialTheme.typography.labelLarge,
+                color = c.ink,
+            )
+        }
+    }
+}
 
 /** Result sheet shared by the scanner, the alerts timeline and guard notifications. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,8 +137,12 @@ fun VerdictSheet(info: VerdictInfo, onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         containerColor = c.surface,
         contentColor = c.ink,
+        scrimColor = SaqrPalette.Obsidian.copy(alpha = 0.5f),
+        tonalElevation = 0.dp,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = c.line) },
     ) {
         VerdictContent(info)
     }
@@ -91,94 +162,61 @@ private fun VerdictContent(info: VerdictInfo) {
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 24.dp)
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 20.dp)
             .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // Score + verdict ---------------------------------------------------------------------
-        val label = verdictLabel(info.verdict)
-        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.semantics(mergeDescendants = true) { heading() }) {
-            if (info.score != null) {
-                Text(
-                    text = info.score.toString(), // Western digits in both languages
-                    style = MaterialTheme.typography.displaySmall.tabular().copy(fontSize = 56.sp, lineHeight = 60.sp),
-                    color = verdictInk(info.verdict),
-                    modifier = Modifier.semantics { contentDescription = "${info.score} / 100" },
-                )
-                Text(
-                    text = "/100",
-                    style = MaterialTheme.typography.titleMedium.tabular(),
-                    color = c.inkSoft,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 10.dp),
-                )
-                Spacer(Modifier.width(16.dp))
-            }
-            Column(Modifier.padding(bottom = 8.dp)) {
-                Text(
-                    text = if (info.kind == ScanKind.PHONE) phoneLevelLabel(info) else label,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = verdictInk(info.verdict),
-                )
-                Text(
-                    text = stringResource(kindLabel(info.kind)),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = c.inkSoft,
-                )
-            }
-        }
+        Text(
+            text = stringResource(kindLabel(info.kind)),
+            style = MaterialTheme.typography.labelMedium,
+            color = c.inkSoft,
+        )
+        TargetLine(info)
+        ScoreLine(info, big = 48)
         Text(
             text = stringResource(instruction(info)),
             style = MaterialTheme.typography.titleMedium,
             color = c.ink,
         )
-
-        Meter(info.verdict)
+        RiskMeter(info.score, info.verdict)
 
         // Who it pretends to be / verified -----------------------------------------------------
         val entity = if (arabic) XAlert.entityAr(info) ?: info.entityEn else info.entityEn
+        val showEntity = entity != null && info.verdict != Verdict.SAFE
+        val showOfficial = info.officialDomain != null && info.verdict != Verdict.SAFE
+        if (info.verifiedOfficial || showEntity || showOfficial) {
+            HorizontalDivider(color = c.line)
+        }
         if (info.verifiedOfficial) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(10.dp).background(c.shield, CircleShape))
+                Box(Modifier.size(10.dp).background(SaqrPalette.SafeFill, CircleShape))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.verdict_verified),
                     style = MaterialTheme.typography.labelLarge,
-                    color = c.shield,
+                    color = c.safeInk,
                 )
             }
         }
-        if (entity != null && info.verdict != Verdict.SAFE) {
-            Detail(stringResource(R.string.verdict_pretends), entity)
-        }
-        if (info.domain != null && info.kind != ScanKind.PHONE) {
-            Detail(stringResource(R.string.verdict_address), Defang.defang(info.domain), ltr = true)
-        }
-        if (info.officialDomain != null && info.verdict != Verdict.SAFE) {
-            Detail(stringResource(R.string.verdict_official_site), info.officialDomain, ltr = true)
-        }
+        if (showEntity) Detail(stringResource(R.string.verdict_pretends), entity.orEmpty())
+        if (showOfficial) Detail(stringResource(R.string.verdict_official_site), info.officialDomain.orEmpty(), ltr = true)
 
         // Reasons ------------------------------------------------------------------------------
         if (info.reasons.isNotEmpty()) {
             HorizontalDivider(color = c.line)
             Text(
                 text = stringResource(if (info.verdict == Verdict.SAFE) R.string.verdict_notes else R.string.verdict_reasons),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = c.inkSoft,
             )
-            info.reasons.take(3).forEach { r ->
-                Row {
-                    Text("•", color = verdictInk(info.verdict), style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (arabic) r.ar else r.en, style = MaterialTheme.typography.bodyMedium, color = c.ink)
-                }
-            }
+            info.reasons.take(3).forEach { r -> ReasonRow(if (arabic) r.ar else r.en, info.verdict) }
         }
 
         // Links / phones found in a message ------------------------------------------------------
         if ((info.kind == ScanKind.MESSAGE || info.kind == ScanKind.EMAIL) && (info.links.isNotEmpty() || info.phones.isNotEmpty())) {
             HorizontalDivider(color = c.line)
-            Text(stringResource(R.string.verdict_found), style = MaterialTheme.typography.labelLarge, color = c.inkSoft)
+            Text(stringResource(R.string.verdict_found), style = MaterialTheme.typography.labelMedium, color = c.inkSoft)
             info.links.take(5).forEach { l ->
                 val v = l.verdict ?: if (l.official) Verdict.SAFE else null
                 FoundRow(
@@ -210,7 +248,7 @@ private fun VerdictContent(info: VerdictInfo) {
             }
         }
 
-        // Actions --------------------------------------------------------------------------------
+        // Actions: one primary, the rest secondary ------------------------------------------------
         HorizontalDivider(color = c.line)
         if (info.xEligible) {
             PrimaryButton(
@@ -233,7 +271,7 @@ private fun VerdictContent(info: VerdictInfo) {
         SecondaryButton(
             text = stringResource(R.string.action_copy_report),
             onClick = {
-                if (Aman.copy(context, "SAQR report", Aman.reportText(info, arabic))) {
+                if (Aman.copy(context, "Saqr report", Aman.reportText(info, arabic))) {
                     Toast.makeText(context, copiedText, Toast.LENGTH_SHORT).show()
                 }
             },
@@ -242,8 +280,8 @@ private fun VerdictContent(info: VerdictInfo) {
             when (falseAlarm) {
                 FalseAlarmState.THANKS -> Text(
                     stringResource(R.string.false_alarm_thanks),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = c.shield,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.inkSoft,
                 )
                 else -> TextButton(
                     enabled = falseAlarm != FalseAlarmState.SENDING,
@@ -280,40 +318,94 @@ private fun VerdictContent(info: VerdictInfo) {
         )
         Text(
             text = stringResource(R.string.aman_footer),
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.tabular(),
             color = c.inkSoft,
         )
     }
 }
 
-/** Safe / Suspicious / Scam with only the active segment coloured. */
+/** Defanged domain (LTR, mono) or what kind of thing was checked. */
 @Composable
-private fun Meter(active: Verdict) {
+private fun TargetLine(info: VerdictInfo) {
     val c = SaqrTheme.colors
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-        Verdict.entries.forEach { v ->
-            val on = v == active
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(if (on) verdictFill(v) else c.muted, SaqrTheme.shapes.pill),
+    val domain = info.domain
+    if (domain != null && info.kind != ScanKind.PHONE) {
+        Text(
+            Defang.defang(domain),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = FontFamily.Monospace,
+                fontSize = 14.sp,
+                textDirection = TextDirection.Ltr,
+            ),
+            color = c.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    } else {
+        Text(
+            stringResource(if (info.kind == ScanKind.PHONE) R.string.kind_phone else R.string.scan_text_target),
+            style = MaterialTheme.typography.bodyMedium,
+            color = c.inkSoft,
+        )
+    }
+}
+
+/** Bold `92 / 100` plus the EN · AR verdict chip (phone checks: the level chip only). */
+@Composable
+private fun ScoreLine(info: VerdictInfo, big: Int) {
+    val c = SaqrTheme.colors
+    FlowRow(
+        verticalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) { heading() },
+    ) {
+        if (info.score != null) {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.semantics { contentDescription = "${info.score} / 100" },
+            ) {
+                Text(
+                    text = info.score.toString(), // Western digits in both languages
+                    style = MaterialTheme.typography.displaySmall.tabular().copy(fontSize = big.sp, lineHeight = (big + 4).sp),
+                    color = c.ink,
                 )
                 Text(
-                    text = stringResource(
-                        when (v) {
-                            Verdict.SAFE -> R.string.meter_safe
-                            Verdict.SUSPICIOUS -> R.string.meter_suspicious
-                            Verdict.SCAM -> R.string.meter_scam
-                        },
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (on) verdictInk(v) else c.inkSoft,
-                    fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
+                    text = " / 100",
+                    style = MaterialTheme.typography.titleMedium.tabular(),
+                    color = c.inkSoft,
+                    softWrap = false,
+                    modifier = Modifier.padding(bottom = (big / 8).dp),
                 )
             }
         }
+        VerdictChip(
+            if (info.kind == ScanKind.PHONE) phoneLevelLabel(info) else bilingualVerdict(info.verdict),
+            info.verdict,
+        )
+    }
+}
+
+@Composable
+private fun ReasonRow(text: String, verdict: Verdict, maxLines: Int = Int.MAX_VALUE) {
+    val c = SaqrTheme.colors
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            Modifier
+                .padding(top = 8.dp)
+                .size(6.dp)
+                .background(verdictFill(verdict), CircleShape),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = c.ink,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

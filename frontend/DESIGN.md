@@ -1,284 +1,281 @@
 ---
-name: SAQR-INTEL
-description: Abu Dhabi Night Grid. A dot-matrix night map of the city, lit by live scam and shield data, shared by the police Command Center and the citizen portal.
+name: Saqr
+description: Saqr — Abu Dhabi Anti-Scam Shield. A crisp, executive, light-first system built around the faceted Saqr falcon. Obsidian ink on warm ivory; emerald, amber and crimson only ever mean safe, suspicious and scam.
 colors:
-  night-canvas: "#0a1220"
-  night-surface: "#111c2e"
-  night-muted: "#16243a"
-  night-line: "#1f2d45"
-  night-ink: "#e8eef7"
-  night-ink-soft: "#a3b3c8"
-  cream-canvas: "#f3ecdf"
-  cream-surface: "#faf6ee"
-  cream-muted: "#eee5d5"
-  cream-line: "#e0d4bf"
-  cream-ink: "#0b192c"
-  cream-ink-soft: "#2b4568"
-  shield-emerald: "#047857"
-  shield-emerald-deep: "#065f46"
-  shield-emerald-bright: "#10b981"
-  shield-emerald-night: "#34d399"
-  emerald-brand: "#0e9f6e"
-  verified-gold: "#c5a572"
-  gold-ink-cream: "#7a5a1f"
-  gold-ink-night: "#d8bd8c"
-  scam-crimson: "#e11d48"
-  scam-ink-cream: "#be123c"
-  scam-ink-night: "#fb7185"
-  navy-900: "#0b192c"
-  navy-950: "#060f1c"
+  canvas: "#F7F5F0"
+  surface: "#FFFFFF"
+  muted: "#F1EEE6"
+  line: "#E6E2D8"
+  ink: "#111315"
+  ink-soft: "#475569"
+  primary: "#111315"
+  primary-hover: "#1E293B"
+  on-primary: "#FAF8F5"
+  dark-canvas: "#0E1012"
+  dark-surface: "#171A1F"
+  dark-muted: "#1F232A"
+  dark-line: "#2A2F37"
+  dark-ink: "#FAF8F5"
+  dark-ink-soft: "#A3ACB9"
+  dark-primary: "#FAF8F5"
+  dark-primary-hover: "#E7E3DA"
+  dark-on-primary: "#111315"
+  safe: "#10B981"
+  safe-ink: "#047857"
+  safe-ink-dark: "#34D399"
+  suspicious: "#F59E0B"
+  suspicious-ink: "#92400E"
+  suspicious-ink-dark: "#FBBF24"
+  scam: "#DC2626"
+  scam-ink: "#B91C1C"
+  scam-ink-dark: "#F87171"
+  obsidian: "#111315"
+  ivory: "#FAF8F5"
+  sandstone: "#ECE7DB"
 typography:
-  figure:
-    fontFamily: "Barlow, Segoe UI, system-ui, sans-serif"
-    fontSize: "42px"
-    fontWeight: 300
-    lineHeight: 1
-    letterSpacing: "-0.025em"
-  headline:
-    fontFamily: "Barlow, Segoe UI, system-ui, sans-serif"
-    fontSize: "1.125rem"
-    fontWeight: 800
-    lineHeight: 1.25
-  nav:
-    fontFamily: "Barlow, Segoe UI, system-ui, sans-serif"
-    fontSize: "15px"
-    fontWeight: 700
-    letterSpacing: "0.02em"
-  body:
-    fontFamily: "Barlow, Segoe UI, system-ui, sans-serif"
-    fontSize: "0.875rem"
+  wordmark:
+    fontFamily: "Gloock, Georgia, serif"
     fontWeight: 400
-    lineHeight: 1.5
-  label:
-    fontFamily: "Barlow, Segoe UI, system-ui, sans-serif"
-    fontSize: "11px"
+    note: "The word Saqr in the logo only"
+  display:
+    fontFamily: "Inter, Segoe UI, system-ui, sans-serif"
+    fontSize: "32px"
     fontWeight: 700
-    letterSpacing: "0.14em"
-  stamp:
-    fontFamily: "Barlow, Segoe UI, system-ui, sans-serif"
-    fontSize: "11px"
-    fontWeight: 800
-    lineHeight: 1
-    letterSpacing: "0.12em"
-  domain:
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    lineHeight: 1.1
+    letterSpacing: "-0.02em"
+  title:
+    fontFamily: "Inter"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: 1.25
+  body:
+    fontFamily: "Inter"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.55
+  small:
+    fontFamily: "Inter"
     fontSize: "13px"
-    fontWeight: 700
+    fontWeight: 500
+  label:
+    fontFamily: "Inter"
+    fontSize: "11px"
+    fontWeight: 600
+    letterSpacing: "0.12em"
   arabic:
-    fontFamily: "Noto Kufi Arabic, Segoe UI, Tahoma, Geeza Pro, sans-serif"
+    fontFamily: "IBM Plex Sans Arabic, Segoe UI, Tahoma, Geeza Pro, sans-serif"
 rounded:
-  stamp: "6px"
+  card: "18px"
   control: "12px"
-  inset: "16px"
-  tile: "20px"
   pill: "9999px"
-spacing:
-  tile-gap: "16px"
-  tile-pad: "16px"
-  tile-pad-roomy: "24px"
-  gutter: "16px"
-  gutter-wide: "24px"
 components:
-  tile:
-    backgroundColor: "{colors.night-surface}"
-    textColor: "{colors.night-ink}"
-    rounded: "{rounded.tile}"
-    padding: "16px"
-  button-primary:
-    backgroundColor: "{colors.shield-emerald}"
-    textColor: "#ffffff"
-    rounded: "{rounded.inset}"
-    padding: "12px 16px"
-  button-primary-hover:
-    backgroundColor: "{colors.shield-emerald-deep}"
-  button-police-action:
-    backgroundColor: "{colors.verified-gold}"
-    textColor: "{colors.navy-950}"
-    rounded: "{rounded.inset}"
-    padding: "12px 16px"
-  button-quiet:
-    backgroundColor: "{colors.night-canvas}"
-    textColor: "{colors.night-ink}"
-    rounded: "{rounded.inset}"
-    padding: "12px 16px"
-  pill-strip:
-    backgroundColor: "{colors.verified-gold}"
-    textColor: "{colors.navy-950}"
-    rounded: "{rounded.pill}"
-    padding: "6px 12px"
-  score-scam:
-    backgroundColor: "{colors.scam-crimson}"
-    textColor: "#ffffff"
-    rounded: "{rounded.pill}"
-    padding: "2px 8px"
-  input-link:
-    backgroundColor: "{colors.night-muted}"
-    textColor: "{colors.night-ink}"
-    rounded: "{rounded.inset}"
-    padding: "12px 14px"
-  crest:
-    backgroundColor: "{colors.navy-900}"
-    textColor: "{colors.verified-gold}"
-    rounded: "{rounded.pill}"
-    size: "54px"
+  card: { backgroundColor: "{colors.surface}", border: "1px {colors.line}", rounded: "{rounded.card}", shadow: "elevation-card" }
+  button-primary: { backgroundColor: "{colors.primary}", textColor: "{colors.on-primary}", rounded: "{rounded.control}", minHeight: "48px" }
+  button-secondary: { backgroundColor: "{colors.surface}", textColor: "{colors.ink}", border: "1px {colors.line}", rounded: "{rounded.control}", minHeight: "48px" }
+  field: { backgroundColor: "{colors.surface}", textColor: "{colors.ink}", fontSize: "16px", minHeight: "48px", rounded: "{rounded.control}" }
+  chip-safe: { backgroundColor: "safe-soft", textColor: "{colors.safe-ink}", rounded: "{rounded.pill}" }
+  chip-suspicious: { backgroundColor: "suspicious-soft", textColor: "{colors.suspicious-ink}", rounded: "{rounded.pill}" }
+  chip-scam: { backgroundColor: "scam-soft", textColor: "{colors.scam-ink}", rounded: "{rounded.pill}" }
 ---
 
-# Design System: SAQR-INTEL
+# Design System: Saqr
 
-## Overview
+Single source of truth for the Saqr brand (web app, extension, Android app). Tokens live in
+`src/app/globals.css`; brand assets in `src/brand/`; icons are generated by
+`scripts/brand/generate-icons.mjs`.
 
-**Creative North Star: "Abu Dhabi Night Grid"**
+## 1. Principles
 
-Every scam is a light on the city. Both surfaces, the police Command Center (desktop, projected on stage) and the citizen portal (phone first), stand on the same ground: Abu Dhabi drawn as a dot-matrix city at night, with live data as the only thing that lights it. Crimson pins are interceptions, emerald pins and the emerald glow around the island are verified places and the citizen's own shield. The system refuses the category default of a grey card grid with a chart in every tile; the map is the large tile, and numbers are figures, not charts.
+1. **Crisp, executive, zero bloat.** Every element earns its place. No decoration that does not inform.
+2. **One primary action per section.** One obsidian button; everything else is secondary or a link.
+3. **No badge rows.** At most one chip next to a title. Status is a sentence, not a strip of pills.
+4. **Text is never smaller than 11px** (11px only for tracked caps labels; body ≥ 15px, inputs 16px).
+5. **No nested cards.** A card never sits inside a card. Group inside a card with spacing and hairlines.
+6. **One meaning per colour.** Crimson only means *scam*. Amber only means *suspicious*. Emerald only means
+   *safe / verified*. Obsidian (ivory in dark) is the colour of primary actions. Never use a verdict colour
+   for decoration, focus, branding, errors that are not scams, or emphasis.
+7. **Colour never works alone.** Every verdict colour is paired with a word and/or an icon.
+8. **Light first.** Ivory canvas by default; the dark theme is the same structure, inverted.
 
-Night Grid is the default theme: a night-navy ground, tiles one step lighter, 1px hairline edges, 20px corners, and nothing glowing. A light version keeps the identical structure on cream paper with navy ink. The theme is chosen before first paint (dark unless the visitor saved "light"), so a first visit never flashes cream. The colour language is fixed like an orienteering map: emerald, gold and crimson each mean one thing on every screen and are never swapped.
+## 2. Colour tokens
 
-State is shown, not implied. When a campaign is blocked, synced to the telecoms or flagged on X, a rotated, bordered stamp lands on the row, so nothing changes silently. The police top bar follows the Abu Dhabi Police website layout, with the SAQR shield standing in the crest slot. Everything is bilingual (English and Arabic, with full RTL) and honours reduced motion.
+Utilities come straight from the token names: `bg-canvas`, `bg-surface`, `bg-muted`, `border-line`,
+`text-ink`, `text-ink-soft`, `bg-primary`, `hover:bg-primary-hover`, `text-on-primary`, `bg-safe`,
+`text-safe-ink`, `bg-safe-soft`, (same for `suspicious` and `scam`), `text-on-scam`, `outline-focus`.
+Components use these names, never raw hex. `[data-theme="dark"]` on `<html>` flips them.
 
-**Key Characteristics:**
-- Dot-matrix Abu Dhabi map as the signature ground, drawn in SVG, no map service.
-- Night navy by default; cream light theme with the same structure.
-- Flat tiles: surface, 1px hairline, 20px radius. No shadows on tiles, no glow halos, no nested cards.
-- Fixed colour meanings: emerald = official / safe / shield on, gold = verified police action, crimson = scam only.
-- Large light-weight figures; small tracked capital labels.
-- Self-stamping states.
-- Barlow (DIN-like, UAE road-sign register) with Noto Kufi Arabic.
+### Neutrals and primary
 
-## Colors
+| Token | Light | Dark | Use | Contrast (light / dark) |
+|---|---|---|---|---|
+| `canvas` | `#F7F5F0` warm ivory | `#0E1012` obsidian | page ground | |
+| `surface` | `#FFFFFF` | `#171A1F` deep slate | cards, sheets, bars | |
+| `muted` | `#F1EEE6` sandstone | `#1F232A` | wells, hover / selected rows, tracks | |
+| `line` | `#E6E2D8` | `#2A2F37` | 1px hairlines | |
+| `ink` | `#111315` | `#FAF8F5` | primary text | 17.1 canvas · 18.6 surface / 18.0 · 16.5 |
+| `ink-soft` | `#475569` slate | `#A3ACB9` | secondary text, labels | 6.95 canvas · 7.58 surface · 6.54 muted / 8.31 · 7.61 · 6.88 |
+| `primary` | `#111315` obsidian | `#FAF8F5` ivory | primary button fill | |
+| `primary-hover` | `#1E293B` slate | `#E7E3DA` | hover | on-primary 13.8 / 14.5 |
+| `on-primary` | `#FAF8F5` | `#111315` | text on primary | 17.6 / 17.6 |
+| `focus` | `#111315` | `#FAF8F5` | 2px focus ring | 17.1 / 18.0 |
 
-A night-navy (or cream) neutral field carrying three signal colours whose meanings never move.
+Brand constants that never flip: `obsidian #111315`, `ivory #FAF8F5`, `slate #1E293B`, `sandstone #ECE7DB`
+(logo tiles and brand surfaces only).
 
-### Primary
-- **Shield Emerald** (`shield-emerald`, deep `shield-emerald-deep` on hover): the primary action fill (Scan Now, Sync to e& / du), the "shield on" state, verified pins and the live-sync dot. Bright (`shield-emerald-bright`) is for dots and pins; the night tint (`shield-emerald-night`) is for emerald text and icons on the dark ground, with the 600/700 steps on cream.
-- **Brand Emerald** (`emerald-brand`): browser surfaces only: selection tint, caret, form accent, and the 2px focus outline.
+### Verdict colours
 
-### Secondary
-- **Verified Gold** (`verified-gold`): fills for verified police actions (Broadcast Official Warning, Stage QR), the crest ring, the icon in navy shield badges, and outlined notices such as the demo-data mark. Gold text uses **Gold Ink** (`gold-ink-cream` on cream, `gold-ink-night` on night), never the fill value.
+Fill values are fixed in both themes. Text uses the `-ink` token, which passes AA (≥ 4.5:1) on canvas,
+surface, muted and its own `-soft` chip. Raw emerald and amber FAIL as text on light grounds
+(`#10B981` 2.33:1, `#F59E0B` 1.97:1 on canvas), so never write text in a fill colour.
 
-### Tertiary
-- **Scam Crimson** (`scam-crimson`): fills only: scam pins, scam score pills (65 and above), the "Spoofed" chip, the active-nav underline in the police bar. Crimson text uses **Scam Ink** (`scam-ink-cream` / `scam-ink-night`), which passes AA on both grounds.
+| Verdict | Fill | Text light | Text dark | Soft chip light / dark | Text on fill |
+|---|---|---|---|---|---|
+| Safe / verified | `safe #10B981` | `safe-ink #047857`: 5.03 canvas · 5.48 surface · 4.73 muted · 4.93 chip | `#34D399`: 9.92 · 9.07 · 8.20 · 7.95 chip | `#E8F6EF` / `#0F2A21` | `on-safe #111315` 7.34 |
+| Suspicious | `suspicious #F59E0B` | `suspicious-ink #92400E`: 6.51 · 7.09 · 6.12 · 6.44 chip | `#FBBF24`: 11.4 · 10.5 · 9.4 · 9.2 chip | `#FDF3E1` / `#2E2310` | `on-suspicious #111315` 8.67 |
+| Scam | `scam #DC2626` | `scam-ink #B91C1C`: 5.94 · 6.47 · 5.58 · 5.61 chip | `#F87171`: 6.89 · 6.31 · 5.70 · 6.04 chip | `#FCEBEB` / `#311617` | `on-scam #FFFFFF` 4.83 |
 
-### Neutral
-- **Night Canvas / Cream Canvas** (`night-canvas` / `cream-canvas`): page ground, the live strip, inset map wells, quiet buttons.
-- **Night Surface / Cream Surface**: every tile, the sticky headers, popovers.
-- **Night Muted / Cream Muted**: input wells, selected and hovered rows, segmented-control tracks, neutral score pills (under 30).
-- **Night Line / Cream Line**: the 1px hairline on every tile, divider rows, header borders.
-- **Night Ink / Cream Ink** and **Ink Soft**: primary text, and secondary text, tile labels, map dots and district names.
-- **Navy 900 / 950**: the shield badge and crest backgrounds, and text on gold fills.
+### Browser surfaces
 
-The semantic set (canvas, surface, muted, line, ink, ink-soft, scam-ink, gold-ink) is one set of CSS variables that flips under `[data-theme="dark"]`; components use the semantic names, never the raw night or cream hex.
+- **Focus:** 2px `focus` outline, 2px offset, on every focusable element (`:focus-visible`). It is ink
+  (obsidian / ivory), not emerald: 17:1 or better on every ground in both themes, and emerald stays
+  reserved for "safe".
+- **Selection:** ink at 14% (light) / ivory at 20% (dark). **Caret:** ink. **accent-color:** primary.
+- **Dot-matrix** `.night-grid` dot: `#DDD8CC` / `#262B33`. **`.map-grid`** (Maps preview): ivory ground,
+  white roads, sand secondary road, `#E2DDD1` grid (dark: `#161A1F`, `#2A2F37`, `#3D3628`, `#1E2228`).
+- **Print** (`.print-area`): ink `#111315` on white.
 
-### Named Rules
-**The Crimson Means Scam Rule.** Crimson appears only where something is a scam. Scores below 65 are gold (30 to 64) or neutral muted (under 30), never crimson. Fills use Scam Crimson, text uses Scam Ink.
+## 3. Typography
 
-**The Gold Is Police Action Rule.** Gold marks a verified police act or an official notice. It is never decoration and never a warning colour for citizens.
+| Role | Face | Size / weight | Notes |
+|---|---|---|---|
+| Wordmark | **Gloock** (`--font-wordmark`, `font-wordmark`) | set by `SaqrLogo` | Logo only. Never headings or UI. |
+| Display | Inter | 32px / 700, -0.02em, lh 1.1 (24px on phones) | one per page |
+| Title | Inter | 20px / 600, lh 1.25 | card titles |
+| Body | Inter | 15px / 400, lh 1.55, ≤ 68ch | |
+| Small | Inter | 13px / 500 | meta lines |
+| Label | Inter | 11px / 600, uppercase, 0.12em (`label-caps`) | section and KPI labels |
+| Figures | Inter | `tabular-nums` | scores, counts, phone numbers |
+| Arabic | **IBM Plex Sans Arabic** 400/500/600/700 (`--font-arabic`) | same scale, +1px body, no letter-spacing, no uppercase | whole page in Arabic and any `lang="ar"` fragment |
+| Code / domains | system mono | 13px | always `dir="ltr"` |
 
-**The One Meaning Rule.** Emerald, gold and crimson are never swapped between surfaces, themes or languages.
+Fonts are self-hosted by `next/font` in `app/layout.tsx`: Inter → `--font-inter` → `--font-sans`,
+IBM Plex Sans Arabic → `--font-plex-arabic` → `--font-arabic`, Gloock → `--font-gloock` → `--font-wordmark`.
 
-## Typography
+**Why Gloock.** Rendered next to the reference lockup it matched best: high stroke contrast, sharp
+bracketed wedge serifs, a heavy squared "S" and a "q" with an angled foot serif. DM Serif Display was close
+but lighter and narrower; Playfair 800/900 has ball terminals and a delicate, fashion feel; Fraunces 900
+has wonky soft shapes; Instrument Serif is far too light. Gloock is a single (400) weight, a little lighter
+than the reference lettering, so `SaqrLogo` adds a 0.012em text stroke.
 
-**Display Font:** Barlow (with Segoe UI, system-ui)
-**Body Font:** Barlow (with Segoe UI, system-ui)
-**Label/Mono Font:** system monospace for domains, RPZ records and URLs
-**Arabic Font:** Noto Kufi Arabic (with Segoe UI, Tahoma, Geeza Pro), applied to the whole page in Arabic and to any `lang="ar"` fragment inside English pages.
+## 4. Logo
 
-**Character:** A DIN-like grotesk in the register of UAE road signs and the Abu Dhabi Police site's capitals, from a whisper-light 300 for figures to a heavy 800 for stamps. Both fonts are self-hosted at build time.
+Assets (`src/brand/`): `saqr-falcon.svg` (master, 512 viewBox, `currentColor`), `saqr-falcon-mono.svg`
+(one path), `saqr-falcon-small.svg` (heavier strokes, simplified facets; use below 24px). In React use
+`<SaqrLogo variant="full|icon" theme="auto|light|dark" sublabel size={32} />` (`src/components/SaqrLogo.tsx`).
 
-### Hierarchy
-- **Figure** (300, 42px, line-height 1, tight tracking, tabular): KPI numbers. The large light figure is the system's way of showing a number; it fades in when the value changes.
-- **Headline** (800, 16 to 18px, snug): tile titles on the citizen portal (link checker, shield, alerts).
-- **Nav** (700, 15px, uppercase, 0.02em): police top-bar menu items.
-- **Body** (400, 14px, relaxed): explanations and registry notes, held to about 68ch.
-- **Label** (700, 11px, uppercase, 0.10 to 0.14em): tile headers, KPI labels, map district names, live-strip status.
-- **Stamp** (800, 11px, uppercase, 0.12em, line-height 1): state stamps.
-- **Domain** (mono 700, 13px): defanged domains in the stream, roster and action center, always `dir="ltr"`.
+- **Construction:** a faceted falcon head facing the reading direction of the wordmark (right), hooked
+  beak with a small eye facet, a diamond body of downward plumage rays. Open facets are holes (even-odd),
+  so the mark is pure fill, no strokes, no filters.
+- **Lockup:** falcon → wordmark, always left to right, also in Arabic pages (`dir="ltr"` on the lockup).
+  Wordmark cap height ≈ ⅓ of the falcon height, gap ≈ 0.14 × falcon height, optically centred.
+  Optional sublabel `INTEL · ABU DHABI` in 11px+ tracked caps.
+- **Clear space:** at least the falcon's beak width (¼ of the falcon height) on every side.
+- **Minimum sizes:** full lockup 24px falcon height; icon 16px (the small variant switches in below 24px).
+- **Colour:** obsidian ink on light grounds, ivory on dark grounds. Never any other colour, gradient,
+  outline, shadow, rotation, or stretching. Never put verdict colours on the logo.
+- **Never** use, imitate or combine with any police emblem or government crest. Saqr is its own brand.
+- **Icons:** `node scripts/brand/generate-icons.mjs` writes the PWA icons (ivory canvas), maskable icon
+  (mark inside the 80% safe circle), Apple touch icon (180px, solid), `app/icon.svg` (follows the browser's
+  colour scheme), `app/favicon.ico` and the extension icons (sandstone tile `#ECE7DB` + obsidian falcon:
+  legible on light and dark toolbars), a white notification badge, and the Android VectorDrawable
+  `ic_saqr_falcon.xml`.
 
-### Named Rules
-**The Figure Not Chart Rule.** Counts are shown as large light figures with one line of context ("+3 this session", the entities impersonated), not as charts.
+## 5. Layout, shape and elevation
 
-**The Tracked Caps Label Rule.** Tile and KPI labels are small tracked capitals in Ink Soft; titles never compete with the figures.
+- Spacing on a 4px grid; 16px page gutter on phones, 24px from `sm`; content max 1200px.
+- **Radii:** cards `rounded-card` (18px), controls `rounded-control` (12px), chips `rounded-full`.
+- **Elevation:** cards use `shadow-card` (soft, warm, `--elevation-card`, flips per theme). Overlays
+  (sheets, drawers, popovers) use `shadow-overlay`. Never glows, never coloured shadows.
+- Depth comes from canvas → surface → muted, plus the 1px hairline.
 
-## Layout
+## 6. Components
 
-Police: a sticky two-row header (76px top bar, then the canvas-coloured live strip), then a three-column desk inside a 1500px container: 260px KPI column, flexible centre (map tile above the campaign roster), 380px right column (interception stream above the action center). Below the large breakpoint, KPIs become a two-up grid above a single column and the nav collapses into a menu button. Citizen: sticky header and a sticky tab bar inside a 1280px container; the link checker spans the width with its map panel (340px) beside the form on large screens and as a 128px strip above it on phones; the shield and alerts tiles sit two-up below.
+Utilities defined in `globals.css` (`@utility`, so variants like `sm:` and `hover:` work):
 
-Rhythm: 16px between tiles, 16px tile padding (24px on the roomy citizen link checker), 16px page gutter on phones and 24px from the small breakpoint. On phones the tab bar fades its trailing edge (mirrored in RTL) to show it scrolls. All direction-sensitive spacing uses logical properties (start / end) so RTL mirrors without extra rules.
+- **Card** `card`: surface, 1px line, 18px radius, `shadow-card`. Padding 20px (16px on phones). No nesting.
+- **Primary button** `btn-primary`: obsidian (ivory in dark), on-primary text, 600, min-height **48px**,
+  12px radius, hover to `primary-hover`, press 0.98. One per section. Add `press` only on custom buttons.
+- **Secondary button** `btn-secondary`: surface, hairline, ink; hover muted. Links use `text-ink underline`.
+- **Field** `field`: 16px text (prevents iOS zoom), 48px tall, hairline, ink focus ring; URLs `dir="ltr"`.
+- **Chips** `chip` + `chip-safe` | `chip-suspicious` | `chip-scam`: pill, 12px 600, soft ground and
+  `-ink` text. One chip per context, always with a word.
+- **Meter (Safe | Suspicious | Scam):** a three-zone track (`bg-safe` / `bg-suspicious` / `bg-scam` at
+  0–29 / 30–64 / 65–100, zones separated by 2px of `surface`), a 2px obsidian/ivory marker at the score,
+  the score as a `tabular-nums` figure, and the three zone words underneath in `label-caps`. The verdict
+  word is written in its `-ink` colour; the zone colours are never used for anything else on that screen.
+- **Drawers / sheets:** surface, 18px top radius (phones: bottom sheet), `shadow-overlay`, scrim
+  `bg-obsidian/50`, a single primary action at the bottom, close button 48px.
+- **Labels:** `label-caps` (11px tracked caps, ink-soft).
 
-## Elevation & Depth
+## 7. Motion
 
-Flat by design. Depth comes from tonal steps (canvas, then surface one step lighter, then muted for wells and selection) and the 1px hairline, not from shadows. Sticky headers use a translucent surface with backdrop blur. Shadows are reserved for things that float above the page.
+Fast and quiet: 120–200ms for state changes, `cubic-bezier(0.16, 1, 0.3, 1)`; 300ms for sheets; theme
+switch keeps the circle reveal. Nothing loops except an in-progress scan (`shimmer-text`). Everything
+honours `prefers-reduced-motion` (fades only) and framer-motion surfaces sit in
+`MotionConfig reducedMotion="user"`.
 
-### Shadow Vocabulary
-- **Popover** (`box-shadow: 0 18px 40px -16px rgba(0,0,0,0.5)`): the police settings popover only.
-- **Map pin rings** (no blur): scam pins carry two concentric translucent crimson rings (6px at 22%, 14px at 9%); verified pins one emerald ring. These are flat rings, not glows.
+## 8. RTL and bilingual rules
 
-### Named Rules
-**The No Halo Rule.** Tiles never glow and never cast shadows. A tile is surface plus a 1px hairline.
+- `<html dir>` switches with the language; use logical utilities (`ps-`, `pe-`, `ms-`, `me-`, `start-`,
+  `end-`, `text-start`) so layouts mirror without extra rules. Directional icons (arrows, chevrons) flip.
+- Latin wordmark, domains, URLs, phone numbers and code stay `dir="ltr"`; the logo lockup never mirrors.
+- Arabic: no uppercase, no letter-spacing; 1px larger body; numbers stay Western digits in scores.
 
-## Shapes
+## 9. Themes
 
-Generous, consistent corners: 20px on every tile, 16px on inset elements inside a tile (map wells, action buttons, input wells), 12px on icon badges and small rows, full pills for chips, score badges and strip buttons, and a tight 6px on stamps. Circles are reserved for the crest, pins and status dots. Stamps are the one deliberately skewed shape: rotated -3 degrees with a 2px border in their own text colour.
+Light is the default. `lib/theme-script.ts` runs in `<head>` before first paint: a saved `saqr-theme`
+(`light` / `dark`) always wins; otherwise light (dark on the legacy `/police` scope). `lib/theme.tsx`
+mirrors this for the toggle; `ThemeToggle.tsx` animates it.
 
-## Components
+## 10. Legacy scope: /police
 
-### Buttons
-- **Shape:** gently rounded (16px) blocks for action buttons, full pills for compact strip actions.
-- **Primary:** Shield Emerald fill, white 700 text, 12px by 16px; hover steps to the deep emerald.
-- **Police action:** Verified Gold fill with Navy 950 text, same shape; hover brightens slightly. Used only for verified police acts.
-- **Quiet:** canvas fill, hairline border, ink text; hover to muted (Export dossier, Citizen Portal).
-- **Press:** primary actions squeeze to 0.97 for 120ms on press (`cubic-bezier(0.16, 1, 0.3, 1)`).
-- **Focus:** a 2px Brand Emerald outline at 2px offset on every focusable element.
-- **Done state:** a completed action keeps its button and stamps itself (SYNCED, BROADCAST) inside it.
+`/police` (Command Center and login) **intentionally stays on the pre-Saqr "Night Grid" design** until
+the owner supplies its new format. Do not restyle it with Saqr tokens.
 
-### Chips
-- **Score pill:** full pill, 12px bold tabular number; crimson fill at 65 and above, gold fill 30 to 64, muted below.
-- **Legend and status dots:** 8 to 10px circles in the signal colours beside an Ink Soft label.
-- **Demo-data mark:** gold-ink text in a 60% gold outline with 6px corners, always present while data is seeded.
+How it works: `.brand-night-grid` (in `globals.css`) re-declares every token name with its old Night Grid
+value for light and dark (cream / night-navy palette, emerald focus and selection, gold, navy, crimson,
+dot-matrix and map colours) and switches `--font-sans` / `--font-arabic` back to Barlow / Noto Kufi Arabic
+(still loaded in `app/layout.tsx`, not preloaded). The class is put on `<html>` by the `<head>` script for
+`/police*` URLs (no flash; covers portals and the body background), by `app/police/layout.tsx`
+(`LegacyNightGridScope`, which also handles client-side navigation), and wraps the route in a
+`display: contents` div. On `/police` the default theme is dark, as before; a saved choice still wins.
 
-### Cards / Containers
-- **Corner Style:** 20px.
-- **Background:** Surface.
-- **Shadow Strategy:** none (see Elevation).
-- **Border:** 1px Line.
-- **Internal Padding:** 16px, 24px for the citizen link checker.
-- **Header:** icon plus tracked-caps label in Ink Soft, with an optional count or legend at the end edge.
+## 11. Deprecated Night Grid tokens
 
-### Inputs / Fields
-- **Style:** Muted well, 16px radius, 1px Line ring, 15px text, always LTR for URLs.
-- **Focus:** the ring thickens to 2px emerald.
-- **Search (police):** a canvas pill that expands from the search icon to 200px.
+Kept as aliases so un-migrated components keep compiling and degrade gracefully. Do not use them in new
+code; replace them when a component is migrated.
 
-### Navigation
-- **Police top bar:** Abu Dhabi Police site layout. Settings and search icon buttons (40px circles), a language link, uppercase 15px menu items with a 4px Scam Crimson underline under the active one (spring-animated between items), and the bilingual wordmark "شرطة أبوظبي / ABU DHABI POLICE" at the reading-end edge beside the crest: a navy circle with a 3px gold ring holding the SAQR shield. A menu button replaces the nav below the large breakpoint.
-- **Live strip:** canvas band with the live-sync dot and status in tracked caps, the demo-data mark, then Citizen Portal, Stage QR and the theme toggle at the end edge.
-- **Citizen tabs:** icon plus label, Ink Soft at rest, Ink when selected with an emerald icon and a 3px ink underline that slides between tabs.
+| Old token | Now maps to | Replace with |
+|---|---|---|
+| `navy-950` | `#0A0B0D` deep obsidian | `bg-obsidian` (overlays) |
+| `navy-900` | `#111315` obsidian | `bg-primary` / `text-ink` |
+| `navy-800` | `#1E293B` slate | `hover:bg-primary-hover` |
+| `navy-700` | `#334155` | `text-ink-soft` / `bg-primary-hover` |
+| `navy-100`, `navy-50` | line / muted values | `border-line`, `bg-muted` |
+| `gold-500` | `#E8E1D0` sandstone (icon on obsidian badges) | `text-on-primary`; police action → `btn-primary` |
+| `gold-100` | muted | `bg-muted` |
+| `gold-ink` | `ink-soft` | `text-ink-soft` |
+| `emerald-brand` | `safe` | `bg-safe` (verdicts only); focus/selection now use ink |
+| `crimson-600` | `scam` | `bg-scam` |
+| `crimson-700` | `scam-ink` (light value) | `text-scam-ink` |
+| `crimson-50` | `scam-soft` (light value) | `bg-scam-soft` |
+| `grid-dot`, `.night-grid`, `.map-grid` | re-coloured for Saqr | keep (shared textures) |
 
-### Stamp (signature)
-Rotated (-3deg) bordered capitals marking a state on the row it belongs to: emerald for SYNCED TO e& / du, gold ink for FLAGGED ON X, scam ink for blocked or active. 2px border in the current colour, 6px corners, 11px 800 uppercase with 0.12em tracking.
+## 12. Don'ts
 
-### City Grid Map (signature)
-Abu Dhabi (Corniche to Yas, Saadiyat to Mussafah) as a 64-column dot matrix in SVG, kept at the city's true aspect ratio so dots stay round and pins land exactly. Land dots are larger and brighter than sea dots, both in Ink Soft at low opacity. Six bilingual district names sit on the map in tracked caps. On the police desk it is interactive: crimson spoofed pins and emerald verified pins open a registry card below the map. On the citizen portal it is a decorative backdrop with the island lit emerald and a caption "Your shield · Abu Dhabi island". Inside its tile the map sits in its own inset canvas well (16px radius, hairline); this inner frame is the one intentional exception to the no-nesting rule, because it frames a canvas, not a card.
-
-### KPI Tile
-Tile with icon and tracked-caps label (full label on wide screens, a short one on phones), a Figure, and one truncated context line. The label icon carries the signal colour of what is counted.
-
-## Do's and Don'ts
-
-### Do:
-- **Do** build every tile as Surface + 1px Line + 20px radius + 16px padding.
-- **Do** fill with `--color-scam` and write crimson text with `--color-scam-ink`; write gold text with `--color-gold-ink`.
-- **Do** use the semantic theme variables (canvas, surface, muted, line, ink, ink-soft) so both themes come from one structure.
-- **Do** stamp a state onto the row or button it changed, with the rotated bordered caps stamp.
-- **Do** show counts as large light figures with one line of context.
-- **Do** use logical (start / end) spacing and keep domains and URLs `dir="ltr"` inside Arabic pages.
-- **Do** wrap animated surfaces in `MotionConfig reducedMotion="user"`; reduced motion keeps fades and drops travel.
-- **Do** keep the demo-data mark visible whenever the desk shows seeded data.
-
-### Don't:
-- **Don't** use crimson for anything that is not a scam: not for errors, warnings, low scores or decoration.
-- **Don't** use gold except for verified police action and official notices.
-- **Don't** add glow halos, drop shadows or blur glows to tiles.
-- **Don't** nest a card inside a tile; the police map's inset canvas well is the only framed element inside a tile.
-- **Don't** reproduce the official Abu Dhabi Police emblem; the crest slot holds the SAQR shield.
-- **Don't** put a chart in every tile; the map and figures carry the data.
-- **Don't** let a state change silently; nothing disappears without a stamp or a message.
+- Don't use crimson, amber or emerald for anything but scam, suspicious and safe.
+- Don't add a second primary button to a section, or a row of badges under a title.
+- Don't nest cards, add glows, gradients behind text, or coloured shadows.
+- Don't set text below 11px, or input text below 16px.
+- Don't recolour, outline or animate the logo; don't use the wordmark font for anything else.
+- Don't reproduce any police emblem.

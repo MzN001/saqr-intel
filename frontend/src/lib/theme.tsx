@@ -2,19 +2,24 @@
 
 import { useCallback, useLayoutEffect, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { THEME_STORAGE_KEY } from "./theme-script";
+import { LEGACY_ROUTE_RE, LEGACY_SCOPE_CLASS, THEME_STORAGE_KEY } from "./theme-script";
 
 export type Theme = "light" | "dark";
 
 const listeners = new Set<() => void>();
-let current: Theme | null = null;
+
+// Theme used when the visitor has not saved a choice: light (Saqr default), dark on the legacy
+// Night Grid routes (/police). Kept in step on client navigation by useLegacyNightGridScope().
+let routeDefault: Theme = typeof window !== "undefined" && LEGACY_ROUTE_RE.test(window.location.pathname) ? "dark" : "light";
 
 function readStored(): Theme {
   try {
-    return window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark"; // dark by default
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === "light" || saved === "dark") return saved; // a saved choice always wins
   } catch {
-    return "dark";
+    /* storage unavailable (private mode) */
   }
+  return routeDefault;
 }
 
 function applyToDocument(theme: Theme) {
@@ -31,14 +36,12 @@ const themeStore = {
     };
   },
   getSnapshot(): Theme {
-    if (current === null) current = readStored();
-    return current;
+    return readStored();
   },
   getServerSnapshot(): Theme {
-    return "dark";
+    return "light"; // Saqr default; the <head> script has already applied the real theme before paint
   },
   set(theme: Theme) {
-    current = theme;
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
@@ -94,9 +97,10 @@ export function useTheme() {
   const theme = useSyncExternalStore(themeStore.subscribe, themeStore.getSnapshot, themeStore.getServerSnapshot);
 
   // The <head> script sets the attribute on first load; this re-applies it after
-  // React's dev-mode remount clears attributes on <html>. No-op in production.
+  // React's dev-mode remount clears attributes on <html>. It reads the store (not the
+  // hydration-time server snapshot) so a dark visitor is never flipped to light for a frame.
   useLayoutEffect(() => {
-    applyToDocument(theme);
+    applyToDocument(themeStore.getSnapshot());
   }, [theme]);
 
   const toggle = useCallback(
@@ -105,4 +109,26 @@ export function useTheme() {
   );
 
   return { theme, toggle };
+}
+
+/**
+ * Keeps a route on the legacy Night Grid scope (/police): puts the scope class on <html>
+ * (so portals and the page background are covered too) and makes dark the default while
+ * mounted. The <head> script does the same before first paint on a full page load; this
+ * covers client-side navigation into and out of the route.
+ */
+export function useLegacyNightGridScope() {
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.classList.add(LEGACY_SCOPE_CLASS);
+    routeDefault = "dark";
+    applyToDocument(readStored());
+    listeners.forEach((cb) => cb());
+    return () => {
+      root.classList.remove(LEGACY_SCOPE_CLASS);
+      routeDefault = "light";
+      applyToDocument(readStored());
+      listeners.forEach((cb) => cb());
+    };
+  }, []);
 }

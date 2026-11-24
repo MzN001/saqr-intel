@@ -1,7 +1,7 @@
 # TODO
 
 ## Email scanning
-- [ ] **Email attachment scanning** — today SAQR only looks at an attachment's *name* (dangerous types such as `.exe`, `.html`, double extensions like `invoice.pdf.exe`, hidden right-to-left characters). It does not open the file. To add:
+- [ ] **Email attachment scanning** — today Saqr only looks at an attachment's *name* (dangerous types such as `.exe`, `.html`, double extensions like `invoice.pdf.exe`, hidden right-to-left characters). It does not open the file. To add:
   - scan the attachment's contents: links and QR codes inside PDFs / images ("quishing"), HTML attachments that contain a fake login form, Office files with macros, archives (`.zip`, `.iso`) and what is inside them;
   - send any links found inside attachments through the normal link scan;
   - check file hashes against a malware feed;
@@ -80,20 +80,20 @@ Then open **https://saqr-intel.vercel.app/police** and sign in with the passcode
 The full rehearsable version (with what to say and what to do when something fails) is `docs/DEMO_SCRIPT.md`.
 
 1. Tab A: https://saqr-intel.vercel.app/police (sign in). The header badge should say **● LIVE SYNCED WITH CITIZEN SHIELD**. The KPIs, stream, map and campaigns should be filled (demo data is loaded on every start).
-2. Tab B: https://saqr-intel.vercel.app/citizen. Click **Test Fake TAMM Fine**.
+2. Tab B: https://saqr-intel.vercel.app/citizen. In the **Link checker** window click **Try a fake TAMM fine** (the verdict appears in the result card next to the box).
    → In Tab A (within 4 seconds), **Citizens Protected Today** goes up by 1, the line under it ("· N live") goes up, and a new row without the **Demo** tag appears at the top of the stream.
-3. Tab B: on the red verdict screen, open the X warning and press **Open X to Post** (you don't have to actually post).
+3. Tab B: on the result card press **Warn community on X**, then **Approve & Open X to Post** in the preview (you don't have to actually post).
    → In Tab A, **Community X Alerts Dispatched** goes up by 1, and the campaign shows "Community-flagged on X".
 4. Tab A: select a campaign, then click **Broadcast Official Warning to /citizen**.
-   → In Tab B, the **"Abu Dhabi Police Verified Alert"** banner appears at the top.
+   → In Tab B, the **"Abu Dhabi Police verified alert"** banner appears at the top.
 5. Tab A: click **Export Official Takedown Dossier** and check that **Download JSON** and **Print / Save PDF** work.
 6. Tab A: switch to **العربية**. The whole layout should flip right-to-left.
 
 ### Good to know
 
 - **Police state is in memory.** Counters, X alerts, telecom syncs and warnings reset when Render restarts or redeploys (free tier). The demo data comes back automatically.
-- **"Sync to e& / du Telecom Blocklist" is real.** It adds the domain to `/api/dns-blocklist` and to the NextDNS phone shield, so shielded phones block it within seconds. Official sites, SAQR's own sites and IPs are refused.
-- **Every Render redeploy clears the phone push-alert sign-ups.** After deploying, open the SAQR app on each demo phone once.
+- **"Sync to e& / du Telecom Blocklist" is real.** It adds the domain to `/api/dns-blocklist` and to the NextDNS phone shield, so shielded phones block it within seconds. Official sites, Saqr's own sites and IPs are refused.
+- **Every Render redeploy clears the phone push-alert sign-ups.** After deploying, open the Saqr web app on each demo phone once.
 - **Never run a local backend with the real NextDNS keys** in `.env` while Render is live: it double-syncs the block list and sends double alerts. The local test setup forces NextDNS off.
 - **Tests:** `.venv\Scripts\python -m pytest -q` in the project root (about 940 pass). `cd frontend; npm run lint; npx tsc --noEmit; npm run build`.
 - **Map:** the `/police` map is drawn by SAQR itself (no map service, no API key).
@@ -118,3 +118,12 @@ The full rehearsable version (with what to say and what to do when something fai
   2. Vercel (website) needs a manual deploy. `frontend/src/components/CityGrid.tsx` has local changes that are not
      part of this branch: stash them first (`git stash push frontend/src/components/CityGrid.tsx`), then
      `cd frontend` and `npx vercel@latest deploy --prod --yes`, then `git stash pop`.
+
+## Saqr rebrand (branch `feature/saqr-rebrand`, 2026-11-25)
+- [ ] **Police dashboard redesign**: `/police` (dashboard + login) still uses the old Night Grid look on purpose.
+  Waiting for the owner's new police format; then remove the `.brand-night-grid` scope (see `frontend/DESIGN.md` section 10).
+- [ ] Extension: the Gmail / Outlook banners and the Google / Bing / Maps search badges were not checked by eye after
+  the restyle.
+- [ ] Android app: test the restyled app on a real phone (so far only the emulator).
+- [ ] Some small text links on phones are under 48px tall (tap target); make them bigger.
+- [ ] The 21st MCP (design components tool) is only available in a new Claude Code session: start one to use it.

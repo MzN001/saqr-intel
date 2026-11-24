@@ -84,9 +84,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="SAQR-INTEL API",
+    title="Saqr API",
     version=__version__,
-    description="Autonomous anti-fraud & cybercrime intelligence system — Abu Dhabi Police Hackathon.",
+    description="Saqr — Abu Dhabi Scam Shield: autonomous anti-fraud & cybercrime intelligence (Abu Dhabi Police Hackathon).",
     lifespan=lifespan,
 )
 
@@ -135,7 +135,7 @@ async def mock_scam(slug: str):
         return HTMLResponse("Not found", status_code=404)
     html = replica_html(domain).replace(
         "<body>", '<body><div style="background:#0B192C;color:#fff;font:12px system-ui;padding:6px 10px;'
-                  'text-align:center">SAQR-INTEL training replica of a real scam pattern &mdash; not a real website. '
+                  'text-align:center">Saqr training replica of a real scam pattern &mdash; not a real website. '
                   'Do not enter real data.</div>', 1).replace('<form action="', '<form data-original-action="')
     return HTMLResponse(html, headers={"X-Robots-Tag": "noindex", "Content-Security-Policy": "form-action 'none'"})
 

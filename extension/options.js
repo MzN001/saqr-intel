@@ -1,4 +1,4 @@
-// SAQR-INTEL settings page (Email Shield + Search & Maps shield), opened from the popup or chrome://extensions.
+// Saqr settings page (Email Shield + Search & Maps shield), opened from the popup or chrome://extensions.
 // Everything goes through background.js, which only accepts these changes from extension pages.
 
 const $ = (id) => document.getElementById(id);
@@ -135,7 +135,7 @@ $("import-file").addEventListener("change", async (e) => {
   e.target.value = "";
   if (!f) return;
   if (f.size > 5_000_000) {
-    showMsg("model-msg", "This file is too big to be a SAQR filter · الملف كبير جداً", false);
+    showMsg("model-msg", "This file is too big to be a Saqr filter · الملف كبير جداً", false);
     return;
   }
   const res = await call({ type: "modelImport", model: await f.text(), mode: "merge" }, "model-msg");

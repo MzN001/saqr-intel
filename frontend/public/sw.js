@@ -20,7 +20,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(title, {
       body: data.body || "A fraudulent website was blocked on your phone. Tap for details.",
       icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      badge: "/icons/badge-96.png",
       tag: data.tag || "saqr-alert",
       renotify: true,
       requireInteraction: true,

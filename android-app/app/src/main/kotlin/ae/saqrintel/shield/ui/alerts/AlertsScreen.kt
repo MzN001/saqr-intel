@@ -5,16 +5,15 @@ import ae.saqrintel.shield.appGraph
 import ae.saqrintel.shield.data.AlertKind
 import ae.saqrintel.shield.data.AlertRecord
 import ae.saqrintel.shield.data.VerdictInfo
+import ae.saqrintel.shield.ui.common.FalconMark
+import ae.saqrintel.shield.ui.common.NeutralChip
+import ae.saqrintel.shield.ui.common.SaqrCard
 import ae.saqrintel.shield.ui.common.ScreenColumn
-import ae.saqrintel.shield.ui.common.Tile
 import ae.saqrintel.shield.ui.common.isArabic
-import ae.saqrintel.shield.ui.common.tabular
-import ae.saqrintel.shield.ui.common.verdictInk
-import ae.saqrintel.shield.ui.common.verdictLabel
+import ae.saqrintel.shield.ui.common.VerdictChip
 import ae.saqrintel.shield.ui.theme.SaqrTheme
 import android.text.format.DateUtils
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,10 +24,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,13 +38,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -73,30 +73,41 @@ fun AlertsScreen(padding: PaddingValues, onOpen: (VerdictInfo) -> Unit) {
             )
             if (alerts.isNotEmpty()) {
                 TextButton(onClick = { confirmClear = true }) {
-                    Text(stringResource(R.string.alerts_clear), color = c.inkSoft)
+                    Text(stringResource(R.string.alerts_clear), style = MaterialTheme.typography.labelLarge, color = c.inkSoft)
                 }
             }
         }
 
         if (alerts.isEmpty()) {
-            Tile {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            SaqrCard(padding = 24.dp) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Box(
                         Modifier
-                            .size(40.dp)
-                            .background(c.muted, SaqrTheme.shapes.control),
+                            .size(72.dp)
+                            .background(c.muted, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(painterResource(R.drawable.ic_tab_shield), contentDescription = null, tint = c.shield)
+                        FalconMark(40.dp)
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.alerts_empty), style = MaterialTheme.typography.titleMedium, color = c.ink)
+                    Spacer(Modifier.size(12.dp))
+                    Text(
+                        stringResource(R.string.alerts_empty),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = c.ink,
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Text(
+                        stringResource(R.string.alerts_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.inkSoft,
+                        textAlign = TextAlign.Center,
+                    )
                 }
-                Text(stringResource(R.string.alerts_body), style = MaterialTheme.typography.bodyMedium, color = c.inkSoft)
             }
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                alerts.forEach { a -> AlertRow(a) { onOpen(a.toVerdictInfo()) } }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                alerts.forEach { a -> AlertCard(a) { onOpen(a.toVerdictInfo()) } }
             }
         }
     }
@@ -120,69 +131,54 @@ fun AlertsScreen(padding: PaddingValues, onOpen: (VerdictInfo) -> Unit) {
     }
 }
 
+/** One timeline card: channel, target, score badge, relative time and a single "Inspect" action. */
 @Composable
-private fun AlertRow(a: AlertRecord, onClick: () -> Unit) {
+private fun AlertCard(a: AlertRecord, onInspect: () -> Unit) {
     val c = SaqrTheme.colors
-    val arabic = isArabic()
     val v = a.verdictValue
-    Surface(
-        onClick = onClick,
-        shape = SaqrTheme.shapes.tile,
-        color = c.surface,
-        contentColor = c.ink,
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, c.line, SaqrTheme.shapes.tile),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        stringResource(kindChip(a.kind)),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = c.ink,
-                        modifier = Modifier
-                            .background(c.muted, SaqrTheme.shapes.stamp)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        DateUtils.getRelativeTimeSpanString(a.time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = c.inkSoft,
-                    )
-                }
-                val entity = if (arabic) a.entityAr ?: a.entityEn else a.entityEn
-                val title = a.label ?: entity?.let { stringResource(R.string.alerts_fake_entity, it) }
-                    ?: stringResource(R.string.alerts_text_message)
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        textDirection = if (a.label != null) TextDirection.Ltr else TextDirection.Content,
-                    ),
-                    color = c.ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (a.label != null && entity != null) {
-                    Text(
-                        stringResource(R.string.alerts_fake_entity, entity),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = c.inkSoft,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    a.score?.toString() ?: "–",
-                    style = MaterialTheme.typography.titleLarge.tabular(),
-                    color = verdictInk(v),
-                )
-                Text(verdictLabel(v), style = MaterialTheme.typography.labelSmall, color = verdictInk(v))
-            }
+    SaqrCard(padding = 16.dp, spacing = 10.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            NeutralChip(stringResource(kindChip(a.kind)))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                DateUtils.getRelativeTimeSpanString(a.time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString(),
+                style = MaterialTheme.typography.labelMedium,
+                color = c.inkSoft,
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
+            VerdictChip(a.score?.let { "$it/100" } ?: "–", v)
+        }
+        val label = a.label
+        if (label != null) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 15.sp,
+                    textDirection = TextDirection.Ltr,
+                ),
+                color = c.ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        } else {
+            Text(
+                stringResource(R.string.alerts_text_message),
+                style = MaterialTheme.typography.titleSmall,
+                color = c.ink,
+            )
+        }
+        TextButton(
+            onClick = onInspect,
+            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+            modifier = Modifier.padding(0.dp),
+        ) {
+            Text(
+                stringResource(R.string.alerts_inspect) + if (isArabic()) "  ←" else "  →",
+                style = MaterialTheme.typography.labelLarge,
+                color = c.ink,
+            )
         }
     }
 }

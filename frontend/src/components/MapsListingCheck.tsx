@@ -1,19 +1,16 @@
 "use client";
 
-import { CircleAlert, MapPin, ShieldCheck } from "lucide-react";
+import { Info } from "lucide-react";
 import { useId, useRef, useState, type FormEvent, type InputHTMLAttributes, type Ref } from "react";
-import { Disclosure } from "./Disclosure";
 import { useLang, type DictKey } from "@/lib/i18n";
 import type { MapsScanInput } from "@/lib/api";
 
 type Problem = "mlNeedName" | "mlNeedContact" | null;
 
-const FIELD =
-  "w-full min-w-0 rounded-2xl bg-muted px-3.5 py-2.5 text-[15px] text-ink outline-hidden ring-1 transition-shadow placeholder:text-ink-soft/80 focus:ring-2";
 
 /**
  * "Check a Maps listing": the citizen copies the name, website and phone from a Google Maps card.
- * Folded by default so the Search & Maps tab stays calm.
+ * Shown as its own card in the Search & Maps window.
  */
 export function MapsListingCheck({ onCheck }: { onCheck: (input: MapsScanInput) => void }) {
   const { t } = useLang();
@@ -44,7 +41,7 @@ export function MapsListingCheck({ onCheck }: { onCheck: (input: MapsScanInput) 
     onCheck({ business_name: n, ...(w ? { website: w } : {}), ...(p ? { phone: p } : {}) });
   };
 
-  const ring = (bad: boolean) => (bad ? "ring-crimson-600" : "ring-line focus:ring-emerald-600");
+
   const errId = `${id}-error`;
   const field = (
     key: string,
@@ -56,7 +53,7 @@ export function MapsListingCheck({ onCheck }: { onCheck: (input: MapsScanInput) 
     extra: InputHTMLAttributes<HTMLInputElement> & { ref?: Ref<HTMLInputElement> },
   ) => (
     <div className="grid gap-1.5">
-      <label htmlFor={`${id}-${key}`} className="text-xs font-semibold text-ink-soft">
+      <label htmlFor={`${id}-${key}`} className="text-[13px] font-semibold text-ink">
         {t(label)}
       </label>
       <input
@@ -72,16 +69,19 @@ export function MapsListingCheck({ onCheck }: { onCheck: (input: MapsScanInput) 
         placeholder={t(placeholder)}
         aria-invalid={bad || undefined}
         aria-describedby={bad ? errId : undefined}
-        className={`${FIELD} ${ring(bad)}`}
+        className={`field ${bad ? "border-ink" : ""}`}
         {...extra}
       />
     </div>
   );
 
   return (
-    <Disclosure summary={t("mlTitle")} icon={<MapPin className="size-4" aria-hidden />} className="max-w-xl">
-      <form onSubmit={submit} noValidate className="grid gap-3">
-        <p className="text-sm leading-relaxed text-ink-soft">{t("mlHint")}</p>
+    <section aria-labelledby={`${id}-title`} className="card p-5 sm:p-6" data-testid="maps-listing-check">
+      <h2 id={`${id}-title`} className="text-[20px] font-semibold leading-tight text-ink">
+        {t("mlTitle")}
+      </h2>
+      <form onSubmit={submit} noValidate className="mt-2 grid gap-3">
+        <p className="text-[15px] leading-relaxed text-ink-soft">{t("mlHint")}</p>
         {field("name", "mlName", "mlNamePh", name, setName, problem === "mlNeedName", {
           ref: nameRef,
           enterKeyHint: "next",
@@ -104,20 +104,16 @@ export function MapsListingCheck({ onCheck }: { onCheck: (input: MapsScanInput) 
           })}
         </div>
         {problem && (
-          <p id={errId} role="alert" className="flex items-center gap-1.5 text-sm font-medium text-crimson-700 dark:text-red-300">
-            <CircleAlert className="size-4 shrink-0" aria-hidden /> {t(problem)}
+          <p id={errId} role="alert" className="flex items-center gap-1.5 text-[14px] font-medium text-ink">
+            <Info className="size-4 shrink-0" aria-hidden /> {t(problem)}
           </p>
         )}
         <div>
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 active:scale-[0.97]"
-          >
-            <ShieldCheck className="size-4" aria-hidden />
+          <button type="submit" className="btn-primary w-full sm:w-auto" data-testid="maps-listing-submit">
             {t("mlButton")}
           </button>
         </div>
       </form>
-    </Disclosure>
+    </section>
   );
 }

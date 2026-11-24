@@ -172,7 +172,7 @@ async def known_evidence(hosts: list[str]) -> dict[str, list[tuple[RedFlag, Enti
     for r in scans:
         out.setdefault(r["domain"], []).append((RedFlag(
             "SAQR_PRIOR_SCAN", "critical" if r["score"] >= 65 else "high", int(r["score"]),
-            f"SAQR already inspected this website in full and rated it {verdict_for(r['score'])} ({r['score']}/100).",
+            f"Saqr already inspected this website in full and rated it {verdict_for(r['score'])} ({r['score']}/100).",
             f"سبق أن فحص صقر هذا الموقع بالكامل وصنّفه {'احتيالاً عالي الخطورة' if r['score'] >= 65 else 'مشبوهاً'} "
             f"({r['score']}/100)."), _entity_for(r["entity"])))
     hunted = await db.fetchall(
@@ -181,7 +181,7 @@ async def known_evidence(hosts: list[str]) -> dict[str, list[tuple[RedFlag, Enti
     for r in hunted:
         out.setdefault(r["domain"], []).append((RedFlag(
             "PROACTIVE_DETECTION", "critical" if r["score"] >= 65 else "high", int(r["score"]),
-            f"SAQR's proactive hunter found this new look-alike domain ({r['source']}) before any victim reported it.",
+            f"Saqr's proactive hunter found this new look-alike domain ({r['source']}) before any victim reported it.",
             f"عثر صائد صقر الاستباقي على هذا النطاق المقلِّد الجديد ({r['source']}) قبل أن يبلّغ عنه أي ضحية."),
             _entity_for(r["entity"])))
     demo = set(settings.demo_scam_domains)
@@ -189,7 +189,7 @@ async def known_evidence(hosts: list[str]) -> dict[str, list[tuple[RedFlag, Enti
         if h in demo:
             out.setdefault(h, []).append((RedFlag(
                 "CONFIRMED_SCAM_PAGE", "critical", 70,
-                "Confirmed by SAQR analysts: a fake TAMM payment page.",
+                "Confirmed by Saqr analysts: a fake TAMM payment page.",
                 "مؤكَّد من محللي صقر: صفحة دفع مزيفة تنتحل صفة منصة تم."), ENTITY_BY_ID.get("tamm")))
     return out
 
@@ -319,7 +319,7 @@ async def check_phone_info(info: phone_intel.PhoneInfo, phone: str, norm: str, c
         names = "; ".join(r["label"] for r in linked[:3])
         flags.insert(0, RedFlag(
             "PHONE_LINKED_TO_SCAM", "critical", 25,
-            f"This number is attached to {len(linked)} fake map listing(s) SAQR linked to fraud: {names}.",
+            f"This number is attached to {len(linked)} fake map listing(s) Saqr linked to fraud: {names}.",
             f"هذا الرقم مرتبط بـ{len(linked)} إدراج(ات) مزيفة على الخريطة ربطها صقر بالاحتيال."))
         status = "linked_to_scam" if status == "unknown" else status
     if status in {"mobile_for_institution", "foreign_for_institution", "linked_to_scam"} or (

@@ -10,10 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalConfiguration
 
-val LocalSaqrColors = staticCompositionLocalOf { DarkSaqrColors }
+val LocalSaqrColors = staticCompositionLocalOf { LightSaqrColors }
 val LocalSaqrShapes = staticCompositionLocalOf { SaqrShapes() }
 
-/** Access point for Night Grid tokens: `SaqrTheme.colors.ink`, `SaqrTheme.shapes.tile`. */
+/** Access point for Saqr tokens: `SaqrTheme.colors.ink`, `SaqrTheme.shapes.card`. */
 object SaqrTheme {
     val colors: SaqrColors
         @Composable @ReadOnlyComposable get() = LocalSaqrColors.current
@@ -22,56 +22,94 @@ object SaqrTheme {
 }
 
 /**
- * Night Grid theme. Dark is the default; [darkTheme] comes from ThemeController.
- * Material 3 colour roles are mapped so stock components look right, but app UI
- * should prefer the semantic SaqrTheme.colors.
- * Note: Material's `error` role is NOT mapped to crimson; crimson means scam only.
+ * Saqr theme. Light is the default; [darkTheme] comes from ThemeController (a saved choice wins).
+ *
+ * Dynamic colour is OFF on purpose: the brand colours carry meaning (crimson = scam, amber =
+ * suspicious, emerald = safe) and must never be replaced by wallpaper colours. Never call
+ * dynamicLightColorScheme / dynamicDarkColorScheme here.
+ *
+ * Material 3 roles are mapped so stock components (dialogs, sheets, text fields) look right; app UI
+ * should prefer the semantic SaqrTheme.colors. Material's `error` role is NOT crimson: crimson means
+ * scam only, so field errors use the suspicious (amber) ink.
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
-fun SaqrShieldTheme(darkTheme: Boolean = true, content: @Composable () -> Unit) {
-    val colors = if (darkTheme) DarkSaqrColors else LightSaqrColors
+fun SaqrShieldTheme(
+    darkTheme: Boolean = false,
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    val c = if (darkTheme) DarkSaqrColors else LightSaqrColors
     val scheme = if (darkTheme) {
         darkColorScheme(
-            primary = SaqrPalette.ShieldNight,
-            onPrimary = SaqrPalette.Navy950,
-            secondary = SaqrPalette.Gold,
-            onSecondary = SaqrPalette.Navy950,
-            background = colors.canvas,
-            onBackground = colors.ink,
-            surface = colors.surface,
-            onSurface = colors.ink,
-            surfaceVariant = colors.muted,
-            onSurfaceVariant = colors.inkSoft,
-            surfaceContainer = colors.surface,
-            secondaryContainer = colors.muted,
-            onSecondaryContainer = colors.ink,
-            outline = colors.line,
-            outlineVariant = colors.line,
+            primary = c.primary,
+            onPrimary = c.onPrimary,
+            primaryContainer = c.muted,
+            onPrimaryContainer = c.ink,
+            secondary = c.ink,
+            onSecondary = c.canvas,
+            secondaryContainer = c.muted,
+            onSecondaryContainer = c.ink,
+            tertiary = c.ink,
+            onTertiary = c.canvas,
+            background = c.canvas,
+            onBackground = c.ink,
+            surface = c.surface,
+            onSurface = c.ink,
+            surfaceVariant = c.muted,
+            onSurfaceVariant = c.inkSoft,
+            surfaceContainerLowest = c.canvas,
+            surfaceContainerLow = c.surface,
+            surfaceContainer = c.surface,
+            surfaceContainerHigh = c.surface,
+            surfaceContainerHighest = c.muted,
+            surfaceTint = c.surface,
+            inverseSurface = c.ink,
+            inverseOnSurface = c.canvas,
+            error = c.suspiciousInk,
+            onError = c.canvas,
+            outline = c.line,
+            outlineVariant = c.line,
+            scrim = SaqrPalette.Obsidian,
         )
     } else {
         lightColorScheme(
-            primary = SaqrPalette.ShieldEmerald,
-            onPrimary = colors.surface,
-            secondary = colors.goldInk,
-            onSecondary = colors.surface,
-            background = colors.canvas,
-            onBackground = colors.ink,
-            surface = colors.surface,
-            onSurface = colors.ink,
-            surfaceVariant = colors.muted,
-            onSurfaceVariant = colors.inkSoft,
-            surfaceContainer = colors.surface,
-            secondaryContainer = colors.muted,
-            onSecondaryContainer = colors.ink,
-            outline = colors.line,
-            outlineVariant = colors.line,
+            primary = c.primary,
+            onPrimary = c.onPrimary,
+            primaryContainer = c.muted,
+            onPrimaryContainer = c.ink,
+            secondary = c.ink,
+            onSecondary = c.surface,
+            secondaryContainer = c.muted,
+            onSecondaryContainer = c.ink,
+            tertiary = c.ink,
+            onTertiary = c.surface,
+            background = c.canvas,
+            onBackground = c.ink,
+            surface = c.surface,
+            onSurface = c.ink,
+            surfaceVariant = c.muted,
+            onSurfaceVariant = c.inkSoft,
+            surfaceContainerLowest = c.surface,
+            surfaceContainerLow = c.surface,
+            surfaceContainer = c.surface,
+            surfaceContainerHigh = c.surface,
+            surfaceContainerHighest = c.muted,
+            surfaceTint = c.surface,
+            inverseSurface = c.ink,
+            inverseOnSurface = c.canvas,
+            error = c.suspiciousInk,
+            onError = c.surface,
+            outline = c.line,
+            outlineVariant = c.line,
+            scrim = SaqrPalette.Obsidian,
         )
     }
     val isArabic = LocalConfiguration.current.locales[0].language == "ar"
-    val typography = remember(isArabic) { saqrTypography(if (isArabic) NotoKufiArabic else Barlow) }
+    val typography = remember(isArabic) { saqrTypography(if (isArabic) PlexArabic else Inter, isArabic) }
 
     CompositionLocalProvider(
-        LocalSaqrColors provides colors,
+        LocalSaqrColors provides c,
         LocalSaqrShapes provides SaqrShapes(),
     ) {
         MaterialTheme(colorScheme = scheme, typography = typography, content = content)

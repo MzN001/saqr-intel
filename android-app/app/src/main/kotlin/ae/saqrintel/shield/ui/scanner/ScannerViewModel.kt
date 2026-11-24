@@ -11,6 +11,7 @@ import ae.saqrintel.shield.data.ScanRoute
 import ae.saqrintel.shield.data.Verdict
 import ae.saqrintel.shield.data.VerdictInfo
 import ae.saqrintel.shield.data.toVerdictInfo
+import ae.saqrintel.shield.ui.common.ApiStatus
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -75,6 +76,7 @@ class ScannerViewModel(app: Application) : AndroidViewModel(app) {
         job = viewModelScope.launch {
             val slowTimer = launch {
                 delay(SLOW_AFTER_MS)
+                ApiStatus.waking()
                 _state.update { it.copy(slow = true) }
             }
             val reporter = try {
@@ -120,10 +122,12 @@ class ScannerViewModel(app: Application) : AndroidViewModel(app) {
                 ).map { it.toVerdictInfo(ScanKind.MESSAGE) }
             }
             slowTimer.cancel()
+            ApiStatus.record(result)
             when (result) {
                 is ApiResult.Ok -> {
                     val info = result.value
-                    _state.update { it.copy(loading = false, slow = false, result = info, showSheet = true) }
+                    // The verdict card shows inline on the Scanner tab; "Full details" opens the sheet.
+                    _state.update { it.copy(loading = false, slow = false, result = info, showSheet = false) }
                     try {
                         graph.settings.incrementChecked()
                         if (info.verdict != Verdict.SAFE) graph.alertStore.add(AlertRecord.from(info, AlertKind.MANUAL))

@@ -259,7 +259,7 @@ export function buildAmanReport(w: WarningInfo, lang: Lang, channelLabel: string
   const site = w.domain ? defang(w.domain) : "—";
   if (lang === "ar") {
     return [
-      "بلاغ احتيال — صقر للاستخبارات → أمان 2828",
+      "بلاغ احتيال — صقر → أمان 2828",
       w.caseId ? `رقم الفحص: ${w.caseId}` : null,
       `الوقت: ${when} (توقيت الإمارات)`,
       `النتيجة: ${w.verdict} (${w.riskScore}/100)`,
@@ -272,7 +272,7 @@ export function buildAmanReport(w: WarningInfo, lang: Lang, channelLabel: string
       .join("\n");
   }
   return [
-    "SAQR-INTEL fraud report → Aman 2828",
+    "Saqr fraud report → Aman 2828",
     w.caseId ? `Scan ID: ${w.caseId}` : null,
     `Time: ${when} (UAE)`,
     `Verdict: ${w.verdict} (${w.riskScore}/100)`,

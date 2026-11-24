@@ -92,7 +92,7 @@ def alert_payload(domain: str, entity_en: str | None, lang: str, test: bool = Fa
         body = f"تم حظر {who} ({masked}) على هاتفك. لا تُدخل أبداً بيانات البطاقة أو رمز التحقق. اضغط للتفاصيل."
     else:
         who = f"fake {entity_en} website" if entity_en else "scam website"
-        title = "🛑 SAQR blocked a scam website" + (" (test)" if test else "")
+        title = "🛑 Saqr blocked a scam website" + (" (test)" if test else "")
         body = f"A {who} ({masked}) was blocked on your phone. Never enter card or OTP details. Tap for details."
     return {"title": title, "body": body, "url": f"/citizen?alert={domain}", "tag": f"saqr-{domain}",
             "lang": lang, "ts": int(time.time() * 1000)}

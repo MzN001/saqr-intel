@@ -1,38 +1,43 @@
-/* SAQR-INTEL Search & Maps shield badges (content/search.js). Solid pills: readable on light and dark pages. */
+/* Saqr | Search & Maps shield badges (content/search.js).
+ * Solid verdict fills (fixed in both themes, frontend/DESIGN.md) with their AA "on-fill" text, so a badge
+ * reads the same on a light or dark search page. Tokens are scoped to our own elements (--saqr-*). */
 .saqr-sb-badge {
+  --saqr-scam: #dc2626;
+  --saqr-on-scam: #ffffff;
+  --saqr-suspicious: #f59e0b;
+  --saqr-safe: #10b981;
+  --saqr-on-fill: #111315;
+
   display: inline-flex;
   align-items: center;
   gap: 4px;
   max-width: 100%;
   margin: 2px 0 4px;
-  padding: 2px 9px;
-  border-radius: 999px;
+  padding: 2px 10px;
+  border-radius: 9999px;
   border: 1px solid transparent;
-  font: 600 12.5px/1.5 system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+  font: 600 12.5px/1.5 Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Tahoma, "IBM Plex Sans Arabic", Arial, sans-serif;
   letter-spacing: 0;
   white-space: normal;
   cursor: help;
   vertical-align: middle;
 }
 .saqr-sb-badge[data-saqr-level="danger"] {
-  background: #b91c1c;
-  border-color: #7f1d1d;
-  color: #fff;
+  background: var(--saqr-scam);
+  color: var(--saqr-on-scam);
 }
 .saqr-sb-badge[data-saqr-level="warn"] {
-  background: #fef3c7;
-  border-color: #d97706;
-  color: #78350f;
+  background: var(--saqr-suspicious);
+  color: var(--saqr-on-fill);
 }
 .saqr-sb-badge[data-saqr-level="official"] {
-  background: #dcfce7;
-  border-color: #16a34a;
-  color: #14532d;
+  background: var(--saqr-safe);
+  color: var(--saqr-on-fill);
 }
 a[data-saqr-inert],
 a[data-saqr-inert] h3 {
   text-decoration: line-through !important;
-  text-decoration-color: #b91c1c !important;
+  text-decoration-color: #dc2626 !important; /* scam fill */
   cursor: not-allowed !important;
 }
 a[data-saqr-inert] {

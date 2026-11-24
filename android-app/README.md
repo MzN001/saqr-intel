@@ -1,20 +1,27 @@
-# SAQR Shield (Android)
+# Saqr (Android)
 
-Native Android app for SAQR-INTEL (Kotlin + Jetpack Compose). Hackathon demo, not an official government service.
+Native Android app "Saqr" (صقر) for SAQR-INTEL (Kotlin + Jetpack Compose). Saqr brand: light by default (dark via
+the top-bar toggle), Inter + IBM Plex Sans Arabic, Gloock for the wordmark only, falcon launcher icon; tokens in
+`ui/theme/` mirror `frontend/DESIGN.md`. Dynamic colour is off. Hackathon demo, not an official government service.
 
 ## What it does
 
-- **Shield tab**: shows if the phone is protected (emerald "Protected" ring, or amber "Action needed") and real
+- **Top bar**: falcon + "Saqr" lockup (always LTR), `EN | عربي`, an API status dot (emerald = last call OK, amber =
+  waking / failed, grey = not checked yet; from real calls only) that opens the API server dialog, theme toggle.
+- **Shield tab**: shows if the phone is protected (emerald "Protected" ring, or amber "N guards off") and real
   counters ("Blocked today" from the local alert list, "Checked today" = server checks made today). Three steps:
   1. alert notifications (asks for `POST_NOTIFICATIONS` on Android 13+),
   2. message guard (plain consent dialog first, then Android's Notification access screen),
   3. web blocker (recommended, not required: "Protected" needs steps 1-2 only; consent dialog first, then
      Android's Accessibility settings).
-  The **API server** pill edits the backend URL, pings `/health` (status + latency) and resets to the default.
+  Pending steps are one-line pills; done steps collapse to small chips (tap to manage). The API server dialog
+  (top-bar dot) edits the backend URL, pings `/health` (status + latency) and resets to the default.
 - **Scanner tab**: "Is this link safe to open?" Paste a link, message, email or phone number. Modes
   Auto | Web | Message | Email | Phone | Maps. Auto decides on the phone: a bare URL goes to
   `/api/analyze-url` (a Google Maps URL to `/api/scan-maps`), a number only to `/api/check-phone`, text with
   `From:` + `Subject:` lines to `/api/analyze-email`, anything else to `/api/analyze-message`. Three example chips.
+  The result shows inline as a verdict card (score, EN + AR verdict, meter, reasons, Warn on X, Copy Aman report);
+  "Full details" opens the verdict sheet.
   After 8 s the app says the server is waking up (Render free tier can take ~50 s).
 - **Alerts tab**: timeline of the last 50 alerts (guard + manual checks that were not safe); tap one for details,
   "Clear all" removes them.
@@ -27,7 +34,7 @@ Native Android app for SAQR-INTEL (Kotlin + Jetpack Compose). Hackathon demo, no
   the phone; a message is sent to the server only if it has a non-official link, a phone number together with a
   claim / lure (police, fine, bank, prize, parcel...), or a request to send / share / enter a code, OTP, PIN, CVV or
   card details (EN + AR; "never share your OTP" advice is not a request). Standalone 4-8 digit codes are masked
-  before sending. HIGH-RISK (>= 65) gives a "Scam SMS blocked · 96% risk" alert, SUSPICIOUS (30-64) a quieter
+  before sending. HIGH-RISK (>= 65) gives a "Scam SMS blocked · 96/100" alert, SUSPICIOUS (30-64) a quieter
   "check before you tap" one; SAFE gives nothing. The app warns; it cannot delete the original message.
 - **Web blocker** (`guard/SaqrBrowserGuardService`, an AccessibilityService): reads ONLY the address bar of
   Chrome, Samsung Internet, Firefox and Edge, found by view id (`WebGuardPolicy.URL_BAR_IDS`); never page
@@ -41,8 +48,8 @@ Native Android app for SAQR-INTEL (Kotlin + Jetpack Compose). Hackathon demo, no
   (`run_sandbox:true, use_llm:true`, 75 s) only for a fast score of 30-64. HIGH-RISK (verdict or score >= 65)
   opens `ui/BlockAlertActivity`; SUSPICIOUS (30-64) gets the quieter caution notification. Server asleep or
   unreachable = fail open, silently.
-- **Block screen** (`ui/BlockAlertActivity`, not exported, own task, not in recents): "Blocked by SAQR-INTEL",
-  defanged address, animated risk ring, impersonated entity + official website, two reasons (EN/AR).
+- **Block screen** (`ui/BlockAlertActivity`, not exported, own task, not in recents): "Blocked by Saqr",
+  defanged address, score + three-zone meter, impersonated entity + official website, two reasons (EN/AR).
   **Close & stay safe** (also the Back key) finishes the screen, then the service presses BACK in the browser;
   if the browser still shows the site 1.8 s later it opens the official site (or adpolice.gov.ae) in that
   browser. In the emulator BACK went back to the previous page when the tab had history, and closed the tab
@@ -56,11 +63,11 @@ Native Android app for SAQR-INTEL (Kotlin + Jetpack Compose). Hackathon demo, no
 | `INTERNET` | talk to the SAQR backend |
 | `POST_NOTIFICATIONS` | show scam alerts (asked at runtime on Android 13+; the app works without it, just silently) |
 | Notification access (`BIND_NOTIFICATION_LISTENER_SERVICE`, granted by the user in Settings) | read incoming message notifications for the message guard |
-| Accessibility (`BIND_ACCESSIBILITY_SERVICE`, "SAQR web blocker", switched on by the user in Settings > Accessibility) | read the address bar of four browsers for the web blocker (`res/xml/accessibility_service_config.xml`: those packages only, window events only) |
+| Accessibility (`BIND_ACCESSIBILITY_SERVICE`, "Saqr web blocker", switched on by the user in Settings > Accessibility) | read the address bar of four browsers for the web blocker (`res/xml/accessibility_service_config.xml`: those packages only, window events only) |
 
 **Android 13+ and a sideloaded APK**: the Accessibility switch may be greyed out ("Restricted setting"). Open
-Settings > Apps > SAQR Shield, tap ⋮ (top right) > **Allow restricted settings**, then switch on SAQR web
-blocker again. The Shield tab shows the same steps (EN/AR).
+Settings > Apps > Saqr, tap ⋮ (top right) > **Allow restricted settings**, then switch on Saqr web
+blocker again. The web blocker consent dialog shows the same steps (EN/AR).
 
 No SMS, contacts, phone-call or location permission. "Call Aman" uses `ACTION_DIAL` (you press call yourself).
 
@@ -75,11 +82,11 @@ No SMS, contacts, phone-call or location permission. "Call Aman" uses `ACTION_DI
 - The server (see `saqr/message_pipeline.py`) never stores the full text: for a flagged message it keeps a
   300-character excerpt with digits hidden; results are pruned after 30 days. Scam links are saved as URL scans
   (they feed the blocklist).
-- Turn the guard off in the Shield tab (Message guard pill) and remove SAQR from Settings > Notification access.
+- Turn the guard off in the Shield tab (Messages chip) and remove Saqr from Settings > Notification access.
 - Web blocker: only the web address leaves the phone (official UAE sites, local addresses and "continue anyway"
   hosts never do), with `interception_channel: ANDROID_APP_GUARD` and channel `web`. It does nothing until the
-  user accepted its own consent dialog (separate from the message guard's). Turn it off with the Web blocker
-  pill and switch off SAQR web blocker in Settings > Accessibility.
+  user accepted its own consent dialog (separate from the message guard's). Turn it off with the Web chip on the Shield tab
+  and switch off Saqr web blocker in Settings > Accessibility.
 
 ## Web blocker: known limits
 
@@ -178,8 +185,8 @@ with `AUTO_SMS_GUARD` and keeps that for the rest of the process.
     `SaqrBrowserGuardService` (web blocker), `WebGuardPolicy` (+ `UrlThrottle`, `BlockGate`, `WebSession`).
   - `ui/BlockAlertActivity.kt` – full-screen block.
   - `util/` – `Defang`, `XAlert` (same templates as `frontend/src/lib/share.ts`), `Aman`.
-  - `ui/` – `shell/`, `shield/`, `scanner/`, `alerts/`, `verdict/VerdictSheet`, `common/`, `theme/` (Night Grid tokens).
+  - `ui/` – `shell/`, `shield/`, `scanner/`, `alerts/`, `verdict/VerdictSheet`, `common/`, `theme/` (Saqr tokens).
   - `locale/LocaleController.kt` – runtime EN | AR switch; `settings/ThemeController.kt` – light / dark.
 - `app/src/test/` – JVM unit tests (filter, official domains, defang, X text, auto routing, JSON parsing,
   web-blocker URL rules / cooldown / thresholds).
-- `licenses/` – OFL licences of the bundled fonts.
+- `licenses/` – OFL licences of the bundled fonts (Inter, IBM Plex Sans Arabic, Gloock).

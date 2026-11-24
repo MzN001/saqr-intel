@@ -20,8 +20,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 
 /**
- * Minimal guard notifications: one line title ("Scam SMS blocked · 96% risk"), one line text
- * (<= 65 chars), no BigTextStyle, "View details" and (when eligible) "Warn on X".
+ * Minimal guard notifications, exactly two lines: title ("Scam SMS blocked · 96/100") and text
+ * ("Fake TAMM (tamm-smart-pay[.]net) — Do not tap.", <= 65 chars), no BigTextStyle; crimson accent for
+ * high-risk, amber for the caution channel; "View verdict" and (when eligible) "Warn on X".
  * Wording is honest: the app warns; it cannot delete the original message.
  */
 object AlertNotifier {
@@ -130,7 +131,7 @@ object AlertNotifier {
         )
         val builder = NotificationCompat.Builder(ctx, if (scam) CHANNEL_ALERTS else CHANNEL_CAUTIONS)
             .setSmallIcon(R.drawable.ic_shield_alert)
-            .setColor(if (scam) SaqrPalette.ScamFill.toArgb() else SaqrPalette.Caution.toArgb())
+            .setColor(if (scam) SaqrPalette.ScamFill.toArgb() else SaqrPalette.SuspiciousFill.toArgb())
             .setContentTitle(title(ctx, record))
             .setContentText(text(ctx, record))
             .setContentIntent(view)

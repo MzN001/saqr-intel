@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Mail, MapPinned, MessageSquareWarning, Monitor, Radio, ScanSearch, Share2, ShieldBan, Smartphone, TriangleAlert, Wifi } from "lucide-react";
+import { Info, Mail, MapPinned, MessageSquareWarning, Monitor, Radio, ScanSearch, Share2, ShieldBan, Smartphone, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 import { API_BASE_URL, getWsUrl, type InterceptionChannel, type VerdictLabel } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
@@ -152,32 +152,24 @@ export function LiveCrowdShield() {
   const { items, status } = useLiveBlocks();
   const now = useNow(20_000);
 
-  const statusStyle =
-    status === "live"
-      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-      : status === "connecting"
-        ? "bg-amber-500/15 text-amber-800 dark:text-amber-300"
-        : "bg-crimson-600/15 text-crimson-700 dark:text-red-300";
-
   return (
-    <section aria-labelledby="live-title" className="rounded-[20px] border border-line bg-surface p-4">
+    <section aria-labelledby="live-title" className="card p-5" data-testid="live-crowd-shield">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="live-title" className="flex items-center gap-2 font-extrabold text-ink">
-            <Radio className="size-4 text-emerald-600" /> {t("liveTitle")}
+          <h2 id="live-title" className="text-[17px] font-semibold text-ink">
+            {t("liveTitle")}
           </h2>
-          <p className="mt-1 text-xs leading-relaxed text-ink-soft">{t("liveIntro")}</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">{t("liveIntro")}</p>
         </div>
-        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${statusStyle}`} aria-live="polite">
-          <span className="relative flex size-2">
-            {status === "live" && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-70" />}
-            <span className={`relative inline-flex size-2 rounded-full ${status === "live" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-crimson-600"}`} />
+        <span className="chip shrink-0" aria-live="polite">
+          <span className="relative flex size-2" aria-hidden>
+            <span className={`relative inline-flex size-2 rounded-full ${status === "live" ? "bg-ink" : "border border-ink-soft"}`} />
           </span>
           {status === "live" ? t("liveOn") : status === "connecting" ? t("liveConnecting") : t("liveOff")}
         </span>
       </div>
 
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-3 divide-y divide-line">
         <AnimatePresence initial={false}>
           {items.map((b) => {
             const Icon = b.kind === "email" ? Mail : b.kind === "maps" ? MapPinned : b.channel ? CHANNEL_ICON[b.channel] : ShieldBan;
@@ -188,23 +180,23 @@ export function LiveCrowdShield() {
               <motion.li
                 key={b.id}
                 layout
-                initial={{ opacity: 0, y: -12, backgroundColor: "rgba(16,185,129,0.18)" }}
-                animate={{ opacity: 1, y: 0, backgroundColor: "rgba(16,185,129,0)" }}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                className="flex items-center gap-3 rounded-2xl p-2.5 ring-1 ring-line"
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-3 py-3"
               >
-                <span className={`grid size-9 shrink-0 place-items-center rounded-xl text-white ${blocked ? "bg-crimson-600" : "bg-amber-500"}`}>
-                  <Icon className="size-4" />
+                <span className={`grid size-9 shrink-0 place-items-center rounded-control ${blocked ? "bg-scam text-on-scam" : "bg-suspicious text-on-suspicious"}`}>
+                  <Icon className="size-4" aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="flex flex-wrap items-center gap-x-2 text-sm font-bold text-ink">
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] font-semibold text-ink">
                     <span className="truncate">{entity ?? t("unknownEntity")}</span>
-                    <span className={`rounded px-1.5 py-px text-[11px] font-extrabold uppercase ${blocked ? "bg-crimson-600 text-white" : "bg-amber-500 text-white"}`}>
+                    <span className={`chip tabular-nums ${blocked ? "chip-scam" : "chip-suspicious"}`}>
                       {blocked ? t("liveBlocked") : t("liveFlagged")} · {b.riskScore}
                     </span>
                   </p>
-                  <p className="truncate text-xs text-ink-soft">
+                  <p className="mt-0.5 truncate text-[13px] text-ink-soft">
                     {b.domain && (
                       <span dir="ltr" className="font-mono">
                         {defang(b.domain)}
@@ -223,8 +215,8 @@ export function LiveCrowdShield() {
           })}
         </AnimatePresence>
         {items.length === 0 && (
-          <li className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-xs text-ink-soft">
-            <TriangleAlert className="size-4 shrink-0 text-amber-500" /> {t("liveEmpty")}
+          <li className="flex items-center gap-2 rounded-control bg-muted p-3 text-[13px] text-ink-soft">
+            <Info className="size-4 shrink-0" aria-hidden /> {t("liveEmpty")}
           </li>
         )}
       </ul>

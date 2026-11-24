@@ -2,15 +2,49 @@
 
 import { getDeviceTag } from "@/lib/device";
 import { AnimatePresence, motion } from "framer-motion";
-import { BellOff, BellRing, Check, CircleAlert, Loader2, PlusSquare, Send, Share, ShieldCheck, Smartphone, Download } from "lucide-react";
+import { BellOff, BellRing, Check, Info, Loader2, PlusSquare, Send, Share, Smartphone, Download } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { apiUrl, deletePushSubscription, getVapidPublicKey, savePushSubscription, sendTestAlert } from "@/lib/api";
-import { Disclosure } from "./Disclosure";
+import { SaqrLogo } from "./SaqrLogo";
 import { useLang } from "@/lib/i18n";
 
 type State = "checking" | "ios-add-home" | "unsupported" | "denied" | "off" | "busy" | "on";
 
 const noopSubscribe = () => () => {};
+
+/* "Are alerts on for this phone?" shared with the setup steps (done state). null = not known yet. */
+let alertsOn: boolean | null = null;
+const alertsListeners = new Set<() => void>();
+function setAlertsOn(v: boolean) {
+  if (alertsOn === v) return;
+  alertsOn = v;
+  alertsListeners.forEach((cb) => cb());
+}
+const alertsStore = {
+  subscribe(cb: () => void) {
+    alertsListeners.add(cb);
+    return () => {
+      alertsListeners.delete(cb);
+    };
+  },
+  get: () => alertsOn,
+  server: () => null,
+};
+
+/** True once this phone has a push subscription (checked quietly once, then kept in sync by the panel). */
+export function useScamAlertsOn(): boolean {
+  const on = useSyncExternalStore(alertsStore.subscribe, alertsStore.get, alertsStore.server);
+  useEffect(() => {
+    if (alertsOn !== null) return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    navigator.serviceWorker
+      .getRegistration("/")
+      .then((r) => r?.pushManager.getSubscription())
+      .then((sub) => setAlertsOn(Boolean(sub)))
+      .catch(() => undefined);
+  }, []);
+  return on === true;
+}
 
 function isIos(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -21,14 +55,11 @@ function ThisPhoneOnly() {
   const { t } = useLang();
   const device = getDeviceTag();
   return (
-    <div className="space-y-2 text-xs leading-relaxed text-ink-soft">
+    <div className="space-y-2 text-[13px] leading-relaxed text-ink-soft">
       <p>{t("alOnlyThis")}</p>
       {isIos() ? (
-        <a
-          href={apiUrl(`/api/ios-dns-profile${device ? `?device=${device}` : ""}`)}
-          className="press inline-flex items-center gap-2 rounded-xl border border-line bg-canvas px-3 py-2 text-sm font-bold text-ink hover:bg-muted"
-        >
-          <Download className="size-4" /> {t("alLinkIos")}
+        <a href={apiUrl(`/api/ios-dns-profile${device ? `?device=${device}` : ""}`)} className="btn-secondary min-h-11 text-[14px]">
+          <Download className="size-4" aria-hidden /> {t("alLinkIos")}
         </a>
       ) : (
         <p>{t("alLinkAndroid")}</p>
@@ -83,18 +114,18 @@ function AlertPreview() {
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.15 }}
-      className="border-t border-line pt-3"
+      className="rounded-card border border-line bg-muted p-3.5"
       aria-hidden
     >
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
-        <span className="grid size-5 place-items-center rounded-md bg-navy-900 text-gold-500">
-          <ShieldCheck className="size-3" />
+      <div className="flex items-center gap-2 text-[12px] font-semibold text-ink-soft">
+        <span className="grid size-6 place-items-center rounded-md bg-obsidian">
+          <SaqrLogo variant="icon" theme="dark" size={16} />
         </span>
         {t("alPreviewApp")}
-        <span className="ms-auto font-medium normal-case">{t("alPreviewNow")}</span>
+        <span className="ms-auto font-medium">{t("alPreviewNow")}</span>
       </div>
-      <p className="mt-1.5 text-[13.5px] font-bold leading-snug text-ink">{t("alPreviewTitle")}</p>
-      <p className="mt-0.5 text-[12.5px] leading-snug text-ink-soft">{t("alPreviewBody")}</p>
+      <p className="mt-1.5 text-[14px] font-semibold leading-snug text-ink">{t("alPreviewTitle")}</p>
+      <p className="mt-0.5 text-[13px] leading-snug text-ink-soft">{t("alPreviewBody")}</p>
     </motion.div>
   );
 }
@@ -107,28 +138,29 @@ function IosSteps() {
     { icon: Smartphone, text: t("alIos3") },
   ];
   return (
-    <div className="border-t border-line pt-4">
-      <p className="font-bold text-ink">{t("alIosTitle")}</p>
-      <p className="mt-0.5 text-sm text-ink-soft">{t("alIosIntro")}</p>
+    <div>
+      <p className="text-[15px] font-semibold text-ink">{t("alIosTitle")}</p>
+      <p className="mt-0.5 text-[14px] text-ink-soft">{t("alIosIntro")}</p>
       <ol className="mt-3 space-y-2.5">
         {steps.map(({ icon: Icon, text }, i) => (
           <li key={i} className="flex items-center gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-[#0a84ff]">
-              <Icon className="size-4.5" />
+            <span className="grid size-9 shrink-0 place-items-center rounded-control bg-muted text-ink">
+              <Icon className="size-4.5" aria-hidden />
             </span>
-            <span className="text-sm font-medium text-ink">
-              <span className="me-1.5 font-extrabold text-ink-soft/80">{i + 1}.</span>
+            <span className="text-[15px] text-ink">
+              <span className="me-1.5 font-semibold tabular-nums text-ink-soft">{i + 1}.</span>
               {text}
             </span>
           </li>
         ))}
       </ol>
-      <p className="mt-3 text-xs text-ink-soft/75">{t("alIosOld")}</p>
+      <p className="mt-3 text-[13px] text-ink-soft">{t("alIosOld")}</p>
     </div>
   );
 }
 
-export function ScamAlertsCard() {
+/** Content of the "Scam alerts" drawer (step 3). */
+export function ScamAlertsPanel() {
   const { t, lang } = useLang();
   const ready = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const [state, setState] = useState<State>("checking");
@@ -166,6 +198,7 @@ export function ScamAlertsCard() {
       if (alive) {
         setEndpoint(ep);
         setState(next);
+        if (next === "on" || next === "off") setAlertsOn(next === "on");
       }
     })();
     return () => {
@@ -211,6 +244,7 @@ export function ScamAlertsCard() {
       await savePushSubscription(sub.toJSON(), lang);
       setEndpoint(sub.endpoint);
       setState("on");
+      setAlertsOn(true);
     } catch {
       setState("off");
       flash(false, t("alError"));
@@ -228,6 +262,7 @@ export function ScamAlertsCard() {
     } finally {
       setEndpoint(null);
       setState("off");
+      setAlertsOn(false);
     }
   };
 
@@ -244,120 +279,79 @@ export function ScamAlertsCard() {
     }
   };
 
-  const on = state === "on";
-
   return (
-    <section aria-labelledby="alerts-title" className="overflow-hidden rounded-[20px] border border-line bg-surface">
-      <div className="p-4 pb-0 sm:p-5 sm:pb-0">
-        <div className="flex items-start gap-3 text-ink">
-          <motion.span
-            className={`grid size-10 shrink-0 place-items-center rounded-xl ${on ? "bg-emerald-700 text-white" : "bg-navy-900 text-gold-500"}`}
-            animate={on ? { rotate: [0, -14, 12, -8, 6, 0] } : { rotate: 0 }}
-            transition={on ? { duration: 1.1, repeat: 1, repeatDelay: 1.5 } : undefined}
-          >
-            <BellRing className="size-5" />
-          </motion.span>
-          <div className="min-w-0">
-            <h2 id="alerts-title" className="text-balance text-base font-extrabold leading-snug sm:text-lg sm:leading-tight">
-              {t("alTitle")}
-            </h2>
-            <p className="mt-1 text-sm leading-relaxed text-ink-soft">{on ? t("alOnSub") : t("alIntro")}</p>
-          </div>
-        </div>
-        <div className="mt-4">
-          <AlertPreview />
-        </div>
-      </div>
+    <div className="space-y-5" data-testid="scam-alerts-panel">
+      <p className="text-[15px] leading-relaxed text-ink-soft">{state === "on" ? t("alOnSub") : t("alIntro")}</p>
+      <AlertPreview />
 
-      <div className="space-y-3 p-4 sm:p-5">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={state} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
-            {state === "checking" && <div className="h-12 animate-pulse rounded-2xl bg-muted" />}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={state} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>
+          {state === "checking" && <div className="h-12 animate-pulse rounded-control bg-muted" />}
 
-            {state === "ios-add-home" && <IosSteps />}
+          {state === "ios-add-home" && <IosSteps />}
 
-            {state === "unsupported" && (
-              <p className="flex items-start gap-2 border-t border-line pt-3 text-sm text-ink-soft">
-                <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-500" />
-                {t("alUnsupported")}
-              </p>
-            )}
-
-            {state === "denied" && (
-              <div className="rounded-2xl bg-amber-50 p-3.5 text-sm text-amber-900 ring-1 ring-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                <p className="flex items-center gap-2 font-bold">
-                  <BellOff className="size-4" /> {t("alDenied")}
-                </p>
-                <p className="mt-1.5">{isIos() ? t("alDeniedIos") : t("alDeniedAndroid")}</p>
-              </div>
-            )}
-
-            {(state === "off" || state === "busy") && (
-              <button
-                type="button"
-                onClick={enable}
-                disabled={state === "busy"}
-                className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-emerald-700 px-5 py-4 text-base font-extrabold text-white transition hover:bg-emerald-800 active:scale-[0.98] disabled:opacity-80"
-              >
-                <span className="pointer-events-none absolute inset-0 animate-[shimmer_2.5s_ease-out_1] bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.25)_50%,transparent_65%)] bg-[length:200%_100%]" />
-                {state === "busy" ? <Loader2 className="relative size-5 animate-spin" /> : <BellRing className="relative size-5" />}
-                <span className="relative">{state === "busy" ? t("alEnabling") : t("alEnable")}</span>
-              </button>
-            )}
-
-            {state === "on" && (
-              <div className="space-y-3">
-                <p className="flex items-center gap-2.5 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800 ring-1 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-                  <span className="grid size-6 place-items-center rounded-full bg-emerald-600 text-white">
-                    <Check className="size-3.5" />
-                  </span>
-                  {t("alOn")}
-                </p>
-                <ThisPhoneOnly />
-                <div className="grid grid-cols-[1fr_auto] gap-2">
-                  <button
-                    type="button"
-                    onClick={test}
-                    disabled={testing}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-navy-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-navy-800 active:scale-[0.98] disabled:opacity-70 dark:bg-white dark:text-navy-900 dark:hover:bg-white/90"
-                  >
-                    {testing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                    {t("alTest")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={disable}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm font-bold text-ink-soft ring-1 ring-line transition hover:text-ink"
-                  >
-                    <BellOff className="size-4" />
-                    {t("alOff")}
-                  </button>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {toast && (
-            <motion.p
-              role="status"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold ${
-                toast.ok ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200" : "bg-amber-50 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
-              }`}
-            >
-              {toast.text}
-            </motion.p>
+          {state === "unsupported" && (
+            <p className="flex items-start gap-2 text-[14px] text-ink">
+              <Info className="mt-0.5 size-4 shrink-0 text-ink-soft" aria-hidden />
+              {t("alUnsupported")}
+            </p>
           )}
-        </AnimatePresence>
 
-        <Disclosure summary={t("howItWorks")}>
-          <p className="text-xs leading-relaxed text-ink-soft">{t("alHow")}</p>
-        </Disclosure>
-      </div>
-    </section>
+          {state === "denied" && (
+            <div className="rounded-control bg-muted p-3.5 text-[14px] text-ink">
+              <p className="flex items-center gap-2 font-semibold">
+                <BellOff className="size-4" aria-hidden /> {t("alDenied")}
+              </p>
+              <p className="mt-1.5 text-ink-soft">{isIos() ? t("alDeniedIos") : t("alDeniedAndroid")}</p>
+            </div>
+          )}
+
+          {(state === "off" || state === "busy") && (
+            <button type="button" onClick={enable} disabled={state === "busy"} className="btn-primary w-full" data-testid="alerts-enable">
+              {state === "busy" ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <BellRing className="size-5" aria-hidden />}
+              {state === "busy" ? t("alEnabling") : t("alEnable")}
+            </button>
+          )}
+
+          {state === "on" && (
+            <div className="space-y-4">
+              <p className="flex items-center gap-2.5 text-[15px] font-semibold text-safe-ink">
+                <span className="grid size-6 place-items-center rounded-full bg-safe text-on-safe">
+                  <Check className="size-3.5" aria-hidden />
+                </span>
+                {t("alOn")}
+              </p>
+              <ThisPhoneOnly />
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <button type="button" onClick={test} disabled={testing} className="btn-secondary px-3">
+                  {testing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+                  {t("alTest")}
+                </button>
+                <button type="button" onClick={disable} className="btn-secondary px-3 text-ink-soft">
+                  <BellOff className="size-4" aria-hidden />
+                  {t("alOff")}
+                </button>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.p
+            role="status"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="rounded-control bg-muted px-3 py-2 text-[14px] font-semibold text-ink"
+          >
+            {toast.text}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <p className="text-[13px] leading-relaxed text-ink-soft">{t("alHow")}</p>
+    </div>
   );
 }

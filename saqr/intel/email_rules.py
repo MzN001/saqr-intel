@@ -758,7 +758,7 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
     # -- authentication (SPF / DKIM / DMARC / ARC) -------------------------------------------------
     if parsed.has_headers and not delivered:
         add("HEADERS_NOT_AVAILABLE", "info", 0,
-            "This copy has no delivery headers (for example a draft or an exported template), so SAQR could not "
+            "This copy has no delivery headers (for example a draft or an exported template), so Saqr could not "
             "check where it really came from. To check that, paste the original of the email you received "
             "(\"Show original\").",
             "لا تحتوي هذه النسخة على ترويسات التسليم (مثل مسودة أو قالب مُصدَّر)، لذلك لم يتمكن صقر من التحقق من "
@@ -861,7 +861,7 @@ def run_email_rules(parsed: ParsedEmail, auth: AuthReport | None, *, unicode_fin
             ", ".join(f"{d} ({f})" for d, f in feed_hits[:3]))
     if hi:
         add("LINK_HIGH_RISK", "critical", 65,
-            f"A website linked in this email ({hi[0]['domain']}) was scanned by SAQR and is a scam.",
+            f"A website linked in this email ({hi[0]['domain']}) was scanned by Saqr and is a scam.",
             f"تم فحص موقع مرتبط في هذه الرسالة ({hi[0]['domain']}) وتبيّن أنه احتيالي.",
             ", ".join(f"{l['domain']} ({l['verdict']} {l.get('risk_score')})" for l in hi[:3]))
     if sus:

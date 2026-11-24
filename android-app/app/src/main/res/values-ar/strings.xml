@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">درع صقر</string>
+    <string name="app_name">صقر</string>
 
     <string name="tab_shield">الدرع</string>
     <string name="tab_scanner">الفاحص</string>
@@ -9,10 +9,13 @@
     <string name="notice_demo">نسخة تجريبية لهاكاثون. ليست خدمة حكومية رسمية.</string>
     <string name="aman_footer">أمان 8002626 · رسالة نصية 2828</string>
 
-    <string name="language_pill">EN</string>
     <string name="cd_language_switch">تغيير اللغة إلى الإنجليزية</string>
     <string name="cd_theme_to_light">التبديل إلى الوضع الفاتح</string>
     <string name="cd_theme_to_dark">التبديل إلى الوضع الداكن</string>
+    <string name="cd_api_status">خادم API: %1$s</string>
+    <string name="api_status_ok">متصل</string>
+    <string name="api_status_waking">قيد التشغيل أو غير معروف</string>
+    <string name="api_status_never">لم يُفحص بعد</string>
 
     <!-- Common actions -->
     <string name="action_cancel">إلغاء</string>
@@ -21,11 +24,14 @@
     <string name="action_warn_x">حذّر الآخرين على X</string>
     <string name="action_call_aman">اتصل بأمان 8002626</string>
     <string name="action_copy_report">نسخ البلاغ</string>
+    <string name="action_copy_aman">نسخ بلاغ أمان 8002626</string>
+    <string name="action_full_details">كل التفاصيل</string>
     <string name="action_false_alarm">الإبلاغ عن إنذار خاطئ</string>
     <string name="false_alarm_sending">جارٍ الإرسال…</string>
     <string name="false_alarm_retry">تعذّر الإرسال. حاول مرة أخرى</string>
-    <string name="false_alarm_thanks">شكراً لك. سيراجعه ضباط صقر.</string>
+    <string name="false_alarm_thanks">شكراً لك. سيراجعه فريق صقر.</string>
     <string name="toast_copied">تم نسخ البلاغ</string>
+    <string name="toast_aman_copied">تم نسخ البلاغ. الصقه في رسالة نصية إلى 2828 أو اقرأه لأمان 8002626.</string>
     <string name="toast_no_app">لا يوجد تطبيق على هذا الهاتف يفتح هذا</string>
 
     <!-- Verdicts -->
@@ -37,7 +43,6 @@
     <string name="meter_scam">احتيال</string>
     <string name="verdict_verified">موثّق رسمياً</string>
     <string name="verdict_pretends">ينتحل صفة</string>
-    <string name="verdict_address">عنوان الموقع</string>
     <string name="verdict_official_site">الموقع الرسمي</string>
     <string name="verdict_reasons">السبب</string>
     <string name="verdict_notes">ملاحظات</string>
@@ -70,15 +75,13 @@
 
     <!-- Scanner -->
     <string name="scan_title">هل هذا الرابط آمن؟</string>
-    <string name="scan_hint">الصق رابطاً أو رسالة نصية أو بريداً قبل أن تفتحه.</string>
     <string name="mode_auto">تلقائي</string>
     <string name="mode_web">موقع</string>
     <string name="mode_message">رسالة</string>
     <string name="mode_email">بريد</string>
     <string name="mode_phone">هاتف</string>
     <string name="mode_maps">خرائط</string>
-    <string name="scan_input_label">ما الذي تريد فحصه</string>
-    <string name="ph_auto">الصق رابطاً أو رسالة أو بريداً أو رقماً</string>
+    <string name="ph_auto">الصق رابطاً أو رسالة نصية أو بريداً…</string>
     <string name="ph_web">https://…</string>
     <string name="ph_message">الصق رسالة SMS أو واتساب</string>
     <string name="ph_email">الصق البريد (المرسل والموضوع والنص)</string>
@@ -87,15 +90,13 @@
     <string name="scan_sender">المرسل (اختياري)</string>
     <string name="scan_maps_website">الموقع الظاهر في الإدراج (اختياري)</string>
     <string name="scan_maps_phone">الهاتف الظاهر في الإدراج (اختياري)</string>
-    <string name="scan_check">افحص</string>
+    <string name="scan_check">افحص الرابط ←</string>
     <string name="scan_checking">جارٍ الفحص…</string>
     <string name="scan_waking">الخادم قيد التشغيل — قد يستغرق ذلك حتى دقيقة.</string>
-    <string name="scan_try">جرّب مثالاً</string>
-    <string name="sample_tamm">جرّب مخالفة تم مزيفة</string>
+    <string name="sample_tamm">مخالفة تم مزيفة</string>
     <string name="sample_bank_email">بريد بنك مزوّر</string>
     <string name="sample_official">شرطة أبوظبي الرسمية</string>
-    <string name="scan_last">آخر فحص</string>
-    <string name="scan_view_details">عرض التفاصيل</string>
+    <string name="scan_text_target">رسالة نصية</string>
     <string name="err_empty">الصق شيئاً لفحصه أولاً.</string>
     <string name="err_rate_limited">فحوص كثيرة خلال دقيقة. انتظر قليلاً ثم حاول مرة أخرى.</string>
     <string name="err_waking">الخادم ما زال قيد التشغيل. حاول مرة أخرى بعد لحظات.</string>
@@ -103,31 +104,29 @@
     <string name="err_invalid">تعذّر على الخادم فحص هذا: %1$s</string>
 
     <!-- Shield -->
-    <string name="shield_heading">الدرع</string>
-    <string name="api_pill">خادم API</string>
     <string name="status_protected">محمي</string>
-    <string name="status_protected_sub">تُفحص رسائل الاحتيال فور وصولها.</string>
-    <string name="status_action_needed">مطلوب إجراء</string>
-    <string name="status_action_sub">أكمل الخطوات أدناه لحماية هذا الهاتف.</string>
+    <plurals name="status_guards_off">
+        <item quantity="zero">لا توجد حماية متوقفة</item>
+        <item quantity="one">حماية واحدة متوقفة</item>
+        <item quantity="two">حمايتان متوقفتان</item>
+        <item quantity="few">%1$d حمايات متوقفة</item>
+        <item quantity="many">%1$d حماية متوقفة</item>
+        <item quantity="other">%1$d حماية متوقفة</item>
+    </plurals>
     <string name="metric_blocked">حُظر اليوم</string>
     <string name="metric_checked">فُحص اليوم</string>
-    <string name="steps_title">احمِ هذا الهاتف في 3 خطوات</string>
     <string name="step1_title">إشعارات التنبيه</string>
-    <string name="step1_body">اسمح لصقر بتنبيهك فور وصول رسالة احتيال.</string>
-    <string name="step1_button">السماح بالإشعارات</string>
-    <string name="step1_done">إشعارات التنبيه مفعّلة</string>
+    <string name="step1_short">التنبيهات</string>
     <string name="step2_title">حارس الرسائل</string>
-    <string name="step2_body">يفحص الروابط في إشعارات SMS وواتساب والبريد قبل أن تضغط عليها.</string>
-    <string name="step2_button">تفعيل حارس الرسائل</string>
-    <string name="step2_done">حارس الرسائل مفعّل</string>
+    <string name="step2_short">الرسائل</string>
     <string name="step3_title">حاجب المواقع</string>
-    <string name="step3_recommended">موصى به</string>
-    <string name="step3_body">يفحص المواقع التي تفتحها في Chrome وSamsung Internet وFirefox وEdge، ويحجب مواقع الاحتيال قبل أن تكتب أي شيء.</string>
-    <string name="step3_button">تفعيل حاجب المواقع</string>
-    <string name="step3_done">حاجب المواقع مفعّل</string>
-    <string name="step3_restricted">المفتاح غير متاح (أندرويد 13 أو أحدث)؟ افتح الإعدادات ثم التطبيقات ثم SAQR Shield، واضغط ⋮ في الأعلى ثم «السماح بالإعدادات المقيدة»، ثم فعّل حاجب مواقع صقر مرة أخرى.</string>
+    <string name="step3_short">المواقع</string>
+    <string name="step_allow">السماح</string>
+    <string name="step_turn_on">تفعيل</string>
+    <string name="cd_step_done">%1$s مفعّل. اضغط للإدارة.</string>
+    <string name="step3_restricted">المفتاح غير متاح (أندرويد 13 أو أحدث)؟ افتح الإعدادات ثم التطبيقات ثم صقر، واضغط ⋮ في الأعلى ثم «السماح بالإعدادات المقيدة»، ثم فعّل حاجب مواقع صقر مرة أخرى.</string>
     <string name="web_consent_title">تفعيل حاجب المواقع؟</string>
-    <string name="web_consent_body">يقرأ صقر شريط العنوان فقط (عنوان الموقع) في Chrome وSamsung Internet وFirefox وEdge. لا يقرأ الصفحة نفسها ولا كلمات المرور ولا أي شيء تكتبه أبداً.\n\nيُرسل عنوان الموقع إلى خادم صقر لفحصه. لا تُرسل المواقع الإماراتية الرسمية ولا العناوين المحلية ولا المواقع التي اخترت فتحها رغم التحذير. لا يغادر هاتفك أي شيء آخر.\n\nيُغطّى موقع الاحتيال بتحذير يملأ الشاشة، ويصلك تنبيه أهدأ عن الموقع المشبوه.\n\nبعد ذلك يفتح أندرويد إعدادات تسهيل الاستخدام: اضغط «حاجب مواقع صقر» وفعّله. لإيقافه، أوقفه من هناك أو اضغط زر حاجب المواقع هنا.</string>
+    <string name="web_consent_body">يقرأ صقر شريط العنوان فقط (عنوان الموقع) في Chrome وSamsung Internet وFirefox وEdge. لا يقرأ الصفحة نفسها ولا كلمات المرور ولا أي شيء تكتبه أبداً.\n\nيُرسل عنوان الموقع إلى خادم صقر لفحصه. لا تُرسل المواقع الإماراتية الرسمية ولا العناوين المحلية ولا المواقع التي اخترت فتحها رغم التحذير. لا يغادر هاتفك أي شيء آخر.\n\nيُغطّى موقع الاحتيال بتحذير يملأ الشاشة، ويصلك تنبيه أهدأ عن الموقع المشبوه.\n\nبعد ذلك يفتح أندرويد إعدادات تسهيل الاستخدام: اضغط «حاجب مواقع صقر» وفعّله. لإيقافه، أوقفه من هناك أو اضغط «المواقع» في تبويب الدرع.</string>
     <string name="web_manage_title">حاجب المواقع</string>
     <string name="web_manage_body">يفحص حاجب المواقع عناوين المواقع التي تفتحها في Chrome وSamsung Internet وFirefox وEdge. لإيقافه، أوقفه من هنا ثم أوقف «حاجب مواقع صقر» من الإعدادات ثم تسهيل الاستخدام.</string>
     <string name="web_service_label">حاجب مواقع صقر</string>
@@ -135,7 +134,7 @@
     <string name="web_service_description">يقرأ صقر شريط عنوان المتصفح فقط ليفحص الموقع الذي تفتحه مع خادم صقر. لا يقرأ محتوى الصفحة ولا كلمات المرور ولا النص الذي تكتبه أبداً. يعمل في Chrome وSamsung Internet وFirefox وEdge.</string>
 
     <!-- Block screen -->
-    <string name="block_title">حجبه صقر للاستخبارات</string>
+    <string name="block_title">حجبه صقر</string>
     <string name="block_sub">هذا الموقع احتيال عالي الخطورة. أوقفه صقر قبل أن تُدخل أي بيانات.</string>
     <string name="block_risk">الخطر</string>
     <string name="block_close">أغلق وابقَ آمناً</string>
@@ -144,8 +143,8 @@
     <string name="block_continue_confirm">اضغط مرة أخرى لفتح موقع الاحتيال</string>
     <string name="block_privacy">فُحص عنوان الموقع فقط. لم يُقرأ أي شيء من الصفحة.</string>
     <string name="notif_kind_web">موقع</string>
-    <string name="notif_title_web_caution">موقع مشبوه · خطر %1$s%%</string>
-    <string name="notif_title_web_scam">حُجب موقع احتيالي · خطر %1$s%%</string>
+    <string name="notif_title_web_caution">موقع مشبوه · %1$s/100</string>
+    <string name="notif_title_web_scam">حُجب موقع احتيالي · %1$s/100</string>
     <string name="consent_title">تفعيل حارس الرسائل؟</string>
     <string name="consent_body">يقرأ صقر الإشعارات الجديدة من هذه التطبيقات فقط: الرسائل (جوجل وسامسونج) وGmail وOutlook وواتساب وواتساب للأعمال وتيليجرام.\n\nيبدأ الفحص على هاتفك. لا تُرسل إلى خادم صقر إلا الرسالة التي فيها رابط، أو رقم هاتف مع ادعاء (مخالفة، بنك، جائزة…)، أو طلب رمز أو رقم سري أو بيانات بطاقة. تُخفى الرموز فيها قبل الإرسال. لا يُرسل المرسل إلا إذا كان رقم هاتف أو اسم مرسل تجاري. المحادثات العادية لا تغادر هاتفك أبداً.\n\nيحتفظ هذا الهاتف بآخر 50 تنبيهاً (عنوان الموقع والنتيجة والأسباب)، ولا يحفظ نص الرسالة أو المرسل. يحتفظ الخادم بالنتائج المشبوهة 30 يوماً.\n\nيمكنك إيقافه في أي وقت من هنا، أو من الإعدادات ثم الوصول إلى الإشعارات.</string>
     <string name="consent_accept">أوافق، متابعة</string>
@@ -175,13 +174,13 @@
     <string name="alerts_clear">مسح الكل</string>
     <string name="alerts_clear_title">مسح كل التنبيهات؟</string>
     <string name="alerts_clear_body">يحذف هذا قائمة التنبيهات من هذا الهاتف.</string>
-    <string name="alerts_fake_entity">رسالة مزيفة باسم %1$s</string>
     <string name="alerts_text_message">رسالة نصية</string>
+    <string name="alerts_inspect">فحص</string>
     <string name="chip_sms">SMS</string>
     <string name="chip_whatsapp">واتساب</string>
     <string name="chip_email">بريد</string>
     <string name="chip_web">موقع</string>
-    <string name="chip_manual">فحص يدوي</string>
+    <string name="chip_manual">يدوي</string>
     <string name="chip_message">رسالة</string>
 
     <!-- Notifications -->
@@ -193,16 +192,16 @@
     <string name="notif_kind_whatsapp">رسالة واتساب</string>
     <string name="notif_kind_email">رسالة بريد</string>
     <string name="notif_kind_message">رسالة</string>
-    <string name="notif_title_scam">حظر %1$s احتيالية · خطر %2$s%%</string>
-    <string name="notif_title_caution">%1$s مشبوهة · خطر %2$s%%</string>
-    <string name="notif_text_entity_link">رابط %1$s مزيف (%2$s)</string>
-    <string name="notif_text_link_scam">رابط احتيالي (%1$s)</string>
-    <string name="notif_text_link_caution">تحقّق من هذا الرابط أولاً (%1$s)</string>
-    <string name="notif_text_entity_code">رسالة مزيفة باسم %1$s تطلب الرمز</string>
-    <string name="notif_text_entity">رسالة مزيفة باسم %1$s</string>
-    <string name="notif_text_code">رسالة تطلب الرمز الخاص بك</string>
-    <string name="notif_text_generic_scam">رسالة فيها علامات احتيال</string>
-    <string name="notif_text_generic_caution">تحقّق من هذه الرسالة قبل الرد</string>
-    <string name="notif_action_view">عرض التفاصيل</string>
+    <string name="notif_title_scam">حُظرت %1$s احتيالية · %2$s/100</string>
+    <string name="notif_title_caution">%1$s مشبوهة · %2$s/100</string>
+    <string name="notif_text_entity_link">%1$s مزيف (%2$s) — لا تضغط.</string>
+    <string name="notif_text_link_scam">رابط احتيالي (%1$s) — لا تضغط.</string>
+    <string name="notif_text_link_caution">رابط غير موثّق (%1$s) — تحقّق أولاً.</string>
+    <string name="notif_text_entity_code">رسالة مزيفة باسم %1$s تطلب الرمز — لا ترد.</string>
+    <string name="notif_text_entity">رسالة مزيفة باسم %1$s — لا ترد.</string>
+    <string name="notif_text_code">رسالة تطلب الرمز الخاص بك — لا ترد.</string>
+    <string name="notif_text_generic_scam">رسالة فيها علامات احتيال — لا ترد.</string>
+    <string name="notif_text_generic_caution">تحقّق من هذه الرسالة قبل الرد.</string>
+    <string name="notif_action_view">عرض النتيجة</string>
     <string name="notif_action_x">حذّر على X</string>
 </resources>

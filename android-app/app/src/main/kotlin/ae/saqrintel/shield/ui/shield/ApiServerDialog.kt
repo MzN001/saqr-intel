@@ -5,6 +5,7 @@ import ae.saqrintel.shield.appGraph
 import ae.saqrintel.shield.data.ApiClient
 import ae.saqrintel.shield.data.ApiResult
 import ae.saqrintel.shield.data.Settings
+import ae.saqrintel.shield.ui.common.ApiStatus
 import ae.saqrintel.shield.ui.theme.SaqrTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -100,7 +101,9 @@ fun ApiServerDialog(onDismiss: () -> Unit) {
                             }
                             ping = PingState.Running
                             scope.launch {
-                                ping = when (val r = graph.api.health(valid)) {
+                                val r = graph.api.health(valid)
+                                ApiStatus.record(r)
+                                ping = when (r) {
                                     is ApiResult.Ok -> PingState.Ok(r.latencyMs)
                                     ApiResult.ServerWaking -> PingState.Waking
                                     else -> PingState.Failed
@@ -116,14 +119,22 @@ fun ApiServerDialog(onDismiss: () -> Unit) {
                     invalid = false
                     ping = PingState.Idle
                     scope.launch { graph?.settings?.resetApiBaseUrl() }
+                    ApiStatus.reset()
                 }) { Text(stringResource(R.string.api_reset)) }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 scope.launch {
+                    val before = graph?.settings?.currentBaseUrl()
                     val saved = graph?.settings?.setApiBaseUrl(url)
-                    if (saved == null) invalid = true else onDismiss()
+                    if (saved == null) {
+                        invalid = true
+                    } else {
+                        // A new server: the dot shows what was learned about it (a ping), else grey.
+                        if (saved != before && ping !is PingState.Ok) ApiStatus.reset()
+                        onDismiss()
+                    }
                 }
             }) { Text(stringResource(R.string.action_save)) }
         },
@@ -139,9 +150,9 @@ private fun PingBadge(state: PingState) {
     val (color: Color, text: String) = when (state) {
         PingState.Idle -> return
         PingState.Running -> c.inkSoft to stringResource(R.string.api_ping_running)
-        is PingState.Ok -> c.shield to stringResource(R.string.api_ping_ok, state.ms.toString())
-        PingState.Waking -> c.caution to stringResource(R.string.api_ping_waking)
-        PingState.Failed -> c.caution to stringResource(R.string.api_ping_failed)
+        is PingState.Ok -> c.safeInk to stringResource(R.string.api_ping_ok, state.ms.toString())
+        PingState.Waking -> c.suspiciousInk to stringResource(R.string.api_ping_waking)
+        PingState.Failed -> c.suspiciousInk to stringResource(R.string.api_ping_failed)
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(8.dp).background(color, CircleShape))

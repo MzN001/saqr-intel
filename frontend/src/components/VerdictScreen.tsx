@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -62,7 +62,17 @@ import {
 } from "@/lib/api";
 import { useLang, type DictKey } from "@/lib/i18n";
 import { CHANNEL_DICT_KEY as CHANNEL_KEY, defang, warningFromVerdict } from "@/lib/share";
+import { RiskMeter, TONE_CHIP, TONE_TEXT, toneOf, type Tone } from "./RiskMeter";
 import { XAlertPrompt } from "./XAlertComposer";
+
+/*
+ * The full verdict report. Two uses:
+ *  - `VerdictScreen`: the full-screen block page, kept for scans that start from a share, a scam-alert
+ *    notification or a DNS block (the resident was about to open something).
+ *  - `ResultView` (embedded): the "Full report" drawer behind the inline VerdictCard.
+ * Saqr styling: white cards on the canvas, the three-zone meter, crimson only for scam, amber for
+ * suspicious, emerald for safe / verified. No card sits inside another card.
+ */
 
 export type ScanState =
   | { status: "idle" }
@@ -82,12 +92,13 @@ const HARVEST_LABELS: Record<string, { en: string; ar: string; icon: typeof Cred
   IBAN: { en: "Bank account", ar: "الحساب البنكي", icon: CreditCard },
 };
 
-const SEVERITY_STYLE: Record<RedFlag["severity"], string> = {
-  critical: "bg-crimson-600 text-white",
-  high: "bg-crimson-50 text-crimson-700 dark:bg-crimson-600/20 dark:text-red-300",
-  medium: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
-  low: "bg-line text-ink-soft",
-  info: "bg-line text-ink-soft",
+/** Severity chips: high/critical are scam evidence, medium is suspicious, low/info are neutral. */
+const SEVERITY_CHIP: Record<RedFlag["severity"], string> = {
+  critical: "chip chip-scam",
+  high: "chip chip-scam",
+  medium: "chip chip-suspicious",
+  low: "chip",
+  info: "chip",
 };
 
 const SEVERITY_LABEL: Record<RedFlag["severity"], DictKey> = {
@@ -98,7 +109,7 @@ const SEVERITY_LABEL: Record<RedFlag["severity"], DictKey> = {
   info: "sevInfo",
 };
 
-const VERDICT_LABEL: Record<string, DictKey> = {
+export const VERDICT_LABEL: Record<string, DictKey> = {
   "HIGH-RISK SCAM": "verdictHighRisk",
   SUSPICIOUS: "verdictSuspicious",
   SAFE: "verdictSafe",
@@ -116,27 +127,45 @@ function uniqueFindings(findings: UnicodeFinding[]): UnicodeFinding[] {
 }
 
 const SCAN_STEPS: DictKey[] = ["stepIntercept", "stepRegistry", "stepSandbox", "stepAi", "stepPolice"];
-
-// ---------------------------------------------------------------- email verdict panels (kind "email")
-
-/** Bidi controls (U+202A-202E, U+2066-2069) can make "invoice<RLO>fdp.exe" read as "invoiceexe.pdf".
- *  Show them as a visible marker instead of letting them reorder the text on screen. */
-function visible(text: string | null | undefined): string {
-  return (text ?? "").replace(/[\u202a-\u202e\u2066-\u2069]/g, "⟨⇄⟩");
-}
-
 const EMAIL_SCAN_STEPS: DictKey[] = ["emStepParse", "emStepAuth", "emStepUnicode", "emStepLinks", "emStepAi", "stepPolice"];
 const MESSAGE_SCAN_STEPS: DictKey[] = ["msgStepLinks", "msgStepPhones", "msgStepWording", "stepPolice"];
 
-const AUTH_LABEL: Record<string, { key: DictKey; style: string }> = {
-  pass: { key: "emAuthPass", style: "bg-emerald-600 text-white" },
-  fail: { key: "emAuthFail", style: "bg-crimson-600 text-white" },
-  softfail: { key: "emAuthSoft", style: "bg-amber-500 text-white" },
-  neutral: { key: "emAuthNeutral", style: "bg-line text-ink-soft" },
-  none: { key: "emAuthNone", style: "bg-line text-ink-soft" },
-  temperror: { key: "emAuthError", style: "bg-line text-ink-soft" },
-  permerror: { key: "emAuthError", style: "bg-amber-500 text-white" },
-  not_checked: { key: "emAuthNotChecked", style: "bg-line text-ink-soft" },
+/** The scanning steps shown for each kind of check (also used by the inline VerdictCard). */
+export function scanSteps(kind?: ScanVerdict["kind"]): DictKey[] {
+  return kind === "email" ? EMAIL_SCAN_STEPS : kind === "message" ? MESSAGE_SCAN_STEPS : SCAN_STEPS;
+}
+export function scanTitle(kind?: ScanVerdict["kind"]): DictKey {
+  return kind === "email" ? "emScanningTitle" : kind === "message" ? "msgScanningTitle" : "scanningTitle";
+}
+
+/** Bidi controls (U+202A-202E, U+2066-2069) can make "invoice<RLO>fdp.exe" read as "invoiceexe.pdf".
+ *  Show them as a visible marker instead of letting them reorder the text on screen. */
+export function visible(text: string | null | undefined): string {
+  return (text ?? "").replace(/[‪-‮⁦-⁩]/g, "⟨⇄⟩");
+}
+
+/** A green "verified official" state is earned only by proof: an official link, an official site, or DMARC. */
+export function isVerifiedOfficial(r: ScanVerdict): boolean {
+  if (r.verdict !== "SAFE") return false;
+  if (r.kind === "message") return Boolean(r.message?.verifiedOfficial);
+  if (r.kind === "email") return Boolean(r.email?.from?.is_official && r.email.auth?.dmarc?.result === "pass");
+  const host = (r.scamDomain ?? r.target ?? "").toLowerCase().replace(/^www\./, "");
+  if (!host) return false;
+  return r.officialDomains.some((d) => {
+    const o = d.toLowerCase().replace(/^www\./, "");
+    return host === o || host.endsWith(`.${o}`);
+  });
+}
+
+const AUTH_LABEL: Record<string, { key: DictKey; chip: string }> = {
+  pass: { key: "emAuthPass", chip: "chip chip-safe" },
+  fail: { key: "emAuthFail", chip: "chip chip-scam" },
+  softfail: { key: "emAuthSoft", chip: "chip chip-suspicious" },
+  neutral: { key: "emAuthNeutral", chip: "chip" },
+  none: { key: "emAuthNone", chip: "chip" },
+  temperror: { key: "emAuthError", chip: "chip" },
+  permerror: { key: "emAuthError", chip: "chip chip-suspicious" },
+  not_checked: { key: "emAuthNotChecked", chip: "chip" },
 };
 
 const WHERE_LABEL: Record<string, DictKey> = {
@@ -160,35 +189,42 @@ const KIND_LABEL: Record<string, DictKey> = {
   fancy: "emKindFancy",
 };
 
-const VERDICT_CHIP: Record<string, string> = {
-  "HIGH-RISK SCAM": "bg-crimson-600 text-white",
-  SUSPICIOUS: "bg-amber-500 text-white",
-  SAFE: "bg-emerald-600 text-white",
-};
-
 const MAX_LINKS_SHOWN = 10;
 
-function Card({ title, icon: Icon, children, delay = 0.3 }: { title: string; icon: typeof Mail; children: ReactNode; delay?: number }) {
+/** One white card on the canvas, with a tracked caps title. Never nested. */
+function Section({
+  title,
+  icon: Icon,
+  children,
+  delay = 0.1,
+  titleClass = "",
+}: {
+  title: string;
+  icon: typeof Mail;
+  children: ReactNode;
+  delay?: number;
+  titleClass?: string;
+}) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line"
+      transition={{ delay, duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="card p-4 sm:p-5"
     >
-      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/80">
-        <Icon className="size-4" /> {title}
-      </p>
-      <div className="mt-2">{children}</div>
-    </motion.div>
+      <h3 className={`label-caps flex items-center gap-2 ${titleClass}`}>
+        <Icon className="size-4" aria-hidden /> {title}
+      </h3>
+      <div className="mt-3">{children}</div>
+    </motion.section>
   );
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid gap-0.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-3">
-      <dt className="text-xs font-semibold text-ink-soft/80 sm:pt-0.5">{label}</dt>
-      <dd className="min-w-0 text-sm text-ink">{children}</dd>
+      <dt className="text-[13px] font-semibold text-ink-soft sm:pt-0.5">{label}</dt>
+      <dd className="min-w-0 text-[15px] text-ink">{children}</dd>
     </div>
   );
 }
@@ -199,53 +235,43 @@ function SenderCard({ email }: { email: EmailDetails }) {
   const replyTo = email.replyTo && email.replyTo.address && email.replyTo.address !== from?.address ? email.replyTo : null;
   const realLetters = from && from.unicode_domain && from.unicode_domain !== from.domain ? from.unicode_domain : null;
   return (
-    <Card title={t("emSender")} icon={UserRound} delay={0.3}>
+    <Section title={t("emSender")} icon={UserRound}>
       {from ? (
         <dl className="space-y-2.5">
           {from.display_name && (
             <Row label={t("emShownName")}>
-              <span className="font-bold" dir="auto">
+              <span className="font-semibold" dir="auto">
                 {visible(from.display_name)}
               </span>
             </Row>
           )}
           <Row label={t("emRealAddress")}>
             <span className="flex flex-wrap items-center gap-1.5">
-              <span dir="ltr" className="break-all font-mono font-bold">
+              <span dir="ltr" className="break-all font-mono text-[14px] font-semibold">
                 {visible(from.address) || "—"}
               </span>
-              {from.is_freemail && (
-                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
-                  {t("emFreemail")}
-                </span>
-              )}
+              {from.is_freemail && <span className="chip chip-suspicious">{t("emFreemail")}</span>}
               {/* Green only when DMARC proves it: a spoofed From: noreply@tamm.abudhabi must not get a green badge. */}
               {from.is_official && email.auth?.dmarc?.result === "pass" && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[11px] font-bold uppercase text-white">
-                  <BadgeCheck className="size-3" /> {t("emOfficial")}
+                <span className="chip chip-safe">
+                  <BadgeCheck className="size-3.5" aria-hidden /> {t("emOfficial")}
                 </span>
               )}
-              {from.is_official && email.auth?.dmarc?.result !== "pass" && (
-                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
-                  {t("emOfficialUnproven")}
-                </span>
-              )}
+              {from.is_official && email.auth?.dmarc?.result !== "pass" && <span className="chip chip-suspicious">{t("emOfficialUnproven")}</span>}
             </span>
           </Row>
           {realLetters && (
             <Row label={t("emRealLetters")}>
-              <span dir="ltr" className="flex flex-wrap items-center gap-2 font-mono">
-                <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{from.domain}</span>
+              <span dir="ltr" className="flex flex-wrap items-center gap-2 font-mono text-[14px]">
+                <span className="rounded bg-muted px-1.5 py-0.5">{from.domain}</span>
                 <span aria-hidden>=</span>
-                <span className="rounded bg-crimson-50 px-1.5 py-0.5 font-bold text-crimson-700 dark:bg-crimson-600/20 dark:text-red-300">
-                  {visible(realLetters)}
-                </span>
+                <span className="rounded bg-scam-soft px-1.5 py-0.5 font-semibold text-scam-ink">{visible(realLetters)}</span>
               </span>
             </Row>
           )}
           {replyTo && (
             <Row label={t("emReplyTo")}>
-              <span dir="ltr" className="break-all font-mono">
+              <span dir="ltr" className="break-all font-mono text-[14px]">
                 {visible(replyTo.address)}
               </span>
             </Row>
@@ -259,9 +285,9 @@ function SenderCard({ email }: { email: EmailDetails }) {
           )}
         </dl>
       ) : (
-        <p className="text-sm text-ink-soft">{t("emNoSender")}</p>
+        <p className="text-[15px] text-ink-soft">{t("emNoSender")}</p>
       )}
-    </Card>
+    </Section>
   );
 }
 
@@ -269,15 +295,15 @@ function AuthChip({ name, result, meaning, extra }: { name: string; result: stri
   const { t } = useLang();
   const label = AUTH_LABEL[result] ?? AUTH_LABEL.not_checked;
   return (
-    <li className="flex items-start gap-3 rounded-xl bg-muted p-3">
-      <span dir="ltr" className="w-14 shrink-0 pt-0.5 font-mono text-xs font-extrabold text-ink">
+    <li className="flex items-start gap-3 py-3">
+      <span dir="ltr" className="w-14 shrink-0 pt-0.5 font-mono text-[13px] font-bold text-ink">
         {name}
       </span>
-      <span className="min-w-0 flex-1 text-sm leading-snug text-ink-soft">{meaning}</span>
+      <span className="min-w-0 flex-1 text-[14px] leading-snug text-ink-soft">{meaning}</span>
       <span className="flex shrink-0 flex-col items-end gap-1">
-        <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${label.style}`}>{t(label.key)}</span>
+        <span className={label.chip}>{t(label.key)}</span>
         {extra && (
-          <span dir="ltr" className="font-mono text-[11px] text-ink-soft/80">
+          <span dir="ltr" className="font-mono text-[11px] text-ink-soft">
             {extra}
           </span>
         )}
@@ -291,19 +317,19 @@ function AuthCard({ email }: { email: EmailDetails }) {
   const auth = email.auth;
   if (!email.hasHeaders || !auth) {
     return (
-      <Card title={t("emAuthTitle")} icon={KeyRound} delay={0.45}>
-        <p className="flex items-start gap-2 text-sm leading-relaxed text-ink-soft">
-          <Info className="mt-0.5 size-4 shrink-0" /> {t("emNoHeaders")}
+      <Section title={t("emAuthTitle")} icon={KeyRound}>
+        <p className="flex items-start gap-2 text-[14px] leading-relaxed text-ink-soft">
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden /> {t("emNoHeaders")}
         </p>
-      </Card>
+      </Section>
     );
   }
   const dkims = auth.dkim ?? [];
   const dkim = dkims.find((d) => d.result === "pass" && d.aligned) ?? dkims.find((d) => d.result === "pass") ?? dkims[0];
   const dmarcPass = auth.dmarc?.result === "pass";
   return (
-    <Card title={t("emAuthTitle")} icon={KeyRound} delay={0.45}>
-      <ul className="space-y-2">
+    <Section title={t("emAuthTitle")} icon={KeyRound}>
+      <ul className="-my-3 divide-y divide-line">
         <AuthChip name="SPF" result={auth.spf?.result ?? "not_checked"} meaning={t("emSpfMeaning")} extra={auth.spf?.domain || null} />
         <AuthChip name="DKIM" result={dkim?.result ?? "none"} meaning={t("emDkimMeaning")} extra={dkim?.domain || null} />
         <AuthChip
@@ -314,50 +340,44 @@ function AuthCard({ email }: { email: EmailDetails }) {
         />
       </ul>
       {dmarcPass && email.from?.is_freemail && (
-        <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
-          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" /> {t("emPassFreemail")}
+        <p className="mt-3 flex items-start gap-2 text-[13px] leading-relaxed text-suspicious-ink">
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {t("emPassFreemail")}
         </p>
       )}
-    </Card>
+    </Section>
   );
 }
 
 function UnicodeCard({ findings }: { findings: UnicodeFinding[] }) {
   const { t } = useLang();
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-      className="rounded-2xl border border-crimson-600/20 bg-crimson-50 p-4 dark:border-crimson-600/40 dark:bg-crimson-600/15"
-    >
-      <p className="flex items-center gap-2 text-sm font-bold text-crimson-700 dark:text-red-300">
-        <ScanEye className="size-4" /> {t("emUnicodeTitle")}
-      </p>
-      <p className="mt-1 text-xs leading-relaxed text-crimson-700/80 dark:text-red-200/80">{t("emUnicodeIntro")}</p>
+    <Section title={t("emUnicodeTitle")} icon={ScanEye} titleClass="text-scam-ink">
+      <p className="text-[14px] leading-relaxed text-ink-soft">{t("emUnicodeIntro")}</p>
       <ul className="mt-3 space-y-2">
-        {uniqueFindings(findings).slice(0, 12).map((f, i) => (
-          <li key={`${f.where}-${i}`} className="rounded-xl bg-white p-3 ring-1 ring-crimson-600/15 dark:bg-black/30 dark:ring-crimson-600/40">
-            <p className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase text-ink-soft">
-              <span>{WHERE_LABEL[f.where] ? t(WHERE_LABEL[f.where]) : f.where}</span>
-              <span aria-hidden>·</span>
-              <span className="text-crimson-700 dark:text-red-300">{KIND_LABEL[f.kind] ? t(KIND_LABEL[f.kind]) : f.kind}</span>
-            </p>
-            <p dir="ltr" className="mt-1 break-all font-mono text-sm font-bold text-ink">
-              {f.sample_escaped}
-            </p>
-            {f.skeleton && f.skeleton !== f.sample_escaped && (
-              <p className="mt-1 text-xs text-ink-soft">
-                {t("emImitates")}:{" "}
-                <span dir="ltr" className="font-mono font-bold text-ink">
-                  {f.skeleton}
-                </span>
+        {uniqueFindings(findings)
+          .slice(0, 12)
+          .map((f, i) => (
+            <li key={`${f.where}-${i}`} className="rounded-control bg-muted p-3">
+              <p className="flex flex-wrap items-center gap-1.5 text-[12px] font-semibold text-ink-soft">
+                <span>{WHERE_LABEL[f.where] ? t(WHERE_LABEL[f.where]) : f.where}</span>
+                <span aria-hidden>·</span>
+                <span className="text-scam-ink">{KIND_LABEL[f.kind] ? t(KIND_LABEL[f.kind]) : f.kind}</span>
               </p>
-            )}
-          </li>
-        ))}
+              <p dir="ltr" className="mt-1 break-all font-mono text-[14px] font-semibold text-ink">
+                {f.sample_escaped}
+              </p>
+              {f.skeleton && f.skeleton !== f.sample_escaped && (
+                <p className="mt-1 text-[13px] text-ink-soft">
+                  {t("emImitates")}:{" "}
+                  <span dir="ltr" className="font-mono font-semibold text-ink">
+                    {f.skeleton}
+                  </span>
+                </p>
+              )}
+            </li>
+          ))}
       </ul>
-    </motion.div>
+    </Section>
   );
 }
 
@@ -372,33 +392,29 @@ function LinksCard({ links, title = "emLinksTitle" }: { links: LinkRow[]; title?
     .sort((a, b) => Number(b.text_mismatch) - Number(a.text_mismatch) || (b.risk_score ?? -1) - (a.risk_score ?? -1))
     .slice(0, MAX_LINKS_SHOWN);
   return (
-    <Card title={t(title)} icon={Link2Off} delay={0.5}>
+    <Section title={t(title)} icon={Link2Off}>
       <ul className="space-y-2">
         {shown.map((l, i) => (
-          <li key={`${l.url}-${i}`} className="rounded-xl bg-muted p-3">
+          <li key={`${l.url}-${i}`} className="rounded-control bg-muted p-3">
             <div className="flex items-start justify-between gap-2">
-              <dl className="min-w-0 space-y-1 text-xs">
+              <dl className="min-w-0 space-y-1 text-[13px]">
                 {l.display_text && (
                   <div className="flex gap-1.5">
-                    <dt className="shrink-0 font-semibold text-ink-soft/80">{t("emLinkShows")}:</dt>
+                    <dt className="shrink-0 font-semibold text-ink-soft">{t("emLinkShows")}:</dt>
                     <dd dir="auto" className="min-w-0 truncate text-ink">
                       {visible(l.display_text)}
                     </dd>
                   </div>
                 )}
                 <div className="flex gap-1.5">
-                  <dt className="shrink-0 font-semibold text-ink-soft/80">{t("emLinkOpens")}:</dt>
-                  <dd dir="ltr" className="min-w-0 truncate font-mono font-bold text-ink">
+                  <dt className="shrink-0 font-semibold text-ink-soft">{t("emLinkOpens")}:</dt>
+                  <dd dir="ltr" className="min-w-0 truncate font-mono font-semibold text-ink">
                     {l.domain ? defang(l.domain) : defang(l.url)}
                   </dd>
                 </div>
               </dl>
-              <span
-                className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${
-                  l.verdict ? VERDICT_CHIP[l.verdict] ?? "bg-line text-ink-soft" : "bg-line text-ink-soft"
-                }`}
-              >
-                {l.official && <BadgeCheck className="size-3" aria-hidden />}
+              <span className={`shrink-0 ${l.official ? "chip chip-safe" : l.verdict ? TONE_CHIP[toneOf(l.verdict)] : "chip"}`}>
+                {l.official && <BadgeCheck className="size-3.5" aria-hidden />}
                 {l.official
                   ? t("officialSite")
                   : l.verdict
@@ -409,13 +425,13 @@ function LinksCard({ links, title = "emLinksTitle" }: { links: LinkRow[]; title?
             {(l.text_mismatch || l.unwrapped_from) && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {l.text_mismatch && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-crimson-50 px-2 py-0.5 text-[11px] font-semibold text-crimson-700 ring-1 ring-crimson-600/20 dark:bg-crimson-600/20 dark:text-red-300">
-                    <TriangleAlert className="size-3" /> {t("emLinkMismatch")}
+                  <span className="chip chip-scam">
+                    <TriangleAlert className="size-3.5" aria-hidden /> {t("emLinkMismatch")}
                   </span>
                 )}
                 {l.unwrapped_from && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold text-ink-soft ring-1 ring-line">
-                    <EyeOff className="size-3" /> {t("emLinkUnwrapped")}
+                  <span className="chip">
+                    <EyeOff className="size-3.5" aria-hidden /> {t("emLinkUnwrapped")}
                   </span>
                 )}
               </div>
@@ -423,8 +439,8 @@ function LinksCard({ links, title = "emLinksTitle" }: { links: LinkRow[]; title?
           </li>
         ))}
       </ul>
-      <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-soft/80">
-        <ShieldCheck className="size-3.5 shrink-0" /> {t("emLinksDisabled")}
+      <p className="mt-3 flex items-center gap-1.5 text-[13px] text-ink-soft">
+        <ShieldCheck className="size-3.5 shrink-0" aria-hidden /> {t("emLinksDisabled")}
         {links.length > MAX_LINKS_SHOWN && (
           <span>
             {" "}
@@ -432,17 +448,17 @@ function LinksCard({ links, title = "emLinksTitle" }: { links: LinkRow[]; title?
           </span>
         )}
       </p>
-    </Card>
+    </Section>
   );
 }
 
-const PHONE_STATUS: Record<MessagePhone["status"], { key: DictKey; style: string }> = {
-  official: { key: "phOfficial", style: "bg-emerald-600 text-white" },
-  unofficial: { key: "phUnofficial", style: "bg-amber-500 text-white" },
-  mobile_for_institution: { key: "phMobile", style: "bg-crimson-600 text-white" },
-  foreign_for_institution: { key: "phForeign", style: "bg-crimson-600 text-white" },
-  linked_to_scam: { key: "phLinked", style: "bg-crimson-600 text-white" },
-  unknown: { key: "phUnknown", style: "bg-line text-ink-soft" },
+const PHONE_STATUS: Record<MessagePhone["status"], { key: DictKey; chip: string }> = {
+  official: { key: "phOfficial", chip: "chip chip-safe" },
+  unofficial: { key: "phUnofficial", chip: "chip chip-suspicious" },
+  mobile_for_institution: { key: "phMobile", chip: "chip chip-scam" },
+  foreign_for_institution: { key: "phForeign", chip: "chip chip-scam" },
+  linked_to_scam: { key: "phLinked", chip: "chip chip-scam" },
+  unknown: { key: "phUnknown", chip: "chip" },
 };
 
 /** The sender and every phone number found in a pasted message, each with its official-number check. */
@@ -453,41 +469,37 @@ function MessageNumbersCard({ message }: { message: MessageDetails }) {
   if (!sender && rows.length === 0) return null;
   const senderStatus = sender?.status ? PHONE_STATUS[sender.status] : null;
   return (
-    <Card title={t("msgNumbersTitle")} icon={PhoneCall} delay={0.45}>
-      <ul className="space-y-2">
+    <Section title={t("msgNumbersTitle")} icon={PhoneCall}>
+      <ul className="-my-2 divide-y divide-line">
         {sender && (
-          <li className="flex items-center justify-between gap-2 rounded-xl bg-muted p-3 text-xs">
+          <li className="flex items-center justify-between gap-2 py-2.5 text-[14px]">
             <span className="min-w-0">
               <span className="font-semibold text-ink-soft">{t("msgSenderRow")}: </span>
-              <span dir="ltr" className="font-mono font-bold text-ink">
+              <span dir="ltr" className="font-mono font-semibold text-ink">
                 {visible(sender.value)}
               </span>
             </span>
-            {senderStatus && (
-              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${senderStatus.style}`}>
-                {t(senderStatus.key)}
-              </span>
-            )}
+            {senderStatus && <span className={`shrink-0 ${senderStatus.chip}`}>{t(senderStatus.key)}</span>}
           </li>
         )}
         {rows.map((p, i) => {
           const st = PHONE_STATUS[p.status] ?? PHONE_STATUS.unknown;
           return (
-            <li key={`${p.masked}-${i}`} className="flex items-center justify-between gap-2 rounded-xl bg-muted p-3 text-xs">
-              <span dir="ltr" className="min-w-0 truncate font-mono font-bold text-ink">
+            <li key={`${p.masked}-${i}`} className="flex items-center justify-between gap-2 py-2.5 text-[14px]">
+              <span dir="ltr" className="min-w-0 truncate font-mono font-semibold tabular-nums text-ink">
                 {p.e164 ?? p.masked}
               </span>
-              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${st.style}`}>{t(st.key)}</span>
+              <span className={`shrink-0 ${st.chip}`}>{t(st.key)}</span>
             </li>
           );
         })}
       </ul>
       {sender?.type === "alphanumeric" && (
-        <p className="mt-2 flex items-start gap-1.5 text-xs text-ink-soft">
+        <p className="mt-3 flex items-start gap-1.5 text-[13px] text-ink-soft">
           <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {t("msgSenderIdNote")}
         </p>
       )}
-    </Card>
+    </Section>
   );
 }
 
@@ -501,30 +513,27 @@ function formatBytes(bytes: number): string {
 function AttachmentsCard({ attachments }: { attachments: EmailAttachment[] }) {
   const { t } = useLang();
   return (
-    <Card title={t("emAttachTitle")} icon={Paperclip} delay={0.55}>
+    <Section title={t("emAttachTitle")} icon={Paperclip}>
       <ul className="space-y-2">
         {attachments.slice(0, 20).map((a, i) => (
-          <li
-            key={`${a.name}-${i}`}
-            className={`flex items-start gap-3 rounded-xl p-3 ${a.risky ? "bg-crimson-50 ring-1 ring-crimson-600/20 dark:bg-crimson-600/15 dark:ring-crimson-600/40" : "bg-muted"}`}
-          >
-            <FileText className={`mt-0.5 size-4 shrink-0 ${a.risky ? "text-crimson-600" : "text-ink-soft"}`} />
+          <li key={`${a.name}-${i}`} className={`flex items-start gap-3 rounded-control p-3 ${a.risky ? "bg-scam-soft" : "bg-muted"}`}>
+            <FileText className={`mt-0.5 size-4 shrink-0 ${a.risky ? "text-scam-ink" : "text-ink-soft"}`} aria-hidden />
             <div className="min-w-0 flex-1">
-              <p dir="ltr" className="truncate text-start font-mono text-sm font-bold text-ink">
+              <p dir="ltr" className="truncate text-start font-mono text-[14px] font-semibold text-ink">
                 {visible(a.name) || "—"}
               </p>
               {a.risky && (
-                <p className="mt-0.5 text-xs font-semibold text-crimson-700 dark:text-red-300">
+                <p className="mt-0.5 text-[13px] font-semibold text-scam-ink">
                   {t("emAttachRisky")}
                   {a.reason ? ` · ${a.reason}` : ""}
                 </p>
               )}
             </div>
-            <span className="shrink-0 text-xs text-ink-soft">{formatBytes(a.size)}</span>
+            <span className="shrink-0 text-[13px] tabular-nums text-ink-soft">{formatBytes(a.size)}</span>
           </li>
         ))}
       </ul>
-    </Card>
+    </Section>
   );
 }
 
@@ -558,49 +567,46 @@ function CampaignCard({ campaigns }: { campaigns: CampaignMatch[] }) {
   }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.35 }}
-      className="rounded-2xl bg-navy-900 p-4 text-white dark:bg-navy-800 dark:ring-1 dark:ring-white/10"
-    >
-      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/60">
-        <Megaphone className="size-4" /> {t("emCampaignTitle")}
-      </p>
-      <ul className="mt-2 space-y-3">
+    <Section title={t("emCampaignTitle")} icon={Megaphone}>
+      <ul className="space-y-4">
         {campaigns.map((c) => {
           const sources = (refs[c.id] ?? []).map((r) => ({ ...r, href: safeHttps(r.url) })).filter((r) => r.href);
           return (
             <li key={c.id}>
-              <p className="text-lg font-bold leading-snug text-gold-500">{lang === "ar" ? c.title_ar || c.title_en : c.title_en}</p>
-              <p className="mt-0.5 text-xs font-semibold text-white/70">{t(c.match === "ioc" ? "emCampaignIoc" : "emCampaignLure")}</p>
+              <p className="text-[17px] font-semibold leading-snug text-ink">{lang === "ar" ? c.title_ar || c.title_en : c.title_en}</p>
+              <p className="mt-0.5 text-[13px] font-medium text-ink-soft">{t(c.match === "ioc" ? "emCampaignIoc" : "emCampaignLure")}</p>
               {c.matched.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {c.matched.slice(0, 8).map((m) => (
-                    <span key={m} dir="auto" className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs ring-1 ring-white/15">
+                    <span key={m} dir="auto" className="chip font-medium">
                       {c.match === "ioc" ? defang(m) : m}
                     </span>
                   ))}
                 </div>
               )}
               {sources.length > 0 && (
-                <div className="mt-2 text-xs">
-                  <span className="font-semibold text-white/60">{t("emCampaignSources")}: </span>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  <span className="font-semibold">{t("emCampaignSources")}: </span>
                   {sources.slice(0, 4).map((r, i) => (
                     <span key={`${r.href}-${i}`}>
                       {i > 0 && " · "}
-                      <a href={r.href ?? undefined} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-gold-500">
-                        {r.title || r.source_id} <ExternalLink className="size-3" />
+                      <a
+                        href={r.href ?? undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-ink underline underline-offset-2"
+                      >
+                        {r.title || r.source_id} <ExternalLink className="size-3" aria-hidden />
                       </a>
                     </span>
                   ))}
-                </div>
+                </p>
               )}
             </li>
           );
         })}
       </ul>
-    </motion.div>
+    </Section>
   );
 }
 
@@ -629,14 +635,14 @@ function PersonalModelCard({ scanId, model }: { scanId: string; model: UserModel
       : t("emModelLearning").replace("{n}", String(labels));
 
   return (
-    <Card title={t("emModelTitle")} icon={BrainCircuit} delay={0.6}>
-      <p className="text-sm font-semibold text-ink">{line}</p>
-      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{t("emModelAsk")}</p>
+    <Section title={t("emModelTitle")} icon={BrainCircuit}>
+      <p className="text-[15px] font-semibold text-ink">{line}</p>
+      <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">{t("emModelAsk")}</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         {(
           [
-            ["scam", "emLabelScam", ThumbsDown, "bg-crimson-600 text-white ring-crimson-600"],
-            ["ham", "emLabelHam", ThumbsUp, "bg-emerald-600 text-white ring-emerald-600"],
+            ["scam", "emLabelScam", ThumbsDown, "border-transparent bg-scam text-on-scam hover:bg-scam"],
+            ["ham", "emLabelHam", ThumbsUp, "border-transparent bg-safe text-on-safe hover:bg-safe"],
           ] as const
         ).map(([label, key, Icon, activeStyle]) => (
           <button
@@ -645,34 +651,32 @@ function PersonalModelCard({ scanId, model }: { scanId: string; model: UserModel
             disabled={state === "saving"}
             onClick={() => void send(label)}
             aria-pressed={chosen === label && state === "saved"}
-            className={`inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-bold ring-1 transition disabled:opacity-60 ${
-              chosen === label && state === "saved" ? activeStyle : "bg-muted text-ink ring-line hover:bg-line"
-            }`}
+            className={`btn-secondary px-3 ${chosen === label && state === "saved" ? activeStyle : ""}`}
           >
-            <Icon className="size-4" /> {t(key)}
+            <Icon className="size-4" aria-hidden /> {t(key)}
           </button>
         ))}
       </div>
       <div aria-live="polite">
         {state === "saved" && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-            <CircleCheck className="size-3.5" /> {t("emLabelSaved")}
+          <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+            <CircleCheck className="size-3.5" aria-hidden /> {t("emLabelSaved")}
           </p>
         )}
         {state === "failed" && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
-            <TriangleAlert className="size-3.5" /> {t("emLabelFailed")}
+          <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+            <Info className="size-3.5" aria-hidden /> {t("emLabelFailed")}
           </p>
         )}
       </div>
       <a
         href={emailModelDownloadUrl()}
         download="saqr-my-model.json"
-        className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-ink underline underline-offset-2 hover:text-emerald-700 dark:hover:text-emerald-400"
+        className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold text-ink underline underline-offset-2"
       >
-        <Download className="size-3.5" /> {t("emModelDownload")}
+        <Download className="size-3.5" aria-hidden /> {t("emModelDownload")}
       </a>
-    </Card>
+    </Section>
   );
 }
 
@@ -680,19 +684,19 @@ function LlmNote({ email }: { email: EmailDetails }) {
   const { t } = useLang();
   if (email.userLlmError) {
     return (
-      <p className="flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200">
-        <Bot className="mt-0.5 size-4 shrink-0" />
+      <p className="flex items-start gap-2 rounded-control bg-muted p-3 text-[14px] text-ink">
+        <Bot className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>
-          {t("llmFailed")} <span className="text-xs opacity-80">({email.userLlmError})</span>
+          {t("llmFailed")} <span className="text-[13px] text-ink-soft">({email.userLlmError})</span>
         </span>
       </p>
     );
   }
   if (!email.userLlmHost) return null;
   return (
-    <p className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-sm text-ink-soft ring-1 ring-line">
-      <Bot className="size-4 shrink-0" /> {t("llmUsed")}{" "}
-      <span dir="ltr" className="font-mono text-xs">
+    <p className="flex items-center gap-2 rounded-control bg-muted p-3 text-[14px] text-ink-soft">
+      <Bot className="size-4 shrink-0" aria-hidden /> {t("llmUsed")}{" "}
+      <span dir="ltr" className="font-mono text-[13px]">
         ({email.userLlmHost})
       </span>
     </p>
@@ -702,20 +706,20 @@ function LlmNote({ email }: { email: EmailDetails }) {
 function AiNotes({ notes }: { notes: string[] }) {
   const { t } = useLang();
   return (
-    <Card title={t("emAiNotes")} icon={Sparkles} delay={0.5}>
+    <Section title={t("emAiNotes")} icon={Sparkles}>
       <ul className="space-y-1.5">
         {notes.slice(0, 6).map((n, i) => (
-          <li key={i} className="flex gap-2 text-sm text-ink" dir="auto">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-crimson-600" />
+          <li key={i} className="flex gap-2 text-[15px] text-ink" dir="auto">
+            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-ink-soft" aria-hidden />
             <span>{n}</span>
           </li>
         ))}
       </ul>
-    </Card>
+    </Section>
   );
 }
 
-function stripBullets(text: string): string {
+export function stripBullets(text: string): string {
   return text
     .split(/\n\s*\n/)
     .filter((p) => !/^\s*(red flags|علامات الخطر)\s*:/i.test(p) && !/^\s*•/.test(p))
@@ -723,101 +727,44 @@ function stripBullets(text: string): string {
     .trim();
 }
 
-function RiskGauge({ score, tone }: { score: number; tone: "danger" | "warn" | "safe" }) {
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius;
-  const value = useMotionValue(0);
-  const offset = useTransform(value, (v) => circumference - (v / 100) * circumference);
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    const controls = animate(value, score, { duration: 1.4, ease: [0.16, 1, 0.3, 1] });
-    const unsub = value.on("change", (v) => setDisplay(Math.round(v)));
-    return () => {
-      controls.stop();
-      unsub();
-    };
-  }, [score, value]);
-
-  const glow = tone === "danger" ? "rgba(255,180,190,0.9)" : tone === "warn" ? "rgba(255,230,160,0.9)" : "rgba(170,255,215,0.9)";
-  return (
-    <div className="relative grid size-36 shrink-0 place-items-center">
-      <svg viewBox="0 0 128 128" className="absolute inset-0 -rotate-90">
-        <circle cx="64" cy="64" r={radius} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="10" />
-        <motion.circle
-          cx="64"
-          cy="64"
-          r={radius}
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="10"
-          style={{ strokeDashoffset: offset, filter: `drop-shadow(0 0 6px ${glow})` }}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-        />
-      </svg>
-      <div className="text-center">
-        <div className="text-4xl font-extrabold tabular-nums text-white">{display}</div>
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-white/70">/ 100</div>
-      </div>
-    </div>
-  );
-}
-
 function ScanningView({ target, interception, kind }: { target: string; interception: InterceptionChannel; kind?: ScanVerdict["kind"] }) {
   const { t } = useLang();
   const [step, setStep] = useState(0);
-  const isEmail = kind === "email";
-  const isMessage = kind === "message";
-  const steps = isEmail ? EMAIL_SCAN_STEPS : isMessage ? MESSAGE_SCAN_STEPS : SCAN_STEPS;
+  const steps = scanSteps(kind);
   useEffect(() => {
-    const id = window.setInterval(() => setStep((s) => Math.min(s + 1, steps.length - 1)), isEmail ? 520 : 650);
+    const id = window.setInterval(() => setStep((s) => Math.min(s + 1, steps.length - 1)), kind === "email" ? 520 : 650);
     return () => window.clearInterval(id);
-  }, [steps.length, isEmail]);
+  }, [steps.length, kind]);
+  const Icon = kind === "email" ? Mail : kind === "message" ? MessageSquareText : ShieldCheck;
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-navy-900 px-6 py-16 text-white">
-      <div className="relative grid size-56 place-items-center overflow-hidden rounded-full">
+    <div className="flex min-h-full flex-col items-center justify-center bg-canvas px-6 py-16 text-ink" data-testid="fullscreen-scanning">
+      <div className="relative grid size-44 place-items-center overflow-hidden rounded-full">
         {[0, 1, 2].map((i) => (
-          <span key={i} className="absolute inset-0 rounded-full border border-emerald-400/30" style={{ transform: `scale(${0.45 + i * 0.27})` }} />
+          <span key={i} className="absolute inset-0 rounded-full border border-line" style={{ transform: `scale(${0.45 + i * 0.27})` }} />
         ))}
-        <span className="absolute inset-0 animate-sweep rounded-full bg-[conic-gradient(from_0deg,rgba(16,185,129,0.55),transparent_28%)]" />
-        <span className="absolute size-20 animate-ping-slow rounded-full bg-emerald-400/30" />
-        <div className="relative grid size-20 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/20 backdrop-blur">
-          {isEmail ? (
-            <Mail className="size-10 text-emerald-300" />
-          ) : isMessage ? (
-            <MessageSquareText className="size-10 text-emerald-300" />
-          ) : (
-            <ShieldCheck className="size-10 text-emerald-300" />
-          )}
+        <span className="absolute inset-0 animate-sweep rounded-full bg-[conic-gradient(from_0deg,color-mix(in_oklab,var(--color-ink)_22%,transparent),transparent_28%)]" />
+        <div className="relative grid size-16 place-items-center rounded-card border border-line bg-surface shadow-card">
+          <Icon className="size-8" aria-hidden />
         </div>
       </div>
-      <p className="mt-6 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-300">
-        {t(CHANNEL_KEY[interception])}
-      </p>
-      <h2 className="shimmer-text mt-3 text-center text-2xl font-bold">{t(isEmail ? "emScanningTitle" : isMessage ? "msgScanningTitle" : "scanningTitle")}</h2>
-      <p className="mt-2 max-w-xs truncate text-center font-mono text-sm text-white/60" dir="ltr">
+      <p className="chip mt-6">{t(CHANNEL_KEY[interception])}</p>
+      <h2 className="shimmer-text mt-3 text-center text-[24px] font-bold tracking-tight">{t(scanTitle(kind))}</h2>
+      <p className="mt-2 max-w-xs truncate text-center font-mono text-[13px] text-ink-soft" dir="ltr">
         {visible(target)}
       </p>
-      <ul className="mt-8 w-full max-w-sm space-y-2.5">
+      <ul className="mt-8 w-full max-w-sm space-y-2.5" aria-live="polite">
         {steps.map((key, i) => (
-          <motion.li
-            key={key}
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: i <= step ? 1 : 0.35, x: 0 }}
-            transition={{ delay: i * 0.08 }}
-            className="flex items-center gap-3 text-sm"
-          >
+          <li key={key} className={`flex items-center gap-3 text-[15px] transition-opacity ${i <= step ? "opacity-100" : "opacity-40"}`}>
             {i < step ? (
-              <CircleCheck className="size-5 text-emerald-400" />
+              <CircleCheck className="size-5 shrink-0" aria-hidden />
             ) : i === step ? (
-              <RefreshCw className="size-5 animate-spin text-emerald-300" />
+              <RefreshCw className="size-5 shrink-0 animate-spin" aria-hidden />
             ) : (
-              <span className="size-5 rounded-full border border-white/30" />
+              <span className="size-5 shrink-0 rounded-full border border-line" aria-hidden />
             )}
             <span>{t(key)}</span>
-          </motion.li>
+          </li>
         ))}
       </ul>
     </div>
@@ -826,13 +773,12 @@ function ScanningView({ target, interception, kind }: { target: string; intercep
 
 type ReportState = "closed" | "open" | "sending" | "sent" | "already" | "error";
 
-/** One-line privacy note, plus (for warnings only) a quiet "Report a false alarm" control. */
-function PrivacyAndFeedback({ scanId, canReport }: { scanId: string; canReport: boolean }) {
+/** "Report a false alarm": a quiet link that opens a short optional note, then a thank-you line. */
+export function FalseAlarmReport({ scanId, compact = false }: { scanId: string; compact?: boolean }) {
   const { t } = useLang();
   const [state, setState] = useState<ReportState>("closed");
   const [note, setNote] = useState("");
   const [error, setError] = useState<DictKey>("faFailed");
-  const showReport = canReport && Boolean(scanId);
 
   const send = async () => {
     setState("sending");
@@ -846,93 +792,90 @@ function PrivacyAndFeedback({ scanId, canReport }: { scanId: string; canReport: 
     }
   };
 
+  if (!scanId) return null;
   return (
-    <section className="space-y-3 border-t border-line pt-4">
-      <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-soft">
-        <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {t("privacyLine")}
-      </p>
-      {showReport && (
-        <div aria-live="polite">
-          {state === "closed" && (
-            <button
-              type="button"
-              onClick={() => setState("open")}
-              className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-xs font-semibold text-ink-soft underline-offset-2 hover:bg-muted hover:text-ink hover:underline"
-            >
-              <Flag className="size-3.5" aria-hidden /> {t("faReport")}
-            </button>
-          )}
-          {(state === "open" || state === "sending" || state === "error") && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void send();
-              }}
-              className="space-y-2"
-            >
-              <label htmlFor={`fa-note-${scanId}`} className="block text-xs font-semibold text-ink">
-                {t("faNoteLabel")}
-              </label>
-              <textarea
-                id={`fa-note-${scanId}`}
-                value={note}
-                onChange={(e) => setNote(e.target.value.slice(0, FALSE_ALARM_NOTE_MAX))}
-                maxLength={FALSE_ALARM_NOTE_MAX}
-                rows={2}
-                dir="auto"
-                placeholder={t("faNotePlaceholder")}
-                className="w-full resize-none rounded-xl bg-surface px-[13px] py-[9px] text-sm text-ink outline-hidden ring-1 ring-line transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-emerald-600"
-              />
-              <p className="flex justify-between gap-3 text-[11px] text-ink-soft">
-                <span>{t("faSentWhat")}</span>
-                <span className="shrink-0 tabular-nums" dir="ltr">
-                  {note.length}/{FALSE_ALARM_NOTE_MAX}
-                </span>
-              </p>
-              {state === "error" && (
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-ink">
-                  <TriangleAlert className="size-3.5 shrink-0" aria-hidden /> {t(error)}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="submit"
-                  disabled={state === "sending"}
-                  className="rounded-xl border border-line px-3 py-2 text-xs font-bold text-ink hover:bg-muted disabled:opacity-60"
-                >
-                  {t(state === "sending" ? "faSending" : "faSend")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setState("closed")}
-                  className="rounded-xl px-3 py-2 text-xs font-semibold text-ink-soft hover:text-ink"
-                >
-                  {t("faCancel")}
-                </button>
-              </div>
-            </form>
-          )}
-          {(state === "sent" || state === "already") && (
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-ink">
-              <CircleCheck className="size-3.5 shrink-0" aria-hidden /> {t(state === "sent" ? "faThanks" : "faAlready")}
+    <div aria-live="polite" data-testid="false-alarm">
+      {state === "closed" && (
+        <button
+          type="button"
+          onClick={() => setState("open")}
+          data-testid="false-alarm-open"
+          className={`inline-flex min-h-11 items-center gap-1.5 text-[14px] font-semibold text-ink-soft underline-offset-2 hover:text-ink hover:underline ${compact ? "" : "-ms-0.5"}`}
+        >
+          <Flag className="size-3.5" aria-hidden /> {t("faReport")}
+        </button>
+      )}
+      {(state === "open" || state === "sending" || state === "error") && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+          className="space-y-2"
+        >
+          <label htmlFor={`fa-note-${scanId}-${compact ? "c" : "f"}`} className="block text-[13px] font-semibold text-ink">
+            {t("faNoteLabel")}
+          </label>
+          <textarea
+            id={`fa-note-${scanId}-${compact ? "c" : "f"}`}
+            value={note}
+            onChange={(e) => setNote(e.target.value.slice(0, FALSE_ALARM_NOTE_MAX))}
+            maxLength={FALSE_ALARM_NOTE_MAX}
+            rows={2}
+            dir="auto"
+            placeholder={t("faNotePlaceholder")}
+            className="field resize-none py-2.5"
+          />
+          <p className="flex justify-between gap-3 text-[12px] text-ink-soft">
+            <span>{t("faSentWhat")}</span>
+            <span className="shrink-0 tabular-nums" dir="ltr">
+              {note.length}/{FALSE_ALARM_NOTE_MAX}
+            </span>
+          </p>
+          {state === "error" && (
+            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+              <Info className="size-3.5 shrink-0" aria-hidden /> {t(error)}
             </p>
           )}
-        </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="submit" disabled={state === "sending"} className="btn-secondary min-h-11 px-4 text-[14px]" data-testid="false-alarm-send">
+              {t(state === "sending" ? "faSending" : "faSend")}
+            </button>
+            <button type="button" onClick={() => setState("closed")} className="min-h-11 rounded-control px-3 text-[14px] font-semibold text-ink-soft hover:text-ink">
+              {t("faCancel")}
+            </button>
+          </div>
+        </form>
       )}
+      {(state === "sent" || state === "already") && (
+        <p className="flex items-center gap-1.5 py-2 text-[14px] font-semibold text-ink">
+          <CircleCheck className="size-4 shrink-0" aria-hidden /> {t(state === "sent" ? "faThanks" : "faAlready")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** One-line privacy note, plus (for warnings only) the false-alarm report. */
+function PrivacyAndFeedback({ scanId, canReport }: { scanId: string; canReport: boolean }) {
+  const { t } = useLang();
+  return (
+    <section className="space-y-2 border-t border-line pt-4">
+      <p className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-soft">
+        <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {t("privacyLine")}
+      </p>
+      {canReport && <FalseAlarmReport scanId={scanId} />}
     </section>
   );
 }
 
-function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => void }) {
+const HEADER_ICON: Record<Tone, typeof ShieldCheck> = { scam: ShieldAlert, suspicious: TriangleAlert, safe: ShieldCheck };
+
+/** The full report. `embedded` = inside the "Full report" drawer (the drawer owns the close button). */
+export function ResultView({ result, onClose, embedded = false }: { result: ScanVerdict; onClose: () => void; embedded?: boolean }) {
   const { t, lang } = useLang();
   const [showOther, setShowOther] = useState(false);
-  const tone = result.verdict === "HIGH-RISK SCAM" ? "danger" : result.verdict === "SUSPICIOUS" ? "warn" : "safe";
-  const header =
-    tone === "danger"
-      ? "from-crimson-700 via-crimson-600 to-[#7a0a1c]"
-      : tone === "warn"
-        ? "from-amber-600 via-amber-500 to-amber-700"
-        : "from-emerald-700 via-emerald-600 to-emerald-800";
+  const tone = toneOf(result.verdict);
   const entity = (lang === "ar" ? result.entityAr : result.entityEn) ?? result.entityEn ?? t("unknownEntity");
   const primary = stripBullets(lang === "ar" ? result.explanationAr : result.explanationEn);
   const secondary = stripBullets(lang === "ar" ? result.explanationEn : result.explanationAr);
@@ -940,142 +883,118 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
   const syndicate = lang === "ar" ? result.syndicateAr ?? result.syndicateEn : result.syndicateEn;
   const email = result.kind === "email" ? result.email ?? null : null;
   const message = result.kind === "message" ? result.message ?? null : null;
+  const verified = isVerifiedOfficial(result);
   const title = email
-    ? t(tone === "danger" ? "emBlockedTitle" : tone === "warn" ? "emSuspiciousTitle" : "emSafeTitle")
+    ? t(tone === "scam" ? "emBlockedTitle" : tone === "suspicious" ? "emSuspiciousTitle" : "emSafeTitle")
     : message
-      ? t(tone === "danger" ? "msgBlockedTitle" : tone === "warn" ? "msgSuspiciousTitle" : "msgSafeTitle")
-      : t(tone === "danger" ? "blockedTitle" : tone === "warn" ? "suspiciousTitle" : "safeTitle");
-  const HeaderIcon = tone === "safe" ? ShieldCheck : tone === "warn" ? TriangleAlert : ShieldAlert;
+      ? t(tone === "scam" ? "msgBlockedTitle" : tone === "suspicious" ? "msgSuspiciousTitle" : "msgSafeTitle")
+      : t(tone === "scam" ? "blockedTitle" : tone === "suspicious" ? "suspiciousTitle" : "safeTitle");
+  const HeaderIcon = HEADER_ICON[tone];
 
   return (
-    <div className="min-h-full bg-canvas">
-      <div className={`relative overflow-hidden bg-gradient-to-br ${header} px-5 pb-8 pt-5 text-white`}>
-        <div className="pointer-events-none absolute -end-16 -top-16 size-56 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative mx-auto max-w-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
-              <span dir="ltr" className="rounded-full bg-white/15 px-2.5 py-1 ring-1 ring-white/25">AD Police</span>
-              <span dir="ltr" className="rounded-full bg-white/15 px-2.5 py-1 ring-1 ring-white/25">e&amp;</span>
-              <span dir="ltr" className="rounded-full bg-white/15 px-2.5 py-1 ring-1 ring-white/25">du</span>
-              <span className="rounded-full bg-white/15 px-2.5 py-1 ring-1 ring-white/25">{t(CHANNEL_KEY[result.interception])}</span>
-            </div>
-            <button onClick={onClose} aria-label={t("close")} className="rounded-full bg-white/15 p-2 hover:bg-white/25">
-              <X className="size-5" />
-            </button>
-          </div>
-
-          <div className="mt-6 flex items-center gap-5">
-            <RiskGauge score={result.riskScore} tone={tone} />
-            <div className="min-w-0">
-              <motion.div
-                initial={{ scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.2 }}
-                className="mb-2 inline-flex items-center gap-2 rounded-lg bg-white px-2.5 py-1 text-sm font-extrabold tracking-wide"
-                style={{ color: tone === "danger" ? "#c8102e" : tone === "warn" ? "#b45309" : "#047857" }}
-              >
-                <HeaderIcon className="size-4" /> {VERDICT_LABEL[result.verdict] ? t(VERDICT_LABEL[result.verdict]) : result.verdict}
-              </motion.div>
-              <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl">{title}</h2>
-              {email || message ? (
-                <p className="mt-1 text-sm text-white/80">{t(email ? "emCheckedBy" : "msgCheckedBy")}</p>
-              ) : (
-                tone !== "safe" && <p className="mt-1 text-sm text-white/80">{t("blockedBy")}</p>
-              )}
-              <p className="mt-2 truncate font-mono text-xs text-white/70" dir="ltr">
-                {visible(result.target)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto -mt-4 max-w-2xl space-y-4 px-4 pb-10">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
+    <div className={embedded ? "" : "min-h-full bg-canvas"} data-testid="verdict-report">
+      <div className={embedded ? "space-y-4" : "mx-auto max-w-2xl space-y-4 px-4 pb-10 pt-4 sm:pt-8"}>
+        {/* Verdict header */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="relative overflow-hidden rounded-2xl bg-navy-900 p-4 text-white shadow-lg dark:bg-navy-800 dark:ring-1 dark:ring-white/10"
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="card p-5"
         >
-          <div className="flex items-center gap-3">
-            <span className="relative flex size-3">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-3 rounded-full bg-emerald-400" />
+          <div className="flex items-start justify-between gap-3">
+            <span className={TONE_CHIP[tone]}>
+              <HeaderIcon className="size-3.5" aria-hidden /> {VERDICT_LABEL[result.verdict] ? t(VERDICT_LABEL[result.verdict]) : result.verdict}
             </span>
-            <p className="text-sm font-semibold">{t("syncedBadge")}</p>
+            {!embedded && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t("close")}
+                data-testid="verdict-close"
+                className="-me-2 -mt-2 grid size-12 shrink-0 place-items-center rounded-full text-ink-soft hover:bg-muted hover:text-ink"
+              >
+                <X className="size-5" aria-hidden />
+              </button>
+            )}
           </div>
-          <p className="mt-1 ps-6 font-mono text-xs text-white/60" dir="ltr">
-            {t("caseId")} {result.scanId} · {new Date().toLocaleTimeString(lang === "ar" ? "ar-AE" : "en-AE")}
+          <h2 className={`mt-3 text-[24px] font-bold leading-tight tracking-tight sm:text-[28px] ${TONE_TEXT[tone]}`}>{title}</h2>
+          <p className="mt-1 text-[14px] text-ink-soft">
+            {email || message ? t(email ? "emCheckedBy" : "msgCheckedBy") : tone !== "safe" ? t("blockedBy") : null}
           </p>
-        </motion.div>
+          <p className="mt-2 truncate font-mono text-[13px] text-ink-soft" dir="ltr">
+            {visible(result.kind === "url" ? defang(result.target) : result.target)}
+          </p>
+          <div className="mt-4 flex items-end gap-4">
+            <p className="shrink-0 text-ink">
+              <span className="text-[40px] font-bold leading-none tabular-nums">{result.riskScore}</span>
+              <span className="ms-1 text-[15px] text-ink-soft tabular-nums">/ 100</span>
+            </p>
+            <RiskMeter score={result.riskScore} className="min-w-0 flex-1 pb-0.5" />
+          </div>
+          {verified && (
+            <p className="mt-4 flex items-center gap-2 text-[15px] font-semibold text-safe-ink">
+              <BadgeCheck className="size-4 shrink-0" aria-hidden /> {message ? t("msgVerified") : t("vcVerified")}
+            </p>
+          )}
+          <p className="mt-4 border-t border-line pt-3 text-[13px] text-ink-soft">
+            <span className="font-semibold text-ink">{t("syncedBadge")}</span>
+            <br />
+            <span dir="ltr" className="font-mono">
+              {t("caseId")} {result.scanId} · {new Date().toLocaleTimeString(lang === "ar" ? "ar-AE" : "en-AE")}
+            </span>{" "}
+            · {t("detectedVia")}: {t(CHANNEL_KEY[result.interception])}
+          </p>
+        </motion.section>
 
         {tone !== "safe" && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="grid gap-3 sm:grid-cols-2"
-          >
-            <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("impersonating")}</p>
-              <p className="mt-1 text-lg font-bold text-crimson-700 dark:text-red-300">{entity}</p>
-            </div>
+          <Section title={t("impersonating")} icon={ShieldAlert}>
+            <p className="text-[19px] font-semibold text-scam-ink">{entity}</p>
             {official && (
-              <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-                <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("officialSite")}</p>
-                <p className="mt-1 flex items-center gap-2 text-lg font-bold text-emerald-700 dark:text-emerald-400" dir="ltr">
-                  <ShieldCheck className="size-5" /> {official}
-                </p>
-              </div>
+              <p className="mt-3 border-t border-line pt-3 text-[14px] text-ink-soft">
+                {t("officialSite")}:{" "}
+                <span className="inline-flex items-center gap-1.5 font-semibold text-safe-ink" dir="ltr">
+                  <ShieldCheck className="size-4" aria-hidden /> {official}
+                </span>
+              </p>
             )}
-          </motion.div>
+          </Section>
         )}
 
         {email && <SenderCard email={email} />}
 
-        {message?.verifiedOfficial && tone === "safe" && (
-          <p className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-sm font-semibold text-emerald-700 ring-1 ring-line dark:text-emerald-400">
-            <BadgeCheck className="size-4 shrink-0" aria-hidden /> {t("msgVerified")}
-          </p>
-        )}
-
         {result.harvested.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className="rounded-2xl border border-crimson-600/20 bg-crimson-50 p-4 dark:border-crimson-600/40 dark:bg-crimson-600/15"
-          >
-            <p className="text-sm font-bold text-crimson-700 dark:text-red-300">{t("wantsYour")}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
+          <Section title={t("wantsYour")} icon={KeyRound} titleClass="text-scam-ink">
+            <div className="flex flex-wrap gap-2">
               {result.harvested
                 .filter((h) => HARVEST_LABELS[h])
                 .map((h) => {
                   const Icon = HARVEST_LABELS[h].icon;
                   return (
-                    <span key={h} className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold text-crimson-700 ring-1 ring-crimson-600/20 dark:bg-black/30 dark:text-red-300 dark:ring-crimson-600/40">
-                      <Icon className="size-3.5" /> {HARVEST_LABELS[h][lang]}
+                    <span key={h} className="chip chip-scam">
+                      <Icon className="size-3.5" aria-hidden /> {HARVEST_LABELS[h][lang]}
                     </span>
                   );
                 })}
             </div>
-          </motion.div>
+          </Section>
         )}
 
         {primary && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line"
+            transition={{ delay: 0.1, duration: 0.2 }}
+            className="card p-4 sm:p-5"
           >
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t(tone === "safe" ? "whySafe" : "whyDangerous")}</p>
+              <h3 className="label-caps">{t(tone === "safe" ? "whySafe" : "whyDangerous")}</h3>
               <button
+                type="button"
                 onClick={() => setShowOther((s) => !s)}
-                className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:bg-line"
+                aria-expanded={showOther}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-ink-soft hover:bg-muted hover:text-ink"
               >
-                <Languages className="size-3.5" /> {t("otherLanguage")}
+                <Languages className="size-3.5" aria-hidden /> {t("otherLanguage")}
               </button>
             </div>
             <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-ink">{primary}</p>
@@ -1086,40 +1005,34 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   dir={lang === "ar" ? "ltr" : "rtl"}
+                  lang={lang === "ar" ? "en" : "ar"}
                   className="mt-3 overflow-hidden whitespace-pre-line border-t border-line pt-3 text-[15px] leading-relaxed text-ink-soft"
                 >
                   {secondary}
                 </motion.p>
               )}
             </AnimatePresence>
-          </motion.div>
+          </motion.section>
         )}
 
         {email && email.unicode.length > 0 && <UnicodeCard findings={email.unicode} />}
         {email && email.campaigns.length > 0 && <CampaignCard campaigns={email.campaigns} />}
 
         {result.redFlags.length > 0 && (
-          <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("redFlags")}</p>
-            <ul className="mt-2 space-y-2">
+          <Section title={t("redFlags")} icon={TriangleAlert}>
+            <ul className="-my-2 divide-y divide-line">
               {[...result.redFlags]
                 .sort((a, b) => b.points - a.points)
                 .map((f, i) => (
-                  <motion.li
-                    key={`${f.code}-${i}`}
-                    initial={{ opacity: 0, x: lang === "ar" ? 16 : -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.55 + i * 0.07 }}
-                    className="flex gap-3 rounded-xl bg-muted p-3"
-                  >
-                    <span className={`h-fit shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase ${SEVERITY_STYLE[f.severity]}`}>
+                  <li key={`${f.code}-${i}`} className="flex gap-3 py-2.5">
+                    <span className={`h-fit shrink-0 ${SEVERITY_CHIP[f.severity]}`}>
                       {SEVERITY_LABEL[f.severity] ? t(SEVERITY_LABEL[f.severity]) : f.severity}
                     </span>
-                    <span className="text-sm leading-snug text-ink">{lang === "ar" ? f.ar : f.en}</span>
-                  </motion.li>
+                    <span className="text-[15px] leading-snug text-ink">{lang === "ar" ? f.ar : f.en}</span>
+                  </li>
                 ))}
             </ul>
-          </div>
+          </Section>
         )}
 
         {email && (
@@ -1144,120 +1057,96 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
         {email && <PersonalModelCard scanId={result.scanId} model={email.userModel} />}
 
         {(email || message) && tone === "safe" && (
-          <p className="flex items-start gap-2 rounded-2xl bg-surface p-3 text-sm text-ink-soft ring-1 ring-line">
-            <Info className="mt-0.5 size-4 shrink-0" /> {t(email ? "emSafeNote" : "msgSafeNote")}
+          <p className="flex items-start gap-2 rounded-control bg-muted p-3 text-[14px] text-ink-soft">
+            <Info className="mt-0.5 size-4 shrink-0" aria-hidden /> {t(email ? "emSafeNote" : "msgSafeNote")}
           </p>
         )}
 
         {(syndicate || result.ip || result.domainAgeHours !== null || result.cloaking) && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <section className="card divide-y divide-line px-4 sm:px-5">
             {syndicate && (
-              <div className="rounded-2xl bg-navy-900 p-4 text-white sm:col-span-2 dark:bg-navy-800 dark:ring-1 dark:ring-white/10">
-                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/60">
-                  <Network className="size-4" /> {t("syndicateLink")}
+              <div className="py-3.5">
+                <p className="label-caps flex items-center gap-2">
+                  <Network className="size-4" aria-hidden /> {t("syndicateLink")}
                 </p>
-                <p className="mt-1 text-lg font-bold text-gold-500">{syndicate}</p>
+                <p className="mt-1 text-[17px] font-semibold text-scam-ink">{syndicate}</p>
               </div>
             )}
             {result.domainAgeHours !== null && (
-              <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
-                <Clock className="size-5 text-crimson-600" />
+              <div className="flex items-center gap-3 py-3.5">
+                <Clock className="size-5 shrink-0 text-ink-soft" aria-hidden />
                 <div>
-                  <p className="text-xs text-ink-soft/80">{t("registered")}</p>
-                  <p className="font-bold">
+                  <p className="text-[13px] text-ink-soft">{t("registered")}</p>
+                  <p className="font-semibold tabular-nums">
                     {Math.round(result.domainAgeHours)} {t("hoursAgo")}
                   </p>
                 </div>
               </div>
             )}
             {result.ip && (
-              <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
-                <Server className="size-5 text-ink-soft" />
+              <div className="flex items-center gap-3 py-3.5">
+                <Server className="size-5 shrink-0 text-ink-soft" aria-hidden />
                 <div>
-                  <p className="text-xs text-ink-soft/80">{t("hostedOn")}</p>
-                  <p className="font-mono font-bold" dir="ltr">
+                  <p className="text-[13px] text-ink-soft">{t("hostedOn")}</p>
+                  <p className="font-mono font-semibold" dir="ltr">
                     {result.ip}
                   </p>
                 </div>
               </div>
             )}
             {result.cloaking && (
-              <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line sm:col-span-2">
-                <EyeOff className="size-5 text-amber-600" />
+              <div className="flex items-center gap-3 py-3.5">
+                <EyeOff className="size-5 shrink-0 text-suspicious-ink" aria-hidden />
                 <p className="font-semibold">{t("cloaking")}</p>
               </div>
             )}
-          </div>
+          </section>
         )}
 
         {result.screenshot && (
-          <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/80">{t("evidence")}</p>
-            <div className="relative mt-2 overflow-hidden rounded-xl ring-1 ring-line">
+          <Section title={t("evidence")} icon={ScanEye}>
+            <div className="relative overflow-hidden rounded-control border border-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`data:image/jpeg;base64,${result.screenshot}`}
                 alt="Sandbox screenshot of the blocked page"
                 className="max-h-80 w-full object-cover object-top opacity-90 blur-[1px] grayscale-[30%]"
               />
-              <div className="absolute inset-0 grid place-items-center bg-crimson-600/10">
-                <span className="rotate-[-12deg] rounded-lg border-4 border-crimson-600 bg-white/90 px-4 py-1 text-2xl font-black tracking-widest text-crimson-600">
+              <div className="absolute inset-0 grid place-items-center">
+                <span className="rotate-[-12deg] rounded-control border-4 border-scam bg-surface px-4 py-1 text-2xl font-black tracking-widest text-scam-ink">
                   BLOCKED
                 </span>
               </div>
             </div>
-          </div>
+          </Section>
         )}
 
         <PrivacyAndFeedback key={result.scanId} scanId={result.scanId} canReport={tone !== "safe"} />
 
-        <div className="sticky bottom-0 -mx-4 space-y-2 bg-gradient-to-t from-canvas via-canvas to-transparent px-4 pb-4 pt-6">
-          <button
-            onClick={onClose}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-navy-900 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-navy-800 active:scale-[0.98] dark:bg-navy-700 dark:hover:bg-navy-800"
-          >
-            <ArrowLeft className="size-5 rtl:rotate-180" /> {t("backToSafety")}
+        <div className={`sticky bottom-0 space-y-2 bg-canvas pb-4 pt-3 ${embedded ? "-mx-4 px-4 sm:-mx-5 sm:px-5" : "-mx-4 px-4"}`}>
+          <button type="button" onClick={onClose} className="btn-primary w-full" data-testid="verdict-back">
+            <ArrowLeft className="size-5 rtl:rotate-180" aria-hidden /> {t("backToSafety")}
           </button>
           <div className="grid grid-cols-2 gap-2">
             {tone === "safe" && (email || message) ? (
               official ? (
-                <a
-                  href={`https://${official}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="press col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
-                >
-                  <ShieldCheck className="size-4" /> {t("goOfficial")}
+                <a href={`https://${official}`} target="_blank" rel="noopener noreferrer" className="btn-secondary col-span-2">
+                  <BadgeCheck className="size-4 text-safe-ink" aria-hidden /> {t("goOfficial")}
                 </a>
               ) : null
             ) : tone === "safe" ? (
-              <a
-                href={official ? `https://${official}` : "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="press col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
-              >
-                <ExternalLink className="size-4" /> {t("continueSite")}
+              <a href={official ? `https://${official}` : "#"} target="_blank" rel="noopener noreferrer" className="btn-secondary col-span-2">
+                <ExternalLink className="size-4" aria-hidden /> {t("continueSite")}
               </a>
             ) : (
               <>
-                {official ? (
-                  <a
-                    href={`https://${official}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="press flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white"
-                  >
-                    <ShieldCheck className="size-4" /> {t("goOfficial")}
+                {official && (
+                  <a href={`https://${official}`} target="_blank" rel="noopener noreferrer" className="btn-secondary px-3">
+                    <BadgeCheck className="size-4 shrink-0 text-safe-ink" aria-hidden /> {t("goOfficial")}
                   </a>
-                ) : (
-                  <span />
                 )}
-                <a
-                  href="tel:8002626"
-                  className={`flex items-center justify-center gap-2 rounded-2xl bg-surface py-3 text-sm font-bold text-ink ring-1 ring-line ${official ? "" : "col-span-2"}`}
-                >
-                  <PhoneCall className="size-4" /> {t("callAman")}
+                <a href="tel:8002626" className={`btn-secondary px-3 ${official ? "" : "col-span-2"}`}>
+                  <PhoneCall className="size-4 shrink-0" aria-hidden /> {t("callAman")}
                 </a>
               </>
             )}
@@ -1271,15 +1160,15 @@ function ResultView({ result, onClose }: { result: ScanVerdict; onClose: () => v
 function ErrorView({ message, onRetry, onClose }: { message: string; onRetry: () => void; onClose: () => void }) {
   const { t } = useLang();
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-navy-900 px-6 text-center text-white">
-      <TriangleAlert className="size-14 text-amber-400" />
-      <h2 className="mt-4 text-2xl font-bold">{t("scanFailed")}</h2>
-      <p className="mt-2 max-w-sm text-sm text-white/70">{message}</p>
+    <div className="flex min-h-full flex-col items-center justify-center bg-canvas px-6 text-center text-ink">
+      <Info className="size-12 text-ink-soft" aria-hidden />
+      <h2 className="mt-4 text-[24px] font-bold">{t("scanFailed")}</h2>
+      <p className="mt-2 max-w-sm text-[15px] text-ink-soft">{message}</p>
       <div className="mt-6 flex gap-3">
-        <button onClick={onRetry} className="press rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold">
+        <button type="button" onClick={onRetry} className="btn-primary">
           {t("retry")}
         </button>
-        <button onClick={onClose} className="rounded-xl bg-white/10 px-5 py-2.5 font-semibold">
+        <button type="button" onClick={onClose} className="btn-secondary">
           {t("close")}
         </button>
       </div>
@@ -1287,6 +1176,7 @@ function ErrorView({ message, onRetry, onClose }: { message: string; onRetry: ()
   );
 }
 
+/** Full-screen block page (share target, scam-alert notification, DNS block). */
 export function VerdictScreen({ state, onClose, onRetry }: { state: ScanState; onClose: () => void; onRetry: () => void }) {
   const open = state.status !== "idle";
 
@@ -1309,11 +1199,13 @@ export function VerdictScreen({ state, onClose, onRetry }: { state: ScanState; o
           key="verdict-sheet"
           role="dialog"
           aria-modal="true"
+          aria-label={state.status === "done" ? t_verdictAria(state.result) : undefined}
+          data-testid="verdict-fullscreen"
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
-          transition={{ type: "spring", stiffness: 210, damping: 28 }}
-          className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-navy-900 no-scrollbar"
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-canvas no-scrollbar"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -1321,7 +1213,7 @@ export function VerdictScreen({ state, onClose, onRetry }: { state: ScanState; o
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
               className="min-h-full"
             >
               {state.status === "scanning" && <ScanningView target={state.target} interception={state.interception} kind={state.kind} />}
@@ -1333,4 +1225,9 @@ export function VerdictScreen({ state, onClose, onRetry }: { state: ScanState; o
       )}
     </AnimatePresence>
   );
+}
+
+/** Dialog name for screen readers: the verdict word + the target (English; the content itself is localised). */
+function t_verdictAria(r: ScanVerdict): string {
+  return `${r.verdict} · ${r.target}`;
 }

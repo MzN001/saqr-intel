@@ -4,13 +4,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.dp
 
-/** Night Grid radii: stamp 6, control 12, inset 16, tile 20, pill full. */
+/** Saqr radii: cards 16, controls 12, pills full. */
 @Immutable
 data class SaqrShapes(
-    val stamp: RoundedCornerShape = RoundedCornerShape(6.dp),
+    /** Cards on the canvas and sheets. Never nest a card in a card. */
+    val card: RoundedCornerShape = RoundedCornerShape(16.dp),
+    /** Buttons, fields, wells inside a card. */
     val control: RoundedCornerShape = RoundedCornerShape(12.dp),
-    val inset: RoundedCornerShape = RoundedCornerShape(16.dp),
-    /** Top-level tiles on the canvas. Never nest a tile in a tile. */
-    val tile: RoundedCornerShape = RoundedCornerShape(20.dp),
     val pill: RoundedCornerShape = RoundedCornerShape(percent = 50),
 )

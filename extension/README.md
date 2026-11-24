@@ -1,7 +1,7 @@
-# SAQR-INTEL | Citizen Web & Maps Scam Shield (Chrome & Edge, Manifest V3)
+# Saqr — Abu Dhabi Scam Shield (Chrome & Edge, Manifest V3)
 
 Automatic scam protection for PC and laptop users. Every website you open is checked with the
-SAQR-INTEL backend; dangerous sites are replaced by an Abu Dhabi Police block page before you can
+Saqr backend; dangerous sites are replaced by the Saqr block page before you can
 type a password or card number. Every block also appears live on the `/citizen` Crowd-Shield radar.
 The **Email Shield** also checks the emails you open in Gmail and Outlook, and the **Search & Maps
 shield** marks scam search results, ads and fake helpline numbers before you click (see below).
@@ -12,9 +12,11 @@ shield** marks scam search results, ads and fake helpline numbers before you cli
 2. Chrome: open `chrome://extensions` · Edge: open `edge://extensions`.
 3. Turn on **Developer mode**.
 4. Click **Load unpacked** and choose this `extension/` folder.
-5. Pin the SAQR shield icon to the toolbar.
+5. Pin the Saqr falcon icon to the toolbar.
 
-The icons are already generated. To recreate them: `python extension/generate_icons.py`.
+**Logo:** the popup, block page and settings page carry the Saqr lockup as inline SVG: the falcon from `frontend/src/brand/` plus the word "Saqr" outlined to paths from Gloock 400 (OFL), so it renders identically without any font file. Colour is `currentColor` (obsidian on light, ivory on dark).
+
+The icons are already generated. To recreate them: `cd frontend` then `node scripts/brand/generate-icons.mjs` (writes the Saqr falcon icons for the web app, this extension and the Android app).
 
 ## Stage demo (1 click)
 
@@ -29,7 +31,7 @@ is replaced by the block page within about a second. The block also shows up on 
 | Navigation interceptor, badge, right-click menu, cache | `background.js` |
 | Block / verdict page with risk gauge, EN + AR cards, X warning, Aman report | `blocked.html`, `blocked.js` |
 | Toolbar popup: backend status, API address, scan this tab, demo buttons | `popup.html`, `popup.js` |
-| Shared design (navy / emerald / crimson, cream light mode, dark mode) | `shield.css` |
+| Saqr brand layer: design tokens from `frontend/DESIGN.md` (ivory canvas, white cards, obsidian primary; emerald / amber / crimson only for safe / suspicious / scam), light + dark via `prefers-color-scheme`, system font stack (Inter if installed; IBM Plex Sans Arabic fallbacks; no bundled fonts) | `shield.css` (pages), `content/mail.css`, `content/search.css` and the Shadow-DOM CSS in `content/*.js` |
 
 - **Fast, then deep:** each site first gets a quick check (address, domain age, known scam
   networks, no browser). Only if that looks suspicious does the full cloud-sandbox scan run.
@@ -41,7 +43,7 @@ is replaced by the block page within about a second. The block also shows up on 
   network addresses are not scanned. If the backend is offline the badge shows `OFF` and pages load
   normally.
 - **Badge:** `SAFE` (green), `!` amber (suspicious), `!` red (blocked), `…` scanning, `OFF` no backend.
-- **Right-click → "Verify Link with SAQR-INTEL"** on any link, selected text or page.
+- **Right-click → "Verify Link with Saqr"** on any link, selected text or page.
 - **Continue anyway:** the block page has a small "continue" link for false alarms; that site is then
   allowed until the browser is closed.
 
@@ -54,15 +56,15 @@ wrapper is resolved to the advertiser's real address from the page itself), the 
 
 | Badge | When |
 |---|---|
-| red `SAQR: scam — imitates TAMM Abu Dhabi` | HIGH-RISK (score 65+). The link is crossed out and locked: clicking it opens a SAQR warning first ("Don't open" / "Open anyway"). Reasons on hover. |
-| amber `SAQR: suspicious` | score 30–64 |
+| red `Saqr: scam — imitates TAMM Abu Dhabi` | HIGH-RISK (score 65+). The link is crossed out and locked: clicking it opens a Saqr warning first ("Don't open" / "Open anyway"). Reasons on hover. |
+| amber `Saqr: suspicious` | score 30–64 |
 | green `Official: Abu Dhabi Police` | only verified official UAE websites |
 | red `Not the official number (official: 800 555)` | a personal mobile number, a number linked to fake Maps listings, or (in an ad) any number that is not the claimed institution's official one |
 | amber `Not on the official list (official: …)` | an unlisted landline in a Maps card or knowledge panel (real branches have their own numbers) |
 | nothing | ordinary sites and unknown numbers (no noise) |
 
 - Links go in batches to `POST /api/batch-verdict` (instant offline checks: look-alike rules, AI URL
-  model, threat feeds, SAQR's earlier scans and proactive-hunter detections; nothing is saved), phones to
+  model, threat feeds, Saqr's earlier scans and proactive-hunter detections; nothing is saved), phones to
   `POST /api/check-phone`. Verdicts are cached per URL in the service worker (safe 30 min, risky 10 min).
 - Google and Bing change their markup often: known selectors first, then any link inside the results
   area (fallback links only ever get red / amber badges). New results (infinite scroll, Maps panels) are
@@ -77,15 +79,15 @@ wrapper is resolved to the advertiser's real address from the page itself), the 
 |---|---|
 | Gmail (`mail.google.com`) | ✓ works. The original message is fetched, so SPF / DKIM / DMARC are really checked. |
 | Outlook (`outlook.live.com`, `outlook.office.com`, `outlook.office365.com`, `outlook.cloud.microsoft`) | ✓ works, but only the visible email is checked (headers not verified). |
-| Yahoo, Proton, iCloud, AOL, Zoho Mail | work in progress: a small pill tells you to paste the email in the SAQR web app. |
+| Yahoo, Proton, iCloud, AOL, Zoho Mail | work in progress: a small pill tells you to paste the email in the Saqr web app. |
 
-- **Open an email:** a SAQR banner appears above it (Safe / Suspicious / Scam) with the reasons,
+- **Open an email:** a Saqr banner appears above it (Safe / Suspicious / Scam) with the reasons,
   the SPF/DKIM/DMARC result, look-alike letters, a **Full report** button, and **Scam** / **Not scam**
   buttons. Links in a scam email are guarded (you are warned before they open).
 - **Inbox:** each row gets a small badge from quick local checks (known scam campaigns, your personal
   model, look-alike letters); **Scan all** checks every visible email with the backend (2 at a time,
   so the rate limit is respected).
-- **Options page** (right-click the SAQR icon → Options): turn automatic scanning on/off, opt in to
+- **Options page** (right-click the Saqr icon → Options): turn automatic scanning on/off, opt in to
   learning from your Spam folder, add **your own AI** (any OpenAI-compatible address, model name and
   key — the key stays in this browser and is sent only with each check over https), and manage the
   **personal model**: export it as a JSON file, import one (from another browser or the web app's

@@ -143,11 +143,11 @@ async def import_model(request: Request, reporter_id: str = ReporterId,
     try:
         incoming = um.validate_model(json.loads(body.decode("utf-8")))
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):  # RecursionError: "[[[[..." bombs
-        raise _err(422, "This file is not a valid SAQR model (it is not JSON).",
-                   "هذا الملف ليس نموذج SAQR صالحاً (ليس بصيغة JSON).") from None
+        raise _err(422, "This file is not a valid Saqr model (it is not JSON).",
+                   "هذا الملف ليس نموذج صقر صالحاً (ليس بصيغة JSON).") from None
     except ValueError as exc:
-        raise _err(422, f"This file is not a valid SAQR model: {exc}",
-                   "هذا الملف ليس نموذج SAQR صالحاً.") from None
+        raise _err(422, f"This file is not a valid Saqr model: {exc}",
+                   "هذا الملف ليس نموذج صقر صالحاً.") from None
 
     async with _lock:
         stored, labelled = await um.load_record(reporter_id)

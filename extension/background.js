@@ -1,6 +1,6 @@
-// SAQR-INTEL | Citizen Web & Maps Scam Shield — Manifest V3 service worker.
+// Saqr — Abu Dhabi Scam Shield — Manifest V3 service worker.
 //
-// Every main-frame navigation is checked with the SAQR-INTEL backend. Dangerous sites are replaced
+// Every main-frame navigation is checked with the Saqr backend. Dangerous sites are replaced
 // by blocked.html before the user can type anything. Results are cached per site so normal
 // browsing stays fast and the backend's rate limit (30 scans / minute) is respected.
 //
@@ -67,7 +67,7 @@ async function setup() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: "Verify Link with SAQR-INTEL",
+      title: "Verify Link with Saqr",
       contexts: ["link", "page", "selection"],
     });
   });
@@ -157,7 +157,7 @@ async function requestJson(path, { method = "POST", body, timeoutMs = FAST_TIMEO
       signal: controller.signal,
     });
   } catch (err) {
-    const e = new Error(err?.name === "AbortError" ? "The SAQR server took too long to answer." : "Could not reach the SAQR server.");
+    const e = new Error(err?.name === "AbortError" ? "The Saqr server took too long to answer." : "Could not reach the Saqr server.");
     e.status = 0;
     throw e;
   } finally {
@@ -289,7 +289,7 @@ async function onBeforeNavigate(details) {
     const tab = await chrome.tabs.get(tabId).catch(() => null);
     if (!tab) return;
     const current = tab.pendingUrl || tab.url || "";
-    if (/^(chrome|edge)-extension:/.test(current)) return; // already showing a SAQR page
+    if (/^(chrome|edge)-extension:/.test(current)) return; // already showing a Saqr page
     if (/^https?:/i.test(current) && cacheKey(current) !== cacheKey(url)) return;
 
     if (isDangerous(verdict)) {
@@ -305,7 +305,7 @@ async function onBeforeNavigate(details) {
 }
 
 // ---------------------------------------------------------------------------
-// Right-click "Verify Link with SAQR-INTEL"
+// Right-click "Verify Link with Saqr"
 // ---------------------------------------------------------------------------
 async function onMenuClick(info, tab) {
   if (info.menuItemId !== MENU_ID) return;
@@ -1229,7 +1229,7 @@ async function modelLabel(msg, sender, trusted) {
 async function modelImport(msg) {
   let incoming = msg.model;
   if (typeof incoming === "string") {
-    if (incoming.length > 5_000_000) bad("This file is too big to be a SAQR model.");
+    if (incoming.length > 5_000_000) bad("This file is too big to be a Saqr model.");
     try {
       incoming = JSON.parse(incoming);
     } catch {

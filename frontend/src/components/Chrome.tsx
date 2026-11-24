@@ -1,139 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { BatteryFull, ChevronDown, Cloud, MessageSquare, Phone, ShieldAlert, ShieldCheck, Signal, Siren, Wifi, Zap } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useLang } from "@/lib/i18n";
-import { ShareQrButton } from "./ShareQrButton";
-import { ThemeToggle } from "./ThemeToggle";
+import { BatteryFull, Signal, Wifi } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 
-/** Aman, SMS and emergency numbers folded into one menu instead of three pills. */
-function ReportMenu() {
-  const { t } = useLang();
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("pointerdown", away);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("pointerdown", away);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [open]);
-  const items = [
-    { href: "tel:8002626", icon: Phone, label: t("aman"), num: "8002626" },
-    { href: "sms:2828", icon: MessageSquare, label: t("sms"), num: "2828" },
-    { href: "tel:999", icon: Siren, label: t("emergency"), num: "999" },
-  ];
-  return (
-    <div ref={box} className="relative hidden md:block">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="true"
-        onClick={() => setOpen((v) => !v)}
-        className="press inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-ink ring-1 ring-line hover:bg-line"
-      >
-        <ShieldAlert className="size-3.5 text-emerald-700 dark:text-emerald-400" />
-        {t("reportFraud")}
-        <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <ul className="absolute end-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-2xl border border-line bg-surface py-1 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.5)]">
-          {items.map(({ href, icon: Icon, label, num }) => (
-            <li key={href}>
-              <a href={href} onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold text-ink hover:bg-muted">
-                <Icon className="size-4 text-emerald-700 dark:text-emerald-400" />
-                <span className="flex-1">{label}</span>
-                <span dir="ltr" className="tabular-nums text-ink-soft">{num}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-export function Header() {
-  const { t, lang, setLang } = useLang();
-  return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6">
-        <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-navy-900 shadow-md ring-2 ring-gold-500/60 sm:size-11 sm:rounded-2xl">
-          <ShieldCheck className="size-6 text-gold-500" />
-          <span className="absolute -bottom-0.5 -end-0.5 size-3 rounded-full border-2 border-surface bg-emerald-500" />
-        </div>
-        <div className="min-w-0">
-          <p className="whitespace-nowrap text-base font-extrabold sm:text-lg leading-none tracking-tight text-ink">{t("appName")}</p>
-          <p className="mt-1 whitespace-nowrap text-xs font-medium text-ink-soft/80">{t("appTagline")}</p>
-        </div>
-
-        <div className="ms-auto flex items-center gap-1.5 sm:gap-2">
-          <ReportMenu />
-          <ShareQrButton />
-          <div
-            role="radiogroup"
-            aria-label="Language"
-            className="relative flex rounded-full bg-navy-900 p-1 text-xs font-bold dark:bg-navy-950 dark:ring-1 dark:ring-white/15"
-            dir="ltr"
-          >
-            {(["en", "ar"] as const).map((l) => (
-              <button
-                key={l}
-                role="radio"
-                aria-checked={lang === l}
-                onClick={() => setLang(l)}
-                className={`relative z-10 rounded-full px-3 py-1.5 transition-colors ${lang === l ? "text-navy-900" : "text-white/80 hover:text-white"}`}
-              >
-                {lang === l && (
-                  <motion.span
-                    layoutId="lang-knob"
-                    className="absolute inset-0 -z-10 rounded-full bg-white"
-                    transition={{ type: "spring", stiffness: 500, damping: 34 }}
-                  />
-                )}
-                <span className="sm:hidden" aria-hidden>
-                  {l === "en" ? "EN" : "ع"}
-                </span>
-                <span className="sr-only sm:not-sr-only">{l === "en" ? "English" : "العربية"}</span>
-              </button>
-            ))}
-          </div>
-
-          <ThemeToggle />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-export function StatusBanner() {
-  const { t } = useLang();
-  return (
-    <div className="relative overflow-hidden bg-navy-900 text-white dark:border-b dark:border-white/5 dark:bg-navy-950">
-      <div className="pointer-events-none absolute inset-0 animate-[shimmer_3.5s_ease-out_1] bg-[linear-gradient(90deg,transparent_30%,rgba(52,211,153,0.16)_50%,transparent_70%)] bg-[length:200%_100%]" />
-      <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-2.5 text-center text-xs font-semibold sm:text-sm">
-        <span className="relative flex size-2.5 shrink-0">
-          <span className="absolute inline-flex size-full animate-[ping_1.4s_cubic-bezier(0,0,0.2,1)_3] rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400" />
-        </span>
-        <span className="sm:hidden">{t("bannerShort")}</span>
-        <span className="hidden sm:inline">{t("banner")}</span>
-        <span className="hidden items-center gap-2 text-emerald-300 sm:flex">
-          <Cloud className="size-4" />
-          <Zap className="size-4" />
-          <BatteryFull className="size-4" />
-        </span>
-      </div>
-    </div>
-  );
-}
+/*
+ * The device frame for the Search & Maps and SMS demos. The page header, notice strip and footer moved to
+ * CitizenChrome.tsx. Inside the frame the screen is device-styled (bg-screen + explicit dark greys), and the
+ * bezel stays a dark device colour in both themes.
+ */
 
 function useClock(): string {
   const [time, setTime] = useState("");
@@ -147,15 +21,15 @@ function useClock(): string {
   return time;
 }
 
+/** Capped at 360px and centred on phones (no bezel there), a 390px device with a bezel from `sm`. */
 export function PhoneFrame({ children, carrier = "e&" }: { children: ReactNode; carrier?: string }) {
   const time = useClock();
   return (
-    <div className="relative mx-auto w-full sm:w-[390px]">
-      <div className="pointer-events-none absolute -inset-8 hidden rounded-[4rem] bg-gradient-to-br from-emerald-400/20 via-navy-700/10 to-gold-500/20 blur-3xl sm:block" />
-      <div className="relative overflow-hidden bg-screen sm:rounded-[3.2rem] sm:border-[11px] sm:border-navy-900 sm:shadow-[0_30px_80px_-20px_rgba(11,25,44,0.55)] dark:bg-[#202124] dark:sm:border-black dark:sm:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.08)]">
-        <div className="relative flex h-11 items-center justify-between bg-screen px-6 text-[13px] font-semibold text-navy-900 dark:bg-[#202124] dark:text-gray-100" dir="ltr">
+    <div className="relative mx-auto w-full max-w-[360px] sm:w-[390px] sm:max-w-none">
+      <div className="relative overflow-hidden rounded-card border border-line bg-screen shadow-card dark:bg-[#202124] sm:rounded-[3.2rem] sm:border-[11px] sm:border-obsidian sm:shadow-overlay dark:sm:border-black">
+        <div className="relative flex h-11 items-center justify-between bg-screen px-6 text-[13px] font-semibold text-obsidian dark:bg-[#202124] dark:text-gray-100" dir="ltr">
           <span className="tabular-nums">{time}</span>
-          <span className="absolute left-1/2 top-2 hidden h-7 w-28 -translate-x-1/2 rounded-full bg-navy-900 sm:block dark:bg-black" />
+          <span className="absolute left-1/2 top-2 hidden h-7 w-28 -translate-x-1/2 rounded-full bg-obsidian sm:block dark:bg-black" />
           <span className="flex items-center gap-1.5">
             <span className="text-[11px] font-bold">{carrier}</span>
             <Signal className="size-3.5" />
@@ -163,9 +37,9 @@ export function PhoneFrame({ children, carrier = "e&" }: { children: ReactNode; 
             <BatteryFull className="size-4" />
           </span>
         </div>
-        <div className="relative h-[calc(100dvh-13rem)] min-h-[560px] overflow-y-auto no-scrollbar sm:h-[720px]">{children}</div>
+        <div className="relative h-[600px] overflow-y-auto no-scrollbar sm:h-[720px]">{children}</div>
         <div className="hidden h-6 items-center justify-center bg-screen sm:flex dark:bg-[#202124]">
-          <span className="h-1 w-28 rounded-full bg-navy-900/80 dark:bg-white/70" />
+          <span className="h-1 w-28 rounded-full bg-obsidian/80 dark:bg-white/70" />
         </div>
       </div>
     </div>

@@ -340,7 +340,7 @@ async def analyze_email(*, source: str = "text", text: str | None = None, file_b
         raise
     except Exception as exc:  # noqa: BLE001 — a parser crash is reported as unreadable input
         log.warning("email parse crashed: %s", type(exc).__name__)
-        raise ValueError("SAQR could not read this email. Try pasting the full original message.") from exc
+        raise ValueError("Saqr could not read this email. Try pasting the full original message.") from exc
     timings["parse_ms"] = _ms(t)
     body = email_text(parsed)
     from_dom = (parsed.from_.domain if parsed.from_ else "") or ""

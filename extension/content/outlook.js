@@ -1,4 +1,4 @@
-// SAQR-INTEL | Outlook on the web adapter (outlook.live.com, outlook.office.com, outlook.office365.com,
+// Saqr | Outlook on the web adapter (outlook.live.com, outlook.office.com, outlook.office365.com,
 // outlook.cloud.microsoft). content/common.js does the UI and the scanning.
 //
 // Outlook can show its UI in Arabic, so we NEVER match aria-label or visible UI words. Only

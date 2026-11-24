@@ -1,4 +1,8 @@
-# SAQR-INTEL: ScamShield for Abu Dhabi
+# Saqr: ScamShield for Abu Dhabi
+
+Saqr (صقر, formerly SAQR-INTEL; the repo and hostnames keep the old `saqr-intel` name) is a hackathon prototype,
+not an official police service. Brand: a falcon mark with a serif wordmark, light by default with a dark theme,
+English and Arabic (`frontend/DESIGN.md`).
 
 **Live:** citizen app https://saqr-intel.vercel.app/citizen · police command center https://saqr-intel.vercel.app/police (officer passcode) ·
 API https://saqr-intel-api.onrender.com (`/docs`, `/health`) · 5-minute demo script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
@@ -10,21 +14,21 @@ imitate TAMM, Abu Dhabi Police, UAE PASS, Emirates Post, e&, du and the banks, a
 the campaign starts, hide behind URL shorteners and redirect chains, and show a harmless page to scanners
 (cloaking). By the time a victim reports one, the money is gone.
 
-SAQR-INTEL checks a link **before the citizen opens it** and explains the verdict in English and Arabic. Every
+Saqr checks a link **before the citizen opens it** and explains the verdict in English and Arabic. Every
 check runs the same pipeline: follow redirects to the real destination, look-alike rules for the official UAE
 entities and ~50 global brands, a trained URL model, global phishing feeds, WHOIS / DNS / TLS age, a page check
 that compares what a bot and a phone see, and an optional LLM judge. A **Proactive Hunter** finds look-alike
-domains that nobody has reported yet. Confirmed scams flow to a DNS blocklist (phones with the SAQR DNS profile
+domains that nobody has reported yet. Confirmed scams flow to a DNS blocklist (phones with the Saqr DNS profile
 stop opening them), to the police command center with an evidence dossier, and to registrar / hosting abuse
 notices.
 
 ## 2. Judging criteria → where to see it
 
-| Criterion | What SAQR does | Where in the demo |
+| Criterion | What Saqr does | Where in the demo |
 |---|---|---|
-| **Detection accuracy (30)** | Rules + URL model + feeds + network + page evidence; weak page signals score 0 without a strong signal (fewer false alarms on real bank / gov sites); redirect / shortener resolver; bot-vs-phone cloaking check | `/citizen` scan bar ("Test Fake TAMM Fine"); `tools/evaluate.py` and `tools/predict.py` (section 5); `/police` model card (`GET /api/model/metrics`) |
+| **Detection accuracy (30)** | Rules + URL model + feeds + network + page evidence; weak page signals score 0 without a strong signal (fewer false alarms on real bank / gov sites); redirect / shortener resolver; bot-vs-phone cloaking check | `/citizen` Link checker ("Try a fake TAMM fine"); `tools/evaluate.py` and `tools/predict.py` (section 5); `/police` model card (`GET /api/model/metrics`) |
 | **Early detection & coverage (25)** | Proactive Hunter (look-alike DNS sweep, newly registered domains, certificate search); pre-click badges on Google / Bing results, sponsored ads and Maps cards; phone DNS shield; email, SMS text, Maps listing and phone-number checks | `/police` "Proactive Hunt" card, "Threats Caught Pre-Victim" KPI, "Run sweep now"; `/citizen` Search & Maps tab; browser extension on google.com / bing.com / Maps |
-| **Explainability & actionability (20)** | Every flag carries an EN + AR reason and its points; the URL model returns its top feature reasons; one-click takedown dossier with WHOIS, hosting, TLS, redirect chain, SHA-256 evidence hashes and ready-to-send abuse notices; evidence pack (.zip) | Verdict screen on `/citizen`; extension block page; `/police` evidence dossier + "Export Official Takedown Dossier" |
+| **Explainability & actionability (20)** | Every flag carries an EN + AR reason and its points; the URL model returns its top feature reasons; one-click takedown dossier with WHOIS, hosting, TLS, redirect chain, SHA-256 evidence hashes and ready-to-send abuse notices; evidence pack (.zip) | Result card and full-screen block page on `/citizen`; extension block page; `/police` evidence dossier + "Export Official Takedown Dossier" |
 | **UAE relevance & innovation (15)** | UAE entity registry (Arabic names, aliases, official domains); Arabic field patterns (رمز التحقق, رقم الهوية ...); sandbox as a UAE phone (`ar-AE`, Asia/Dubai, Abu Dhabi location); bilingual RTL UI; police warning broadcast to citizens; X warning composer; RPZ feed format for telecom DNS | `/citizen` in العربية; `/police` "Broadcast Official Warning"; `GET /api/dns-blocklist?format=rpz` |
 | **Feasibility (10)** | Pure-Python runtime on a 512 MB free Render instance (no numpy / sklearn / browser in the cloud); Next.js on Vercel; extension needs no build; offline test suite | `render.yaml`, `requirements.txt`, section 8 |
 
@@ -78,7 +82,7 @@ Code: `main.py`, `saqr/pipeline.py`, `saqr/intel/` (one module per stage), `saqr
 - **Android app** (`android-app/`, native Kotlin): a message guard checks links and code requests in new SMS,
   WhatsApp and email notifications (an on-device filter decides what is sent), and a web blocker reads only the
   address bar of Chrome, Samsung Internet, Firefox and Edge and covers a high-risk site with a full-screen
-  "Blocked by SAQR-INTEL" screen (suspicious sites get a quieter alert). Both use `ANDROID_APP_GUARD` and need
+  "Blocked by Saqr" screen (suspicious sites get a quieter alert). Both use `ANDROID_APP_GUARD` and need
   the user's consent; see `android-app/README.md`.
 - **Telecom feed**: `GET /api/dns-blocklist` (JSON) and `?format=rpz` (zone file). Official, trusted and
   shared-hosting domains (vercel.app, onrender.com ...) are never published.
@@ -219,8 +223,15 @@ http://localhost:3000/police (open on a laptop when no `POLICE_PASSCODE` is set,
 `.env` notes: all keys are optional (without an LLM key the rules engine decides). Leave `NEXTDNS_PROFILE_ID` / `NEXTDNS_API_KEY` empty on a laptop while the cloud backend uses
 them. `OFFLINE_MODE=true` runs a demo with no internet (seeded data, simulated CT and hunter).
 
-Extension: `chrome://extensions` or `edge://extensions` → Developer mode → Load unpacked → `extension/`.
-It uses the cloud API by default; see `extension/README.md`.
+Extension ("Saqr — Abu Dhabi Scam Shield", 1.3.1): `chrome://extensions` or `edge://extensions` → Developer mode →
+Load unpacked → `extension/`. It uses the cloud API by default; its block page shows one language at a time (with a
+toggle) and the top three reasons. See `extension/README.md`.
+
+Citizen app layout: `/citizen` is one page with five windows (Link checker, Search & Maps, SMS, Email, Live shield;
+`?view=check|maps|sms|email|live`). A check you start shows its verdict in a card next to the input; the
+full-screen block page appears when you were about to open a scam (shared link, alert notification, a tap in the
+Search & Maps or SMS demo). Phone-shield and scam-alert setup open in side panels. `/police` keeps its earlier
+dark "Night Grid" design until a new police design is ready.
 
 Tests (all offline):
 
@@ -248,7 +259,7 @@ Cloud: `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=fals
 | Maps "website" that is WhatsApp / link-in-bio / a short link | Real: flagged only when the listing uses a UAE institution's name (a restaurant using WhatsApp is normal); these hosts never enter the blocklist or the graph |
 | UAE regression suite (50 cases) | Hand-written synthetic cases, run offline with rules only (section 5); not real-world accuracy |
 | Phone DNS block and push alert | Real (NextDNS denylist), tested on the owner's iPhone; one shared NextDNS profile |
-| "Sync to e& / du Telecom Blocklist" | Adds the domain to SAQR's own blocklist + NextDNS. No telecom consumes the RPZ feed yet |
+| "Sync to e& / du Telecom Blocklist" | Adds the domain to Saqr's own blocklist + NextDNS. No telecom consumes the RPZ feed yet |
 | Proactive Hunter | `HUNTER_MODE=live` by default: real DNS sweep, whoisds list and crt.sh. crt.sh answered HTTP 502 when tested on 2026-11-24 (the source backs off). `OFFLINE_MODE` or `HUNTER_MODE=simulated` = synthetic leads, labelled "simulated", never published |
 | CT monitor | `CT_MODE=simulated` by default and on Render: synthetic certificate stream. `certstream` mode exists, not tested here; synthetic CT leads are ignored by the live hunter |
 | Syndicates Sand Viper / Desert Mirage, seeded scans `SCN-SEED-*`, map pins, citizen reports | Fictitious demo data (`saqr/seed_data.py`); replica scam pages are rendered from stored HTML |
@@ -259,8 +270,8 @@ Cloud: `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=fals
 | Maps listing lookup | Google Places only with `GOOGLE_MAPS_API_KEY` (not set in `render.yaml`); otherwise seeded listings + OSM reverse geocoding |
 | Screenshots | Only with Playwright (laptop). Render has no browser: no screenshots, cloaking check = two HTTP views |
 | Search & Maps badges (extension) | Tested on saved HTML fixtures of Google, Bing and Maps, not yet against live Google markup |
-| SMS guard tab on `/citizen` | A simulated phone screen with a demo SMS (checked by `/api/analyze-message`); real messages are pasted or shared to the PWA (Android share target). SAQR cannot read a phone's SMS inbox |
-| Android app (message guard + web blocker) | Real scans against the SAQR API. Tested in the Android 16 emulator only (Google Messages, Chrome 133); not yet on a real phone, Samsung Internet, Firefox or Edge. Browser address-bar ids can change with browser updates; in-app web views are not covered. Sideloaded on Android 13+ it needs "Allow restricted settings" |
+| SMS window on `/citizen` (`?view=sms`) | A simulated phone screen with a demo SMS (checked by `/api/analyze-message`); real messages are pasted or shared to the PWA (Android share target). Saqr cannot read a phone's SMS inbox |
+| Android app (message guard + web blocker) | Real scans against the Saqr API. Tested in the Android 16 emulator only (Google Messages, Chrome 133); not yet on a real phone, Samsung Internet, Firefox or Edge. Browser address-bar ids can change with browser updates; in-app web views are not covered. Sideloaded on Android 13+ it needs "Allow restricted settings" |
 | Demo scam sites (saqr-demo-scam.vercel.app, aed-refund-claim.vercel.app) | Harmless training replicas with an inert form |
 
 ## 10. Limitations and route to a police pilot

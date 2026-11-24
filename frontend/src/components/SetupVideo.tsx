@@ -115,7 +115,7 @@ function androidScenes(host: string): Scene[] {
       bg: "#1e3a5f",
       caption: { en: "Open the Settings app.", ar: "افتح تطبيق الإعدادات." },
       render: (p) => (
-        <div className="flex h-full flex-col bg-gradient-to-b from-[#1e3a5f] to-[#0b192c] px-4 pt-10">
+        <div className="flex h-full flex-col bg-gradient-to-b from-[#334155] to-[#111315] px-4 pt-10">
           <div className="mx-auto mb-8 flex w-full items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-[12px] text-[#555]">
             <Search className="size-3.5" /> Search
           </div>
@@ -210,7 +210,7 @@ function androidScenes(host: string): Scene[] {
     {
       ms: 4200,
       bg: "#8c8c8c",
-      caption: { en: "Paste the SAQR hostname, then tap Save.", ar: "الصق اسم مضيف صقر، ثم اضغط «حفظ»." },
+      caption: { en: "Paste the Saqr hostname, then tap Save.", ar: "الصق اسم مضيف صقر، ثم اضغط «حفظ»." },
       render: (p) => {
         const typed = host.slice(0, Math.round(Math.min(1, p / 0.5) * host.length));
         return <PrivateDnsDialog host={typed} selected="host" hlSave pressed={p > TAP_AT + 0.05 && p < TAP_AT + 0.22} />;
@@ -221,7 +221,7 @@ function androidScenes(host: string): Scene[] {
       bg: "#f4f4f6",
       tap: false,
       caption: {
-        en: "Done. Scam sites are now blocked in every app, even with SAQR closed.",
+        en: "Done. Scam sites are now blocked in every app, even with Saqr closed.",
         ar: "تم. أصبحت مواقع الاحتيال محظورة في كل التطبيقات، حتى مع إغلاق صقر.",
       },
       render: () => (
@@ -231,7 +231,7 @@ function androidScenes(host: string): Scene[] {
             <Row tone="android" label="VPN" sub="Not connected" />
             <Row tone="android" label="Private DNS" sub={host} hl />
           </AGroup>
-          <Done text="SAQR shield is on" />
+          <Done text="Saqr shield is on" />
         </div>
       ),
     },
@@ -278,11 +278,11 @@ function Done({ text }: { text: string }) {
       initial={{ opacity: 0, y: 12, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: 0.5, duration: 0.45, ease: EASE }}
-      className="mx-6 mt-8 flex items-center gap-3 rounded-2xl bg-[#0b192c] p-3 text-white shadow-lg"
+      className="mx-6 mt-8 flex items-center gap-3 rounded-2xl bg-[#111315] p-3 text-white shadow-lg"
     >
-      <span className="grid size-9 place-items-center rounded-xl bg-emerald-600"><ShieldCheck className="size-5" /></span>
+      <span className="grid size-9 place-items-center rounded-xl bg-[#10b981] text-[#111315]"><ShieldCheck className="size-5" /></span>
       <span className="text-[13px] font-bold">{text}</span>
-      <Check className="ms-auto size-4 text-emerald-400" />
+      <Check className="ms-auto size-4 text-[#34d399]" />
     </motion.div>
   );
 }
@@ -291,26 +291,26 @@ function Done({ text }: { text: string }) {
 
 function iosScenes(): Scene[] {
   const pressed = (p: number) => p > TAP_AT && p < TAP_AT + 0.18;
-  const profile = "SAQR-INTEL Citizen DNS Shield";
+  const profile = "Saqr Shield";
   return [
     {
       ms: 3400,
-      bg: "#f3ecdf",
+      bg: "#f7f5f0",
       caption: {
-        en: "In Safari on the iPhone, tap Download iPhone DNS Profile on the SAQR page.",
+        en: "In Safari on the iPhone, tap Download iPhone DNS Profile on the Saqr page.",
         ar: "في سفاري على الآيفون، اضغط «تنزيل ملف DNS للآيفون» في صفحة صقر.",
       },
       render: (p) => (
-        <div className="flex h-full flex-col bg-[#f3ecdf]">
+        <div className="flex h-full flex-col bg-[#f7f5f0]">
           <div className="mx-3 mt-2 rounded-xl bg-white/80 px-3 py-1.5 text-center text-[11px] text-[#333]" dir="ltr">
             <Lock className="me-1 inline size-3" />saqr-intel.vercel.app
           </div>
-          <div className="m-3 rounded-2xl bg-[#faf6ee] p-3 shadow-sm ring-1 ring-[#e0d4bf]">
-            <p className="text-[13px] font-extrabold text-[#0b192c]">Activate System-Wide Background Shield</p>
-            <p className="mt-1 text-[11px] leading-snug text-[#2b4568]">One-time setup. Your phone then checks every website in every app.</p>
+          <div className="m-3 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-[#e6e2d8]">
+            <p className="text-[13px] font-bold text-[#111315]">Phone shield for iPhone</p>
+            <p className="mt-1 text-[11px] leading-snug text-[#475569]">One-time setup. Your phone then checks every website in every app.</p>
             <span
               data-hl=""
-              className={`mt-3 flex items-center justify-center gap-2 rounded-xl bg-[#0b192c] py-2.5 text-[12px] font-bold text-white transition-transform duration-150 ${pressed(p) ? "scale-95" : ""}`}
+              className={`mt-3 flex items-center justify-center gap-2 rounded-xl bg-[#111315] py-2.5 text-[12px] font-bold text-white transition-transform duration-150 ${pressed(p) ? "scale-95" : ""}`}
             >
               <Download className="size-3.5" /> Download iPhone DNS Profile
             </span>
@@ -394,7 +394,7 @@ function iosScenes(): Scene[] {
           </Group>
           <p className="px-6 pb-1 pt-4 text-[11px] uppercase text-[#6d6d72]">Downloaded profile</p>
           <Group>
-            <Row icon={<Icon bg="#0b192c"><ShieldCheck className="size-4 text-[#c5a572]" /></Icon>} label={profile} sub="SAQR-INTEL" hl pressed={pressed(p)} />
+            <Row icon={<Icon bg="#111315"><ShieldCheck className="size-4 text-[#ece7db]" /></Icon>} label={profile} sub="Saqr" hl pressed={pressed(p)} />
           </Group>
         </div>
       ),
@@ -411,9 +411,9 @@ function iosScenes(): Scene[] {
             <span data-hl="" className={`rounded-md px-1 font-semibold text-[#0a84ff] transition-colors ${pressed(p) ? "bg-[#0a84ff]/15" : ""}`}>Install</span>
           </div>
           <div className="mx-3 mt-3 rounded-xl bg-white p-4 text-center">
-            <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#0b192c]"><ShieldCheck className="size-6 text-[#c5a572]" /></span>
+            <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#111315]"><ShieldCheck className="size-6 text-[#ece7db]" /></span>
             <p className="mt-2 text-[14px] font-semibold text-black">{profile}</p>
-            <p className="text-[11px] text-[#6d6d72]">SAQR-INTEL · DNS Settings</p>
+            <p className="text-[11px] text-[#6d6d72]">Saqr · DNS Settings</p>
           </div>
         </div>
       ),
@@ -460,7 +460,7 @@ function iosScenes(): Scene[] {
       ms: 3400,
       bg: "#f2f2f7",
       caption: {
-        en: "Back in VPN & Device Management, open DNS and make sure SAQR is ticked.",
+        en: "Back in VPN & Device Management, open DNS and make sure Saqr is ticked.",
         ar: "في «VPN وإدارة الجهاز»، افتح «DNS» وتأكد من تحديد صقر.",
       },
       render: (p) => (
@@ -492,7 +492,7 @@ function iosScenes(): Scene[] {
           <Group>
             <Row label="DNS" value={profile} hl />
           </Group>
-          <Done text="SAQR shield is on" />
+          <Done text="Saqr shield is on" />
         </div>
       ),
     },
@@ -618,7 +618,7 @@ function Player({ scenes, platformLabel }: { scenes: Scene[]; platformLabel: str
   return (
     <div className="flex flex-col items-center gap-4">
       {/* phone */}
-      <div className="w-[272px] rounded-[2.6rem] border-[9px] border-navy-900 bg-navy-900 shadow-[0_24px_60px_-20px_rgba(11,25,44,0.6)] dark:border-black">
+      <div className="w-[272px] max-w-full rounded-[2.6rem] border-[9px] border-obsidian bg-obsidian shadow-overlay dark:border-black">
         <div className="relative h-[520px] overflow-hidden rounded-[2rem] bg-white" ref={screen} dir="ltr">
           <span aria-hidden className="absolute left-1/2 top-1.5 z-10 h-4 w-16 -translate-x-1/2 rounded-full bg-black" />
           <AnimatePresence initial={false} mode="popLayout">
@@ -639,13 +639,13 @@ function Player({ scenes, platformLabel }: { scenes: Scene[]; platformLabel: str
           {ring && (
             <motion.div
               aria-hidden
-              className="pointer-events-none absolute z-20 rounded-xl border-[2.5px] border-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.25),0_6px_20px_-4px_rgba(16,185,129,0.55)]"
+              className="pointer-events-none absolute z-20 rounded-xl border-[2.5px] border-[#0a84ff] shadow-[0_0_0_4px_rgba(10,132,255,0.22)]"
               style={{ left: 0, top: 0 }}
               initial={false}
               animate={{ x: ring.x - 4, y: ring.y - 4, width: ring.w + 8, height: ring.h + 8, opacity: 1 }}
               transition={{ duration: reduce ? 0 : 0.45, ease: EASE, delay: reduce ? 0 : 0.2 }}
             >
-              {!reduce && playing && <span className="absolute inset-0 animate-[saqr-hl_1.2s_ease-out_infinite] rounded-xl border-2 border-emerald-400" />}
+              {!reduce && playing && <span className="absolute inset-0 animate-[saqr-hl_1.2s_ease-out_infinite] rounded-xl border-2 border-[#0a84ff]" />}
             </motion.div>
           )}
 
@@ -655,7 +655,7 @@ function Player({ scenes, platformLabel }: { scenes: Scene[]; platformLabel: str
               <motion.span
                 key={`tap-${index}`}
                 aria-hidden
-                className="pointer-events-none absolute z-30 size-10 rounded-full bg-white/70 ring-2 ring-navy-900/40"
+                className="pointer-events-none absolute z-30 size-10 rounded-full bg-white/70 ring-2 ring-obsidian/40"
                 style={{ left: ring.x + ring.w / 2 - 20, top: ring.y + ring.h / 2 - 20 }}
                 initial={{ scale: 0.3, opacity: 0.9 }}
                 animate={{ scale: reduce ? 1 : 1.5, opacity: 0 }}
@@ -669,10 +669,10 @@ function Player({ scenes, platformLabel }: { scenes: Scene[]; platformLabel: str
 
       {/* caption: what to do on this screen */}
       <div className="min-h-[3.25rem] w-full max-w-sm text-center" aria-live="polite">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+        <p className="label-caps tabular-nums">
           {platformLabel} · {lang === "ar" ? "الخطوة" : "Step"} {index + 1}/{scenes.length}
         </p>
-        <p className="mt-1 text-sm font-semibold leading-snug text-ink">{scene.caption[lang]}</p>
+        <p className="mt-1 text-[15px] font-semibold leading-snug text-ink">{scene.caption[lang]}</p>
       </div>
 
       {/* controls */}
@@ -681,7 +681,7 @@ function Player({ scenes, platformLabel }: { scenes: Scene[]; platformLabel: str
           type="button"
           onClick={toggle}
           aria-label={ended ? (lang === "ar" ? "إعادة التشغيل" : "Replay") : playing ? (lang === "ar" ? "إيقاف مؤقت" : "Pause") : (lang === "ar" ? "تشغيل" : "Play")}
-          className="press grid size-10 shrink-0 place-items-center rounded-full bg-navy-900 text-white hover:bg-navy-800 dark:bg-white dark:text-navy-900"
+          className="press grid size-11 shrink-0 place-items-center rounded-full bg-primary text-on-primary hover:bg-primary-hover"
         >
           {ended ? <RotateCcw className="size-4" /> : playing ? <Pause className="size-4" /> : <Play className="size-4 translate-x-px" />}
         </button>
@@ -699,14 +699,14 @@ function Player({ scenes, platformLabel }: { scenes: Scene[]; platformLabel: str
             >
               <span className="block h-1 overflow-hidden rounded-full bg-line group-hover:bg-ink-soft/40">
                 <span
-                  className="block h-full rounded-full bg-emerald-600"
+                  className="block h-full rounded-full bg-ink"
                   style={{ width: i < index ? "100%" : i === index ? `${progress * 100}%` : "0%" }}
                 />
               </span>
             </button>
           ))}
         </div>
-        <span className="shrink-0 text-xs tabular-nums text-ink-soft/80" dir="ltr">~{total}s</span>
+        <span className="shrink-0 text-[13px] tabular-nums text-ink-soft" dir="ltr">~{total}s</span>
       </div>
     </div>
   );
@@ -726,17 +726,18 @@ export function SetupVideoButton({ platform, host }: { platform: "android" | "io
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="press inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-2 text-xs font-bold text-ink shadow-sm ring-1 ring-line hover:bg-muted"
+        className="btn-secondary w-full text-[14px]"
+        data-testid={`setup-video-${platform}`}
       >
-        <span className="grid size-5 place-items-center rounded-full bg-emerald-700 text-white">
-          <Play className="size-2.5 translate-x-px fill-current" />
+        <span className="grid size-6 place-items-center rounded-full bg-primary text-on-primary">
+          <Play className="size-3 translate-x-px fill-current" aria-hidden />
         </span>
         {lang === "ar" ? `شاهد فيديو الإعداد على ${platform === "android" ? "أندرويد" : "الآيفون"}` : `Watch the ${label} setup video`}
       </button>
       <Modal
         open={open}
         onClose={close}
-        title={lang === "ar" ? `إعداد درع صقر على ${platform === "android" ? "أندرويد" : "الآيفون"}` : `Set up the SAQR shield on ${label}`}
+        title={lang === "ar" ? `إعداد درع صقر على ${platform === "android" ? "أندرويد" : "الآيفون"}` : `Set up the Saqr shield on ${label}`}
       >
         {open && scenes && <Player key={platform} scenes={scenes} platformLabel={label} />}
       </Modal>

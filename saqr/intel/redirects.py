@@ -220,13 +220,13 @@ def flags_for(hops: list[dict[str, Any]], input_host: str, judged_host: str, ver
         out.append(RedFlag(
             "REDIRECTS_TO_FLAGGED", "high", 0,
             f"The link you received ({input_host}) is a disguise: it really leads to {judged_host}, "
-            f"which SAQR flags as dangerous.",
+            f"which Saqr flags as dangerous.",
             f"الرابط الذي وصلك ({input_host}) مجرد واجهة: يقود فعلياً إلى {judged_host} الذي يصنّفه صقر موقعاً خطيراً."))
     short = next((h for h in hosts if is_shortener(h)), None)
     if short:
         out.append(RedFlag(
             "URL_SHORTENER", "info", 0,
-            f"The link was shortened with {short}, which hides the real address. SAQR followed it to {hosts[-1]}.",
+            f"The link was shortened with {short}, which hides the real address. Saqr followed it to {hosts[-1]}.",
             f"تم اختصار الرابط عبر {short} مما يخفي العنوان الحقيقي. تتبّعه صقر حتى {hosts[-1]}."))
     if len(hosts) > 2 or not short:
         path = " → ".join(hosts[:6])

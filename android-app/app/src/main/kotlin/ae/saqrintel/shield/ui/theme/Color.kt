@@ -4,30 +4,27 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 /*
- * Night Grid design tokens, mirrored from the website (frontend/src/app/globals.css).
+ * Saqr design tokens, mirrored from the website (frontend/DESIGN.md, frontend/src/app/globals.css).
  *
- * Rules (same as the web app's DESIGN.md):
- *  - Crimson (scamFill / scamInk) ONLY ever means "scam". Never use it for errors,
- *    decoration, badges or emphasis that is not a scam verdict.
- *  - Gold (gold / goldInk) means a police action (official warning, takedown, report).
- *  - Amber (caution) means "suspicious, check first" or "action needed".
- *  - No nested cards: a tile sits on the canvas, never inside another tile.
- *  - Text is never smaller than 11sp.
+ * Rules:
+ *  - Crimson ONLY means "scam". Amber ONLY means "suspicious / action needed". Emerald ONLY means
+ *    "safe / verified". Never use a verdict colour for decoration, focus, branding or emphasis.
+ *  - Text is written in the `-Ink` token, never in a fill colour (raw emerald / amber fail AA as text).
+ *  - Obsidian (ivory in dark) is the colour of the one primary action per screen.
+ *  - No nested cards. Text is never smaller than 11sp.
  */
 
-/** Theme-independent palette. */
+/** Theme-independent palette (fills and brand constants never flip). */
 object SaqrPalette {
-    val ScamFill = Color(0xFFE11D48)
-    val EmeraldBrand = Color(0xFF0E9F6E)
-    val ShieldEmerald = Color(0xFF047857)
-    val ShieldDeep = Color(0xFF065F46)
-    val ShieldBright = Color(0xFF10B981)
-    val ShieldNight = Color(0xFF34D399)
-    val Gold = Color(0xFFC5A572)
-    /** Amber: "check first" / "action needed". Never a scam, never a police action. */
-    val Caution = Color(0xFFD97706)
-    val Navy900 = Color(0xFF0B192C)
-    val Navy950 = Color(0xFF060F1C)
+    val Obsidian = Color(0xFF111315)
+    val Ivory = Color(0xFFFAF8F5)
+    val Slate = Color(0xFF1E293B)
+    val Sandstone = Color(0xFFF7F5F0)
+
+    /** Verdict fills: meters, dots, rings, notification accents. Never text. */
+    val SafeFill = Color(0xFF10B981)
+    val SuspiciousFill = Color(0xFFF59E0B)
+    val ScamFill = Color(0xFFDC2626)
 }
 
 /** Semantic colours that change between light and dark. */
@@ -39,41 +36,55 @@ data class SaqrColors(
     val line: Color,
     val ink: Color,
     val inkSoft: Color,
-    /** Text colour for scam verdicts only. */
+    /** Primary button fill (obsidian in light, ivory in dark). */
+    val primary: Color,
+    val primaryPressed: Color,
+    val onPrimary: Color,
+    /** Verdict text colours (AA on canvas, surface, muted and the soft chip). */
+    val safeInk: Color,
+    val suspiciousInk: Color,
     val scamInk: Color,
-    /** Text colour for police actions only. */
-    val goldInk: Color,
-    /** Accent for "safe / protected" in this theme. */
-    val shield: Color,
-    /** Amber for "suspicious" and "action needed" (not crimson, not gold). */
-    val caution: Color,
+    /** Soft chip grounds. */
+    val safeSoft: Color,
+    val suspiciousSoft: Color,
+    val scamSoft: Color,
     val isDark: Boolean,
 )
 
 val LightSaqrColors = SaqrColors(
-    canvas = Color(0xFFF3ECDF),
-    surface = Color(0xFFFAF6EE),
-    muted = Color(0xFFEEE5D5),
-    line = Color(0xFFE0D4BF),
-    ink = Color(0xFF0B192C),
-    inkSoft = Color(0xFF2B4568),
-    scamInk = Color(0xFFBE123C),
-    goldInk = Color(0xFF7A5A1F),
-    shield = SaqrPalette.ShieldEmerald,
-    caution = Color(0xFFB45309),
+    canvas = Color(0xFFF7F5F0),
+    surface = Color(0xFFFFFFFF),
+    muted = Color(0xFFF1EEE6),
+    line = Color(0xFFE6E2D8),
+    ink = Color(0xFF111315),
+    inkSoft = Color(0xFF475569),
+    primary = SaqrPalette.Obsidian,
+    primaryPressed = SaqrPalette.Slate,
+    onPrimary = SaqrPalette.Ivory,
+    safeInk = Color(0xFF047857),
+    suspiciousInk = Color(0xFF92400E),
+    scamInk = Color(0xFFB91C1C),
+    safeSoft = Color(0xFFE8F6EF),
+    suspiciousSoft = Color(0xFFFDF3E1),
+    scamSoft = Color(0xFFFCEBEB),
     isDark = false,
 )
 
 val DarkSaqrColors = SaqrColors(
-    canvas = Color(0xFF0A1220),
-    surface = Color(0xFF111C2E),
-    muted = Color(0xFF16243A),
-    line = Color(0xFF1F2D45),
-    ink = Color(0xFFE8EEF7),
-    inkSoft = Color(0xFFA3B3C8),
-    scamInk = Color(0xFFFB7185),
-    goldInk = Color(0xFFD8BD8C),
-    shield = SaqrPalette.ShieldNight,
-    caution = Color(0xFFFBBF24),
+    canvas = Color(0xFF0E1012),
+    surface = Color(0xFF171A1F),
+    muted = Color(0xFF1F232A),
+    line = Color(0xFF2A2F37),
+    ink = Color(0xFFFAF8F5),
+    inkSoft = Color(0xFFA3ACB9),
+    primary = SaqrPalette.Ivory,
+    primaryPressed = Color(0xFFE7E3DA),
+    onPrimary = SaqrPalette.Obsidian,
+    safeInk = Color(0xFF34D399),
+    suspiciousInk = Color(0xFFFBBF24),
+    scamInk = Color(0xFFF87171),
+    safeSoft = Color(0xFF0F2A21),
+    suspiciousSoft = Color(0xFF2E2310),
+    scamSoft = Color(0xFF311617),
     isDark = true,
 )

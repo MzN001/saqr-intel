@@ -1,8 +1,8 @@
-// SAQR-INTEL | "work in progress" pill for webmail sites the email shield does not support yet
+// Saqr | "work in progress" pill for webmail sites the email shield does not support yet
 // (Yahoo Mail, Proton Mail, iCloud Mail, AOL Mail, Zoho Mail — see manifest.json).
 //
 // Shows a small dismissible <saqr-wip-pill> once per browser session:
-//   "SAQR email scanning for <Provider> is a work in progress — paste the email at <app>"
+//   "Saqr email scanning for <Provider> is a work in progress — paste the email at <app>"
 // Closed Shadow DOM, textContent only, EN/AR following the page/browser language. It reads nothing
 // from the mail page.
 
@@ -33,7 +33,7 @@
   ];
 
   const TEXT = {
-    en: (p, app) => ["SAQR email scanning for " + p + " is a work in progress — paste the email at ", app],
+    en: (p, app) => ["Saqr email scanning for " + p + " is a work in progress — paste the email at ", app],
     ar: (p, app) => ["فحص البريد من صقر لـ " + p + " قيد التطوير — الصق الرسالة في ", app],
     close: { en: "Close", ar: "إغلاق" },
   };
@@ -80,19 +80,28 @@
 
     const lang = pickLang(document.documentElement.getAttribute("lang"), navigator.languages || [navigator.language]);
     const dark = !!(root.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    const FALCON =
+      "url(\"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%2720 20 472 472%27%3E%3Cpath fill-rule=%27evenodd%27 d=%27" +
+      "M260 24L354 51L371 78L394 97C403 110 405 128 400 146L390 172L380 145L354 146L344 182L352 203L424 284L368 379L274 219L341 136L289 141L213 249L128 312L159 369L168 306L248 244L163 402L89 284L145 218L179 81ZM210 101L259 89L259 97L283 121L317 112L253 164ZM191 127L206 150L177 184ZM211 212L196 234L153 268L161 238ZM323 188L356 272L299 222ZM357 97L371 106L362 119L344 116ZM259 250L294 427L254 489L253 303L227 453L188 382ZM270 237L344 362L311 444Z".replace(/ /g, "%20") +
+      "%27/%3E%3C/svg%3E\")";
     const host = document.createElement("saqr-wip-pill");
     host.style.cssText = "position:fixed;inset-block-end:16px;inset-inline-start:16px;z-index:2147483000;";
     const shadow = host.attachShadow({ mode: "closed" });
     const css =
+      // Saqr tokens (frontend/DESIGN.md): surface + hairline, ink text, obsidian/ivory focus; the dot is the
+      // falcon mark (neutral ink: "work in progress" is not a verdict, so no verdict colour).
       ":host{all:initial}" +
-      ".p{display:flex;align-items:center;gap:8px;max-width:460px;padding:8px 8px 8px 14px;border-radius:999px;" +
-      "font:13px/1.4 system-ui,-apple-system,'Segoe UI',Tahoma,'Noto Sans Arabic',sans-serif;" +
-      "background:#fff;color:#0f172a;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,.18)}" +
-      ".p.dark{background:#111827;color:#f1f5f9;border-color:#334155}" +
-      ".dot{width:10px;height:10px;border-radius:50%;background:#f59e0b;flex:none}" +
-      "a{color:#0f766e;font-weight:600}.dark a{color:#5eead4}" +
-      "button{all:unset;cursor:pointer;padding:0 6px;font-size:18px;line-height:1;opacity:.7}" +
-      "button:focus-visible{outline:2px solid #0f766e;border-radius:4px}";
+      ".p{--surface:#fff;--line:#e6e2d8;--ink:#111315;--soft:#475569;display:flex;align-items:center;gap:10px;max-width:460px;" +
+      "padding:8px 8px 8px 14px;border-radius:9999px;" +
+      "font:500 13px/1.45 Inter,'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,Tahoma,'IBM Plex Sans Arabic',sans-serif;" +
+      "background:var(--surface);color:var(--ink);border:1px solid var(--line);" +
+      "box-shadow:0 1px 2px rgba(17,19,21,.04),0 8px 24px -12px rgba(17,19,21,.2)}" +
+      ".p.dark{--surface:#171a1f;--line:#2a2f37;--ink:#faf8f5;--soft:#a3acb9}" +
+      ".dot{width:16px;height:16px;flex:none;background:var(--ink);" +
+      "-webkit-mask:" + FALCON + " center/contain no-repeat;mask:" + FALCON + " center/contain no-repeat}" +
+      "a{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}" +
+      "button{all:unset;cursor:pointer;padding:0 6px;font-size:18px;line-height:1;color:var(--soft)}" +
+      "button:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:4px}";
     try {
       const sheet = new CSSStyleSheet();
       sheet.replaceSync(css);

@@ -113,7 +113,7 @@ def _template(wave: dict[str, Any], hours: int) -> dict[str, Any]:
     tips_en = [f"Official {name_en} services are only at {official}.",
                "Never share OTP codes, CVV or UAE PASS credentials — no official entity will ask for them.",
                "Check the website address carefully before paying anything.",
-               "Report suspicious links to Abu Dhabi Police via Aman (8002626) or the SAQR-INTEL portal."]
+               "Report suspicious links to Abu Dhabi Police via Aman (8002626) or the Saqr app."]
     tips_ar = [f"الخدمات الرسمية لـ{name_ar} متاحة فقط عبر {official_ar}.",
                "لا تشارك أبداً رموز التحقق أو رمز CVV أو بيانات UAE PASS — لن تطلبها أي جهة رسمية.",
                "تحقق من عنوان الموقع بعناية قبل دفع أي مبلغ.",

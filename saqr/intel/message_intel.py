@@ -334,7 +334,7 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
     sus = [l for l in links if l.get("verdict") == "SUSPICIOUS"]
     if hi:
         add("MSG_SCAM_LINK", "critical", 65,
-            f"The link in this message ({hi[0]['domain']}) was scanned by SAQR and is a scam website.",
+            f"The link in this message ({hi[0]['domain']}) was scanned by Saqr and is a scam website.",
             f"تم فحص الرابط الموجود في هذه الرسالة ({hi[0]['domain']}) وتبيّن أنه موقع احتيالي.",
             ", ".join(f"{l['domain']} ({l.get('risk_score')})" for l in hi[:3]))
     elif sus:
@@ -382,7 +382,7 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
             f"({sender_check.get('region') or 'خارج الدولة'}).", sender_check.get("masked"))
     if st == "linked_to_scam":
         add("MSG_PHONE_LINKED_TO_SCAM", "critical", 40,
-            "The sender's number is already linked to fake listings in SAQR's fraud intelligence.",
+            "The sender's number is already linked to fake listings in Saqr's fraud intelligence.",
             "رقم المرسل مرتبط مسبقاً بإدراجات مزيفة في استخبارات صقر للاحتيال.", sender_check.get("masked"))
 
     # -- call-back numbers in the text -------------------------------------------------------------
@@ -406,7 +406,7 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
                 f"الرقم الموجود في الرسالة ليس من الأرقام الرسمية لـ{name_ar}.", p.get("masked"))
         if s == "linked_to_scam":
             add("MSG_PHONE_LINKED_TO_SCAM", "critical", 40,
-                "A number in this message is already linked to fake listings in SAQR's fraud intelligence.",
+                "A number in this message is already linked to fake listings in Saqr's fraud intelligence.",
                 "رقم في هذه الرسالة مرتبط مسبقاً بإدراجات مزيفة في استخبارات صقر للاحتيال.", p.get("masked"))
 
     # -- credential requests -------------------------------------------------------------------------

@@ -3,15 +3,23 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SAQR-INTEL Email Shield settings</title>
+    <title>Saqr settings</title>
     <link rel="stylesheet" href="shield.css" />
     <style>
+      .wrap-head {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 24px 16px 8px;
+      }
+      .wrap-head .saqr-lockup {
+        height: 32px;
+      }
       main {
         max-width: 720px;
         margin: 0 auto;
-        padding: 16px;
+        padding: 8px 16px 24px;
         display: grid;
-        gap: 14px;
+        gap: 16px;
       }
       .sub {
         margin: 4px 0 0;
@@ -30,11 +38,12 @@
         height: 20px;
         margin: 2px 0 0;
         flex: none;
-        accent-color: var(--emerald-700);
+        accent-color: var(--primary);
       }
       .switch strong {
         display: block;
-        font-size: 14px;
+        font-size: 15px;
+        font-weight: 600;
       }
       .grid {
         display: grid;
@@ -42,8 +51,8 @@
         margin-top: 12px;
       }
       .grid label {
-        font-size: 12.5px;
-        font-weight: 700;
+        font-size: 13px;
+        font-weight: 600;
       }
       .grid .input {
         width: 100%;
@@ -58,15 +67,17 @@
       }
       .row .btn {
         width: auto;
-        padding: 9px 14px;
-        font-size: 13px;
+        min-height: 44px;
+        padding: 10px 16px;
+        font-size: 14px;
       }
       .note {
         margin: 10px 0 0;
         padding: 10px 12px;
-        border-radius: 12px;
+        border-radius: var(--radius-control);
         background: var(--muted);
-        font-size: 12.5px;
+        font-size: 13px;
+        color: var(--ink-soft);
       }
       .stats {
         display: grid;
@@ -83,6 +94,8 @@
       .stats b {
         display: block;
         font-size: 22px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
       }
       .stats span {
         font-size: 12px;
@@ -90,29 +103,27 @@
       }
       footer {
         padding: 0 16px 16px;
-        font-size: 11px;
+        font-size: 12px;
         color: var(--ink-soft);
         text-align: center;
       }
     </style>
   </head>
   <body>
-    <header class="brand-bar">
-      <img class="brand-logo" src="icons/icon48.png" alt="" />
-      <div>
-        <p class="brand-name">SAQR-INTEL</p>
-        <p class="brand-tag">Email Shield settings · إعدادات درع البريد</p>
-      </div>
+    <header class="brand-bar wrap-head">
+      <!-- Saqr lockup: falcon (frontend/src/brand) + "Saqr" outlined from Gloock 400 (OFL). currentColor. -->
+      <svg class="saqr-lockup" role="img" aria-label="Saqr" viewBox="89 24 847 465" fill="currentColor"><path fill-rule="evenodd" d="M260 24L354 51L371 78L394 97C403 110 405 128 400 146L390 172L380 145L354 146L344 182L352 203L424 284L368 379L274 219L341 136L296 140L219 252L135 317L159 369L168 306L248 244L163 402L89 284L145 218L179 81ZM262 38L344 60L354 75L334 86L271 63L208 77ZM195 94L268 77L268 91L286 111L309 106L316 92L330 98L326 106L286 132L253 180ZM187 104L217 151L160 219ZM243 191L208 244L140 297L155 236ZM334 164L331 185L377 303L287 223ZM358 86L382 103L368 129L349 124L315 127L338 111L344 96ZM352 100L366 101L352 112ZM259 250L294 427L254 489L253 303L227 453L188 382ZM270 237L344 362L311 444Z"/><path transform="translate(489.1 346.0) scale(0.2139)" stroke="currentColor" stroke-width="12" stroke-linejoin="round" d="M235 14Q209 14 193 12Q176 10 160 7Q144 4 121 2Q98 0 58 0L23 -260L35 -260Q50 -137 104 -70Q157 -4 241 -4Q303 -4 342 -39Q381 -74 381 -130Q381 -154 373 -176Q364 -198 344 -223Q324 -248 291 -277Q258 -307 209 -344L168 -375Q93 -432 64 -477Q35 -522 35 -575Q35 -663 100 -713Q164 -764 270 -764Q296 -764 313 -762Q329 -760 345 -757Q360 -754 381 -752Q402 -750 435 -750L445 -548L435 -548Q421 -641 375 -695Q329 -749 264 -749Q218 -749 191 -722Q163 -695 163 -650Q163 -611 189 -575Q214 -540 277 -493L320 -461Q386 -413 425 -372Q463 -332 480 -294Q497 -256 497 -213Q497 -147 464 -96Q431 -45 373 -16Q314 12 235 14ZM676 14Q615 14 578 -19Q541 -52 541 -106Q541 -129 549 -149Q557 -170 579 -190Q602 -210 642 -231Q682 -253 748 -277L841 -311L841 -386Q841 -443 823 -476Q805 -510 773 -510Q735 -509 709 -460Q682 -411 673 -324L565 -386Q582 -427 617 -458Q652 -489 698 -506Q743 -523 793 -523Q878 -523 932 -475Q985 -428 985 -346L985 -105Q985 -47 1024 -47Q1047 -47 1069 -72L1077 -65Q1051 -30 1014 -8Q977 14 942 14Q904 14 877 -12Q849 -38 842 -81Q793 -31 757 -8Q720 14 676 14ZM751 -48Q773 -48 794 -59Q814 -70 840 -95L841 -298L801 -283Q750 -264 723 -244Q696 -225 686 -201Q675 -177 675 -146Q675 -103 697 -75Q718 -48 751 -48ZM1346 210L1346 200Q1383 200 1405 178Q1427 156 1427 120L1427 -95Q1402 -48 1356 -17Q1310 14 1256 14Q1202 14 1160 -20Q1117 -54 1093 -113Q1069 -173 1069 -248Q1069 -330 1099 -391Q1128 -453 1181 -488Q1234 -523 1304 -523Q1418 -523 1461 -430L1561 -523L1571 -523L1571 120Q1571 156 1593 178Q1615 200 1652 200L1652 210ZM1309 -26Q1331 -26 1355 -40Q1379 -55 1399 -78Q1418 -102 1427 -128L1427 -371Q1423 -434 1399 -470Q1375 -506 1335 -506Q1281 -506 1253 -439Q1225 -373 1225 -244Q1225 -26 1309 -26ZM1621 0L1621 -10L1622 -10Q1658 -10 1680 -32Q1702 -54 1702 -90L1702 -418Q1702 -456 1687 -477Q1671 -498 1621 -498L1621 -508L1720 -508Q1773 -508 1800 -518Q1827 -529 1838 -546L1843 -546L1844 -382Q1857 -412 1878 -445Q1898 -478 1930 -500Q1961 -523 2005 -523Q2020 -523 2037 -520Q2054 -517 2073 -509L2034 -392Q1998 -412 1972 -420Q1945 -428 1925 -428Q1891 -428 1875 -407Q1858 -386 1846 -357L1846 -90Q1846 -54 1868 -32Q1890 -10 1926 -10L1927 -10L1927 0Z"/></svg>
+      <p class="tag">Settings · <span class="ar" lang="ar">الإعدادات</span></p>
     </header>
 
     <main>
       <section class="card" aria-labelledby="scan-title">
-        <p class="card-title" id="scan-title">Checking emails · فحص الرسائل</p>
+        <p class="label" id="scan-title">Checking emails · فحص الرسائل</p>
         <label class="switch">
           <input type="checkbox" id="auto-scan" />
           <span>
             <strong>Check each email when I open it · افحص كل رسالة عند فتحها</strong>
-            <span class="sub">Works in Gmail and Outlook. Turn it off to check emails only when you press the SAQR button.</span>
+            <span class="sub">Works in Gmail and Outlook. Turn it off to check emails only when you press the Saqr button.</span>
             <span class="sub ar" dir="rtl" lang="ar">يعمل في Gmail و Outlook. أوقفه إذا أردت الفحص فقط عند الضغط على زر صقر.</span>
           </span>
         </label>
@@ -120,7 +131,7 @@
       </section>
 
       <section class="card" aria-labelledby="search-title">
-        <p class="card-title" id="search-title">Search &amp; Maps shield · درع البحث والخرائط</p>
+        <p class="label" id="search-title">Search &amp; Maps shield · درع البحث والخرائط</p>
         <label class="switch">
           <input type="checkbox" id="search-shield" />
           <span>
@@ -133,9 +144,9 @@
       </section>
 
       <section class="card" aria-labelledby="llm-title">
-        <p class="card-title" id="llm-title">Use my own AI (optional) · استخدم الذكاء الاصطناعي الخاص بي (اختياري)</p>
+        <p class="label" id="llm-title">Use my own AI (optional) · استخدم الذكاء الاصطناعي الخاص بي (اختياري)</p>
         <p class="sub">
-          If you have an account with an AI service that works like OpenAI (OpenAI, Groq, OpenRouter, Mistral…), SAQR can ask
+          If you have an account with an AI service that works like OpenAI (OpenAI, Groq, OpenRouter, Mistral…), Saqr can ask
           it for a second opinion on each email.
         </p>
         <p class="sub ar" dir="rtl" lang="ar">إذا كان لديك حساب في خدمة ذكاء اصطناعي متوافقة مع OpenAI، يمكن لصقر أن يطلب منها رأياً ثانياً في كل رسالة.</p>
@@ -158,7 +169,7 @@
           </div>
         </form>
         <p class="note">
-          Your key is kept only in this browser. It is sent to the SAQR server together with each email check, used for that
+          Your key is kept only in this browser. It is sent to the Saqr server together with each email check, used for that
           one check, and never stored there.
           <br />
           <span class="ar" dir="rtl" lang="ar">يُحفظ مفتاحك في هذا المتصفح فقط. يُرسل إلى خادم صقر مع كل فحص، ويُستخدم لذلك الفحص فقط، ولا يُخزَّن هناك أبداً.</span>
@@ -167,9 +178,9 @@
       </section>
 
       <section class="card" aria-labelledby="model-title">
-        <p class="card-title" id="model-title">My personal scam filter · فلتر الاحتيال الشخصي</p>
+        <p class="label" id="model-title">My personal scam filter · فلتر الاحتيال الشخصي</p>
         <p class="sub">
-          When you mark an email as "scam" or "not a scam", SAQR learns what scams look like for you. It starts helping after
+          When you mark an email as "scam" or "not a scam", Saqr learns what scams look like for you. It starts helping after
           <b id="min-docs">10</b> emails of each kind.
         </p>
         <p class="sub ar" dir="rtl" lang="ar">عندما تضع علامة «احتيال» أو «ليست احتيالاً» على رسالة، يتعلم صقر شكل الاحتيال بالنسبة لك. يبدأ بالمساعدة بعد 10 رسائل من كل نوع.</p>
@@ -179,7 +190,7 @@
           <div><b id="n-state">–</b><span>Status · الحالة</span></div>
         </div>
         <div class="row">
-          <button class="btn btn-primary" type="button" id="export">Download my filter · تنزيل</button>
+          <button class="btn btn-secondary" type="button" id="export">Download my filter · تنزيل</button>
           <button class="btn btn-ghost" type="button" id="import-btn">Load a filter file · تحميل ملف</button>
           <input type="file" id="import-file" accept="application/json,.json" class="hidden" />
           <button class="btn btn-danger" type="button" id="reset">Erase my filter · مسح</button>
@@ -193,8 +204,8 @@
           </span>
         </label>
         <p class="note">
-          The filter is stored in this browser. Emails you mark after a SAQR check also teach the copy kept for this browser on
-          the SAQR server (only number codes, never the email text). "Erase" deletes both.
+          The filter is stored in this browser. Emails you mark after a Saqr check also teach the copy kept for this browser on
+          the Saqr server (only number codes, never the email text). "Erase" deletes both.
           <br />
           <span class="ar" dir="rtl" lang="ar">يُحفظ الفلتر في هذا المتصفح. الرسائل التي تضع عليها علامة بعد فحص صقر تُعلّم أيضاً النسخة المحفوظة لهذا المتصفح على خادم صقر (أرقام فقط، وليس نص الرسالة). «مسح» يحذف النسختين.</span>
         </p>

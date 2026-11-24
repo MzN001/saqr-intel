@@ -76,32 +76,32 @@ ERRORS: dict[str, tuple[str, str]] = {
     "bad_model": ("The AI model name is not valid.", "اسم نموذج الذكاء الاصطناعي غير صالح."),
     "bad_key": ("The AI key is not valid (it must not contain spaces or line breaks).",
                 "مفتاح الذكاء الاصطناعي غير صالح (يجب ألا يحتوي على مسافات أو أسطر جديدة)."),
-    "https_only": ("For safety, SAQR only talks to AI services over https://. Plain http:// is allowed only for "
+    "https_only": ("For safety, Saqr only talks to AI services over https://. Plain http:// is allowed only for "
                    "an AI running on this computer, when the server owner has enabled it.",
                    "لأسباب أمنية يتصل صقر بخدمات الذكاء الاصطناعي عبر https:// فقط. يُسمح بـ http:// فقط لنموذج يعمل "
                    "على هذا الجهاز وعندما يفعّل مالك الخادم ذلك."),
-    "private_blocked": ("That AI address points to a private or internal network, which this SAQR server is not "
+    "private_blocked": ("That AI address points to a private or internal network, which this Saqr server is not "
                         "allowed to contact.",
                         "يشير عنوان الذكاء الاصطناعي هذا إلى شبكة خاصة أو داخلية، ولا يُسمح لخادم صقر بالاتصال بها."),
     "not_found_host": ("The AI address could not be found. Check the spelling.",
                        "تعذّر العثور على عنوان خدمة الذكاء الاصطناعي. تحقّق من كتابته."),
-    "offline": ("This SAQR server is in offline mode, so your AI model was not used.",
+    "offline": ("This Saqr server is in offline mode, so your AI model was not used.",
                 "خادم صقر يعمل دون اتصال بالإنترنت، لذلك لم يُستخدم نموذج الذكاء الاصطناعي الخاص بك."),
     "auth": ("Your AI service did not accept the key.", "لم تقبل خدمة الذكاء الاصطناعي المفتاح."),
     "model_missing": ("Your AI service could not find that model or address.",
                       "لم تجد خدمة الذكاء الاصطناعي هذا النموذج أو العنوان."),
     "rate_limited": ("Your AI service is busy or over its limit. Try again later.",
                      "خدمة الذكاء الاصطناعي مشغولة أو تجاوزت الحد المسموح. حاول لاحقاً."),
-    "redirect": ("Your AI address tried to redirect SAQR somewhere else. For safety, redirects are not followed.",
+    "redirect": ("Your AI address tried to redirect Saqr somewhere else. For safety, redirects are not followed.",
                  "حاول عنوان الذكاء الاصطناعي تحويل صقر إلى مكان آخر. لأسباب أمنية لا يتم اتباع التحويلات."),
     "rejected": ("Your AI service rejected the request.", "رفضت خدمة الذكاء الاصطناعي الطلب."),
     "server_error": ("Your AI service had an internal error.", "حدث خطأ داخلي في خدمة الذكاء الاصطناعي."),
     "timeout": ("Your AI service took too long to answer.", "استغرقت خدمة الذكاء الاصطناعي وقتاً طويلاً للرد."),
     "connect": ("Could not connect to your AI service.", "تعذّر الاتصال بخدمة الذكاء الاصطناعي."),
     "too_big": ("Your AI service sent a reply that was too large.", "أرسلت خدمة الذكاء الاصطناعي رداً كبيراً جداً."),
-    "bad_reply": ("Your AI service's answer was not in the expected format, so SAQR's own checks were used.",
+    "bad_reply": ("Your AI service's answer was not in the expected format, so Saqr's own checks were used.",
                   "لم يكن رد خدمة الذكاء الاصطناعي بالشكل المتوقع، لذلك استُخدمت فحوصات صقر الخاصة."),
-    "server_chain": ("SAQR's AI judge is not answering right now, so SAQR's rule checks were used.",
+    "server_chain": ("Saqr's AI judge is not answering right now, so Saqr's rule checks were used.",
                      "محلل صقر الذكي لا يستجيب حالياً، لذلك استُخدمت فحوصات صقر القائمة على القواعد."),
 }
 

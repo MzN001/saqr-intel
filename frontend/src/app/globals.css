@@ -1,42 +1,82 @@
 @import "tailwindcss";
 
-/* `dark:` classes apply when <html data-theme="dark"> (set by lib/theme.tsx). */
+/* `dark:` classes apply when <html data-theme="dark"> (set by lib/theme-script.ts + lib/theme.tsx). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* =====================================================================================
+   Saqr design tokens. DESIGN.md is the source of truth; every value here is listed there
+   with its contrast ratio. Light is the default theme; dark overrides are further down.
+   Components use the semantic names (bg-canvas, bg-surface, text-ink, bg-primary ...),
+   never raw hex.
+   ===================================================================================== */
 @theme {
-  /* Semantic colours that flip between light and dark (see [data-theme="dark"] below). */
-  /* Light theme: warm cream paper + deep navy ink (easier on the eyes than pure white). */
-  --color-canvas: #f3ecdf;
-  --color-surface: #faf6ee;
-  --color-muted: #eee5d5;
-  --color-line: #e0d4bf;
-  --color-ink: #0b192c;
-  --color-ink-soft: #2b4568;
+  /* ---- Neutrals (flip per theme) ---- */
+  --color-canvas: #f7f5f0; /* warm ivory page ground */
+  --color-surface: #ffffff; /* cards, sheets, sticky bars */
+  --color-muted: #f1eee6; /* sandstone step: input wells, hovered / selected rows, tracks */
+  --color-line: #e6e2d8; /* 1px hairlines and dividers */
+  --color-ink: #111315; /* primary text (17.1:1 on canvas) */
+  --color-ink-soft: #475569; /* slate secondary text (6.95:1 on canvas, 7.58:1 on surface) */
   /* Phone-screen "white" for the simulated Google / Messages apps. */
-  --color-screen: #fdfaf4;
-  /* Night Grid: the dot of the city map texture (warm grey on cream; see dark below). */
-  --color-grid-dot: #d9ccb4;
-  --color-scam: #e11d48;
-  /* Crimson for TEXT (fills stay --color-scam): AA on both grounds. */
-  --color-scam-ink: #be123c;
-  /* Gold for TEXT on the cream ground (fills and buttons keep --color-gold-500). */
-  --color-gold-ink: #7a5a1f;
+  --color-screen: #ffffff;
+  /* Dot of the .night-grid texture. */
+  --color-grid-dot: #ddd8cc;
 
-  --color-navy-950: #060f1c;
-  --color-navy-900: #0b192c;
-  --color-navy-800: #132a47;
-  --color-navy-700: #1e3a5f;
-  --color-navy-100: #e7edf5;
-  --color-navy-50: #f3f6fa;
-  --color-emerald-brand: #0e9f6e;
-  --color-crimson-700: #a50e25;
-  --color-crimson-600: #c8102e;
-  --color-crimson-50: #fdecee;
-  --color-gold-500: #c5a572;
-  --color-gold-100: #f6efe2;
+  /* ---- Primary action: obsidian (inverts to ivory in dark) ---- */
+  --color-primary: #111315;
+  --color-primary-hover: #1e293b;
+  --color-on-primary: #faf8f5;
 
-  --font-sans: var(--font-barlow), "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --font-arabic: var(--font-kufi), "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
+  /* ---- Brand constants (never flip; use for the logo only) ---- */
+  --color-obsidian: #111315;
+  --color-ivory: #faf8f5;
+  --color-slate: #1e293b;
+  --color-sandstone: #ece7db;
+
+  /* ---- Verdict colours. FILL values are fixed; *-ink are TEXT values that pass AA (4.5:1)
+          on canvas, surface and their own -soft chip in both themes. ---- */
+  --color-safe: #10b981; /* emerald fill: dots, meter zone, icons on soft chips */
+  --color-safe-ink: #047857;
+  --color-safe-soft: #e8f6ef;
+  --color-on-safe: #111315;
+  --color-suspicious: #f59e0b; /* amber fill */
+  --color-suspicious-ink: #92400e;
+  --color-suspicious-soft: #fdf3e1;
+  --color-on-suspicious: #111315;
+  --color-scam: #dc2626; /* crimson fill: scam only */
+  --color-scam-ink: #b91c1c;
+  --color-scam-soft: #fcebeb;
+  --color-on-scam: #ffffff;
+
+  /* ---- Browser surfaces ---- */
+  --color-focus: #111315; /* 2px focus ring = ink: 17:1 on canvas, never a verdict colour */
+
+  /* ---- DEPRECATED Night Grid aliases. Kept so un-migrated components degrade gracefully;
+          do not use in new code (see DESIGN.md "Deprecated tokens"). ---- */
+  --color-gold-ink: #475569; /* was gold text -> ink-soft */
+  --color-navy-950: #0a0b0d; /* -> obsidian, a step deeper (overlays, inset panels) */
+  --color-navy-900: #111315; /* -> obsidian (primary) */
+  --color-navy-800: #1e293b; /* -> slate (primary hover) */
+  --color-navy-700: #334155; /* -> slate 700 */
+  --color-navy-100: #e6e2d8; /* -> line */
+  --color-navy-50: #f1eee6; /* -> muted */
+  --color-emerald-brand: #10b981; /* -> safe */
+  --color-crimson-700: #b91c1c; /* -> scam-ink (light) */
+  --color-crimson-600: #dc2626; /* -> scam */
+  --color-crimson-50: #fcebeb; /* -> scam-soft (light) */
+  --color-gold-500: #e8e1d0; /* "police action" gold -> sandstone accent (icons on obsidian badges) */
+  --color-gold-100: #f1eee6; /* -> muted */
+
+  /* ---- Type. Variables come from next/font in app/layout.tsx. ---- */
+  --font-sans: var(--font-inter), "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-arabic: var(--font-plex-arabic), "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
+  /* The "Saqr" wordmark ONLY (SaqrLogo.tsx). Never for headings or UI text. */
+  --font-wordmark: var(--font-gloock), Georgia, "Times New Roman", serif;
+
+  /* ---- Shape ---- */
+  --radius-card: 18px;
+  --radius-control: 12px;
+  --radius-pill: 9999px;
 
   --animate-sweep: sweep 4s linear infinite;
   --animate-ping-slow: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -79,10 +119,93 @@
 
 :root {
   color-scheme: light;
+  /* Card elevation: soft and warm, never a glow. Flips with the theme (see dark below). */
+  --elevation-card: 0 1px 2px rgb(17 19 21 / 0.04), 0 8px 24px -12px rgb(17 19 21 / 0.1);
+  --elevation-overlay: 0 24px 48px -20px rgb(17 19 21 / 0.28);
+  --selection: rgb(17 19 21 / 0.14);
+  /* .map-grid (Maps listing preview) */
+  --map-ground: #eeebe3;
+  --map-road: #ffffff;
+  --map-road-2: #e6dcc4;
+  --map-grid: #e2ddd1;
 }
 
-/* Night Grid (default theme): night-navy ground, tiles one step lighter, hairline edges. */
+/* Dark: obsidian canvas, deep-slate surfaces, ivory ink; the primary inverts to an ivory button. */
 [data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #0e1012;
+  --color-surface: #171a1f;
+  --color-muted: #1f232a;
+  --color-line: #2a2f37;
+  --color-ink: #faf8f5;
+  --color-ink-soft: #a3acb9;
+  --color-screen: #ffffff;
+  --color-grid-dot: #262b33;
+  --color-primary: #faf8f5;
+  --color-primary-hover: #e7e3da;
+  --color-on-primary: #111315;
+  --color-safe-ink: #34d399;
+  --color-safe-soft: #0f2a21;
+  --color-suspicious-ink: #fbbf24;
+  --color-suspicious-soft: #2e2310;
+  --color-scam-ink: #f87171;
+  --color-scam-soft: #311617;
+  --color-focus: #faf8f5;
+  --color-gold-ink: #a3acb9;
+  --elevation-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.55);
+  --elevation-overlay: 0 24px 48px -20px rgb(0 0 0 / 0.6);
+  --selection: rgb(250 248 245 / 0.2);
+  --map-ground: #161a1f;
+  --map-road: #2a2f37;
+  --map-road-2: #3d3628;
+  --map-grid: #1e2228;
+}
+
+/* =====================================================================================
+   LEGACY NIGHT GRID SCOPE (/police only).
+   The police Command Center + login keep the previous Night Grid look until the owner
+   supplies its new format. `.brand-night-grid` is put on <html> by lib/theme-script.ts on
+   /police routes (and by app/police/layout.tsx on client navigation) and re-declares
+   every token with its pre-Saqr value: palette, fonts (Barlow + Noto Kufi), dot-matrix,
+   map, focus and selection. Do not use it anywhere else.
+   ===================================================================================== */
+.brand-night-grid {
+  color-scheme: light;
+  --color-canvas: #f3ecdf;
+  --color-surface: #faf6ee;
+  --color-muted: #eee5d5;
+  --color-line: #e0d4bf;
+  --color-ink: #0b192c;
+  --color-ink-soft: #2b4568;
+  --color-screen: #fdfaf4;
+  --color-grid-dot: #d9ccb4;
+  --color-scam: #e11d48;
+  --color-scam-ink: #be123c;
+  --color-gold-ink: #7a5a1f;
+  --color-navy-950: #060f1c;
+  --color-navy-900: #0b192c;
+  --color-navy-800: #132a47;
+  --color-navy-700: #1e3a5f;
+  --color-navy-100: #e7edf5;
+  --color-navy-50: #f3f6fa;
+  --color-emerald-brand: #0e9f6e;
+  --color-crimson-700: #a50e25;
+  --color-crimson-600: #c8102e;
+  --color-crimson-50: #fdecee;
+  --color-gold-500: #c5a572;
+  --color-gold-100: #f6efe2;
+  --color-focus: #0e9f6e;
+  --font-sans: var(--font-barlow), "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-arabic: var(--font-kufi), "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
+  --selection: color-mix(in oklab, #0e9f6e 28%, transparent);
+  --map-ground: #e8eef1;
+  --map-road: #ffffff;
+  --map-road-2: #fbe7a8;
+  --map-grid: #d6e0e5;
+  font-family: var(--font-sans);
+}
+.brand-night-grid[data-theme="dark"],
+[data-theme="dark"] .brand-night-grid {
   color-scheme: dark;
   --color-canvas: #0a1220;
   --color-surface: #111c2e;
@@ -93,9 +216,24 @@
   --color-grid-dot: #1f2e47;
   --color-scam-ink: #fb7185;
   --color-gold-ink: #d8bd8c;
+  --map-ground: #1d2c35;
+  --map-road: #3c4a55;
+  --map-road-2: #6b5b2e;
+  --map-grid: #26363f;
+}
+html[lang="ar"] .brand-night-grid,
+html[lang="ar"].brand-night-grid {
+  font-family: var(--font-arabic);
+}
+/* Higher specificity than the :root browser-surface rules further down. */
+:root.brand-night-grid,
+.brand-night-grid {
+  caret-color: var(--color-emerald-brand);
+  accent-color: var(--color-emerald-brand);
+  scrollbar-color: color-mix(in oklab, var(--color-navy-700) 45%, transparent) transparent;
 }
 
-/* The city at night: a dot-matrix ground. Used behind the map tiles and the citizen hero. */
+/* The dot-matrix ground (map tiles, hero backdrops). */
 .night-grid {
   background-image: radial-gradient(var(--color-grid-dot) 1.4px, transparent 1.5px);
   background-size: 14px 14px;
@@ -116,7 +254,7 @@ html[lang="ar"] body {
   font-family: var(--font-arabic);
 }
 
-/* Arabic inside English pages (e.g. the police wordmark) still gets the Arabic face. */
+/* Arabic inside English pages still gets the Arabic face. */
 :lang(ar) {
   font-family: var(--font-arabic);
 }
@@ -136,22 +274,13 @@ html[lang="ar"] body {
 }
 
 .map-grid {
-  background-color: #e8eef1;
+  background-color: var(--map-ground);
   background-image:
-    linear-gradient(115deg, transparent 46%, #ffffff 46%, #ffffff 54%, transparent 54%),
-    linear-gradient(25deg, transparent 47%, #fbe7a8 47%, #fbe7a8 53%, transparent 53%),
-    linear-gradient(#d6e0e5 1px, transparent 1px),
-    linear-gradient(90deg, #d6e0e5 1px, transparent 1px);
+    linear-gradient(115deg, transparent 46%, var(--map-road) 46%, var(--map-road) 54%, transparent 54%),
+    linear-gradient(25deg, transparent 47%, var(--map-road-2) 47%, var(--map-road-2) 53%, transparent 53%),
+    linear-gradient(var(--map-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--map-grid) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 22px 22px, 22px 22px;
-}
-
-[data-theme="dark"] .map-grid {
-  background-color: #1d2c35;
-  background-image:
-    linear-gradient(115deg, transparent 46%, #3c4a55 46%, #3c4a55 54%, transparent 54%),
-    linear-gradient(25deg, transparent 47%, #6b5b2e 47%, #6b5b2e 53%, transparent 53%),
-    linear-gradient(#26363f 1px, transparent 1px),
-    linear-gradient(90deg, #26363f 1px, transparent 1px);
 }
 
 /* ---- Theme switch animation ----
@@ -195,7 +324,7 @@ html.theme-fading *::after {
   }
 }
 
-/* /police: "Print / Save PDF" prints only the takedown dossier. */
+/* Print: "Print / Save PDF" prints only the .print-area block, ink on white. */
 @media print {
   body * {
     visibility: hidden !important;
@@ -209,25 +338,29 @@ html.theme-fading *::after {
     inset: 0 0 auto 0;
     padding: 24px;
     background: #fff !important;
+    color: #111315 !important;
+  }
+  .brand-night-grid .print-area {
     color: #0b192c !important;
   }
 }
 
-/* ---- Browser surfaces in the SAQR palette (selection, caret, focus, form accents, scrollbars) ---- */
+/* ---- Browser surfaces (selection, caret, focus, form accents, scrollbars) ---- */
 ::selection {
-  background: color-mix(in oklab, var(--color-emerald-brand) 28%, transparent);
+  background: var(--selection);
   color: inherit;
 }
 :root {
-  caret-color: var(--color-emerald-brand);
-  accent-color: var(--color-emerald-brand);
-  scrollbar-color: color-mix(in oklab, var(--color-navy-700) 45%, transparent) transparent;
+  caret-color: var(--color-ink);
+  accent-color: var(--color-primary);
+  scrollbar-color: color-mix(in oklab, var(--color-ink-soft) 45%, transparent) transparent;
 }
 /* In the base layer so utilities (outline-hidden, rounded-*, focus rings) can override it.
-   Fields that draw their own emerald focus ring use `outline-hidden` to avoid a double ring. */
+   Ink focus ring: maximum contrast in both themes and no verdict colour borrowed for focus.
+   Fields that draw their own focus ring use `outline-hidden` to avoid a double ring. */
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--color-emerald-brand);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
     border-radius: 6px;
   }
@@ -275,4 +408,128 @@ html.theme-fading *::after {
     max-height: none !important;
     overflow: visible !important;
   }
+}
+
+/* =====================================================================================
+   Saqr component utilities (use these in new and migrated components; see DESIGN.md).
+   ===================================================================================== */
+
+/* Card: surface + 1px hairline + 18px radius + soft elevation. Never nest one in another. */
+@utility card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-card);
+}
+@utility shadow-card {
+  box-shadow: var(--elevation-card);
+}
+@utility shadow-overlay {
+  box-shadow: var(--elevation-overlay);
+}
+
+/* Primary button: obsidian (light) / ivory (dark), 48px touch target. One per section. */
+@utility btn-primary {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-inline: 1.25rem;
+  border-radius: var(--radius-control);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: background-color 150ms ease, transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  &:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Secondary button: surface + hairline + ink. */
+@utility btn-secondary {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-inline: 1.25rem;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-line);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: background-color 150ms ease;
+  &:hover:not(:disabled) {
+    background-color: var(--color-muted);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Text field: 16px text (no iOS zoom), 48px tall, muted well, ink focus ring. */
+@utility field {
+  min-height: 48px;
+  width: 100%;
+  padding-inline: 0.875rem;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-line);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 16px;
+  &::placeholder {
+    color: var(--color-ink-soft);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 0;
+    border-color: transparent;
+  }
+}
+
+/* Chips: one per verdict. Text >= 12px; colour never carries meaning alone (pair with a word / icon). */
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 24px;
+  padding-inline: 0.625rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-muted);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+@utility chip-safe {
+  background-color: var(--color-safe-soft);
+  color: var(--color-safe-ink);
+}
+@utility chip-suspicious {
+  background-color: var(--color-suspicious-soft);
+  color: var(--color-suspicious-ink);
+}
+@utility chip-scam {
+  background-color: var(--color-scam-soft);
+  color: var(--color-scam-ink);
+}
+
+/* Tracked small caps label (section headers, KPI labels). 11px minimum. */
+@utility label-caps {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
 }

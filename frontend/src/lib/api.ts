@@ -197,7 +197,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       cache: "no-store",
     });
   } catch {
-    throw new ApiError("Can't reach the SAQR-INTEL server right now (it may be waking up). Please try again in 30 seconds.", 0);
+    throw new ApiError("Can't reach the Saqr server right now (it may be waking up). Please try again in 30 seconds.", 0);
   }
   const ct = res.headers.get("content-type") ?? "";
   const body: unknown = ct.includes("json") ? await res.json() : await res.text();

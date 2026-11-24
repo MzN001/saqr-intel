@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Platform theme only for the window before Compose draws (no appcompat).
-         Night Grid is dark by default, so the window starts on the dark canvas. -->
-    <style name="Theme.SaqrShield" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/night_canvas</item>
+         Saqr is light by default: sandstone canvas, dark status / navigation bar icons. The Compose
+         screens then switch the bar icons for the saved theme (enableEdgeToEdge). -->
+    <style name="Theme.SaqrShield" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/saqr_canvas</item>
+        <item name="android:colorBackground">@color/saqr_canvas</item>
+        <item name="android:colorAccent">@color/saqr_obsidian</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

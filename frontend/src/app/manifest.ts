@@ -2,16 +2,16 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "SAQR-INTEL Citizen Shield",
-    short_name: "SAQR Verify",
-    description: "Share any suspicious link or Google Maps listing to SAQR Verify for an instant Abu Dhabi Police security verdict.",
+    name: "Saqr — Abu Dhabi Anti-Scam Shield",
+    short_name: "Saqr",
+    description: "Share any suspicious link, message or Google Maps listing to Saqr for an instant scam verdict.",
     id: "/citizen",
     start_url: "/citizen",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#0B192C",
-    theme_color: "#0B192C",
+    background_color: "#F7F5F0",
+    theme_color: "#F7F5F0",
     lang: "en",
     dir: "auto",
     categories: ["security", "utilities", "government"],

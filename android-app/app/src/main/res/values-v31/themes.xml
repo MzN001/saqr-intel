@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 31+: system splash on the sandstone canvas with the adaptive falcon icon. -->
+    <style name="Theme.SaqrShield" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/saqr_canvas</item>
+        <item name="android:colorBackground">@color/saqr_canvas</item>
+        <item name="android:colorAccent">@color/saqr_obsidian</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowSplashScreenBackground">@color/saqr_canvas</item>
+    </style>
+</resources>

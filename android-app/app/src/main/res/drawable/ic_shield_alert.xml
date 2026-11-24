@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Notification small icon: monochrome shield with "!" cut out (system tints it). -->
+<!-- Notification small icon: the simplified Saqr falcon (saqr-falcon-small.svg, heavier strokes, fewer
+     facets) as one alpha-only shape; the system tints it. Name kept so code and the guard compile. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -8,5 +9,5 @@
     <path
         android:fillColor="#FFFFFFFF"
         android:fillType="evenOdd"
-        android:pathData="M12,2 L20,5 L20,11 C20,16.5 16.6,20.7 12,22 C7.4,20.7 4,16.5 4,11 L4,5 Z M11,7 L13,7 L13,13 L11,13 Z M11,15 L13,15 L13,17 L11,17 Z" />
+        android:pathData="M12.203,0.203L16.983,1.576L17.847,2.949L19.017,3.915C19.475,4.576 19.576,5.492 19.322,6.407L18.814,7.729L18.305,6.356L16.983,6.407L16.475,8.237L16.881,9.305L20.542,13.424L17.695,18.254L12.915,10.119L16.322,5.898L13.678,6.153L9.814,11.644L5.492,14.847L7.068,17.746L7.525,14.542L11.593,11.39L7.271,19.424L3.508,13.424L6.356,10.068L8.085,3.102ZM9.661,4.119L12.153,3.508L12.153,3.915L13.373,5.136L15.102,4.678L11.847,7.322ZM8.695,5.441L9.458,6.61L7.983,8.339ZM9.712,9.763L8.949,10.881L6.763,12.61L7.169,11.085ZM15.407,8.542L17.085,12.814L14.186,10.271ZM17.136,3.915L17.847,4.373L17.39,5.034L16.475,4.881ZM12.153,11.695L13.932,20.695L11.898,23.847L11.847,14.39L10.525,22.017L8.542,18.407ZM12.712,11.034L16.475,17.39L14.797,21.559Z" />
 </vector>

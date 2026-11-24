@@ -1,4 +1,4 @@
-// SAQR-INTEL | Search & Maps shield — shared pure logic (no DOM, no chrome.*).
+// Saqr | Search & Maps shield — shared pure logic (no DOM, no chrome.*).
 // Loaded by content/search.js (manifest.json), importScripts in background.js and the node tests.
 // Publishes globalThis.SaqrSearchCore.
 
@@ -154,21 +154,21 @@
 
   // ------------------------------------------------------------------------------- wording (EN + AR)
   const STR = {
-    scam: ["SAQR: scam", "صقر: احتيال"],
-    scamImitates: ["SAQR: scam — imitates {0}", "صقر: احتيال — ينتحل صفة {0}"],
-    suspicious: ["SAQR: suspicious", "صقر: مشبوه"],
-    suspiciousImitates: ["SAQR: suspicious — may imitate {0}", "صقر: مشبوه — قد ينتحل صفة {0}"],
+    scam: ["Saqr: scam", "صقر: احتيال"],
+    scamImitates: ["Saqr: scam — imitates {0}", "صقر: احتيال — ينتحل صفة {0}"],
+    suspicious: ["Saqr: suspicious", "صقر: مشبوه"],
+    suspiciousImitates: ["Saqr: suspicious — may imitate {0}", "صقر: مشبوه — قد ينتحل صفة {0}"],
     official: ["Official: {0}", "رسمي: {0}"],
     officialSite: ["Official UAE website", "موقع إماراتي رسمي"],
     phoneFake: ["Not the official number (official: {0})", "ليس الرقم الرسمي (الرسمي: {0})"],
     phoneScam: ["Scam number: linked to fake listings", "رقم احتيالي: مرتبط بإدراجات مزيفة"],
     phoneUnlisted: ["Not on the official list (official: {0})", "غير مدرج في القائمة الرسمية (الرسمي: {0})"],
     phoneOfficial: ["Official {0} number", "رقم رسمي لـ{0}"],
-    tipHead: ["SAQR-INTEL checked this before you click:", "فحص صقر هذا قبل أن تنقر:"],
+    tipHead: ["Saqr checked this before you click:", "فحص صقر هذا قبل أن تنقر:"],
     tipOfficial: ["Use only: {0}", "استخدم فقط: {0}"],
-    tipLocked: ["The link is locked: SAQR asks before opening it.", "الرابط مقفل: سيسألك صقر قبل فتحه."],
+    tipLocked: ["The link is locked: Saqr asks before opening it.", "الرابط مقفل: سيسألك صقر قبل فتحه."],
     gTitle: ["Wait! This link looks like a scam", "انتظر! هذا الرابط يبدو احتيالياً"],
-    gBody: ["SAQR thinks {0} is a fake website. It may steal your card, OTP or UAE PASS details.", "يعتقد صقر أن {0} موقع مزيف. قد يسرق بيانات بطاقتك أو رمز التحقق أو UAE PASS."],
+    gBody: ["Saqr thinks {0} is a fake website. It may steal your card, OTP or UAE PASS details.", "يعتقد صقر أن {0} موقع مزيف. قد يسرق بيانات بطاقتك أو رمز التحقق أو UAE PASS."],
     gStay: ["Don't open (recommended)", "لا تفتح (موصى به)"],
     gGo: ["Open anyway", "افتح على أي حال"],
     gReport: ["Report fraud: Aman 8002626", "أبلغ عن الاحتيال: أمان 8002626"],

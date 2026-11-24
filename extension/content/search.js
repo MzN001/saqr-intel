@@ -1,4 +1,4 @@
-// SAQR-INTEL | Search & Maps shield — content script for Google Search (google.com, google.ae and other
+// Saqr | Search & Maps shield — content script for Google Search (google.com, google.ae and other
 // country domains), Bing and Google Maps place panels.
 //
 // Before the user clicks anything it collects the organic result links, the SPONSORED ads (Google /
@@ -6,7 +6,7 @@
 // Maps place panel, and the phone numbers shown in ads, knowledge panels and Maps cards. They go to
 // background.js (message types searchSettings / searchVerdicts / checkPhones only), which asks
 // POST /api/batch-verdict and POST /api/check-phone. Each result then gets a small badge:
-//   red    "SAQR: scam — imitates TAMM" (reasons on hover); the link is locked until the user confirms
+//   red    "Saqr: scam — imitates TAMM" (reasons on hover); the link is locked until the user confirms
 //   amber  suspicious
 //   green  ONLY for verified official UAE websites / numbers
 //   nothing for ordinary sites (no noise).
@@ -427,19 +427,31 @@
   }
 
   const GUARD_CSS = `
-    .veil { position: fixed; inset: 0; z-index: 2147483647; background: rgba(15, 23, 42, .55); display: grid; place-items: center; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; }
-    .box { max-width: 440px; margin: 16px; padding: 20px 22px; border-radius: 16px; background: #fff; color: #0f172a; box-shadow: 0 20px 50px rgba(0,0,0,.35); border-top: 6px solid #b91c1c; }
-    h2 { margin: 0 0 8px; font-size: 18px; color: #991b1b; }
+    /* Saqr tokens (frontend/DESIGN.md): white card on a dimmed page, obsidian primary, scam-ink title. */
+    .veil { --surface: #fff; --muted: #f1eee6; --line: #e6e2d8; --ink: #111315; --soft: #475569; --primary: #111315; --primary-hover: #1e293b;
+            --on-primary: #faf8f5; --scam-ink: #b91c1c; --safe-ink: #047857;
+            position: fixed; inset: 0; z-index: 2147483647; background: rgba(17, 19, 21, .5); display: grid; place-items: center;
+            font: 15px/1.55 Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Tahoma, "IBM Plex Sans Arabic", sans-serif; }
+    .box { max-width: 440px; margin: 16px; padding: 24px; border-radius: 18px; background: var(--surface); color: var(--ink);
+           border: 1px solid var(--line); box-shadow: 0 24px 60px -20px rgba(17,19,21,.45); }
+    h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; line-height: 1.25; color: var(--scam-ink); }
     p { margin: 0 0 8px; }
     ul { margin: 0 0 8px; padding-inline-start: 18px; }
     li { margin: 2px 0; }
-    .official { font-weight: 600; color: #166534; }
-    .report { font-size: 12.5px; color: #475569; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    button { font: inherit; border-radius: 10px; padding: 9px 14px; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; color: #0f172a; }
-    .stay { background: #0f5132; border-color: #0f5132; color: #fff; font-weight: 700; }
-    .go { color: #991b1b; }
-    @media (prefers-color-scheme: dark) { .box { background: #1e293b; color: #e2e8f0; } button { background: #0f172a; color: #e2e8f0; border-color: #334155; } .report { color: #94a3b8; } .official { color: #86efac; } }
+    .official { font-weight: 600; color: var(--safe-ink); }
+    .report { font-size: 13px; color: var(--soft); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    button { font: inherit; font-weight: 600; border-radius: 12px; min-height: 44px; padding: 10px 16px; cursor: pointer;
+             border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+    button:hover { background: var(--muted); }
+    button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .stay { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+    .stay:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+    .go { color: var(--ink); }
+    @media (prefers-color-scheme: dark) {
+      .veil { --surface: #171a1f; --muted: #1f232a; --line: #2a2f37; --ink: #faf8f5; --soft: #a3acb9; --primary: #faf8f5;
+              --primary-hover: #e7e3da; --on-primary: #111315; --scam-ink: #f87171; --safe-ink: #34d399; }
+    }
   `;
 
   /** chrome.runtime.sendMessage that never throws: resolves {ok:false} instead. */

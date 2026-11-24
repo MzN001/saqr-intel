@@ -46,7 +46,7 @@ object Aman {
                 "النتيجة: ${verdictAr(info.verdict)}$score",
                 XAlert.entityAr(info)?.let { "ينتحل صفة: $it" },
                 "الموقع المشبوه (معطّل): $site",
-                "طريقة الرصد: تطبيق درع صقر",
+                "طريقة الرصد: تطبيق صقر",
                 if (reasons.isNotEmpty()) "علامات الخطر:\n" + reasons.joinToString("\n") else null,
             )
         } else {
@@ -57,7 +57,7 @@ object Aman {
                 "Verdict: ${info.verdict.wire}$score",
                 info.entityEn?.let { "Impersonating: $it" },
                 "Suspicious site (masked): $site",
-                "Detected via: SAQR Shield app",
+                "Detected via: Saqr app",
                 if (reasons.isNotEmpty()) "Red flags:\n" + reasons.joinToString("\n") else null,
             )
         }

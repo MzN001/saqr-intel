@@ -1,4 +1,4 @@
-// SAQR-INTEL | Gmail adapter for the mail shield (content/common.js does the UI and the scanning).
+// Saqr | Gmail adapter for the mail shield (content/common.js does the UI and the scanning).
 //
 // All Gmail knowledge lives in ONE versioned selector table (SELECTORS below). Gmail changes its
 // obfuscated class names from time to time: when that happens, add the new selector at the FRONT of

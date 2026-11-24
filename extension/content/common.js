@@ -1,4 +1,4 @@
-// SAQR-INTEL | mail content scripts — shared core (Gmail + Outlook).
+// Saqr | mail content scripts — shared core (Gmail + Outlook).
 //
 // Loaded by manifest.json AFTER lib/email_features.js + lib/campaign_match.js (globalThis.SaqrModel,
 // globalThis.SaqrCampaigns) and BEFORE content/gmail.js or content/outlook.js. Publishes
@@ -106,37 +106,37 @@
     summary: ["{0} dangerous, {1} suspicious, {2} with no warning signs", "{0} خطيرة، {1} مشبوهة، {2} بلا علامات تحذير"],
     summaryLocal: ["Some emails can only be checked fully when you open them.", "بعض الرسائل لا يمكن فحصها بالكامل إلا عند فتحها."],
     cancelled: ["Stopped.", "تم الإيقاف."],
-    brand: ["SAQR email shield", "درع صقر للبريد"],
+    brand: ["Saqr Email Shield", "درع صقر للبريد"],
 
-    tScanning: ["SAQR is checking this email…", "صقر يفحص هذه الرسالة…"],
+    tScanning: ["Saqr is checking this email…", "صقر يفحص هذه الرسالة…"],
     tSafe: ["No scam signs found", "لم نجد علامات احتيال"],
     tSuspicious: ["Be careful: this email looks suspicious", "انتبه: هذه الرسالة تبدو مشبوهة"],
     tDangerous: ["Danger: this email looks like a scam", "خطر: هذه الرسالة تبدو احتيالية"],
-    tError: ["SAQR could not check this email", "تعذّر على صقر فحص هذه الرسالة"],
-    errHint: ["Check your internet connection or the SAQR extension settings, then press Rescan.", "تحقّق من الاتصال بالإنترنت أو من إعدادات إضافة صقر، ثم اضغط «إعادة الفحص»."],
-    errReload: ["SAQR was updated. Reload this page to keep checking your emails.", "تم تحديث صقر. أعد تحميل هذه الصفحة لمتابعة فحص رسائلك."],
+    tError: ["Saqr could not check this email", "تعذّر على صقر فحص هذه الرسالة"],
+    errHint: ["Check your internet connection or the Saqr extension settings, then press Rescan.", "تحقّق من الاتصال بالإنترنت أو من إعدادات إضافة صقر، ثم اضغط «إعادة الفحص»."],
+    errReload: ["Saqr was updated. Reload this page to keep checking your emails.", "تم تحديث صقر. أعد تحميل هذه الصفحة لمتابعة فحص رسائلك."],
     safeHint: ["Still be careful with links and never share codes (OTP) or card details.", "ومع ذلك كن حذراً مع الروابط ولا تشارك رموز التحقق أو بيانات البطاقة أبداً."],
     score: ["Risk {0}/100", "الخطورة {0}/100"],
     headersNotVerified: ["Sender not verified (headers not available)", "لم يتم التحقق من المرسل (الترويسات غير متاحة)"],
     sourceHint: [
-      "To check the sender too: open this email's menu → View → View message source. SAQR reads it automatically. Or paste that source into the SAQR web app (Email tab).",
+      "To check the sender too: open this email's menu → View → View message source. Saqr reads it automatically. Or paste that source into the Saqr web app (Email tab).",
       "للتحقق من المرسل أيضاً: افتح قائمة هذه الرسالة ← عرض ← عرض مصدر الرسالة، وسيقرؤه صقر تلقائياً. أو الصق المصدر في تطبيق صقر على الويب (تبويب البريد).",
     ],
     campaign: ["Matches a known scam campaign: {0}", "تطابق حملة احتيال معروفة: {0}"],
     lookalike: ["Look-alike or hidden letters:", "أحرف مشابهة أو مخفية:"],
-    linksGuarded: ["Links in this email are locked. SAQR will ask before opening them.", "الروابط في هذه الرسالة مقفلة. سيسألك صقر قبل فتحها."],
+    linksGuarded: ["Links in this email are locked. Saqr will ask before opening them.", "الروابط في هذه الرسالة مقفلة. سيسألك صقر قبل فتحها."],
     fullReport: ["Full report", "التقرير الكامل"],
     isScam: ["This is a scam", "هذه رسالة احتيال"],
     isSafe: ["This is safe", "هذه رسالة آمنة"],
     rescan: ["Rescan", "إعادة الفحص"],
-    thanks: ["Thank you. SAQR will remember this ({0} emails learned).", "شكراً لك. سيتذكر صقر ذلك (تعلّم من {0} رسائل)."],
-    thanksShort: ["Thank you. SAQR will remember this.", "شكراً لك. سيتذكر صقر ذلك."],
+    thanks: ["Thank you. Saqr will remember this ({0} emails learned).", "شكراً لك. سيتذكر صقر ذلك (تعلّم من {0} رسائل)."],
+    thanksShort: ["Thank you. Saqr will remember this.", "شكراً لك. سيتذكر صقر ذلك."],
     labelFail: ["Could not save your answer. Try again.", "تعذّر حفظ إجابتك. حاول مرة أخرى."],
     reportFail: ["Could not open the report.", "تعذّر فتح التقرير."],
     localOnly: ["Quick check only — open the email to scan it fully.", "فحص سريع فقط — افتح الرسالة لفحصها بالكامل."],
 
     gTitle: ["Wait! This email looks dangerous", "انتظر! هذه الرسالة تبدو خطيرة"],
-    gBody: ["SAQR thinks this email is a scam. This link may steal your password, card or money. Are you sure you want to open it?", "يعتقد صقر أن هذه الرسالة احتيالية. قد يسرق هذا الرابط كلمة المرور أو بيانات البطاقة أو أموالك. هل أنت متأكد أنك تريد فتحه؟"],
+    gBody: ["Saqr thinks this email is a scam. This link may steal your password, card or money. Are you sure you want to open it?", "يعتقد صقر أن هذه الرسالة احتيالية. قد يسرق هذا الرابط كلمة المرور أو بيانات البطاقة أو أموالك. هل أنت متأكد أنك تريد فتحه؟"],
     gStay: ["Don't open (recommended)", "لا تفتح (موصى به)"],
     gOpen: ["Open anyway", "افتح على أي حال"],
 
@@ -561,7 +561,7 @@
     const bytes = (x) => (enc ? enc.encode(x).length : x.length * 3);
     if (s.length <= cap / 3 || bytes(s) <= cap) return { raw: s, truncated: false };
     const sep = s.search(/\r?\n\r?\n/);
-    const note = "\r\n\r\n[SAQR: message truncated]\r\n";
+    const note = "\r\n\r\n[Saqr: message truncated]\r\n";
     let head = sep >= 0 ? s.slice(0, sep) : s.slice(0, 65536);
     if (bytes(head) > cap / 2) head = head.slice(0, Math.floor(cap / 6));
     let budget = cap - bytes(head) - bytes(note) - 8;
@@ -699,70 +699,83 @@
     }
   }
 
-  // Shared colours (light / dark) for every Shadow DOM widget.
+  // Saqr brand tokens (frontend/DESIGN.md) for every Shadow DOM widget, light and dark.
+  const FALCON_MASK = "url(\"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%2720 20 472 472%27%3E%3Cpath fill-rule=%27evenodd%27 d=%27M260%2024L354%2051L371%2078L394%2097C403%20110%20405%20128%20400%20146L390%20172L380%20145L354%20146L344%20182L352%20203L424%20284L368%20379L274%20219L341%20136L289%20141L213%20249L128%20312L159%20369L168%20306L248%20244L163%20402L89%20284L145%20218L179%2081ZM210%20101L259%2089L259%2097L283%20121L317%20112L253%20164ZM191%20127L206%20150L177%20184ZM211%20212L196%20234L153%20268L161%20238ZM323%20188L356%20272L299%20222ZM357%2097L371%20106L362%20119L344%20116ZM259%20250L294%20427L254%20489L253%20303L227%20453L188%20382ZM270%20237L344%20362L311%20444Z%27/%3E%3C/svg%3E\")";
   const BASE_CSS = String.raw`
-    :host { all: initial; display: block; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif; }
+    :host { all: initial; display: block; font: 14px/1.5 Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Tahoma, "IBM Plex Sans Arabic", sans-serif; }
     * { box-sizing: border-box; }
-    .w { --bg:#ffffff; --ink:#0f172a; --soft:#475569; --line:#e2e8f0; --chip:#f1f5f9;
-         --safe:#047857; --safe-bg:#ecfdf5; --warn:#b45309; --warn-bg:#fffbeb; --bad:#b91c1c; --bad-bg:#fef2f2;
-         --info:#334155; --info-bg:#f8fafc; --accent:#0f766e; color: var(--ink); }
-    .w.dark { --bg:#111827; --ink:#f1f5f9; --soft:#cbd5e1; --line:#334155; --chip:#1f2937;
-         --safe:#34d399; --safe-bg:#052e22; --warn:#fbbf24; --warn-bg:#3a2a05; --bad:#f87171; --bad-bg:#3b0d0d;
-         --info:#cbd5e1; --info-bg:#1e293b; --accent:#5eead4; }
-    button { font: inherit; cursor: pointer; border-radius: 999px; border: 1px solid var(--line);
-             background: var(--bg); color: var(--ink); padding: 4px 12px; }
-    button:hover { filter: brightness(0.96); }
-    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .w.dark button.primary { color: #04201d; }
+    [lang="ar"] { font-family: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, "Geeza Pro", sans-serif; }
+    .w { --surface:#ffffff; --muted:#f1eee6; --line:#e6e2d8; --ink:#111315; --soft:#475569;
+         --primary:#111315; --primary-hover:#1e293b; --on-primary:#faf8f5; --focus:#111315;
+         --safe-fill:#10b981; --suspicious-fill:#f59e0b; --scam-fill:#dc2626;
+         --safe:#047857; --safe-bg:#e8f6ef; --warn:#92400e; --warn-bg:#fdf3e1; --bad:#b91c1c; --bad-bg:#fcebeb;
+         --info:#475569; --info-bg:#ffffff; --chip:#f1eee6; --bg:var(--surface); --accent:var(--primary);
+         --shadow: 0 1px 2px rgba(17,19,21,.04), 0 8px 24px -12px rgba(17,19,21,.14); color: var(--ink); }
+    .w.dark { --surface:#171a1f; --muted:#1f232a; --line:#2a2f37; --ink:#faf8f5; --soft:#a3acb9;
+         --primary:#faf8f5; --primary-hover:#e7e3da; --on-primary:#111315; --focus:#faf8f5;
+         --safe:#34d399; --safe-bg:#0f2a21; --warn:#fbbf24; --warn-bg:#2e2310; --bad:#f87171; --bad-bg:#311617;
+         --info:#a3acb9; --info-bg:#171a1f; --chip:#1f232a;
+         --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.6); }
+    button { font: inherit; font-weight: 600; cursor: pointer; border-radius: 12px; border: 1px solid var(--line);
+             background: var(--surface); color: var(--ink); padding: 6px 14px; min-height: 34px; }
+    button:hover { background: var(--muted); }
+    button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    button.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+    button.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
     .hidden { display: none !important; }
   `;
 
   const BANNER_CSS = BASE_CSS + String.raw`
-    .w { margin: 8px 0 12px; border: 1px solid var(--line); border-inline-start: 5px solid var(--info);
-         border-radius: 12px; background: var(--info-bg); padding: 10px 14px; }
-    .w.safe { border-inline-start-color: var(--safe); background: var(--safe-bg); }
-    .w.suspicious { border-inline-start-color: var(--warn); background: var(--warn-bg); }
-    .w.dangerous { border-inline-start-color: var(--bad); background: var(--bad-bg); }
+    .w { margin: 8px 0 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface);
+         box-shadow: var(--shadow); padding: 14px 16px; }
+    .w.safe { background: var(--surface); }
+    .w.suspicious { background: var(--warn-bg); border-color: transparent; }
+    .w.dangerous { background: var(--bad-bg); border-color: transparent; }
     .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--info); flex: none; }
-    .safe .dot { background: var(--safe); } .suspicious .dot { background: var(--warn); } .dangerous .dot { background: var(--bad); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--info); flex: none; }
+    .safe .dot { background: var(--safe-fill); } .suspicious .dot { background: var(--suspicious-fill); } .dangerous .dot { background: var(--scam-fill); }
     .scanning .dot { animation: pulse 1s ease-in-out infinite; }
     @keyframes pulse { 50% { opacity: .25; } }
-    .title { font-weight: 700; font-size: 15px; }
+    @media (prefers-reduced-motion: reduce) { .scanning .dot { animation: none; } }
+    .title { font-weight: 600; font-size: 15px; }
     .safe .title { color: var(--safe); } .suspicious .title { color: var(--warn); } .dangerous .title { color: var(--bad); }
-    .score { margin-inline-start: auto; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--soft); }
-    .by { font-size: 12px; color: var(--soft); }
-    .x { border: none; background: transparent; padding: 0 6px; font-size: 18px; line-height: 1; color: var(--soft); }
-    p { margin: 6px 0 0; color: var(--ink); }
-    ul { margin: 6px 0 0; padding-inline-start: 20px; }
+    .score { margin-inline-start: auto; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--soft); }
+    .by { font-size: 12px; font-weight: 500; color: var(--soft); }
+    .x { border: none; background: transparent; padding: 0 6px; min-height: 0; font-size: 18px; line-height: 1; color: var(--soft); }
+    .x:hover { background: transparent; color: var(--ink); }
+    p { margin: 8px 0 0; color: var(--ink); }
+    ul { margin: 8px 0 0; padding-inline-start: 20px; }
     li { margin: 2px 0; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--chip); border: 1px solid var(--line); color: var(--soft); }
+    .chip { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 9999px; background: var(--chip); color: var(--soft); }
     .chip.pass { color: var(--safe); } .chip.fail { color: var(--bad); }
-    .evidence { font-family: ui-monospace, Consolas, monospace; font-size: 12px; direction: ltr; unicode-bidi: isolate; }
-    .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .note { font-size: 12px; color: var(--soft); margin-top: 6px; }
+    .evidence { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; direction: ltr; unicode-bidi: isolate; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .note { font-size: 12px; color: var(--soft); margin-top: 8px; }
   `;
 
   const DIALOG_CSS = BASE_CSS + String.raw`
-    .back { position: fixed; inset: 0; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center; z-index: 2147483647; }
-    .w { background: var(--bg); border-radius: 16px; max-width: 440px; width: calc(100% - 32px); padding: 20px; border-top: 6px solid var(--bad); box-shadow: 0 20px 50px rgba(0,0,0,.35); }
-    h2 { margin: 0 0 8px; font-size: 18px; color: var(--bad); }
-    p { margin: 0 0 8px; }
-    .url { font-family: ui-monospace, Consolas, monospace; font-size: 12px; word-break: break-all; color: var(--soft); direction: ltr; unicode-bidi: isolate; }
-    .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
+    .back { position: fixed; inset: 0; background: rgba(17,19,21,.5); display: flex; align-items: center; justify-content: center; z-index: 2147483647; }
+    .w { background: var(--surface); border-radius: 18px; max-width: 440px; width: calc(100% - 32px); padding: 24px;
+         border: 1px solid var(--line); box-shadow: 0 24px 60px -20px rgba(17,19,21,.45); }
+    h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; line-height: 1.25; color: var(--bad); }
+    p { margin: 0 0 12px; font-size: 15px; line-height: 1.55; }
+    .url { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; word-break: break-all; color: var(--ink);
+           background: var(--muted); border-radius: 12px; padding: 8px 10px; direction: ltr; unicode-bidi: isolate; }
+    .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; }
+    .actions button { min-height: 44px; }
   `;
 
   const SCANALL_CSS = BASE_CSS + String.raw`
-    .w { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 420px; padding: 6px 8px 6px 12px;
-         background: var(--bg); border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 4px 16px rgba(0,0,0,.18); font-size: 13px; }
-    .w.open { border-radius: 14px; }
-    .logo { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; }
+    .w { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 440px; padding: 6px 8px 6px 12px;
+         background: var(--surface); border: 1px solid var(--line); border-radius: 9999px; box-shadow: var(--shadow); font-size: 13px; }
+    .w.open { border-radius: 18px; }
+    .logo { width: 18px; height: 18px; flex: none; background: var(--ink); -webkit-mask: ${FALCON_MASK} center / contain no-repeat; mask: ${FALCON_MASK} center / contain no-repeat; }
     .msg { color: var(--soft); }
-    .bar { height: 4px; width: 100%; background: var(--chip); border-radius: 4px; overflow: hidden; }
-    .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
-    .x { border: none; background: transparent; padding: 0 4px; font-size: 16px; color: var(--soft); }
+    .bar { height: 4px; width: 100%; background: var(--muted); border-radius: 4px; overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; background: var(--primary); transition: width .2s; }
+    .x { border: none; background: transparent; padding: 0 4px; min-height: 0; font-size: 16px; color: var(--soft); }
+    .x:hover { background: transparent; color: var(--ink); }
   `;
 
   /**

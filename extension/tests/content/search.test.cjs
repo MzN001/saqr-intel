@@ -136,13 +136,13 @@ const SCAM = { verdict: "HIGH-RISK SCAM", score: 92, official: false, entity: TA
 
 test("decideLink: red + locked for scams, amber for suspicious, green only for official UAE sites", () => {
   const red = C.decideLink(SCAM, "en");
-  assert.deepEqual([red.level, red.inert, red.label], ["danger", true, "SAQR: scam — imitates TAMM Abu Dhabi"]);
+  assert.deepEqual([red.level, red.inert, red.label], ["danger", true, "Saqr: scam — imitates TAMM Abu Dhabi"]);
   assert.match(red.tip, /Uses the name of TAMM/);
   assert.match(red.tip, /Use only: tamm\.abudhabi/);
   assert.equal(C.decideLink(SCAM, "ar").label, "صقر: احتيال — ينتحل صفة منصة تم - حكومة أبوظبي");
-  assert.equal(C.decideLink({ ...SCAM, entity: null }, "en").label, "SAQR: scam");
+  assert.equal(C.decideLink({ ...SCAM, entity: null }, "en").label, "Saqr: scam");
   const amber = C.decideLink({ verdict: "SUSPICIOUS", score: 45, entity: null, reasons: [] }, "en");
-  assert.deepEqual([amber.level, amber.inert, amber.label], ["warn", false, "SAQR: suspicious"]);
+  assert.deepEqual([amber.level, amber.inert, amber.label], ["warn", false, "Saqr: suspicious"]);
   const tick = C.decideLink({ verdict: "SAFE", score: 0, official: true, entity: { nameEn: "Abu Dhabi Police", nameAr: "شرطة أبوظبي" }, reasons: [] }, "ar");
   assert.deepEqual([tick.level, tick.label], ["official", "رسمي: شرطة أبوظبي"]);
   assert.equal(C.decideLink({ verdict: "SAFE", score: 0, official: true, entity: null }, "en", { quiet: true }), null);
@@ -192,17 +192,17 @@ test("pass: badges before the click, scam links locked, one badge per result, ca
   const shield = S.createShield({ doc, site: "google", send: be.send, lang: "en", navigate: () => {} });
   await shield.pass();
   assert.deepEqual(plain(badges(doc)), [
-    ["danger", "⛔ SAQR: scam — imitates TAMM Abu Dhabi"], // the TAMM ad
+    ["danger", "⛔ Saqr: scam — imitates TAMM Abu Dhabi"], // the TAMM ad
     ["danger", "⛔ Not the official number (official: 800 555)"], // its phone
     ["official", "✓ Official: Abu Dhabi Police"], // adpolice result (its "Fines" sitelink adds no second tick)
-    ["danger", "⛔ SAQR: scam — imitates TAMM Abu Dhabi"],
-    ["warn", "⚠ SAQR: suspicious"], // the changed-markup result, found by the fallback
+    ["danger", "⛔ Saqr: scam — imitates TAMM Abu Dhabi"],
+    ["warn", "⚠ Saqr: suspicious"], // the changed-markup result, found by the fallback
     ["official", "✓ Official: TAMM Abu Dhabi"], // knowledge panel website button
   ]);
   const ad = doc.querySelector("[data-text-ad]");
   const locked = ad.querySelectorAll("a[data-saqr-inert]");
   assert.equal(locked.length, 2); // main ad link and its sitelink
-  assert.equal(ad.querySelector(".saqr-sb-badge").getAttribute("title").split("\n")[0], "SAQR-INTEL checked this before you click:");
+  assert.equal(ad.querySelector(".saqr-sb-badge").getAttribute("title").split("\n")[0], "Saqr checked this before you click:");
   assert.equal(doc.querySelectorAll("a[data-saqr-inert]").length, 3);
   assert.ok(!doc.querySelector("a[href*='thenationalnews']").hasAttribute("data-saqr-inert"));
 

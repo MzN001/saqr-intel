@@ -35,7 +35,7 @@ class Subscription(BaseModel):
 class SubscribeRequest(BaseModel):
     subscription: Subscription
     lang: Literal["en", "ar"] = "en"
-    device: str | None = Field(None, pattern=r"^[a-z0-9]{6,24}$", description="This phone's SAQR device tag.")
+    device: str | None = Field(None, pattern=r"^[a-z0-9]{6,24}$", description="This phone's Saqr device tag.")
 
 
 class EndpointRequest(BaseModel):
@@ -63,7 +63,7 @@ async def unsubscribe(req: EndpointRequest):
 async def test_alert(req: EndpointRequest):
     row = await push.get_subscription(req.endpoint)
     if not row:
-        raise HTTPException(404, "This phone is not subscribed to SAQR alerts yet.")
+        raise HTTPException(404, "This phone is not subscribed to Saqr alerts yet.")
     ok = await push.send(row, push.alert_payload("tamm-smart-pay.net", "TAMM Abu Dhabi", row["lang"], test=True))
     if not ok:
         raise HTTPException(502, "The phone's push service did not accept the alert. Try turning alerts off and on.")
@@ -76,7 +76,7 @@ async def alert_verdict(domain: str = Query(..., min_length=3, max_length=253)):
         "SELECT result_json FROM scans WHERE domain=? AND verdict != 'SAFE' ORDER BY risk_score DESC, created_at DESC LIMIT 1",
         (domain.strip().lower(),))
     if not row:
-        raise HTTPException(404, "No SAQR verdict for this domain.")
+        raise HTTPException(404, "No Saqr verdict for this domain.")
     result = json.loads(row["result_json"])
     result.pop("screenshot_base64", None)
     return result

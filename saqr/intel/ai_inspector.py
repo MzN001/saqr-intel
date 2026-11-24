@@ -161,7 +161,7 @@ def intel_flags(lex: LexicalReport) -> list[RedFlag]:
             pts = 20
         out.append(RedFlag("AI_PHISHING_URL" if p >= ML_STRONG else "AI_SUSPICIOUS_URL",
                            "critical" if p >= ML_CERTAIN else "high" if p >= ML_STRONG else "medium", pts,
-                           f"SAQR's AI model rates this address {pct}% likely to be phishing"
+                           f"Saqr's AI model rates this address {pct}% likely to be phishing"
                            + (f". Main reasons: {why_en}." if why_en else "."),
                            f"يُقدّر نموذج صقر الذكي أن هذا العنوان احتيالي بنسبة {pct}٪"
                            + (f". أهم الأسباب: {why_ar}." if why_ar else ".")))
@@ -277,7 +277,7 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
     p = url_model_probability(lex)
     if ml is None and age is not None and age < 24 * 30 and p is not None and p >= 0.5:
         flags.append(RedFlag("AI_NEW_DOMAIN", "medium", 15,
-                             f"A brand-new domain whose address SAQR's AI model already leans towards phishing ({round(p * 100)}%).",
+                             f"A brand-new domain whose address Saqr's AI model already leans towards phishing ({round(p * 100)}%).",
                              f"نطاق جديد جداً يميل نموذج صقر الذكي إلى اعتبار عنوانه احتيالياً ({round(p * 100)}٪)."))
     if ml is not None and net.get("dns_status") == "nxdomain" and not net.get("ip_addresses"):
         flags.append(RedFlag("SITE_TAKEN_DOWN", "medium", 15,
@@ -320,7 +320,7 @@ def template_explanations(rr: RuleResult, net: dict[str, Any], domain: str) -> t
             if ent:
                 return (f"This is an official {ent.name_en} website ({domain}). It is safe to use.",
                         f"هذا موقع رسمي تابع لـ{ent.name_ar} ({domain}) وآمن للاستخدام.")
-            return (f"{domain} is on SAQR's list of trusted UAE websites. It is safe to use.",
+            return (f"{domain} is on Saqr's list of trusted UAE websites. It is safe to use.",
                     f"{domain} مدرج في قائمة صقر للمواقع الموثوقة في الدولة، وهو آمن للاستخدام.")
         return ("No major red flags were found. Still, never share OTP codes or card details through links received by SMS.",
                 "لم يتم العثور على مؤشرات خطر كبيرة. ومع ذلك، لا تشارك أبداً رموز التحقق أو بيانات البطاقة عبر روابط تصلك برسائل نصية.")

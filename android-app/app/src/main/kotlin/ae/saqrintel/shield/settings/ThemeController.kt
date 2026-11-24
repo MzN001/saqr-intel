@@ -14,12 +14,12 @@ val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name =
 
 enum class ThemeMode { DARK, LIGHT }
 
-/** Light / dark choice. Night Grid is dark by default (same as the website). */
+/** Light / dark choice. Saqr is light by default (same as the website); a saved choice still wins. */
 class ThemeController(private val context: Context) {
     private val key = stringPreferencesKey("theme")
 
     val mode: Flow<ThemeMode> = context.settingsStore.data.map { prefs ->
-        if (prefs[key] == ThemeMode.LIGHT.name) ThemeMode.LIGHT else ThemeMode.DARK
+        if (prefs[key] == ThemeMode.DARK.name) ThemeMode.DARK else ThemeMode.LIGHT
     }
 
     suspend fun set(mode: ThemeMode) {

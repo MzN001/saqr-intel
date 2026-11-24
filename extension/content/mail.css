@@ -1,9 +1,11 @@
-/* SAQR-INTEL | page-level styles for the mail shield (Gmail / Outlook content scripts).
+/* Saqr | page-level styles for the mail shield (Gmail / Outlook content scripts).
  *
  * Widgets (<saqr-mail-banner>, <saqr-scan-all>, <saqr-link-guard>) style themselves inside their
  * closed Shadow DOM; this file only places their host elements and styles the two things that must
  * live in the mail page itself: inbox-row badges and "guarded" links in a dangerous email.
  * Everything is namespaced (saqr-*) and uses !important where Gmail/Outlook styles would win.
+ * Colours are the Saqr tokens (frontend/DESIGN.md), scoped to our own elements as --saqr-* variables so
+ * nothing leaks into the mail page. Verdict text uses the AA "-ink" values on their soft chip.
  */
 
 saqr-mail-banner {
@@ -27,40 +29,54 @@ saqr-link-guard {
 
 /* Inbox-row badge: <span class="saqr-row-badge" data-saqr-row="campaign|model|scam|suspicious|safe"> */
 .saqr-row-badge {
+  /* light */
+  --saqr-muted: #f1eee6;
+  --saqr-ink-soft: #475569;
+  --saqr-safe-ink: #047857;
+  --saqr-safe-soft: #e8f6ef;
+  --saqr-suspicious-ink: #92400e;
+  --saqr-suspicious-soft: #fdf3e1;
+  --saqr-scam-ink: #b91c1c;
+  --saqr-scam-soft: #fcebeb;
+  --saqr-scam: #dc2626;
+
   display: inline-block !important;
   margin-inline-end: 6px !important;
-  padding: 0 7px !important;
-  border-radius: 999px !important;
-  font: 600 11px/18px system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif !important;
+  padding: 0 8px !important;
+  border-radius: 9999px !important;
+  font: 600 11px/18px Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Tahoma, "IBM Plex Sans Arabic", sans-serif !important;
   letter-spacing: 0 !important;
   vertical-align: middle !important;
   white-space: nowrap !important;
   border: 1px solid transparent !important;
-  background: #f1f5f9 !important;
-  color: #334155 !important;
+  background: var(--saqr-muted) !important;
+  color: var(--saqr-ink-soft) !important;
   text-decoration: none !important;
   cursor: help;
 }
-.saqr-row-badge[data-saqr-row="scam"] { background: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
-.saqr-row-badge[data-saqr-row="suspicious"] { background: #fef3c7 !important; color: #92400e !important; border-color: #fcd34d !important; }
-.saqr-row-badge[data-saqr-row="campaign"] { background: #ffedd5 !important; color: #9a3412 !important; border-color: #fdba74 !important; }
-.saqr-row-badge[data-saqr-row="model"] { background: #ede9fe !important; color: #5b21b6 !important; border-color: #c4b5fd !important; }
-.saqr-row-badge[data-saqr-row="safe"] { background: #d1fae5 !important; color: #065f46 !important; border-color: #6ee7b7 !important; }
-.saqr-row-badge[data-saqr-row="safe"][data-saqr-scope="local"] { background: #f1f5f9 !important; color: #475569 !important; border-color: #cbd5e1 !important; }
-.saqr-row-badge[data-saqr-scope="scanning"] { opacity: 0.75; }
-
 /* Dark page (Gmail dark theme / Outlook dark mode): common.js sets data-saqr-theme="dark". */
-.saqr-row-badge[data-saqr-theme="dark"] { background: #1f2937 !important; color: #cbd5e1 !important; }
-.saqr-row-badge[data-saqr-theme="dark"][data-saqr-row="scam"] { background: #450a0a !important; color: #fca5a5 !important; border-color: #7f1d1d !important; }
-.saqr-row-badge[data-saqr-theme="dark"][data-saqr-row="suspicious"] { background: #422006 !important; color: #fcd34d !important; border-color: #78350f !important; }
-.saqr-row-badge[data-saqr-theme="dark"][data-saqr-row="campaign"] { background: #431407 !important; color: #fdba74 !important; border-color: #7c2d12 !important; }
-.saqr-row-badge[data-saqr-theme="dark"][data-saqr-row="model"] { background: #2e1065 !important; color: #c4b5fd !important; border-color: #4c1d95 !important; }
-.saqr-row-badge[data-saqr-theme="dark"][data-saqr-row="safe"] { background: #052e22 !important; color: #6ee7b7 !important; border-color: #065f46 !important; }
-.saqr-row-badge[data-saqr-theme="dark"][data-saqr-row="safe"][data-saqr-scope="local"] { background: #1f2937 !important; color: #94a3b8 !important; border-color: #334155 !important; }
+.saqr-row-badge[data-saqr-theme="dark"] {
+  --saqr-muted: #1f232a;
+  --saqr-ink-soft: #a3acb9;
+  --saqr-safe-ink: #34d399;
+  --saqr-safe-soft: #0f2a21;
+  --saqr-suspicious-ink: #fbbf24;
+  --saqr-suspicious-soft: #2e2310;
+  --saqr-scam-ink: #f87171;
+  --saqr-scam-soft: #311617;
+}
+/* A known scam campaign is a scam; "looks like your scams" (personal model) is a suspicion. */
+.saqr-row-badge[data-saqr-row="scam"],
+.saqr-row-badge[data-saqr-row="campaign"] { background: var(--saqr-scam-soft) !important; color: var(--saqr-scam-ink) !important; }
+.saqr-row-badge[data-saqr-row="suspicious"],
+.saqr-row-badge[data-saqr-row="model"] { background: var(--saqr-suspicious-soft) !important; color: var(--saqr-suspicious-ink) !important; }
+.saqr-row-badge[data-saqr-row="safe"] { background: var(--saqr-safe-soft) !important; color: var(--saqr-safe-ink) !important; }
+.saqr-row-badge[data-saqr-row="safe"][data-saqr-scope="local"] { background: var(--saqr-muted) !important; color: var(--saqr-ink-soft) !important; }
+.saqr-row-badge[data-saqr-scope="scanning"] { opacity: 0.75; }
 
 /* Links inside a dangerous email: still visible, clearly marked; clicks ask first (common.js). */
 a[data-saqr-link="guarded"] {
-  outline: 2px dashed #dc2626 !important;
+  outline: 2px dashed #dc2626 !important; /* scam fill (fixed in both themes) */
   outline-offset: 1px !important;
   cursor: not-allowed !important;
 }

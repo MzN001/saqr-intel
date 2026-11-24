@@ -88,24 +88,28 @@ export function OfficialWarningBanner() {
           className="overflow-hidden"
           role="alert"
         >
-          <div className="border-b-4 border-crimson-600 bg-navy-900 text-white">
-            <div className="mx-auto flex max-w-7xl items-start gap-3 px-4 py-3 sm:px-6">
-              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-crimson-600">
-                <BadgeCheck className="size-5" />
+          <div className="border-b border-line bg-surface" data-testid="official-warning">
+            <div className="mx-auto flex max-w-6xl items-start gap-3 px-4 py-3 sm:px-6">
+              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-control bg-scam text-on-scam">
+                <BadgeCheck className="size-5" aria-hidden />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-gold-500">
-                  {lang === "ar" ? "تنبيه موثّق من شرطة أبوظبي" : "Abu Dhabi Police Verified Alert"}
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono normal-case tracking-normal text-white/70" dir="ltr">
+                <p className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-scam-ink rtl:tracking-normal">{lang === "ar" ? "تنبيه موثّق من شرطة أبوظبي" : "Abu Dhabi Police verified alert"}</span>
+                  <span className="chip font-mono" dir="ltr">
                     {warning.id}
                   </span>
                 </p>
-                <p className="mt-0.5 text-sm font-extrabold sm:text-base">{lang === "ar" ? warning.title_ar : warning.title_en}</p>
-                <p className="mt-0.5 text-sm text-white/80">{lang === "ar" ? warning.message_ar : warning.message_en}</p>
+                <p className="mt-1 text-[15px] font-semibold text-ink">{lang === "ar" ? warning.title_ar : warning.title_en}</p>
+                <p className="mt-0.5 text-[14px] leading-relaxed text-ink-soft">{lang === "ar" ? warning.message_ar : warning.message_en}</p>
               </div>
-              <button type="button" onClick={dismiss} aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
-                className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white">
-                <X className="size-4" />
+              <button
+                type="button"
+                onClick={dismiss}
+                aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
+                className="-me-2 grid size-11 shrink-0 place-items-center rounded-full text-ink-soft hover:bg-muted hover:text-ink"
+              >
+                <X className="size-4" aria-hidden />
               </button>
             </div>
           </div>

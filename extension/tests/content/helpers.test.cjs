@@ -271,7 +271,7 @@ test("capRaw keeps all headers and stays under the byte cap", () => {
   assert.equal(out.truncated, true);
   assert.ok(out.raw.startsWith(head));
   assert.ok(new TextEncoder().encode(out.raw).length <= 2 * 1024 * 1024);
-  assert.match(out.raw, /SAQR: message truncated/);
+  assert.match(out.raw, /Saqr: message truncated/);
 });
 
 // ------------------------------------------------------------------------------------- fixtures

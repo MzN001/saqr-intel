@@ -5,10 +5,11 @@ import ae.saqrintel.shield.appGraph
 import ae.saqrintel.shield.guard.AlertNotifier
 import ae.saqrintel.shield.guard.SaqrBrowserGuardService
 import ae.saqrintel.shield.guard.SaqrNotificationListenerService
-import ae.saqrintel.shield.ui.common.PrimaryButton
+import ae.saqrintel.shield.ui.common.FalconMark
+import ae.saqrintel.shield.ui.common.SaqrCard
 import ae.saqrintel.shield.ui.common.ScreenColumn
-import ae.saqrintel.shield.ui.common.Tile
 import ae.saqrintel.shield.ui.common.tabular
+import ae.saqrintel.shield.ui.theme.SaqrPalette
 import ae.saqrintel.shield.ui.theme.SaqrTheme
 import android.Manifest
 import android.app.Activity
@@ -21,14 +22,18 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,7 +41,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,14 +56,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import kotlinx.coroutines.flow.flowOf
@@ -93,7 +104,6 @@ fun ShieldScreen(padding: PaddingValues) {
 
     var showConsent by remember { mutableStateOf(false) }
     var showManageGuard by remember { mutableStateOf(false) }
-    var showApi by remember { mutableStateOf(false) }
 
     // After a second "Don't allow" Android stops showing the prompt: then open the app's settings.
     var denials by rememberSaveable { mutableIntStateOf(0) }
@@ -102,122 +112,98 @@ fun ShieldScreen(padding: PaddingValues) {
         if (!granted && ++denials >= 2) openAppNotificationSettings(context)
     }
 
-    ScreenColumn(padding) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                stringResource(R.string.shield_heading),
-                style = MaterialTheme.typography.headlineSmall,
-                color = c.ink,
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { heading() },
-            )
-            Surface(
-                onClick = { showApi = true },
-                shape = SaqrTheme.shapes.pill,
-                color = c.muted,
-                contentColor = c.ink,
-                modifier = Modifier.border(1.dp, c.line, SaqrTheme.shapes.pill),
-            ) {
-                Text(
-                    stringResource(R.string.api_pill),
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                )
-            }
+    // "Protected" needs steps 1-2; the web blocker is recommended, not required.
+    val guardsOff = listOf(notificationsOn, guardOn).count { !it }
+    val askNotifications = {
+        if (Build.VERSION.SDK_INT >= 33) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            openAppNotificationSettings(context)
         }
+    }
 
-        // Hero status ring -------------------------------------------------------------------------
-        Tile {
+    ScreenColumn(padding) {
+        // Status card -----------------------------------------------------------------------------
+        SaqrCard(padding = 20.dp) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                val ring = if (protected) c.shield else c.caution
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(148.dp)) {
-                    Canvas(Modifier.size(148.dp)) {
-                        val w = 10.dp.toPx()
-                        drawArc(c.muted, 0f, 360f, false, style = Stroke(w))
-                        drawArc(
-                            ring, -90f, if (protected) 360f else 240f, false,
-                            style = Stroke(w, cap = StrokeCap.Round),
-                        )
+                val ring = if (protected) SaqrPalette.SafeFill else SaqrPalette.SuspiciousFill
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(112.dp)) {
+                    Canvas(Modifier.size(112.dp)) {
+                        val w = 5.dp.toPx()
+                        val arc = Size(size.width - w, size.height - w)
+                        val topLeft = Offset(w / 2f, w / 2f)
+                        drawArc(c.muted, 0f, 360f, false, topLeft, arc, style = Stroke(w))
+                        // Full ring when protected; otherwise the share of required steps that are done.
+                        val sweep = if (protected) 360f else 360f * (2 - guardsOff).coerceAtLeast(0) / 2f
+                        if (sweep > 0f) {
+                            drawArc(ring, -90f, sweep, false, topLeft, arc, style = Stroke(w, cap = StrokeCap.Round))
+                        }
                     }
-                    Icon(
-                        painterResource(if (protected) R.drawable.ic_tab_shield else R.drawable.ic_shield_alert),
-                        contentDescription = null,
-                        tint = ring,
-                        modifier = Modifier.size(48.dp),
+                    Box(
+                        Modifier
+                            .size(84.dp)
+                            .background(c.muted, CircleShape),
                     )
+                    FalconMark(52.dp)
                 }
-                Spacer(Modifier.size(12.dp))
+                Spacer(Modifier.height(12.dp))
                 Text(
-                    stringResource(if (protected) R.string.status_protected else R.string.status_action_needed),
+                    if (protected) {
+                        stringResource(R.string.status_protected)
+                    } else {
+                        pluralStringResource(R.plurals.status_guards_off, guardsOff, guardsOff)
+                    },
                     style = MaterialTheme.typography.titleLarge,
-                    color = ring,
-                )
-                Text(
-                    stringResource(if (protected) R.string.status_protected_sub else R.string.status_action_sub),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = c.inkSoft,
+                    color = if (protected) c.safeInk else c.suspiciousInk,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics {
+                        heading()
+                        liveRegion = LiveRegionMode.Polite
+                    },
                 )
             }
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            HorizontalDivider(color = c.line)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Metric(blocked, stringResource(R.string.metric_blocked), Modifier.weight(1f))
+                Box(
+                    Modifier
+                        .width(1.dp)
+                        .height(36.dp)
+                        .background(c.line),
+                )
                 Metric(checked, stringResource(R.string.metric_checked), Modifier.weight(1f))
             }
         }
 
-        Text(
-            stringResource(R.string.steps_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = c.ink,
-            modifier = Modifier.semantics { heading() },
-        )
-
-        // Step 1: notifications -----------------------------------------------------------------
-        if (notificationsOn) {
-            DonePill(stringResource(R.string.step1_done)) { openAppNotificationSettings(context) }
-        } else {
-            StepCard(1, R.string.step1_title, R.string.step1_body) {
-                PrimaryButton(stringResource(R.string.step1_button), onClick = {
-                    if (Build.VERSION.SDK_INT >= 33) {
-                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    } else {
-                        openAppNotificationSettings(context)
-                    }
-                })
-            }
+        // Setup steps: one line each, gone once done --------------------------------------------
+        val pending = buildList {
+            if (!notificationsOn) add(Step(1, R.string.step1_title, R.string.step_allow, askNotifications))
+            if (!guardOn) add(Step(2, R.string.step2_title, R.string.step_turn_on) { showConsent = true })
+            if (!webOn) add(Step(3, R.string.step3_title, R.string.step_turn_on) { showWebConsent = true })
         }
+        pending.forEachIndexed { i, step -> StepPill(step, primary = i == 0) }
 
-        // Step 2: message guard -------------------------------------------------------------------
-        if (guardOn) {
-            DonePill(stringResource(R.string.step2_done)) { showManageGuard = true }
-        } else {
-            StepCard(2, R.string.step2_title, R.string.step2_body) {
-                PrimaryButton(stringResource(R.string.step2_button), onClick = { showConsent = true })
-            }
+        val done = buildList {
+            if (notificationsOn) add(R.string.step1_short to { openAppNotificationSettings(context) })
+            if (guardOn) add(R.string.step2_short to { showManageGuard = true })
+            if (webOn) add(R.string.step3_short to { showManageWeb = true })
         }
-
-        // Step 3: web blocker (recommended; "Protected" needs steps 1-2 only) -----------------------
-        if (webOn) {
-            DonePill(stringResource(R.string.step3_done)) { showManageWeb = true }
-        } else {
-            StepCard(3, R.string.step3_title, R.string.step3_body, badge = R.string.step3_recommended) {
-                PrimaryButton(stringResource(R.string.step3_button), onClick = { showWebConsent = true })
-                if (Build.VERSION.SDK_INT >= 33) {
-                    Text(
-                        stringResource(R.string.step3_restricted),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = c.inkSoft,
-                    )
-                }
+        if (done.isNotEmpty()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                done.forEach { (label, onClick) -> DoneChip(stringResource(label), onClick) }
             }
         }
 
         Text(
             stringResource(R.string.aman_footer),
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelLarge.tabular(),
             color = c.inkSoft,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
             textAlign = TextAlign.Center,
         )
     }
@@ -265,11 +251,17 @@ fun ShieldScreen(padding: PaddingValues) {
             onDismissRequest = { showWebConsent = false },
             title = { Text(stringResource(R.string.web_consent_title)) },
             text = {
-                Text(
-                    stringResource(R.string.web_consent_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                )
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(stringResource(R.string.web_consent_body), style = MaterialTheme.typography.bodyMedium)
+                    if (Build.VERSION.SDK_INT >= 33) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            stringResource(R.string.step3_restricted),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = c.inkSoft,
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -304,14 +296,13 @@ fun ShieldScreen(padding: PaddingValues) {
             containerColor = c.surface,
         )
     }
-    if (showApi) {
-        ApiServerDialog(onDismiss = { showApi = false })
-    }
 }
 
 fun openAccessibilitySettings(context: Context) {
     startSafely(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
 }
+
+private class Step(val number: Int, val title: Int, val action: Int, val onClick: () -> Unit)
 
 @Composable
 private fun Metric(value: Int, label: String, modifier: Modifier) {
@@ -322,73 +313,83 @@ private fun Metric(value: Int, label: String, modifier: Modifier) {
     }
 }
 
+/** One pending setup step on one line: number, title, a single action. */
 @Composable
-private fun DonePill(text: String, onClick: () -> Unit) {
+private fun StepPill(step: Step, primary: Boolean) {
     val c = SaqrTheme.colors
-    Surface(
-        onClick = onClick,
-        shape = SaqrTheme.shapes.pill,
-        color = c.surface,
-        contentColor = c.shield,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, c.shield.copy(alpha = 0.5f), SaqrTheme.shapes.pill),
+            .background(c.surface, SaqrTheme.shapes.pill)
+            .border(1.dp, c.line, SaqrTheme.shapes.pill)
+            .padding(start = 8.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Box(
-                Modifier
-                    .size(22.dp)
-                    .background(c.shield, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("✓", color = c.surface, style = MaterialTheme.typography.labelLarge)
+        Box(
+            Modifier
+                .size(32.dp)
+                .background(c.suspiciousSoft, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(step.number.toString(), style = MaterialTheme.typography.labelLarge.tabular(), color = c.suspiciousInk)
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            stringResource(step.title),
+            style = MaterialTheme.typography.titleSmall,
+            color = c.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(Modifier.width(8.dp))
+        Surface(
+            onClick = step.onClick,
+            shape = SaqrTheme.shapes.pill,
+            color = if (primary) c.primary else c.surface,
+            contentColor = if (primary) c.onPrimary else c.ink,
+            border = if (primary) null else BorderStroke(1.dp, c.line),
+            modifier = Modifier.heightIn(min = 40.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) {
+                Text(stringResource(step.action), style = MaterialTheme.typography.labelLarge, maxLines = 1)
             }
-            Spacer(Modifier.width(10.dp))
-            Text(text, style = MaterialTheme.typography.labelLarge, color = c.ink)
         }
     }
 }
 
+/** A finished step, collapsed to a small chip; tap to manage / turn off. */
 @Composable
-private fun StepCard(
-    number: Int,
-    title: Int,
-    body: Int,
-    enabled: Boolean = true,
-    badge: Int? = null,
-    action: @Composable () -> Unit,
-) {
+private fun DoneChip(text: String, onClick: () -> Unit) {
     val c = SaqrTheme.colors
-    Tile {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Box(
-                Modifier
-                    .size(28.dp)
-                    .background(if (enabled) c.caution.copy(alpha = 0.18f) else c.muted, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(number.toString(), style = MaterialTheme.typography.labelLarge.tabular(), color = if (enabled) c.caution else c.inkSoft)
-            }
-            Spacer(Modifier.width(12.dp))
-            Text(
-                stringResource(title),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (enabled) c.ink else c.inkSoft,
-                modifier = Modifier.weight(1f),
-            )
-            if (badge != null) {
-                Text(
-                    stringResource(badge),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = c.inkSoft,
-                    modifier = Modifier
-                        .border(1.dp, c.line, SaqrTheme.shapes.pill)
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+    val description = stringResource(R.string.cd_step_done, text)
+    Surface(
+        onClick = onClick,
+        shape = SaqrTheme.shapes.pill,
+        color = c.surface,
+        contentColor = c.ink,
+        border = BorderStroke(1.dp, c.line),
+        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = description },
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            // Drawn check (a font glyph renders as a "V" in IBM Plex Sans Arabic).
+            Canvas(Modifier.size(16.dp)) {
+                drawCircle(SaqrPalette.SafeFill)
+                val s = size.width
+                val check = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(s * 0.28f, s * 0.52f)
+                    lineTo(s * 0.44f, s * 0.67f)
+                    lineTo(s * 0.73f, s * 0.36f)
+                }
+                drawPath(
+                    check,
+                    SaqrPalette.Obsidian,
+                    style = Stroke(1.8.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round),
                 )
             }
+            Spacer(Modifier.width(6.dp))
+            Text(text, style = MaterialTheme.typography.labelMedium, color = c.ink)
         }
-        Text(stringResource(body), style = MaterialTheme.typography.bodyMedium, color = c.inkSoft)
-        action()
     }
 }
 

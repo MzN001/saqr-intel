@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Only what XML resources need (window + launcher icon). Compose tokens live in ui/theme/Color.kt. -->
-    <color name="night_canvas">#0A1220</color>
-    <color name="ic_launcher_background">#0B192C</color>
+    <!-- Only what XML resources need (window, splash, launcher icon). Compose tokens live in ui/theme/Color.kt. -->
+    <color name="saqr_canvas">#F7F5F0</color>
+    <color name="saqr_obsidian">#111315</color>
+    <color name="ic_launcher_background">#F7F5F0</color>
 </resources>
