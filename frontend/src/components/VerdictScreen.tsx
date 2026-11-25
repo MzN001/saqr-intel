@@ -62,7 +62,7 @@ import {
 } from "@/lib/api";
 import { useLang, type DictKey } from "@/lib/i18n";
 import { CHANNEL_DICT_KEY as CHANNEL_KEY, defang, warningFromVerdict } from "@/lib/share";
-import { RiskMeter, TONE_CHIP, TONE_TEXT, toneOf, type Tone } from "./RiskMeter";
+import { RiskMeter, TONE_CHIP, TONE_TEXT, shownTone, toneOf, type Tone } from "./RiskMeter";
 import { XAlertPrompt } from "./XAlertComposer";
 
 /*
@@ -875,7 +875,7 @@ const HEADER_ICON: Record<Tone, typeof ShieldCheck> = { scam: ShieldAlert, suspi
 export function ResultView({ result, onClose, embedded = false }: { result: ScanVerdict; onClose: () => void; embedded?: boolean }) {
   const { t, lang } = useLang();
   const [showOther, setShowOther] = useState(false);
-  const tone = toneOf(result.verdict);
+  const tone = shownTone(result);
   const entity = (lang === "ar" ? result.entityAr : result.entityEn) ?? result.entityEn ?? t("unknownEntity");
   const primary = stripBullets(lang === "ar" ? result.explanationAr : result.explanationEn);
   const secondary = stripBullets(lang === "ar" ? result.explanationEn : result.explanationAr);
@@ -884,7 +884,9 @@ export function ResultView({ result, onClose, embedded = false }: { result: Scan
   const email = result.kind === "email" ? result.email ?? null : null;
   const message = result.kind === "message" ? result.message ?? null : null;
   const verified = isVerifiedOfficial(result);
-  const title = email
+  const title = result.unverified
+    ? t("unverifiedTitle")
+    : email
     ? t(tone === "scam" ? "emBlockedTitle" : tone === "suspicious" ? "emSuspiciousTitle" : "emSafeTitle")
     : message
       ? t(tone === "scam" ? "msgBlockedTitle" : tone === "suspicious" ? "msgSuspiciousTitle" : "msgSafeTitle")

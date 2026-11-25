@@ -23,7 +23,7 @@ from typing import Any
 from .config import settings
 from .db import db, iso, strip_query
 from .email_pipeline import _scan_target
-from .intel import graph_engine, message_intel, phone_intel
+from .intel import graph_engine, message_intel, phone_intel, redirects
 from .intel.email_rules import is_esp_tracker, regdom
 from .intel.registry import Entity
 from .intel.threat_feeds import on_free_hosting, popularity_rank
@@ -61,12 +61,26 @@ def _candidates(links: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if host in picked or l["whitelisted"] or is_esp_tracker(host):
             continue
         rank = popularity_rank(regdom(host))
-        if rank and rank <= 10_000 and not on_free_hosting(host) and not l["mock_scam_replica"]:
+        # a link shortener is popular but is only a wrapper: it is scanned so its destination gets judged
+        if rank and rank <= 10_000 and not on_free_hosting(host) and not l["mock_scam_replica"] \
+                and not redirects.is_shortener(host):
             continue
         picked[host] = l
         if len(picked) >= MAX_LINK_SCANS:
             break
     return list(picked.values())
+
+
+def _unverified_links(links: list[dict[str, Any]]) -> dict[str, str] | None:
+    """A SAFE message whose link could not be opened or followed is "not verified", never "clean"."""
+    bad = [l["domain"] for l in links if l.get("unverified")]
+    if not bad:
+        return None
+    return {"status": "unverified", "code": "MSG_LINK_UNVERIFIED",
+            "en": f"The link in this message ({bad[0]}) could not be opened, so Saqr could not check where it "
+                  "leads. That is not the same as safe: do not tap it or enter any details.",
+            "ar": f"تعذّر فتح الرابط الموجود في هذه الرسالة ({bad[0]})، لذلك لم يتمكن صقر من التحقق من وجهته. "
+                  "هذا لا يعني أنه آمن: لا تضغط عليه ولا تُدخل أي بيانات."}
 
 
 async def _scan_links(cands: list[dict[str, Any]], *, channel: str | None, reporter: str | None,
@@ -178,6 +192,9 @@ async def analyze_message(text: str, *, sender: str | None = None, channel: str 
         r = scans.get(l["domain"])
         if r:
             l.update(scanned=True, scan_id=r["scan_id"], verdict=r["verdict"], risk_score=r["risk_score"])
+            l["unverified"] = bool(r.get("verification"))
+        elif not l["whitelisted"] and redirects.is_shortener(l["domain"]):
+            l["unverified"] = True  # a short link nobody followed is never a clean result
     timings["links_ms"] = _ms(t)
 
     # 2. who it claims to be + numbers -------------------------------------------------------------------
@@ -236,6 +253,7 @@ async def analyze_message(text: str, *, sender: str | None = None, channel: str 
         "red_flags": rr.flags_dicts(),
         "llm_red_flags": list((verdict_llm or {}).get("key_red_flags") or [])[:8],
         "verified_official": rr.verified_official and final == "SAFE",
+        "verification": _unverified_links(links) if final == "SAFE" else None,
         "message": {
             "excerpt": message_intel.excerpt(text), "length": len(text),
             "credential_requests": rr.credential_requests,
@@ -246,8 +264,8 @@ async def analyze_message(text: str, *, sender: str | None = None, channel: str 
                 "region": (sender_check or {}).get("region"),
                 "claims_institution": snd["type"] == "alphanumeric" and message_intel.sender_entity(sender) is not None},
         },
-        "links": [{k: l[k] for k in ("url", "domain", "official", "scanned", "scan_id", "verdict", "risk_score")}
-                  for l in links],
+        "links": [{**{k: l[k] for k in ("url", "domain", "official", "scanned", "scan_id", "verdict", "risk_score")},
+                   "unverified": bool(l.get("unverified"))} for l in links],
         "phones": phones,
         "analyzer": {"engine": engine, "confidence": (verdict_llm or {}).get("confidence"), "notes": notes},
         "timings": timings,

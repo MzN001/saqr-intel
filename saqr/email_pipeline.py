@@ -43,6 +43,7 @@ from .intel.email_rules import (
 )
 from .intel.email_types import AuthReport, ParsedEmail
 from .intel.email_unicode import scan_address, scan_text, scan_url
+from .intel import redirects
 from .intel.threat_feeds import on_free_hosting, popularity_rank
 from .pipeline import analyze_url, new_scan_id
 from .seed_data import DEMO_INTEL
@@ -145,7 +146,7 @@ def _scan_candidates(links: list[dict[str, Any]], own_domain: str | None) -> lis
         if own_domain and rd == own_domain:
             continue
         rank = popularity_rank(rd)
-        if rank and rank <= 10_000 and not on_free_hosting(host):
+        if rank and rank <= 10_000 and not on_free_hosting(host) and not redirects.is_shortener(host):
             continue
         try:
             if analyze_lexical(host).is_whitelisted:

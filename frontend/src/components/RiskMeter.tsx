@@ -131,6 +131,12 @@ export function toneOf(verdict: VerdictLabel | string): Tone {
   return verdict === "HIGH-RISK SCAM" ? "scam" : verdict === "SUSPICIOUS" ? "suspicious" : "safe";
 }
 
+/** The tone a result is SHOWN in: a SAFE result whose link could not be checked is amber, never green. */
+export function shownTone(r: { verdict: VerdictLabel | string; unverified?: unknown }): Tone {
+  const tone = toneOf(r.verdict);
+  return tone === "safe" && r.unverified ? "suspicious" : tone;
+}
+
 /** Text colour of the verdict word, and its soft chip. Never used for anything else. */
 export const TONE_TEXT: Record<Tone, string> = {
   scam: "text-scam-ink",

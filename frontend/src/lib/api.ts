@@ -53,6 +53,8 @@ interface SyndicateBrief {
 }
 
 interface UrlScanResponse {
+  /** Set when a SAFE result could not actually be checked (dead short link, site did not answer). */
+  verification?: { status: string; code: string; en: string; ar: string } | null;
   scan_id: string;
   kind: "url";
   domain: string;
@@ -140,6 +142,16 @@ export interface ScanVerdict {
   email?: EmailDetails;
   /** Only for kind "message": the links and phone numbers found in a pasted SMS / WhatsApp text. */
   message?: MessageDetails;
+  /** The scan found nothing bad but could NOT check the link (dead short link, site did not answer):
+   *  shown as "Not verified" in amber, never as a green "Safe". */
+  unverified?: { en: string; ar: string } | null;
+}
+
+/** `verification` from the API -> the note the UI shows, plus the same sentence as the first reason. */
+function unverifiedOf(v: { en: string; ar: string; code: string } | null | undefined, verdict: VerdictLabel) {
+  if (!v || verdict !== "SAFE") return { unverified: null, flag: [] as RedFlag[] };
+  const flag: RedFlag = { code: v.code, severity: "medium", points: 0, en: v.en, ar: v.ar };
+  return { unverified: { en: v.en, ar: v.ar }, flag: [flag] };
 }
 
 export interface AwarenessWave {
@@ -215,7 +227,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 function fromUrlScan(r: UrlScanResponse, interception: InterceptionChannel): ScanVerdict {
   const ti = r.technical_indicators ?? {};
+  const note = unverifiedOf(r.verification, r.verdict);
   return {
+    unverified: note.unverified,
     kind: "url",
     scanId: r.scan_id,
     target: r.domain,
@@ -228,7 +242,7 @@ function fromUrlScan(r: UrlScanResponse, interception: InterceptionChannel): Sca
     officialPhones: [],
     explanationEn: r.citizen_explanation_en,
     explanationAr: r.citizen_explanation_ar,
-    redFlags: (r.red_flags ?? []).filter((f) => f.points > 0),
+    redFlags: [...note.flag, ...(r.red_flags ?? []).filter((f) => f.points > 0)],
     harvested: ti.harvested_fields ?? [],
     ip: ti.ip_addresses?.[0] ?? null,
     sslIssuer: ti.ssl_issuer ?? null,
@@ -839,6 +853,8 @@ export interface MessageScanVerdict {
   citizen_explanation_ar: string;
   red_flags: RedFlag[];
   verified_official: boolean;
+  /** Set when a SAFE message has a link that could not be opened or followed. */
+  verification?: { status: string; code: string; en: string; ar: string } | null;
   message: {
     excerpt: string | null;
     length: number;
@@ -863,8 +879,10 @@ export interface MessageDetails {
 
 export function fromMessageScan(r: MessageScanVerdict, interception: InterceptionChannel): ScanVerdict {
   const scamLink = r.links.find((l) => l.verdict && l.verdict !== "SAFE")?.domain ?? null;
+  const note = unverifiedOf(r.verification, r.verdict);
   return {
     kind: "message",
+    unverified: note.unverified,
     scanId: r.scan_id,
     target: r.claimed_entity ?? r.message?.sender?.value ?? "Text message",
     scamDomain: scamLink,
@@ -876,7 +894,7 @@ export function fromMessageScan(r: MessageScanVerdict, interception: Interceptio
     officialPhones: [],
     explanationEn: r.citizen_explanation_en,
     explanationAr: r.citizen_explanation_ar,
-    redFlags: (r.red_flags ?? []).filter((f) => f.points > 0),
+    redFlags: [...note.flag, ...(r.red_flags ?? []).filter((f) => f.points > 0)],
     harvested: [],
     ip: null,
     sslIssuer: null,

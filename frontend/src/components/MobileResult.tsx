@@ -4,9 +4,9 @@ import { ArrowLeft, ArrowRight, CircleCheck, Lock, type LucideIcon } from "lucid
 import type { ScanVerdict } from "@/lib/api";
 import { useLang, type DictKey } from "@/lib/i18n";
 import { defang } from "@/lib/share";
-import { RiskMeter, toneOf, type Tone } from "./RiskMeter";
+import { RiskMeter, shownTone, type Tone } from "./RiskMeter";
 import { useSetupProgress } from "./SetupSteps";
-import { ErrorContent, LiveActions, MARK_TEXT, Reasons, ScanningContent, TEXT_LINK, topReasons, VERDICT_WORDS } from "./VerdictCard";
+import { ErrorContent, LiveActions, MARK_TEXT, Reasons, ScanningContent, TEXT_LINK, topReasons, verdictWords } from "./VerdictCard";
 import { isVerifiedOfficial, visible, type ScanState } from "./VerdictScreen";
 
 /*
@@ -84,7 +84,7 @@ function ShieldRow({ onOpenShield }: { onOpenShield: () => void }) {
 
 function Done({ result, onFullReport, onOpenShield }: { result: ScanVerdict; onFullReport: () => void; onOpenShield: () => void }) {
   const { t, lang } = useLang();
-  const tone = toneOf(result.verdict);
+  const tone = shownTone(result);
   const verified = isVerifiedOfficial(result);
   const entity = lang === "ar" ? result.entityAr ?? result.entityEn : result.entityEn;
   const fill = (key: DictKey, x: string) => t(key).replace("{x}", x);
@@ -114,7 +114,7 @@ function Done({ result, onFullReport, onOpenShield }: { result: ScanVerdict; onF
         <Ring score={result.riskScore} tone={tone} />
         <div className="min-w-0">
           <p className={`text-[21px] font-extrabold leading-[1.05] tracking-[-0.01em] ${MARK_TEXT[tone]}`} data-testid="mobile-verdict-headline">
-            {t(HEADLINE[tone])}
+            {result.unverified ? t("unverifiedTitle") : t(HEADLINE[tone])}
           </p>
           <p className="mt-1.5 text-[14px] font-bold leading-snug text-ink-soft">{line}</p>
         </div>
@@ -149,7 +149,7 @@ function Done({ result, onFullReport, onOpenShield }: { result: ScanVerdict; onF
       </div>
 
       <p className="mt-3 text-[12px] leading-normal text-ink-soft">{tone === "safe" ? t("mrFootSafe") : t("privacyLine")}</p>
-      <p className="sr-only" aria-live="polite">{`${t("vcLiveChip")}: ${VERDICT_WORDS[tone].en} · ${result.riskScore} / 100`}</p>
+      <p className="sr-only" aria-live="polite">{`${t("vcLiveChip")}: ${verdictWords(result).en} · ${result.riskScore} / 100`}</p>
     </div>
   );
 }

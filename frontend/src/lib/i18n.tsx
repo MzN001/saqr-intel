@@ -655,6 +655,11 @@ const dict = {
     ar: "لم نجد علامات احتيال. ومع ذلك، لا تشارك أبداً رمز التحقق أو الرقم السري أو كلمة المرور.",
   },
   vcVerified: { en: "Verified official", ar: "جهة رسمية موثّقة" },
+  vcAdviceUnverified: {
+    en: "Saqr could not check where this link leads. Treat it with caution and do not enter any details.",
+    ar: "لم يتمكن صقر من التحقق من وجهة هذا الرابط. تعامل معه بحذر ولا تُدخل أي بيانات.",
+  },
+  unverifiedTitle: { en: "Could not verify this link", ar: "تعذّر التحقق من هذا الرابط" },
   vcPretends: { en: "Pretends to be", ar: "ينتحل صفة" },
   vcOfficial: { en: "Official site", ar: "الموقع الرسمي" },
   vcFullReport: { en: "Full report", ar: "التقرير الكامل" },

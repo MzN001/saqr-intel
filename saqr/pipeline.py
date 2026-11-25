@@ -285,6 +285,29 @@ def score_breakdown(flags: list[Any], rules_score: int, final_score: int, engine
     return out
 
 
+def verification_note(verdict: str, lex: LexicalReport, page: dict[str, Any] | None) -> dict[str, str] | None:
+    """Why a SAFE result is NOT a clean bill of health: Saqr could not reach what the link leads to.
+    None = the address (and, on a deep scan, the page) was really checked. Never set on scams, official
+    sites or popular sites (those often refuse automated visitors)."""
+    if verdict != "SAFE" or lex.is_whitelisted:
+        return None
+    if redirects.is_shortener(lex.host):
+        return {"status": "unverified", "code": "SHORTLINK_UNRESOLVED",
+                "en": "This short link did not lead to a website Saqr could open, so where it goes could not be "
+                      "checked. That is not the same as safe: do not enter any details.",
+                "ar": "هذا الرابط المختصر لم يؤدِّ إلى موقع استطاع صقر فتحه، لذلك لم يتم التحقق من وجهته. "
+                      "هذا لا يعني أنه آمن: لا تُدخل أي بيانات."}
+    if page is not None and not ai_inspector.popular_site(lex):
+        code = page.get("http_status")
+        if page.get("status") != "ok" or code is None or code >= 400:
+            return {"status": "unverified", "code": "SITE_UNREACHABLE",
+                    "en": "The website did not answer, so Saqr could not read the page. That is not the same as "
+                          "safe: scam pages are often taken down and moved.",
+                    "ar": "لم يستجب الموقع، لذلك لم يتمكن صقر من قراءة الصفحة. هذا لا يعني أنه آمن: "
+                          "صفحات الاحتيال تُحذف وتُنقل كثيراً."}
+    return None
+
+
 async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | None = None,
                       reporter: str | None = None, message_text: str | None = None,
                       run_sandbox: bool = True, profile: str = "mobile", use_llm: bool = True,
@@ -379,6 +402,8 @@ async def analyze_url(url: str, *, scan_id: str | None = None, channel: str | No
         "official_domains": list(ent.domains) if ent else [],
         "is_official_domain": lex.is_whitelisted,
         "verified_official": lex.is_whitelisted,  # alias of is_official_domain (same name as maps / message scans)
+        # None, or why this SAFE result could not actually be checked (dead short link, site did not answer)
+        "verification": None if mock_slug else verification_note(fv.verdict, lex, page),
         "citizen_explanation_en": fv.explanation_en, "citizen_explanation_ar": fv.explanation_ar,
         "red_flags": [{"code": f.code, "severity": f.severity, "points": f.points, "en": f.en, "ar": f.ar}
                       for f in fv.flags],

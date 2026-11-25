@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import type { ScanVerdict } from "@/lib/api";
 import { useLang } from "@/lib/i18n";
 import { CHANNEL_DICT_KEY, defang, warningFromVerdict } from "@/lib/share";
-import { RiskMeter, toneOf, type Tone } from "./RiskMeter";
+import { RiskMeter, shownTone, toneOf, type Tone } from "./RiskMeter";
 import { FalseAlarmReport, isVerifiedOfficial, scanSteps, scanTitle, stripBullets, visible, type ScanState } from "./VerdictScreen";
 import { CopyAmanButton, Toast, useToast, WarnOnXButton } from "./XAlertComposer";
 
@@ -30,6 +30,14 @@ const DEMO = {
     { en: "Website address was created only days ago", ar: "عنوان الموقع أُنشئ قبل أيام فقط" },
   ] as Bilingual[],
 };
+
+/** Stamp for a result that could not be checked (see ScanVerdict.unverified). */
+export const UNVERIFIED_WORDS: Bilingual = { en: "NOT VERIFIED", ar: "لم يتم التحقق" };
+
+/** The verdict words a result is shown with. */
+export function verdictWords(r: ScanVerdict): Bilingual {
+  return r.unverified && toneOf(r.verdict) === "safe" ? UNVERIFIED_WORDS : VERDICT_WORDS[toneOf(r.verdict)];
+}
 
 export const VERDICT_WORDS: Record<Tone, Bilingual> = {
   scam: { en: "HIGH-RISK SCAM", ar: "احتيال عالي الخطورة" },
@@ -69,8 +77,7 @@ export function topReasons(r: ScanVerdict): Bilingual[] {
 }
 
 /** The verdict as an outlined, tilted stamp: tracked caps over the Arabic word. Stays readable in RTL. */
-function VerdictStamp({ tone }: { tone: Tone }) {
-  const words = VERDICT_WORDS[tone];
+function VerdictStamp({ tone, words = VERDICT_WORDS[tone] }: { tone: Tone; words?: Bilingual }) {
   return (
     <span className={`verdict-stamp shrink-0 ${MARK_TEXT[tone]}`} data-testid="verdict-stamp">
       <span lang="en" dir="ltr" className="text-[12px] font-bold uppercase tracking-[0.08em]">
@@ -83,7 +90,7 @@ function VerdictStamp({ tone }: { tone: Tone }) {
   );
 }
 
-function ScoreRow({ score, tone }: { score: number; tone: Tone }) {
+function ScoreRow({ score, tone, words }: { score: number; tone: Tone; words?: Bilingual }) {
   return (
     <>
       <div className="mt-1 flex items-start justify-between gap-3">
@@ -92,7 +99,7 @@ function ScoreRow({ score, tone }: { score: number; tone: Tone }) {
           <span className="ms-3 text-[15px] text-ink-soft tabular-nums">/ 100</span>
         </p>
         <span className="pt-1">
-          <VerdictStamp tone={tone} />
+          <VerdictStamp tone={tone} words={words} />
         </span>
       </div>
       <RiskMeter score={score} tone={tone} variant="line" className="mt-3" />
@@ -261,12 +268,14 @@ export function LiveActions({ result, onFullReport }: { result: ScanVerdict; onF
 
 function LiveContent({ result, onFullReport }: { result: ScanVerdict; onFullReport: () => void }) {
   const { t, lang } = useLang();
-  const tone = toneOf(result.verdict);
+  const tone = shownTone(result);
   const verified = isVerifiedOfficial(result);
   const reasons = topReasons(result);
   const entity = lang === "ar" ? result.entityAr ?? result.entityEn : result.entityEn;
   const official = result.officialDomains[0];
-  const advice = tone === "scam" ? t("vcAdviceScam") : tone === "suspicious" ? t("vcAdviceSuspicious") : t("vcAdviceSafe");
+  const advice = result.unverified
+    ? t("vcAdviceUnverified")
+    : tone === "scam" ? t("vcAdviceScam") : tone === "suspicious" ? t("vcAdviceSuspicious") : t("vcAdviceSafe");
 
   return (
     <>
@@ -274,7 +283,7 @@ function LiveContent({ result, onFullReport }: { result: ScanVerdict; onFullRepo
       <p className="mt-4 truncate font-mono text-[14px] text-ink" dir="ltr" lang="en" data-testid="verdict-target">
         {visible(result.kind === "url" ? defang(result.target) : result.target)}
       </p>
-      <ScoreRow score={result.riskScore} tone={tone} />
+      <ScoreRow score={result.riskScore} tone={tone} words={verdictWords(result)} />
 
       {verified ? (
         <p className="mt-4 flex items-center gap-2 text-[15px] font-semibold text-brand-ink" data-testid="verdict-verified">
@@ -288,7 +297,7 @@ function LiveContent({ result, onFullReport }: { result: ScanVerdict; onFullRepo
       ) : (
         <p className="mt-4 text-[15px] font-semibold leading-snug text-ink">{advice}</p>
       )}
-      {tone !== "safe" && (entity || official) && (
+      {tone !== "safe" && !result.unverified && (entity || official) && (
         <p className="mt-1.5 text-[14px] text-ink-soft">
           {entity && (
             <>
@@ -336,7 +345,7 @@ export function VerdictCard({
   const { t } = useLang();
   const announce =
     scan.status === "done"
-      ? `${t("vcLiveChip")}: ${VERDICT_WORDS[toneOf(scan.result.verdict)].en} · ${scan.result.riskScore} / 100`
+      ? `${t("vcLiveChip")}: ${verdictWords(scan.result).en} · ${scan.result.riskScore} / 100`
       : scan.status === "error"
         ? t("scanFailed")
         : "";
