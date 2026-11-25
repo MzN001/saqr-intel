@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
 import { useLang } from "@/lib/i18n";
@@ -130,7 +130,7 @@ function NodeShape({ node, lang, active, ring }: { node: PipelineNode; lang: "en
   );
 }
 
-export default function AgentPipeline({ className = "" }: { className?: string }) {
+export default function AgentPipeline({ className = "", toolbar }: { className?: string; toolbar?: ReactNode }) {
   const { lang } = useLang();
   const L = (b: Bi) => b[lang];
   const reduced = useReducedMotion() ?? false;
@@ -218,7 +218,10 @@ export default function AgentPipeline({ className = "" }: { className?: string }
           <h2 className="text-lg font-semibold text-ink">{L(TEXT.title)}</h2>
           <p className="text-sm text-ink-soft">{L(TEXT.subtitle)}</p>
         </div>
-        <span className="chip chip-suspicious uppercase tracking-[0.08em] rtl:normal-case rtl:tracking-normal">{L(TEXT.badge)}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="chip chip-suspicious uppercase tracking-[0.08em] rtl:normal-case rtl:tracking-normal">{L(TEXT.badge)}</span>
+          {toolbar}
+        </div>
         <p className="w-full text-[13px] leading-relaxed text-ink-soft">{L(TEXT.caption)}</p>
       </header>
 

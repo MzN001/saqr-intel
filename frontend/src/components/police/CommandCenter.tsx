@@ -4,7 +4,7 @@ import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { Crosshair, ExternalLink, Flag, Loader2, LogOut, Menu, QrCode, Search, ShieldCheck, Siren, Users, X, MapPinned } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { CityGridMap, MAP_ASPECT, type GridPin } from "@/components/CityGrid";
 import { Modal } from "@/components/Modal";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -114,7 +114,89 @@ function LangPill() {
   );
 }
 
-function TopBar({ L, link, query, setQuery, devOpen }: { L: L; link: string; query: string; setQuery: (q: string) => void; devOpen: boolean }) {
+/* Desk view (Map | Pipeline flow), remembered for the tab in sessionStorage. */
+type DeskView = "map" | "pipeline";
+const VIEW_KEY = "saqr-police-desk-view";
+const DESK_PANEL_ID = "desk-view-panel";
+const CAMPAIGN_LIMIT = 15;
+let memView: DeskView | null = null;
+const viewListeners = new Set<() => void>();
+function readView(): DeskView {
+  if (memView) return memView;
+  try {
+    return window.sessionStorage.getItem(VIEW_KEY) === "pipeline" ? "pipeline" : "map";
+  } catch {
+    return "map";
+  }
+}
+function writeView(v: DeskView) {
+  memView = v;
+  try {
+    window.sessionStorage.setItem(VIEW_KEY, v);
+  } catch {
+    /* storage blocked: the in-memory choice still works for this page */
+  }
+  viewListeners.forEach((f) => f());
+}
+function subscribeView(f: () => void) {
+  viewListeners.add(f);
+  return () => {
+    viewListeners.delete(f);
+  };
+}
+function useDeskView(): [DeskView, (v: DeskView) => void] {
+  const v = useSyncExternalStore(subscribeView, readView, () => "map" as DeskView);
+  return [v, writeView];
+}
+
+/** Map | Pipeline flow segmented control (same look as the language pill). */
+function DeskSwitch({ view, setView, L }: { view: DeskView; setView: (v: DeskView) => void; L: L }) {
+  const opts: { id: DeskView; label: string }[] = [
+    { id: "map", label: L("viewMap") },
+    { id: "pipeline", label: L("viewPipeline") },
+  ];
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const onKey = (e: KeyboardEvent, i: number) => {
+    const rtl = document.documentElement.dir === "rtl";
+    let next = -1;
+    if (e.key === "ArrowRight") next = rtl ? i - 1 : i + 1;
+    else if (e.key === "ArrowLeft") next = rtl ? i + 1 : i - 1;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = opts.length - 1;
+    if (next < 0) return;
+    e.preventDefault();
+    const j = (next + opts.length) % opts.length;
+    setView(opts[j].id);
+    refs.current[j]?.focus();
+  };
+  return (
+    <div role="tablist" aria-label={L("deskView")} className="flex shrink-0 rounded-full border border-line bg-surface p-0.5">
+      {opts.map((o, i) => {
+        const on = view === o.id;
+        return (
+          <button
+            key={o.id}
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            aria-controls={DESK_PANEL_ID}
+            tabIndex={on ? 0 : -1}
+            onClick={() => setView(o.id)}
+            onKeyDown={(e) => onKey(e, i)}
+            className={`min-h-10 whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold normal-case tracking-normal transition-colors ${on ? "bg-primary text-on-primary" : "text-ink-soft hover:text-ink"}`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TopBar({ L, link, query, setQuery, devOpen, onGo }: { L: L; link: string; query: string; setQuery: (q: string) => void; devOpen: boolean; onGo: (id: Section) => void }) {
   const { lang } = useLang();
   const [active, setActive] = useState<Section>("desk");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -140,7 +222,9 @@ function TopBar({ L, link, query, setQuery, devOpen }: { L: L; link: string; que
   const go = (id: Section) => {
     setActive(id);
     setMenuOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    onGo(id); // e.g. "Geo-spoof map" switches the desk back to the map first
+    // Wait a frame so a just-mounted map card exists before scrolling to it.
+    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
   const badge =
     link === "offline"
@@ -371,6 +455,10 @@ export function CommandCenter({ devOpen = false }: { devOpen?: boolean }) {
   const match = (s: (string | null | undefined)[]) => !q || s.some((x) => x?.toLowerCase().includes(q));
   const campaigns = useMemo(() => state?.campaigns ?? [], [state]);
   const shownCampaigns = campaigns.filter((c) => match([c.domain, c.impersonated_entity]));
+  // Backend already orders campaigns by impact (risk score x hits, then hits): show the top 15 only.
+  const topCampaigns = shownCampaigns.slice(0, CAMPAIGN_LIMIT);
+  const [view, setView] = useDeskView();
+  const deskSwitch = <DeskSwitch view={view} setView={setView} L={L} />;
   const shownEvents = (state?.recent_events ?? []).filter((e) => match([e.domain, e.impersonated_entity, e.title]));
   const selected = picked ?? campaigns[0]?.campaign_id ?? null;
   const current = campaigns.find((c) => c.campaign_id === selected) ?? null;
@@ -402,13 +490,20 @@ export function CommandCenter({ devOpen = false }: { devOpen?: boolean }) {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-dvh bg-canvas text-ink">
-        <TopBar L={L} link={link} query={query} setQuery={setQuery} devOpen={devOpen} />
+        <TopBar L={L} link={link} query={query} setQuery={setQuery} devOpen={devOpen} onGo={(id) => id === "map" && setView("map")} />
 
         <main id="desk" className="mx-auto max-w-[1500px] scroll-mt-40 space-y-4 px-4 py-5 sm:px-6">
           {!state && (
             <p className="card flex items-center gap-2 p-4 text-sm text-ink-soft">
               <Loader2 className="size-4 animate-spin" /> {L("loading")}
             </p>
+          )}
+
+          {/* Pipeline flow: lifted above the desk grid into its own full-width row (the diagram needs ~960px). */}
+          {view === "pipeline" && (
+            <motion.div key="pipeline-view" id={DESK_PANEL_ID} role="tabpanel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2, ease: EASE }}>
+              <AgentPipeline toolbar={deskSwitch} />
+            </motion.div>
           )}
 
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[260px_minmax(0,1fr)_380px]">
@@ -442,11 +537,16 @@ export function CommandCenter({ devOpen = false }: { devOpen?: boolean }) {
             </div>
 
             <div className="min-w-0 space-y-4">
+              {view === "map" && (
+              <motion.div key="map-view" id={DESK_PANEL_ID} role="tabpanel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2, ease: EASE }}>
               <Tile id="map" title={L("map")} icon={<MapPinned className="size-4" />}
                 right={
-                  <span className="flex items-center gap-3 whitespace-nowrap text-xs text-ink-soft">
-                    <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-scam" />{L("spoofed")}</span>
-                    <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-safe" />{L("verified")}</span>
+                  <span className="flex flex-wrap items-center justify-end gap-3">
+                    <span className="flex items-center gap-3 whitespace-nowrap text-xs text-ink-soft">
+                      <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-scam" />{L("spoofed")}</span>
+                      <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-safe" />{L("verified")}</span>
+                    </span>
+                    {deskSwitch}
                   </span>
                 }
                 className="flex flex-col"
@@ -485,9 +585,17 @@ export function CommandCenter({ devOpen = false }: { devOpen?: boolean }) {
                     )}
                   </AnimatePresence>
               </Tile>
+              </motion.div>
+              )}
                 <Tile id="campaigns" title={L("campaigns")} icon={<Siren className="size-4" />}
-              right={<span className="text-xs text-ink-soft tabular-nums">{shownCampaigns.length}</span>}>
-              <Roster list={shownCampaigns} selected={selected} onPick={(c) => setPicked(c.campaign_id)} lang={lang} L={L} />
+              right={
+                <span className="text-xs text-ink-soft tabular-nums">
+                  {shownCampaigns.length > CAMPAIGN_LIMIT
+                    ? L("topOf").replace("{shown}", String(CAMPAIGN_LIMIT)).replace("{total}", String(shownCampaigns.length))
+                    : shownCampaigns.length}
+                </span>
+              }>
+              <Roster list={topCampaigns} selected={selected} onPick={(c) => setPicked(c.campaign_id)} lang={lang} L={L} />
             </Tile>
             </div>
 
@@ -500,9 +608,6 @@ export function CommandCenter({ devOpen = false }: { devOpen?: boolean }) {
               </Tile>
             </div>
           </div>
-
-          {/* Full-width agent pipeline visualizer, directly under the KPI / desk row. */}
-          <AgentPipeline />
 
           <div id="hunt" className="grid scroll-mt-40 grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-5">
             <ProactiveHunt
