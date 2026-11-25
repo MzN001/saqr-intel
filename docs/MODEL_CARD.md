@@ -16,6 +16,14 @@ Generated from `saqr/intel/data/model_metrics.json` (trained 2026-11-24T08:43:07
 | **Stress test**: every blocklist switched off (stands in for brand-new scams no list knows yet) | recall 75%, precision 98.4%, false-alarm rate 1.25% (300 / 5 / 100 / 395) | recall 63%, false-alarm rate 1.0% (252 / 4 / 148 / 396) |
 <!-- SAMPLE_D_ROW: sealed sample D (scams reported in the last day, never seen by the deployed model) goes here as one more row -->
 
+| Sealed sample E (2026-11-25), test half: 125 scam links first listed in the last 17 hours, scored once. Phishing only, no legitimate half; a different, fresher sample than B, so not comparable to the 75% measured on B | Warn (score >= 30) | Block (score >= 65) |
+|---|---|---|
+| **Blocklists off**, all 125 links | caught 92.8% (116 / 125, 95% CI 86.9-96.2) | 79.2% (99 / 125, CI 71.3-85.4) |
+| **Blocklists off, dead links removed** (104 links whose server still answered) | caught **94.2%** (98 / 104, CI 88.0-97.3) | 82.7% (86 / 104, CI 74.3-88.8) |
+| Blocklists off, pages still up (64 links, HTTP < 400) | caught 95.3% (61 / 64, CI 87.1-98.4) | 78.1% (50 / 64, CI 66.6-86.5) |
+
+Sample E is described in its own section below. It measures recall only: no accuracy or false-alarm figure comes from it.
+
 With every blocklist switched off, Saqr still caught 75% of the scams (63% blocked outright) and was right 98.4% of the time when it flagged. 0 false alarms on the 224 UAE official / bank / government / brand pages in the sample. Against the brief's targets (accuracy 98%, recall 97.5%, false-alarm rate 1%): as deployed, accuracy and recall meet them at warn level and the false-alarm rate (1.25%) is slightly above (1.0% at block meets it); with blocklists off, recall 75% does not. Sealed sample C, the UAE suite, the rejected retrain and the limits are below, unchanged.
 
 ## What it is
@@ -379,6 +387,77 @@ as-deployed line depends on Phishing Army having listed most of these sites with
 limitation above. Against the targets (accuracy 98%, recall 97.5%, false-alarm rate 1%): as deployed at warn, recall
 97.5% meets the target, accuracy 96.3% and false-alarm rate 3.99% do not; at block, accuracy 97.9%, recall 96.25% and
 false-alarm rate 1.71% are all just short. With every blocklist off, recall (85% / 80%) is below 97.5%.
+
+## Sealed sample E (2026-11-25): 233 fresh phishing URLs, recall only
+
+**Why.** The stress test on sample B (75% at warn with every blocklist off) lost 53 of its 100 misses to sites that
+were already offline when scanned. Sample E asks the same question on links scanned within hours of being reported,
+and reports the result with and without the dead links.
+
+**Method.** Phishing only. PhishTank verified + online submissions made after 2026-11-24T22:45Z (after sample D was
+collected) and OpenPhish public-feed URLs first listed after that time; collected 2026-11-25T15:25Z from feed listings
+only (no URL visited). Excluded: sites in samples C / D, in the holdout list of the deployed model, in any training
+file, in the Tranco top 1M, or reported to PhishTank before the window; one URL per site. 477 URLs remained
+(47 PhishTank, 430 OpenPhish), 272 of them on `pages.dev`, so each registered domain was capped at 30 links:
+**233 URLs**. They were split by a hash of the host into a **study half (108)**, whose misses were read and used to
+write the changes below, and a **test half (125)**, whose results were not looked at until the code was frozen. All
+233 were scanned once at 15:27Z with `tools/evaluate.py --mode live` (HTTP only, no LLM, no Chromium, threat feeds
+off, `VISUAL_SCREENSHOTS=false`) and the evidence saved. "Before" = the score from that scan. "After" = the same saved
+evidence re-judged (`--rescore` logic) by the frozen code (`saqr/` tree SHA-256 `b09f0299...3064c1`, frozen 15:40Z);
+the test half was re-judged once. Test half: 105 OpenPhish + 20 PhishTank, 63 on free-hosting platforms.
+
+**Dead links.** The state of a link comes from the scan evidence, never from the verdict: *dead* = no DNS answer or no
+response; *HTTP error* = the server answered 4xx / 5xx; *live page* = HTTP < 400 with a page. "Dead links removed"
+drops the dead group whether or not Saqr caught those links.
+
+| Blocklists off, caught at warn (>= 30) | before | after | 95% CI (after) |
+|---|---|---|---|
+| **Test half, all 125** | 115 = 92.0% | 116 = 92.8% | 86.9-96.2 |
+| **Test half, dead links removed (104)** | 97 = 93.3% | **98 = 94.2%** | 88.0-97.3 |
+| Test half, live pages (64) | 60 = 93.8% | 61 = 95.3% | 87.1-98.4 |
+| Test half, HTTP 4xx-5xx (40) | 37 = 92.5% | 37 = 92.5% | 80.1-97.4 |
+| Test half, dead (21) | 18 = 85.7% | 18 = 85.7% | 65.4-95.0 |
+| Study half, all 108 | 93 = 86.1% | 98 = 90.7% | 83.8-94.9 |
+| Study half, dead links removed (92) | 79 = 85.9% | 84 = 91.3% | 83.8-95.5 |
+| Study half, live pages (54) | 42 = 77.8% | 47 = 87.0% | 75.6-93.6 |
+
+Block level (>= 65), after: test half 99 / 125 = 79.2% (unchanged), dead links removed 86 / 104 = 82.7% (unchanged),
+live pages 50 / 64 = 78.1% (unchanged); study half 75 / 108 = 69.4% (was 70 = 64.8%).
+
+With the threat feeds counted (a hit = 70): test half 121 / 125 warn, 115 / 125 block; 85 of the 125 were feed hits.
+This line is inflated by construction, because most of the sample was taken from OpenPhish, one of the two feeds.
+
+**What changed between before and after** (all in the rules; the URL model files are untouched):
+- `registry.GLOBAL_BRANDS`: about 60 more brands (Shopee, Lazada, Allegro, OLX, Xfinity, Vodafone, ANZ, Santander,
+  BBVA, Barclays, Kraken, Royal Mail, Spotify ...). Every listed official domain is checked against the Tranco top 1M
+  by `tools/check_brand_domains.py` (3 are not in it: `dhl.ae`, `rakuten.fr`, `vodafone.com.gh`).
+- `BRAND_PRIZE_PAGE` (25, strong): a registry brand in the page title with prize / free-gift wording, on a
+  user-content platform.
+- `FORM_SERVICE_LOGIN` (45, strong): the title says sign in / log in and the form posts to a website-builder or form
+  service, even when no password field is recognised.
+- **False-alarm fix:** a Tranco top-100k site of its own (not a page on a hosting platform) is no longer
+  `BRAND_IMPERSONATION` or `HOMOGLYPH_SPOOF`. The look-alike rules flagged 211 of the top 100k before (`ebay.de`,
+  `airbnb.it`, `yahoo.co.jp`, `adobe.io`, `m3.com` ...) and 2 after (`sharepoint.com`, `adsb.fi`).
+
+**False alarms.** No legitimate sample was collected with E. The same code re-judged the saved evidence of 1,015
+legitimate pages (sample C 460, sample D 351, a 204-page free-hosting set): warn 83 before and after, block 19 before
+and after. Offline FP suite (14,047 legitimate URLs, system mode): warn 0.69% and block 0.12% (17) before and after.
+Of the 204 legitimate free-hosting pages, 50 are warned and 10 blocked by the URL model, unchanged: the warn-level
+recall on hosted phishing and that false-alarm rate come from the same rule.
+
+**Limits.**
+- Not comparable to sample B: E is fresher (scanned within 17 hours of listing), mostly from OpenPhish, and half of it
+  sits on free-hosting platforms where the URL model already warns. The 75% on B was not re-measured (the sample B
+  files are not on this machine).
+- The changes moved the sealed half by one link (115 -> 116). Most of the 94.2% was there before; the gain on the
+  study half (86.1% -> 90.7%) is optimistic because its misses were read.
+- 125 links: the intervals are about +/- 5 points. No accuracy, precision or false-alarm rate comes from this sample.
+- Feed labels are noisy: the OpenPhish list includes student "Netflix clone" projects, and at least two study-half
+  misses look legitimate (`misbeneficiosaxa.com`, `1795c.com`).
+- The cap leaves one URL per site but up to 30 per platform, so a campaign on one platform still weighs a lot.
+- A Chromium run of the same 233 links (`--browser`) did not raise recall; it is not part of these numbers.
+- Raw files (`e_phish_all.csv` SHA-256 `a5b3c2e1...78019a`, `e_http.jsonl` `d1e1a416...fa68d`, scripts) are in
+  `datasets/live5/`, which is not in the repository. These numbers are not in `model_metrics.json`.
 
 ## Retrain, calibration, visual similarity (2026-11-24)
 

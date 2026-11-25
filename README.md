@@ -245,7 +245,7 @@ The same engine and the same verdict reach the citizen wherever the scam arrives
 
 ## Accuracy
 
-All numbers measured on 2026-11-24 and stored in `saqr/intel/data/model_metrics.json`. "Block" = HIGH-RISK, score ≥ 65; "warn" = SUSPICIOUS or worse, score ≥ 30. Full per-set tables, thresholds and what was tried and dropped: [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
+All numbers measured on 2026-11-24 and stored in `saqr/intel/data/model_metrics.json` (sealed sample E: measured on 2026-11-25, recorded in the model card only). "Block" = HIGH-RISK, score ≥ 65; "warn" = SUSPICIOUS or worse, score ≥ 30. Full per-set tables, thresholds and what was tried and dropped: [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 
 <!-- ACCURACY:START -->
 | Test | What it measures | Result |
@@ -256,6 +256,7 @@ All numbers measured on 2026-11-24 and stored in `saqr/intel/data/model_metrics.
 <!-- SAMPLE_D_ROW: sealed sample D (scams reported in the last day, never seen by the deployed model) goes here, e.g.
 | **Sealed sample D**, N links reported in the last day, never seen by the deployed model | ... | ... |
 -->
+| **Sealed sample E** (2026-11-25), 125 scam links first listed in the last 17 hours, every blocklist off, no AI judge, code frozen first, scored once. A different, fresher sample than B (mostly OpenPhish, half on free hosting), so not comparable to the 75% on B | Fresh scams, with and without links that were already dead | Warn: 92.8% caught (116 of 125, 95% CI 86.9-96.2); **94.2% with dead links removed** (98 of 104, CI 88.0-97.3); 95.3% of pages still up (61 of 64). Block: 79.2% / 82.7% / 78.1%. Before the rule changes of this round the same links scored 92.0% / 93.3% / 93.8% at warn. Recall only: no legitimate half |
 | **Sealed sample C**, 460 legitimate pages never trained on (code frozen first, scored once) | False alarms | Block: 3 of 460 = 0.65% (95% CI 0.2-1.9%). Warn: 19 of 460 = 4.1% (CI 2.7-6.4%) |
 | Sample C, phishing half: only 3 URLs reported after the cut-off | Recall | 2 of 3 caught at warn and at block (95% CI 21-94%): **too few to measure recall** (see below) |
 | Sample C combined, 3 phishing + 460 legitimate (99.35% legitimate) | Accuracy | Warn: 95.7% (CI 93.4-97.2%). Block: 99.1% (CI 97.8-99.7%); mostly reflects the false-alarm rate |
@@ -509,7 +510,7 @@ Each step uses what exists today.
 
 ## Honest limits
 
-- **Brand-new scams that no blocklist knows yet are caught less often.** As deployed, recall is 98.5% on sample B, but those scams were publicly reported, so the feeds had seen most of them; with every blocklist switched off recall is 75% at warn (63% at block), below the brief's 97.5%. Not re-measured on sealed sample C because only 3 phishing URLs qualified (2 caught; CI 21-94%). The new cloaking and visual signals fired 0 times on those 3 and are not measured on a real phishing sample.
+- **Brand-new scams that no blocklist knows yet are caught less often.** As deployed, recall is 98.5% on sample B, but those scams were publicly reported, so the feeds had seen most of them; with every blocklist switched off recall is 75% at warn (63% at block), below the brief's 97.5%. Not re-measured on sealed sample C because only 3 phishing URLs qualified (2 caught; CI 21-94%). On sealed sample E (125 links listed in the last 17 hours, a fresher and easier sample than B) recall with blocklists off is 92.8% at warn and 79.2% at block, 94.2% and 82.7% with dead links removed: still below 97.5%. The new cloaking and visual signals fired 0 times on those 3 and are not measured on a real phishing sample.
 - **Free-hosting pages get too many warnings.** 17 of the 19 warn-level false alarms in sample C were legitimate GitHub Pages / Vercel / Netlify / Pages projects flagged by the URL model; warn-level false alarms are 4.1%, above the 1% target.
 - Measured accuracy is on public international datasets. The only UAE set is the team's own synthetic regression suite: it checks common UAE cases, not real-world accuracy, so the hidden test set may behave differently. A brand-new scam on an innocent-looking, aged domain needs page evidence.
 - 5 of the 11 visual baselines are partial (TAMM, UAE PASS, ICP, Emirates NBD, du). The screenshot hash is weak, optional, and sends suspicious links to thum.io.

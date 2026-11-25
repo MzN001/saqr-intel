@@ -53,6 +53,7 @@ STRONG_SIGNALS = {"NEWLY_REGISTERED", "YOUNG_DOMAIN", "FRESH_CERTIFICATE", "KNOW
                   "KNOWN_PHISHING_FEED", "AI_PHISHING_URL",
                   # page evidence that is specific to phishing (saqr/intel/page_signals.py)
                   "PROVIDER_PHISHING_WARNING", "SHORTLINK_DISABLED", "FORM_SERVICE_CREDENTIALS", "BRAND_LOGIN_PAGE",
+                  "FORM_SERVICE_LOGIN", "BRAND_PRIZE_PAGE",
                   # evasion / clone evidence (sandbox.mobile_cloak_verdict, brand_fingerprint)
                   "MOBILE_CLOAKING_DETECTED", "VISUAL_BRAND_CLONE_DETECTED"}
 # Evidence that ordinary, legitimate sites show all the time (a login box, a "Sign in with UAE PASS"
@@ -87,6 +88,7 @@ ML_SUSPECT = _ML["suspect"]
 ML_CORROBORATION = {"FRESH_CERTIFICATE", "NEWLY_REGISTERED", "YOUNG_DOMAIN", "BRAND_CONTENT", "BRAND_IMPERSONATION",
                     "CREDENTIAL_HARVESTING", "EXFIL_FORM", "SUSPICIOUS_TLD", "URGENCY_PRESSURE", "LURE_KEYWORDS",
                     "CLOAKING", "TYPOSQUAT", "HOMOGLYPH_SPOOF", "PUNYCODE", "RAW_IP_HOST", "BRAND_LOGIN_PAGE",
+                    "FORM_SERVICE_LOGIN", "BRAND_PRIZE_PAGE",
                     "FORM_SERVICE_CREDENTIALS", "MOBILE_CLOAKING_DETECTED", "VISUAL_BRAND_CLONE_DETECTED",
                     "VISUAL_BRAND_SIMILARITY"}
 
@@ -261,7 +263,7 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
         title_ent = None
     popular = bool(popularity_rank(lex.registered_domain)) and not page_signals.user_content(lex.host)
     page_ev = page_signals.page_flags(lex.host, page, title_ent, popular) if page else []
-    if any(f.code == "BRAND_LOGIN_PAGE" for f in page_ev) and not entity:
+    if any(f.code in ("BRAND_LOGIN_PAGE", "BRAND_PRIZE_PAGE") for f in page_ev) and not entity:
         entity = title_ent
     flags += page_ev
     if URGENCY.search(text):

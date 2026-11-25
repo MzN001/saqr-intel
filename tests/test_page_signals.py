@@ -172,3 +172,62 @@ def test_renewed_certificate_on_an_old_domain_is_not_zero_hour():
     assert "FRESH_CERTIFICATE" not in {f.code for f in old.flags}
     new = run_rules(page_signals.lexical(url), {"cert_age_hours": 5, "domain_age_hours": 24 * 3}, None, None)
     assert "FRESH_CERTIFICATE" in _codes(new)
+
+
+# ---- 2026-11-25: prize bait, form-service sign-in pages, wider brand list, popular-site guard ----
+def test_prize_and_form_login_flags_are_strong_signals():
+    assert {"FORM_SERVICE_LOGIN", "BRAND_PRIZE_PAGE"} <= STRONG_SIGNALS
+
+
+def test_brand_prize_bait_on_free_hosting_is_flagged():
+    url = "https://lucky-draw-2026.blogspot.com/"
+    page = _page("<p>Selamat</p>", url, "Hadiah Shopee 2026", "Hadiah Shopee 2026 pemenang undian resmi")
+    rr = run_rules(page_signals.lexical(url), {}, page, None)
+    assert "BRAND_PRIZE_PAGE" in _codes(rr)
+    assert rr.verdict != "SAFE"
+    assert rr.entity is not None and rr.entity.id == "shopee"
+
+
+def test_brand_prize_words_on_an_ordinary_site_stay_safe():
+    # the same wording on a site of its own (not a free-hosting page) is a news post, not bait
+    url = "https://old-tech-blog.com/shopee-sale"
+    page = _page("<p>news</p>", url, "Shopee 11.11 sale: free shipping", "Shopee free shipping vouchers explained")
+    rr = run_rules(page_signals.lexical(url), {}, page, None)
+    assert "BRAND_PRIZE_PAGE" not in _codes(rr)
+    assert rr.verdict == "SAFE"
+
+
+def test_sign_in_page_posting_to_a_form_service_is_flagged():
+    url = "https://frvrh-example.info/"
+    html = ('<form action="//www.weebly.com/weebly/apps/formSubmit.php" method="post">'
+            '<label for="a">Email, mobile, or username</label><input id="a" name="_u1" type="text">'
+            '<input name="_u2" type="text"></form>')
+    rr = run_rules(page_signals.lexical(url), {}, _page(html, url, "Sign in to Example", "Sign in"), None)
+    assert "FORM_SERVICE_LOGIN" in _codes(rr)
+    assert rr.verdict != "SAFE"
+
+
+def test_contact_form_on_a_form_service_stays_safe():
+    url = "https://small-bakery-site.com/contact"
+    html = ('<form action="//www.weebly.com/weebly/apps/formSubmit.php" method="post">'
+            '<input name="name"><input name="message"></form>')
+    rr = run_rules(page_signals.lexical(url), {}, _page(html, url, "Contact us", "Send us a message"), None)
+    assert "FORM_SERVICE_LOGIN" not in _codes(rr)
+    assert rr.verdict == "SAFE"
+
+
+@pytest.mark.parametrize("host", ["ebay.de", "airbnb.it", "yahoo.co.jp", "adobe.io", "hsbc.com.hk", "m3.com"])
+def test_popular_sites_of_their_own_are_not_brand_traps(host):
+    rep = analyze_lexical(f"https://{host}/")
+    assert not {f.code for f in rep.flags} & {"BRAND_IMPERSONATION", "HOMOGLYPH_SPOOF", "TYPOSQUAT"}
+
+
+@pytest.mark.parametrize("url,brand", [
+    ("https://shopee-686.blogspot.com/", "shopee"),          # a brand word on a free-hosting page still counts
+    ("https://xfinity-account-verify.top/", "xfinity"),
+    ("https://paypal-login.secure-check.xyz/", "paypal"),    # unpopular domain: unchanged
+])
+def test_brand_words_on_unpopular_or_hosted_addresses_still_flag(url, brand):
+    rep = analyze_lexical(url)
+    assert "BRAND_IMPERSONATION" in {f.code for f in rep.flags}
+    assert rep.impersonated is not None and rep.impersonated.id == brand

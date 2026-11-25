@@ -130,4 +130,4 @@ def test_website_brand_matching_is_unchanged():
     # the website / SMS path still ignores short names; only the email display-name / subject path uses them
     assert _entity_in_text("DHL Express customs fee") is None
     assert _entity_in_text("UPS package on hold") is None
-    assert [e.id for e in R.SHORT_BRANDS] == ["dhl", "ups"]
+    assert [e.id for e in R.SHORT_BRANDS] == ["dhl", "ups", "olx", "okx", "dpd"]

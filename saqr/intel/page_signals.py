@@ -48,6 +48,15 @@ LOGIN_WORDS = re.compile(
     r"\blog\s?-?in\b|\bsign\s?-?in\b|\blogon\b|\bverify\b|\bverification\b|\baccount\b|\bwallet\b|\bsecure\b"
     r"|\bupdate\b|\bunlock\b|\bsuspended\b|\bconnexion\b|\banmelden\b|\biniciar sesi[oó]n\b|\bentrar\b"
     r"|تسجيل الدخول|تحقق|حسابك|تحديث البيانات", re.I)
+# A page TITLE that says it is a log-in page (narrower than LOGIN_WORDS: no "account", "secure", "update").
+LOGIN_TITLE = re.compile(
+    r"\blog\s?-?in\b|\bsign\s?-?in\b|\blogon\b|\bwebmail\b|\bverify your\b|\bconnexion\b|\banmelden\b"
+    r"|\biniciar sesi[oó]n\b|تسجيل الدخول", re.I)
+# Prize / giveaway bait next to a brand name ("Roblox free Robux", "Hadiah Shopee", "Netflix gratuit").
+PRIZE_WORDS = re.compile(
+    r"\bfree\b|\bgift\s?cards?\b|\bgiveaway\b|\bprize\b|\bwinners?\b|\breward\b|\bbonus\b|\bclaim\b|\bgratis\b"
+    r"|\bgratuit\b|\bhadiah\b|\bundian\b|\bpemenang\b|\bpremio\b|\bsorteo\b|\bganador\b|\bkostenlos\b|\bgewinn"
+    r"|جائزة|هدية|مجانا|مجاناً|اربح|الفائز", re.I)
 
 
 # Hosted payment pages (UAE + global gateways). Every merchant's checkout shares these hosts, so a page
@@ -146,12 +155,22 @@ def page_flags(host: str, page: dict[str, Any] | None, title_brand: Any = None,
         out.append(RedFlag("FORM_SERVICE_CREDENTIALS", "critical", 45,
                            "A website-builder or form-service form asks for a password or card details; real log-ins never work this way.",
                            "نموذج من منصة إنشاء مواقع أو خدمة نماذج يطلب كلمة مرور أو بيانات بطاقة؛ صفحات الدخول الحقيقية لا تعمل بهذه الطريقة."))
+    elif _form_service_actions(page) and (page.get("forms") or []) and LOGIN_TITLE.search(fold(title)) \
+            and not popular:
+        # the password box is often a plain text field, so no credential field is recognised
+        out.append(RedFlag("FORM_SERVICE_LOGIN", "critical", 45,
+                           "The page calls itself a sign-in page but its form goes to a website-builder / form service, not to a real log-in system.",
+                           "تسمّي الصفحة نفسها صفحة تسجيل دخول لكن نموذجها يُرسل إلى خدمة نماذج أو منصة إنشاء مواقع وليس إلى نظام دخول حقيقي."))
     if title_brand is not None:
         loginish = bool(LOGIN_WORDS.search(fold(title)) or LOGIN_WORDS.search(fold(text[:1500])))
         on_platform = user_content(final_host or host)
+        name = title_brand.name_en
         if (on_platform and (loginish or creds)) or (creds and LOGIN_WORDS.search(fold(title)) and not popular):
-            name = title_brand.name_en
             out.append(RedFlag("BRAND_LOGIN_PAGE", "critical", 25,
                                f"The page presents itself as a {name} sign-in / account page on a website that is not {name}'s.",
                                f"تقدّم الصفحة نفسها كصفحة دخول أو حساب لـ{title_brand.name_ar} على موقع لا يتبع لها."))
+        elif on_platform and PRIZE_WORDS.search(fold(f"{title} {text[:1500]}")):
+            out.append(RedFlag("BRAND_PRIZE_PAGE", "high", 25,
+                               f"The page uses the {name} name with prize / free-gift bait on a free website that is not {name}'s.",
+                               f"تستخدم الصفحة اسم {title_brand.name_ar} مع إغراء بجوائز أو هدايا مجانية على موقع مجاني لا يتبع لها."))
     return out

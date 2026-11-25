@@ -77,6 +77,8 @@ const REASONS = {
   SHORTLINK_DISABLED: ["the link-shortening service has disabled this link for abuse", "خدمة اختصار الروابط عطّلت هذا الرابط بسبب إساءة الاستخدام"],
   FORM_SERVICE_CREDENTIALS: ["it sends passwords or card details to a third-party form service", "يرسل كلمات المرور أو بيانات البطاقة إلى خدمة نماذج خارجية"],
   BRAND_LOGIN_PAGE: ["a log-in page using a known brand's name on an unrelated site", "صفحة تسجيل دخول تحمل اسم جهة معروفة على موقع لا يتبعها"],
+  FORM_SERVICE_LOGIN: ["a sign-in page whose form goes to a website-builder form service", "صفحة تسجيل دخول يُرسل نموذجها إلى خدمة نماذج خارجية"],
+  BRAND_PRIZE_PAGE: ["a known brand's name with prize or free-gift bait on a free website", "اسم جهة معروفة مع إغراء بجوائز أو هدايا على موقع مجاني لا يتبعها"],
   AI_NEW_DOMAIN: ["a brand-new domain whose address looks like phishing", "نطاق حديث جداً وعنوانه يشبه مواقع التصيّد"],
   SITE_TAKEN_DOWN: ["the site has already vanished and its address looks like phishing", "الموقع اختفى بالفعل وعنوانه يشبه مواقع التصيّد"],
   CERT_RENEWED: ["its security certificate was renewed very recently", "شهادة الأمان جُدّدت حديثاً جداً"],

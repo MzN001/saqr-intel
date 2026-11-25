@@ -236,7 +236,7 @@ _LAYER_OF = {
                     "domain_age_tls"),
     **dict.fromkeys(("CREDENTIAL_HARVESTING", "BRAND_CONTENT", "URGENCY_PRESSURE", "EXFIL_FORM", "NO_HTTPS",
                      "PROVIDER_PHISHING_WARNING", "SHORTLINK_DISABLED", "FORM_SERVICE_CREDENTIALS",
-                     "BRAND_LOGIN_PAGE"), "page"),
+                     "BRAND_LOGIN_PAGE", "FORM_SERVICE_LOGIN", "BRAND_PRIZE_PAGE"), "page"),
 }
 
 

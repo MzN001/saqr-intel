@@ -82,6 +82,8 @@ const REASON_BY_FLAG: Record<string, { en: string; ar: string }> = {
   SHORTLINK_DISABLED: { en: "the link-shortening service has disabled this link for abuse", ar: "خدمة اختصار الروابط عطّلت هذا الرابط بسبب إساءة الاستخدام" },
   FORM_SERVICE_CREDENTIALS: { en: "it sends passwords or card details to a third-party form service", ar: "يرسل كلمات المرور أو بيانات البطاقة إلى خدمة نماذج خارجية" },
   BRAND_LOGIN_PAGE: { en: "a log-in page using a known brand's name on an unrelated site", ar: "صفحة تسجيل دخول تحمل اسم جهة معروفة على موقع لا يتبعها" },
+  FORM_SERVICE_LOGIN: { en: "a sign-in page whose form goes to a website-builder form service", ar: "صفحة تسجيل دخول يُرسل نموذجها إلى خدمة نماذج خارجية" },
+  BRAND_PRIZE_PAGE: { en: "a known brand's name with prize or free-gift bait on a free website", ar: "اسم جهة معروفة مع إغراء بجوائز أو هدايا على موقع مجاني لا يتبعها" },
   AI_NEW_DOMAIN: { en: "a brand-new domain whose address looks like phishing", ar: "نطاق حديث جداً وعنوانه يشبه مواقع التصيّد" },
   SITE_TAKEN_DOWN: { en: "the site has already vanished and its address looks like phishing", ar: "الموقع اختفى بالفعل وعنوانه يشبه مواقع التصيّد" },
   CERT_RENEWED: { en: "its security certificate was renewed very recently", ar: "شهادة الأمان جُدّدت حديثاً جداً" },

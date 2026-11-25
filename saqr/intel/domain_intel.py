@@ -246,6 +246,13 @@ def analyze_lexical(raw: str) -> LexicalReport:
     tokens = _tokens(skeleton(host_wo_tld))
     raw_tokens = _tokens(host_wo_tld.lower())
 
+    from .threat_feeds import popularity_rank  # local: threat_feeds -> domain_intel at load time
+    from .page_signals import user_content  # local: page_signals imports this module
+
+    # A Tranco top-100k site of its own (not a page on a hosting platform) is not a brand trap: brands own
+    # far more addresses than any registry lists (ebay.de, airbnb.it, yahoo.co.jp, adobe.io ...).
+    popular_own_site = bool(popularity_rank(reg_domain)) and not user_content(host)
+
     best: tuple[float, Entity | None, str] = (0.0, None, "")
     for ent in ALL_BRANDS:
         is_global = ent.category == "global"
@@ -258,7 +265,7 @@ def analyze_lexical(raw: str) -> LexicalReport:
             if sim > best[0] and (not is_global or (len(od_label) >= 7 and sim >= 88)):
                 best = (sim, ent, od)
             # spoof: skeleton equals official label but raw differs (homoglyph / leet / punycode)
-            if label_skel == od_label and label != od_label:
+            if label_skel == od_label and label != od_label and not popular_own_site:  # m3.com is not me.com
                 rep.impersonated = ent
                 rep.flags.append(RedFlag(
                     "HOMOGLYPH_SPOOF", "critical", 50,
@@ -278,7 +285,7 @@ def analyze_lexical(raw: str) -> LexicalReport:
     sim_ent = best[1]
 
     # Brand keyword embedded in an unofficial domain (combosquatting)
-    if not rep.flags:
+    if not rep.flags and not popular_own_site:
         for ent in ALL_BRANDS:
             hit = (_global_brand_hit(ent, tokens) if ent.category == "global"
                    else any(_keyword_hit(k, full_skel, tokens) for k in ent.keywords))
@@ -294,8 +301,6 @@ def analyze_lexical(raw: str) -> LexicalReport:
                     f"يستخدم اسم {ent.name_ar} لكنه ليس موقعاً رسمياً (الموقع الرسمي: {'، '.join(ent.domains)}).",
                 ))
                 break
-
-    from .threat_feeds import popularity_rank  # local: threat_feeds -> domain_intel at load time
 
     if (not rep.impersonated and sim_ent and 75 <= best[0] < 100
             and not popularity_rank(reg_domain)):  # a top-100k site is not a typo trap (adac.de vs adcb)

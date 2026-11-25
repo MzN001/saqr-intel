@@ -63,6 +63,14 @@ object XAlert {
             "a log-in page using a known brand's name on an unrelated site",
             "صفحة تسجيل دخول تحمل اسم جهة معروفة على موقع لا يتبعها",
         ),
+        "FORM_SERVICE_LOGIN" to r(
+            "a sign-in page whose form goes to a website-builder form service",
+            "صفحة تسجيل دخول يُرسل نموذجها إلى خدمة نماذج خارجية",
+        ),
+        "BRAND_PRIZE_PAGE" to r(
+            "a known brand's name with prize or free-gift bait on a free website",
+            "اسم جهة معروفة مع إغراء بجوائز أو هدايا على موقع مجاني لا يتبعها",
+        ),
         "AI_NEW_DOMAIN" to r("a brand-new domain whose address looks like phishing", "نطاق حديث جداً وعنوانه يشبه مواقع التصيّد"),
         "SITE_TAKEN_DOWN" to r(
             "the site has already vanished and its address looks like phishing",
