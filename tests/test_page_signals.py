@@ -242,3 +242,13 @@ def test_deactivated_bitly_link_is_not_safe():
     rr = run_rules(page_signals.lexical(url), {}, page, None)
     assert "SHORTLINK_DISABLED" in _codes(rr)
     assert rr.verdict != "SAFE"
+
+
+def test_saqrs_own_website_is_never_a_scam():
+    # it is hosted on vercel.app, a platform where anyone can publish, but this exact host is Saqr's own
+    for url in ("https://saqr-intel.vercel.app/", "https://saqr-intel.vercel.app/citizen?view=sms"):
+        rr = run_rules(page_signals.lexical(url), {}, None, None)
+        assert rr.verdict == "SAFE" and rr.score == 0
+    # a neighbour on the same platform gets no such trust
+    assert not page_signals.lexical("https://saqr-intel-login.vercel.app/").is_whitelisted
+    assert not page_signals.lexical("https://evil.saqr-intel.vercel.app.example.com/").is_whitelisted

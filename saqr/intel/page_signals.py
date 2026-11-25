@@ -91,7 +91,11 @@ def shared_platform(host: str) -> bool:
 def unofficial_user_content(lex: LexicalReport) -> LexicalReport:
     """A page that anyone can publish on an official company's platform (a Google Cloud Storage bucket,
     Google Sites, SharePoint ...) is not that company's own site: it must be judged, not whitelisted."""
-    if lex.is_whitelisted and shared_platform(lex.host):
+    from ..config import settings
+
+    # Saqr's own website lives on a hosting platform (saqr-intel.vercel.app): that exact host stays trusted.
+    own = {h.lower() for h in settings.own_hosts}
+    if lex.is_whitelisted and shared_platform(lex.host) and lex.host not in own:
         return replace(lex, is_whitelisted=False, official_match=None, impersonated=None)
     return lex
 
