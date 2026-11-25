@@ -562,15 +562,41 @@ async def _openai(system: str, user: str, model: str) -> str:
     return resp.choices[0].message.content or ""
 
 
+_ANTHROPIC_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
+
+
+async def _anthropic(system: str, user: str, model: str) -> str:
+    """Claude through the official Anthropic SDK. The system prompt already asks for one JSON object
+    (no prefill: current models reject it). Thinking is adaptive on these models and sampling
+    parameters are not accepted, so depth is set with output_config.effort only."""
+    import anthropic
+
+    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=settings.llm_timeout_s,
+                                      max_retries=0)  # the chain below is the retry policy
+    effort = settings.anthropic_effort if settings.anthropic_effort in _ANTHROPIC_EFFORTS else "low"
+    resp = await client.beta.messages.create(
+        model=model, max_tokens=8000, system=system,
+        messages=[{"role": "user", "content": user}],
+        output_config={"effort": effort},
+        # A safety decline is re-run on Anthropic's default fallback model inside the same call.
+        betas=["server-side-fallback-2026-07-01"], fallbacks="default",
+    )
+    if resp.stop_reason == "refusal":
+        raise RuntimeError("anthropic refusal: the model declined this request")
+    return "".join(b.text for b in resp.content if b.type == "text")
+
+
 async def llm_json(system: str, user: str) -> tuple[dict[str, Any] | None, str]:
     """Call the configured LLM chain. Returns (json, engine_name) or (None, 'rules')."""
     if settings.offline_mode:
         return None, "rules"
     chain: list[tuple[str, Any, str]] = []
     primary = settings.active_llm
-    if primary == "gemini":
+    if primary == "anthropic":
+        chain += [(f"anthropic:{m}", _anthropic, m) for m in settings.anthropic_models]
+    if primary == "gemini" or (primary == "anthropic" and settings.gemini_api_key):
         chain += [(f"gemini:{m}", _gemini, m) for m in settings.gemini_models]
-    if primary in {"gemini", "openai"} and settings.openai_api_key:
+    if primary in {"anthropic", "gemini", "openai"} and settings.openai_api_key:
         chain.append((f"openai:{settings.openai_model}", _openai, settings.openai_model))
     now = time.monotonic()
     # Circuit breaker: models that just failed are tried last (retired ones not at all), so a scan
@@ -596,6 +622,8 @@ def _pause_for(text: str, name: str) -> int:
     if "404" in text or "NOT_FOUND" in text:
         _retired.add(name)  # retired / unknown model name: never first in line again
         return 86400
+    if "401" in text or "authentication_error" in text:
+        return 3600  # wrong / revoked key: nothing a retry can fix soon
     if "403" in text or "PERMISSION_DENIED" in text or "limit: 0" in text:
         return 86400  # not available to this key at all (e.g. a model that is not on the free tier)
     if "429" in text or "RESOURCE_EXHAUSTED" in text:
@@ -626,7 +654,8 @@ def second_opinion_candidate(exclude: str) -> tuple[str, Any, str] | None:
     """The model for the verification pass: GEMINI_SECOND_OPINION_MODEL first, then the GEMINI_MODEL
     chain, never the model that gave the first answer and never one the circuit breaker is resting
     (so a retired / unavailable model costs at most one failed call a day, not one per scan)."""
-    if settings.active_llm != "gemini":
+    # Claude first -> the second opinion comes from Gemini (another vendor) when its key is set.
+    if not (settings.active_llm == "gemini" or (settings.active_llm == "anthropic" and settings.gemini_api_key)):
         return None
     now = time.monotonic()
     seen: set[str] = set()

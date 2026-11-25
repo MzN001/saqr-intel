@@ -50,7 +50,7 @@ def _isolate(live: bool, use_llm: bool = False, browser: bool = False) -> None:
         os.environ["OFFLINE_MODE"] = "true"
     if not use_llm:
         os.environ["LLM_PROVIDER"] = "rules"
-        for key in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "OPENAI_API_KEY"):
+        for key in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
             os.environ[key] = ""
     if live and not browser:
         os.environ["ENABLE_PLAYWRIGHT"] = "false"  # the Render path: pages fetched over HTTP, no Chromium

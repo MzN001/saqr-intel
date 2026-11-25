@@ -30,4 +30,5 @@ olefile==0.47
 
 # LLM providers (optional at runtime - the rules engine works without keys)
 google-genai==3.6.1
+anthropic==2.14.0
 openai==3.57.0

@@ -44,6 +44,8 @@ services:
         value: https://saqr-intel.vercel.app,http://localhost:3000,http://127.0.0.1:3000
       - key: GEMINI_API_KEY             # optional; without it the rules engine is used
         sync: false
+      - key: ANTHROPIC_API_KEY          # optional; when set, Claude is the AI judge and Gemini the fallback
+        sync: false
       - key: NEXTDNS_PROFILE_ID         # phone DNS shield feed (optional)
         sync: false
       - key: NEXTDNS_API_KEY

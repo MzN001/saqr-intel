@@ -49,8 +49,14 @@ class Settings:
     cors_origin_regex: str = os.getenv("CORS_ORIGIN_REGEX", r"https://saqr-intel(-[a-z0-9-]+)?\.vercel\.app")
 
     # --- LLM -----------------------------------------------------------------
-    # auto -> Gemini if key present, else OpenAI if key present, else rules engine
+    # auto -> Claude if ANTHROPIC_API_KEY is set, else Gemini, else OpenAI, else the rules engine.
+    # With Claude first, Gemini / OpenAI (when their keys are set) stay in the chain as fallbacks.
     llm_provider: str = os.getenv("LLM_PROVIDER", "auto").lower()
+    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    # Tried in order (comma list), e.g. "claude-opus-5-5,claude-sonnet-5-5".
+    anthropic_models: list[str] = field(default_factory=lambda: _list("ANTHROPIC_MODEL", "claude-opus-5-5"))
+    # Thinking depth for the judge: low keeps a scan inside the per-model time budget.
+    anthropic_effort: str = os.getenv("ANTHROPIC_EFFORT", "low").lower()
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
     # Tried in order; a model that is busy (503), retired (404) or over quota (429) is skipped in
     # about a second. Google retires model names regularly (2.5-flash went in 2026), hence a chain.
@@ -179,11 +185,15 @@ class Settings:
     @property
     def active_llm(self) -> str:
         p = self.llm_provider
+        if p in ("anthropic", "claude") and self.anthropic_api_key:
+            return "anthropic"
         if p == "gemini" and self.gemini_api_key:
             return "gemini"
         if p == "openai" and self.openai_api_key:
             return "openai"
         if p == "auto":
+            if self.anthropic_api_key:
+                return "anthropic"
             if self.gemini_api_key:
                 return "gemini"
             if self.openai_api_key:
