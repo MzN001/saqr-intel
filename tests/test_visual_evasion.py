@@ -396,6 +396,24 @@ def test_50_to_74_is_weak_corroboration_only(score):
     assert next(f for f in rr.flags if f.code == "VISUAL_BRAND_SIMILARITY").points == 10
 
 
+def test_weak_visual_similarity_never_tips_a_result_over_the_block_line():
+    page = {"harvested_fields": ["OTP", "CARD_NUMBER", "CVV"], "text": "pay immediately"}
+    base = _rules("dubai-dental.example", None, **page)
+    assert base.score == 55 and base.verdict == "SUSPICIOUS"
+    rr = _rules("dubai-dental.example", _vis(60), **page)
+    assert rr.score == 64 and rr.verdict == "SUSPICIOUS"
+    assert sum(f.points for f in rr.flags) == rr.score  # breakdown still reconciles
+    assert next(f for f in rr.flags if f.code == "VISUAL_BRAND_SIMILARITY").points == 9
+    # already over the line without it: the weak flag keeps its full points
+    more = {**page, "external_form_actions": ["https://collect.example/x"]}
+    assert _rules("dubai-dental.example", None, **more).score == 65
+    rr = _rules("dubai-dental.example", _vis(60), **more)
+    assert rr.score == 75 and next(f for f in rr.flags if f.code == "VISUAL_BRAND_SIMILARITY").points == 10
+    # the strong clone flag (>= 75%) is unchanged and still blocks
+    rr = _rules("dubai-dental.example", _vis(87), **page)
+    assert rr.verdict == "HIGH-RISK SCAM" and "VISUAL_BRAND_CLONE_DETECTED" in codes(rr.flags)
+
+
 def test_below_50_adds_nothing():
     assert not codes(_rules("refund-centre.example", _vis(49)).flags) & {
         "VISUAL_BRAND_SIMILARITY", "VISUAL_BRAND_CLONE_DETECTED"}

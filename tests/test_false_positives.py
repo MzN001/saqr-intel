@@ -91,3 +91,20 @@ def test_old_domain_harvesting_cards_with_brand_is_still_a_scam():
 def test_trusted_uae_sites_are_whitelisted(domain):
     lex = analyze_lexical(domain)
     assert lex.is_whitelisted and lex.score == 0
+
+
+@pytest.mark.parametrize("domain", ["adpolice.com", "www.adpolice.com", "https://www.adpolice.com/"])
+def test_adpolice_ad_fraud_company_is_safe_and_not_an_abu_dhabi_police_lookalike(domain):
+    from saqr.intel.maps_sentinel import is_official_uae
+    from saqr.routers.blocklist import _publishable
+
+    lex = analyze_lexical(domain)
+    assert lex.is_whitelisted and lex.score == 0 and lex.impersonated is None
+    assert not {f.code for f in lex.flags} & {"TLD_SWAP", "TYPOSQUAT", "BRAND_IMPERSONATION"}
+    page = {**_page([], text="Abu Dhabi Police brand protection"),
+            "visual_similarity": {"score": 60, "matched_entity": "Abu Dhabi Police", "entity_id": "adpolice",
+                                  "matched_domain": "adpolice.gov.ae", "official": False}}
+    rr = run_rules(lex, OLD_DOMAIN, page, None)
+    assert rr.verdict == "SAFE" and rr.entity is None
+    assert _publishable(lex.host) is None
+    assert not is_official_uae(lex)  # trusted, but not counted as a UAE institution

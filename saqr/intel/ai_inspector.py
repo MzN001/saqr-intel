@@ -345,6 +345,13 @@ def run_rules(lex: LexicalReport, net: dict[str, Any], page: dict[str, Any] | No
             entity = lex.impersonated  # a brand merely mentioned on the page is not impersonation
 
     score = min(100, sum(f.points for f in flags))
+    # The WEAK visual-similarity flag (50-74%) never by itself lifts a result across the block line: its
+    # points are trimmed so the total stops at 64. The strong VISUAL_BRAND_CLONE_DETECTED is unaffected.
+    weak_vis = next((f for f in flags if f.code == "VISUAL_BRAND_SIMILARITY" and f.points > 0), None)
+    if weak_vis and score >= 65 and score - weak_vis.points < 65:
+        trimmed = max(0, 64 - (score - weak_vis.points))
+        flags = [RedFlag(f.code, f.severity, trimmed, f.en, f.ar) if f is weak_vis else f for f in flags]
+        score = min(100, sum(f.points for f in flags))
     # Brand impersonation + credential harvesting on a non-official site is a scam by definition
     if entity and sens and corroborated and score < 70:
         score = 70

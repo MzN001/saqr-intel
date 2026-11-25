@@ -109,6 +109,26 @@ def test_own_public_host_is_never_blocked_and_is_removed(client, fake):
     assert own not in {d["domain"] for d in client.get("/api/dns-blocklist").json()["domains"]}
 
 
+def test_trusted_domain_pushed_earlier_is_removed_and_not_republished(client, fake):
+    fake.denylist.append({"id": "adpolice.com", "active": True})  # pushed before it joined the trust list
+
+    async def go():
+        await db.execute(
+            "INSERT OR REPLACE INTO scans (id, kind, target, domain, created_at, risk_score, verdict, result_json) "
+            "VALUES (?,?,?,?,?,?,?,?)", ("SCN-ADPOLICE", "url", "https://www.adpolice.com", "www.adpolice.com",
+                                         iso(), 65, "HIGH-RISK SCAM", "{}"))
+        sync = mod.NextDNSSync()
+        await sync.sync_once()
+        return sync
+
+    sync = client.portal.call(go)
+    assert "adpolice.com" not in {d["id"] for d in fake.denylist}
+    assert "adpolice.com" in sync.status()["protected_removed"] and "adpolice.com" not in fake.posts
+    assert {"id": "owner-entry.com", "active": True} in fake.denylist
+    listed = {d["domain"] for d in client.get("/api/dns-blocklist").json()["domains"]}
+    assert not {"adpolice.com", "www.adpolice.com"} & listed
+
+
 def test_bad_key_reports_clear_error(client, fake):
     fake.key = "something-else"
 

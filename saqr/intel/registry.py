@@ -238,6 +238,14 @@ TRUSTED_UAE_DOMAINS: tuple[str, ...] = (
                              # 600 575 556 / customercare@cbd.ae; direct fetch 403, read via the search index)
 )
 
+# Known legitimate sites that are NOT UAE institutions and NOT any entity's domain, but whose names collide
+# with a brand (so the look-alike rules would flag them). Trusted (SAFE, unjudged, never published to the
+# blocklist) like TRUSTED_UAE_DOMAINS, but not counted as UAE institutions (maps_sentinel).
+TRUSTED_UNRELATED_DOMAINS: tuple[str, ...] = (
+    # AdPolice GmbH-style ad-fraud company, unrelated to Abu Dhabi Police; verified on its website 2026-11-25
+    "adpolice.com",
+)
+
 # Every registered domain under the gov.ae public suffix is a UAE government site: .aeDA (TDRA) .ae Domain
 # Name Policy AEDA-POL-007 s.15 "Eligibility Requirements for gov.ae Restricted Zone" (registrant must be a
 # UAE government entity, ministry letter required, UAE-accredited registrars only):
@@ -258,7 +266,7 @@ ENTITY_EXTRA_DOMAINS: dict[str, str] = {
 OFFICIAL_DOMAINS: dict[str, Entity | None] = {d: e for e in ALL_BRANDS for d in e.domains}
 for _d, _id in ENTITY_EXTRA_DOMAINS.items():
     OFFICIAL_DOMAINS.setdefault(_d, ENTITY_BY_ID[_id])
-for _d in (*TRUSTED_UAE_DOMAINS, *settings.extra_whitelist, *settings.own_hosts):
+for _d in (*TRUSTED_UAE_DOMAINS, *TRUSTED_UNRELATED_DOMAINS, *settings.extra_whitelist, *settings.own_hosts):
     OFFICIAL_DOMAINS.setdefault(_d.lower(), None)
 
 # Phone number -> entity

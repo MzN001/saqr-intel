@@ -116,13 +116,17 @@ class NextDNSSync:
             existing = {item.get("id", "").lower() for item in r.json().get("data", [])}
 
             # Never block SAQR's own public address (the Vercel site's tunnel): remove if present.
-            for own in existing & await self_hosts.all_self_hosts():
+            # Same for official / trusted domains (e.g. one added to the trust list after it was pushed).
+            from .domain_intel import official_match
+
+            protected = (existing & await self_hosts.all_self_hosts()) | {d for d in existing if official_match(d)}
+            for own in sorted(protected):
                 resp = await client.delete(f"{base}/{own}")
                 if resp.status_code < 300 or resp.status_code == 404:
                     existing.discard(own)
                     self.pushed.discard(own)
                     self.removed.append(own)
-                    log.info("NextDNS: removed SAQR's own host %s from the denylist", own)
+                    log.info("NextDNS: removed protected host %s (own / official / trusted) from the denylist", own)
 
             self.pushed |= existing & set(await self._wanted())
 
