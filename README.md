@@ -8,12 +8,14 @@
 </p>
 
 <p align="center">
-  <a href="#how-it-works">How it works</a> ·
+  <a href="#the-problem-and-the-solution"><b>Problem and solution</b></a> ·
+  <a href="#technical-choices-tools-apis-and-data"><b>Technical choices</b></a> ·
+  <a href="#how-to-build-and-run-the-project"><b>Build and run</b></a><br>
   <a href="#try-it">Try it</a> ·
+  <a href="#how-it-works">How it works</a> ·
   <a href="#accuracy">Accuracy</a> ·
   <a href="#visual-similarity-and-bilingual-ai">Visual similarity</a> ·
   <a href="#privacy-and-safety">Privacy</a> ·
-  <a href="#run-it">Run it</a> ·
   <a href="#route-to-a-police-pilot">Pilot</a> ·
   <a href="#honest-limits">Limits</a>
 </p>
@@ -22,9 +24,21 @@
 
 **Saqr checks a link before the citizen opens it, and says why in English and Arabic.**
 
-Scam links reach UAE residents through SMS, WhatsApp, email, search ads and fake Google Maps listings. They imitate TAMM, Abu Dhabi Police, UAE PASS, Emirates Post, e&, du and the banks, are registered hours before the campaign starts, hide behind URL shorteners and redirect chains, and show a harmless page to scanners (cloaking). By the time a victim reports one, the money is gone.
+SCAMSHIELD AI Hackathon submission · 42 Abu Dhabi × Abu Dhabi Police · Team maze · MVP / prototype on the `master` branch (identical to `main`)
 
-Every check runs the same pipeline: follow redirects to the real destination, look-alike rules for the official UAE entities and ~50 global brands, a trained URL model, global phishing feeds, WHOIS / DNS / TLS age, a page check that compares what a bot, a phone and a computer see, a visual brand-clone check and an optional AI judge. A **Proactive Hunter** finds look-alike domains nobody has reported yet. Confirmed scams flow to a DNS blocklist (phones with the Saqr DNS profile stop opening them), to the police Command Center with an evidence dossier, and to drafted registrar / hosting abuse notices.
+| Submission guideline (README.md) | Section |
+|---|---|
+| The problem and the solution | [The problem and the solution](#the-problem-and-the-solution) |
+| Technical choices, tools, APIs and data | [Technical choices, tools, APIs and data](#technical-choices-tools-apis-and-data) |
+| How to build and run the project | [How to build and run the project](#how-to-build-and-run-the-project) |
+
+<br>
+
+## The problem and the solution
+
+**The problem.** Scam links reach UAE residents through SMS, WhatsApp, email, search ads and fake Google Maps listings. They imitate TAMM, Abu Dhabi Police, UAE PASS, Emirates Post, e&, du and the banks, are registered hours before the campaign starts, hide behind URL shorteners and redirect chains, and show a harmless page to scanners (cloaking). By the time a victim reports one, the money is gone.
+
+**The solution.** Every check runs the same pipeline: follow redirects to the real destination, look-alike rules for the official UAE entities and ~50 global brands, a trained URL model, global phishing feeds, WHOIS / DNS / TLS age, a page check that compares what a bot, a phone and a computer see, a visual brand-clone check and an optional AI judge. A **Proactive Hunter** finds look-alike domains nobody has reported yet. Confirmed scams flow to a DNS blocklist (phones with the Saqr DNS profile stop opening them), to the police Command Center with an evidence dossier, and to drafted registrar / hosting abuse notices.
 
 **98.6% accuracy as deployed** (recall 98.5%, false-alarm rate 1.25%), measured on 800 live links with threat feeds on as in production; the test scams were publicly reported scams, so the feeds had already seen most of them. With every blocklist switched off, Saqr still caught 75% of the scams (63% blocked outright) and was right 98.4% of the time when it flagged. Details: [Accuracy](#accuracy).
 
@@ -119,9 +133,31 @@ Code: `main.py`, `saqr/pipeline.py`, `saqr/intel/` (one module per stage), `saqr
 | **Early detection & coverage (25)** | Proactive Hunter (look-alike DNS sweep, newly registered domains, certificate search); pre-click badges on Google / Bing results, sponsored ads and Maps cards; phone DNS shield; email, SMS text, Maps listing and phone-number checks | `/police` "Proactive Hunt" card, "Threats Caught Pre-Victim" KPI, "Run sweep now"; `/citizen` Search & Maps tab; browser extension on google.com / bing.com / Maps |
 | **Explainability & actionability (20)** | Every flag carries an EN + AR reason and its points; the URL model returns its top feature reasons; one-click takedown dossier with WHOIS, hosting, TLS, redirect chain, SHA-256 evidence hashes and ready-to-send abuse notices; evidence pack (.zip) | Result card and full-screen block page on `/citizen`; extension block page; `/police` evidence dossier + "Export Official Takedown Dossier" |
 | **UAE relevance & innovation (15)** | UAE entity registry (Arabic names, aliases, official domains); Arabic field patterns (رمز التحقق, رقم الهوية ...); sandbox as a UAE phone (`ar-AE`, Asia/Dubai, Abu Dhabi location); bilingual RTL UI; police warning broadcast to citizens; X warning composer; RPZ feed format for telecom DNS | `/citizen` in العربية; `/police` "Broadcast Official Warning"; `GET /api/dns-blocklist?format=rpz` |
-| **Feasibility (10)** | Pure-Python runtime on a 512 MB free Render instance (no numpy / sklearn / browser in the cloud); Next.js on Vercel; extension needs no build; offline test suite | `render.yaml`, `requirements.txt`, [Run it](#run-it) |
+| **Feasibility (10)** | Pure-Python runtime on a 512 MB free Render instance (no numpy / sklearn / browser in the cloud); Next.js on Vercel; extension needs no build; offline test suite | `render.yaml`, `requirements.txt`, [How to build and run the project](#how-to-build-and-run-the-project) |
 
 </details>
+
+<br>
+
+## Technical choices, tools, APIs and data
+
+| Area | What Saqr uses |
+|---|---|
+| **Backend** | Python 3.11+, FastAPI (`main.py`, `saqr/`), SQLite via aiosqlite; Playwright for the page sandbox on a laptop, an HTTP fetch in the cloud |
+| **Frontend** | Next.js 16 + React + TypeScript + Tailwind (`frontend/`): citizen app / PWA (`/citizen`) and police Command Center (`/police`), English and Arabic (RTL) |
+| **Android app** | Native Kotlin + Jetpack Compose (`android-app/`): message guard and web blocker |
+| **Browser extension** | Chrome / Edge Manifest V3 (`extension/`), no build step |
+| **AI and models** | Trained URL model: logistic regression over hashed character n-grams + gradient-boosted trees (LightGBM), trained with scikit-learn / LightGBM, run in pure Python at runtime. AI judge: Google Gemini (or OpenAI) when a key is set, with one second opinion from another model when unsure. Optional personal email model trained in the browser |
+| **APIs and services** | Gemini API (or OpenAI), NextDNS API (phone DNS shield), Web Push (scam alerts), WHOIS / DNS / TLS lookups, Phishing Army and OpenPhish feeds, crt.sh / certificate transparency, whoisds.com newly registered domains, image.thum.io (optional screenshots), Google Places (optional, `GOOGLE_MAPS_API_KEY`), OpenStreetMap / Nominatim |
+| **Hosting** | Backend on Render (free tier, `render.yaml`), frontend on Vercel, code on GitHub |
+| **Data** | Public labelled URL sets for training and holdouts (PhreshPhish, PhiUSIIL, Phishing.Database, Phishing Army, Tranco, JPCERT/CC, Hannousse, PhishTank, OpenPhish, HuggingFace sets): sources and licences in [Data and licences](#data-and-licences); measured results in [Accuracy](#accuracy) |
+
+**Why these choices**
+
+- **Pure-Python runtime** so the backend fits a 512 MB free Render instance (no numpy / sklearn / browser in the cloud); training runs in a separate venv on a developer machine.
+- **Rules are the floor:** hard evidence is never lowered by the AI, and without an AI key the rules engine and URL model decide alone; nothing breaks.
+- **Weak signals need strong evidence:** weak page signals (log-in form, urgent words, brand mention) score 0 without a strong signal, to avoid false alarms on real bank / gov sites.
+- **No browser on the server:** Render has no browser, so the cloaking check uses two HTTP views; Playwright stays on the laptop.
 
 <br>
 
@@ -392,13 +428,13 @@ A walk-through of the dashboard is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
 
 <br>
 
-## Run it
+## How to build and run the project
 
-Needs Python 3.11+ and Node.js 20+.
+**Prerequisites:** Python 3.11+ and Node.js 20+.
 
 **Windows, one click:** double-click `start-windows.bat` (macOS: `./start-mac.sh`). It installs everything, starts the backend on port 8000 and opens http://localhost:3000/citizen.
 
-**Windows, manually (PowerShell):**
+**Backend, manually (Windows PowerShell):**
 
 ```powershell
 python -m venv .venv
@@ -413,9 +449,14 @@ If PowerShell refuses `activate`, run `Set-ExecutionPolicy -Scope CurrentUser Re
 
 Frontend (second terminal): `cd frontend`, `npm install`, `npm run dev` → http://localhost:3000/citizen and http://localhost:3000/police (open on a laptop when no `POLICE_PASSCODE` is set, marked "Dev: unlocked"). `/api/*` is proxied to `http://127.0.0.1:8000` (or `NEXT_PUBLIC_API_URL`).
 
-`.env` notes: all keys are optional (without an LLM key the rules engine decides). Leave `NEXTDNS_PROFILE_ID` / `NEXTDNS_API_KEY` empty on a laptop while the cloud backend uses them. `OFFLINE_MODE=true` runs a demo with no internet (seeded data, simulated CT and hunter).
+**Tests** (all offline):
 
-**Browser extension** ("Saqr — Abu Dhabi Scam Shield", 1.3.1): `chrome://extensions` or `edge://extensions` → Developer mode → Load unpacked → `extension/`. It uses the cloud API by default; no build step. See [extension/README.md](extension/README.md).
+```bash
+python -m pytest -q                              # backend (Windows: .venv\Scripts\python -m pytest -q)
+node --test extension/tests/*.test.js            # extension libs + background worker
+node --test extension/tests/content/*.test.cjs   # content scripts on HTML fixtures
+cd frontend && npm run lint && npx tsc --noEmit && npm run build
+```
 
 **Android app** (from `android-app/`, PowerShell; JDK 21 and the Android SDK, details in [android-app/README.md](android-app/README.md)):
 
@@ -425,14 +466,9 @@ $env:JAVA_HOME = '<path to JDK 21>'
 # APK: app/build/outputs/apk/debug/app-debug.apk
 ```
 
-**Tests** (all offline):
+**Browser extension** ("Saqr — Abu Dhabi Scam Shield", 1.3.1): `chrome://extensions` or `edge://extensions` → Developer mode → Load unpacked → `extension/`. It uses the cloud API by default; no build step. See [extension/README.md](extension/README.md).
 
-```bash
-python -m pytest -q                              # backend (Windows: .venv\Scripts\python -m pytest -q)
-node --test extension/tests/*.test.js            # extension libs + background worker
-node --test extension/tests/content/*.test.cjs   # content scripts on HTML fixtures
-cd frontend && npm run lint && npx tsc --noEmit && npm run build
-```
+**Environment variables** (`.env`, copied from `.env.example`; no secret values are committed): all keys are optional (without an LLM key the rules engine decides). Leave `NEXTDNS_PROFILE_ID` / `NEXTDNS_API_KEY` empty on a laptop while the cloud backend uses them. `OFFLINE_MODE=true` runs a demo with no internet (seeded data, simulated CT and hunter).
 
 **Cloud:** `render.yaml` (backend, auto-deploys from `main`, `ENABLE_PLAYWRIGHT=false`); a Vercel project for `frontend/`.
 
