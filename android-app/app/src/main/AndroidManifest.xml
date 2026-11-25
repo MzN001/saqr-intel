@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Scam-site firewall: to find the DNS server of the current Wi-Fi / mobile network. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- No CALL_PHONE (Aman opens the dialer), no SMS / contacts permissions: the message guard only
          reads notifications after the user enables Notification access for SAQR. -->
@@ -18,6 +20,7 @@
         android:localeConfig="@xml/locales_config"
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
+        android:testOnly="false"
         android:theme="@style/Theme.SaqrShield"
         tools:targetApi="33">
 
@@ -30,7 +33,31 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- "Share" a message or link from any app to Saqr: it opens the Scanner and checks it. -->
+            <intent-filter android:label="@string/share_label">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- Select text in any app, then "Check with Saqr" in the selection menu. -->
+            <intent-filter android:label="@string/share_label">
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
         </activity>
+
+        <!-- Scam-site firewall: a local DNS-only filter (see SaqrDnsVpnService). exported so the system can
+             bind it; BIND_VPN_SERVICE means only the system can. Android asks the user before it starts. -->
+        <service
+            android:name=".guard.SaqrDnsVpnService"
+            android:exported="true"
+            android:label="@string/fw_session"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
 
         <!-- Message guard. exported=true is required so the system can bind it; the BIND permission
              means only the system can. -->

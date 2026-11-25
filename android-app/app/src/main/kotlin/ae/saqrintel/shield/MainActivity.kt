@@ -1,6 +1,7 @@
 package ae.saqrintel.shield
 
 import ae.saqrintel.shield.guard.AlertNotifier
+import ae.saqrintel.shield.guard.SaqrDnsVpnService
 import ae.saqrintel.shield.locale.LocaleController
 import ae.saqrintel.shield.settings.ThemeController
 import ae.saqrintel.shield.settings.ThemeMode
@@ -22,12 +23,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     /** Alert to show (from a guard notification); consumed by the shell. */
     private val openAlert = MutableStateFlow<String?>(null)
+
+    /** Text shared to Saqr from another app ("Share" or the text-selection menu); consumed by the Scanner. */
+    private val sharedText = MutableStateFlow<String?>(null)
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleController.wrap(newBase))
@@ -38,10 +43,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val themeController = ThemeController(applicationContext)
         if (savedInstanceState == null) handleIntent(intent)
+        resumeFirewall()
 
         setContent {
             val mode by themeController.mode.collectAsStateWithLifecycle(initialValue = ThemeMode.LIGHT)
             val alertId by openAlert.collectAsStateWithLifecycle()
+            val shared by sharedText.collectAsStateWithLifecycle()
             val dark = mode == ThemeMode.DARK
             val scope = rememberCoroutineScope()
 
@@ -63,6 +70,8 @@ class MainActivity : ComponentActivity() {
                     onToggleLanguage = { LocaleController.toggle(this@MainActivity) },
                     openAlertId = alertId,
                     onAlertOpened = { openAlert.value = null },
+                    sharedText = shared,
+                    onSharedUsed = { sharedText.value = null },
                 )
             }
         }
@@ -74,9 +83,30 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
+    /** The firewall stops with the app's process: bring it back if the user left it on. */
+    private fun resumeFirewall() {
+        val graph = appGraph ?: return
+        lifecycleScope.launch {
+            if (graph.settings.dnsFirewall.first() && !SaqrDnsVpnService.isRunning.value &&
+                SaqrDnsVpnService.consentIntent(this@MainActivity) == null
+            ) {
+                SaqrDnsVpnService.start(this@MainActivity)
+            }
+        }
+    }
+
     private fun handleIntent(intent: Intent?) {
         intent ?: return
         val graph = appGraph
+        val incoming = when (intent.action) {
+            Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)
+            Intent.ACTION_PROCESS_TEXT -> intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
+            else -> null
+        }?.trim()?.take(MAX_SHARED)
+        if (!incoming.isNullOrEmpty()) {
+            sharedText.value = incoming
+            return
+        }
         // Debug-only test hook: adb shell am start -n ae.saqrintel.shield/.MainActivity --es api_url http://10.0.2.2:8011
         val apiUrl = intent.getStringExtra(EXTRA_API_URL)
         if (apiUrl != null && graph != null && graph.settings.isDebugBuild) {
@@ -111,6 +141,7 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_WARN_X = "ae.saqrintel.shield.WARN_X"
         const val EXTRA_API_URL = "api_url"
         const val EXTRA_WEB_CONSENT = "web_consent"
+        private const val MAX_SHARED = 4000
 
         fun alertIntent(context: Context, alertId: String, warnOnX: Boolean): Intent =
             Intent(context, MainActivity::class.java)

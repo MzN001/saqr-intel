@@ -202,4 +202,18 @@
     <string name="notif_text_generic_caution">Check this message before you reply.</string>
     <string name="notif_action_view">View verdict</string>
     <string name="notif_action_x">Warn on X</string>
+
+    <!-- Scam-site firewall, share to Saqr -->
+    <string name="fw_session">Saqr scam-site firewall</string>
+    <string name="fw_title">Scam-site firewall</string>
+    <string name="fw_short">Firewall</string>
+    <string name="fw_consent_title">Turn on the scam-site firewall?</string>
+    <string name="fw_consent_body">Saqr stops this phone from opening websites on its scam list, in every app.\n\nHow it works: Android shows it as a VPN, but only the phone\'s website-name lookups pass through it. Your browsing, messages and passwords do not. The names are compared with the list on this phone and are never sent to Saqr.\n\nAndroid will now ask you to allow it. A key icon in the status bar shows it is on.</string>
+    <string name="fw_manage_title">Scam-site firewall is on</string>
+    <string name="fw_manage_body">Websites on Saqr\'s scam list will not open on this phone. Turn it off here at any time.</string>
+    <string name="share_label">Check with Saqr</string>
+    <string name="share_hint_title">Check any message in one tap</string>
+    <string name="share_hint_body">In WhatsApp, Messages or your email: press and hold the message, tap Share, then choose Saqr. You get the verdict straight away.</string>
+    <string name="scan_copied">Check copied text</string>
+    <string name="scan_copied_empty">Nothing copied yet. Copy a link or message first.</string>
 </resources>

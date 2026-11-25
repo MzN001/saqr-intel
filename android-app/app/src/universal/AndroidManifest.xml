@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "universal" edition: the message guard (notification access) and the web blocker (accessibility) are NOT
+     declared. Google Play Protect blocks sideloaded apps that declare either, so this edition can be shared
+     as a plain download. Their code stays in the app but nothing can bind it. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+        <service
+            android:name=".guard.SaqrNotificationListenerService"
+            tools:node="remove" />
+        <service
+            android:name=".guard.SaqrBrowserGuardService"
+            tools:node="remove" />
+    </application>
+</manifest>

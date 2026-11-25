@@ -204,4 +204,18 @@
     <string name="notif_text_generic_caution">تحقّق من هذه الرسالة قبل الرد.</string>
     <string name="notif_action_view">عرض النتيجة</string>
     <string name="notif_action_x">حذّر على X</string>
+
+    <!-- Scam-site firewall, share to Saqr -->
+    <string name="fw_session">جدار صقر لحجب مواقع الاحتيال</string>
+    <string name="fw_title">جدار حجب مواقع الاحتيال</string>
+    <string name="fw_short">الجدار</string>
+    <string name="fw_consent_title">تشغيل جدار حجب مواقع الاحتيال؟</string>
+    <string name="fw_consent_body">يمنع صقر هذا الهاتف من فتح المواقع المدرجة في قائمة الاحتيال، في جميع التطبيقات.\n\nطريقة العمل: يعرضه أندرويد على أنه VPN، لكن لا يمر عبره سوى استعلامات أسماء المواقع. تصفحك ورسائلك وكلمات مرورك لا تمر عبره. تُقارن الأسماء بالقائمة الموجودة على هذا الهاتف ولا تُرسل إلى صقر أبداً.\n\nسيطلب منك أندرويد الآن السماح بذلك. تظهر أيقونة مفتاح في شريط الحالة عند تشغيله.</string>
+    <string name="fw_manage_title">جدار حجب مواقع الاحتيال يعمل</string>
+    <string name="fw_manage_body">المواقع المدرجة في قائمة صقر للاحتيال لن تُفتح على هذا الهاتف. يمكنك إيقافه من هنا في أي وقت.</string>
+    <string name="share_label">افحص عبر صقر</string>
+    <string name="share_hint_title">افحص أي رسالة بضغطة واحدة</string>
+    <string name="share_hint_body">في واتساب أو الرسائل أو البريد: اضغط مطولاً على الرسالة، ثم «مشاركة»، ثم اختر صقر. تحصل على النتيجة فوراً.</string>
+    <string name="scan_copied">افحص النص المنسوخ</string>
+    <string name="scan_copied_empty">لا يوجد نص منسوخ. انسخ رابطاً أو رسالة أولاً.</string>
 </resources>

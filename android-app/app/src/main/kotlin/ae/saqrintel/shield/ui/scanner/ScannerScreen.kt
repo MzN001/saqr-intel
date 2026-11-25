@@ -3,6 +3,9 @@ package ae.saqrintel.shield.ui.scanner
 import ae.saqrintel.shield.R
 import ae.saqrintel.shield.ui.common.Pill
 import ae.saqrintel.shield.ui.common.PrimaryButton
+import ae.saqrintel.shield.ui.common.SecondaryButton
+import android.content.ClipboardManager
+import android.widget.Toast
 import ae.saqrintel.shield.ui.common.ScreenColumn
 import ae.saqrintel.shield.ui.common.SaqrCard
 import ae.saqrintel.shield.ui.theme.SaqrTheme
@@ -22,8 +25,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -51,9 +56,25 @@ const val SAMPLE_BANK_EMAIL =
 const val SAMPLE_OFFICIAL = "https://www.adpolice.gov.ae"
 
 @Composable
-fun ScannerScreen(padding: PaddingValues, vm: ScannerViewModel = viewModel()) {
+fun ScannerScreen(
+    padding: PaddingValues,
+    incoming: String? = null,
+    onIncomingUsed: () -> Unit = {},
+    vm: ScannerViewModel = viewModel(),
+) {
     val s by vm.state.collectAsStateWithLifecycle()
     val c = SaqrTheme.colors
+    val context = LocalContext.current
+    val nothingCopied = stringResource(R.string.scan_copied_empty)
+
+    // Text shared to Saqr from another app: fill it in and check it straight away.
+    LaunchedEffect(incoming) {
+        if (incoming != null) {
+            vm.useSample(ScanMode.AUTO, incoming)
+            vm.check()
+            onIncomingUsed()
+        }
+    }
 
     ScreenColumn(padding) {
         Text(
@@ -110,6 +131,26 @@ fun ScannerScreen(padding: PaddingValues, vm: ScannerViewModel = viewModel()) {
                 onClick = vm::check,
                 loading = s.loading,
             )
+            // The clipboard is read only when this is tapped (Android then shows its own "pasted" notice).
+            if (s.input.isEmpty() && !s.loading) {
+                SecondaryButton(
+                    text = stringResource(R.string.scan_copied),
+                    onClick = {
+                        val clip = try {
+                            context.getSystemService(ClipboardManager::class.java)?.primaryClip
+                                ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
+                        } catch (_: RuntimeException) {
+                            null
+                        }
+                        if (clip.isNullOrEmpty()) {
+                            Toast.makeText(context, nothingCopied, Toast.LENGTH_SHORT).show()
+                        } else {
+                            vm.useSample(ScanMode.AUTO, clip)
+                            vm.check()
+                        }
+                    },
+                )
+            }
 
             val error = s.error
             val status = when {

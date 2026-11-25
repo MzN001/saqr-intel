@@ -2,6 +2,7 @@ package ae.saqrintel.shield
 
 import ae.saqrintel.shield.data.AlertStore
 import ae.saqrintel.shield.data.ApiClient
+import ae.saqrintel.shield.data.Blocklist
 import ae.saqrintel.shield.data.ScanCache
 import ae.saqrintel.shield.data.Settings
 import ae.saqrintel.shield.guard.AlertNotifier
@@ -16,6 +17,7 @@ class AppGraph(context: Context) {
     val settings = Settings(context)
     val alertStore = AlertStore(context)
     val cache = ScanCache()
+    val blocklist = Blocklist(context)
     val api = ApiClient { settings.currentBaseUrl() }
 
     /** For fire-and-forget work that must outlive a screen (e.g. logging an X alert). */

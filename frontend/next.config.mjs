@@ -11,6 +11,15 @@ const nextConfig = {
       "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" },
     },
   },
+  async redirects() {
+    // A short, stable address for the Android app: https://saqr-intel.vercel.app/downloads/Saqr-Shield.apk
+    // (same file as APK_URL in src/components/SetupDrawer.tsx).
+    const apk = "https://github.com/MzN001/saqr-intel/releases/download/android-v0.2.0/Saqr-Shield.apk";
+    return [
+      { source: "/downloads/Saqr-Shield.apk", destination: apk, permanent: false },
+      { source: "/app", destination: apk, permanent: false },
+    ];
+  },
   async rewrites() {
     // `fallback`: checked only after app routes, including the dynamic /api/officer/[...path] proxy
     // (plain-array rewrites run before dynamic routes and would send officer calls straight to the backend).

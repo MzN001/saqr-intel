@@ -701,8 +701,8 @@ const dict = {
   apkAria: { en: "Download the Saqr Android app (APK)", ar: "نزّل تطبيق صقر لأندرويد (APK)" },
   apkTitle: { en: "Saqr Android app", ar: "تطبيق صقر لأندرويد" },
   apkBody: {
-    en: "Message guard and web blocker. Android 8 or newer, installs outside the Play Store.",
-    ar: "حارس الرسائل وحاجب المواقع. أندرويد 8 أو أحدث، يُثبَّت من خارج متجر Play.",
+    en: "Scam-site firewall and one-tap message check. Android 8 or newer, installs outside the Play Store.",
+    ar: "جدار حجب مواقع الاحتيال وفحص الرسائل بضغطة واحدة. أندرويد 8 أو أحدث، يُثبَّت من خارج متجر Play.",
   },
   apkDownload: { en: "Download APK", ar: "نزّل APK" },
   shieldIntro: {

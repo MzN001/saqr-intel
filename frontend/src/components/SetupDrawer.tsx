@@ -7,8 +7,10 @@ import { createPortal } from "react-dom";
 import { useLang } from "@/lib/i18n";
 import { useHydrated } from "@/lib/useHydrated";
 
-/** The published Saqr Android app (native message guard + web blocker). The one place for this URL. */
-export const APK_URL = "https://github.com/MzN001/saqr-intel/releases/download/android-v0.1.0/Saqr-Shield.apk";
+/** The published Saqr Android app: the "universal" edition (scam-site firewall + Share to Saqr), which
+ *  installs from a plain download. Also served at /downloads/Saqr-Shield.apk (redirect in next.config.mjs:
+ *  keep the two in step). */
+export const APK_URL = "https://github.com/MzN001/saqr-intel/releases/download/android-v0.2.0/Saqr-Shield.apk";
 
 /** Android setup only: one row offering the native app, under the DNS setup. Hairline top border, no card. */
 export function ApkDownloadRow() {

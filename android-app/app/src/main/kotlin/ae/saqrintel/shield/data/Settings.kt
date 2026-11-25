@@ -41,6 +41,9 @@ class Settings(private val context: Context) {
     /** True once the user accepted the web-blocker explanation. Off = the accessibility service does nothing. */
     val webConsent: Flow<Boolean> = store.data.map { it[KEY_WEB_CONSENT] == true }
 
+    /** True while the user wants the scam-site firewall (local DNS filter) on. */
+    val dnsFirewall: Flow<Boolean> = store.data.map { it[KEY_DNS_FIREWALL] == true }
+
     val checkedToday: Flow<Int> = store.data.map { p ->
         if (p[KEY_CHECKED_DAY] == today()) p[KEY_CHECKED_COUNT] ?: 0 else 0
     }
@@ -64,6 +67,10 @@ class Settings(private val context: Context) {
 
     suspend fun setWebConsent(on: Boolean) {
         store.edit { it[KEY_WEB_CONSENT] = on }
+    }
+
+    suspend fun setDnsFirewall(on: Boolean) {
+        store.edit { it[KEY_DNS_FIREWALL] = on }
     }
 
     /** "r-" + 32 random hex chars, generated once. Not linked to the person or the phone. */
@@ -91,6 +98,7 @@ class Settings(private val context: Context) {
         private val KEY_API = stringPreferencesKey("api_base_url")
         private val KEY_GUARD_CONSENT = booleanPreferencesKey("guard_consent")
         private val KEY_WEB_CONSENT = booleanPreferencesKey("web_consent")
+        private val KEY_DNS_FIREWALL = booleanPreferencesKey("dns_firewall")
         private val KEY_REPORTER =stringPreferencesKey("reporter_id")
         private val KEY_CHECKED_DAY = stringPreferencesKey("checked_day")
         private val KEY_CHECKED_COUNT = intPreferencesKey("checked_count")

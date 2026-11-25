@@ -28,3 +28,6 @@ android-app/captures/
 android-app/.idea/
 # Local working notes (kept out of the repository)
 /CLAUDE.md
+
+# Android release signing (never commit)
+android-app/keystore.properties

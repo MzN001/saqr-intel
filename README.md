@@ -463,8 +463,9 @@ cd frontend && npm run lint && npx tsc --noEmit && npm run build
 
 ```powershell
 $env:JAVA_HOME = '<path to JDK 21>'
-.\gradlew.bat assembleDebug lintDebug testDebugUnitTest
-# APK: app/build/outputs/apk/debug/app-debug.apk
+.\gradlew.bat assembleFullDebug assembleUniversalRelease testUniversalDebugUnitTest
+# full edition (adb / demo):     app/build/outputs/apk/full/debug/app-full-debug.apk
+# universal edition (download):  app/build/outputs/apk/universal/release/app-universal-release.apk (needs the release key)
 ```
 
 **Browser extension** ("Saqr — Abu Dhabi Scam Shield", 1.3.1): `chrome://extensions` or `edge://extensions` → Developer mode → Load unpacked → `extension/`. It uses the cloud API by default; no build step. See [extension/README.md](extension/README.md).

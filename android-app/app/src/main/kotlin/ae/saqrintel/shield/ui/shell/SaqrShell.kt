@@ -83,6 +83,8 @@ fun SaqrShell(
     onToggleLanguage: () -> Unit,
     openAlertId: String? = null,
     onAlertOpened: () -> Unit = {},
+    sharedText: String? = null,
+    onSharedUsed: () -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableStateOf(ShellTab.Shield) }
     var sheet by remember { mutableStateOf<VerdictInfo?>(null) }
@@ -99,6 +101,11 @@ fun SaqrShell(
             sheet = record.toVerdictInfo()
         }
         onAlertOpened() // last: it changes this effect's key
+    }
+
+    // Text shared from another app: go to the Scanner, which checks it.
+    LaunchedEffect(sharedText) {
+        if (sharedText != null) tab = ShellTab.Scanner
     }
 
     Scaffold(
@@ -142,7 +149,7 @@ fun SaqrShell(
         ) { current ->
             when (current) {
                 ShellTab.Shield -> ShieldScreen(padding)
-                ShellTab.Scanner -> ScannerScreen(padding)
+                ShellTab.Scanner -> ScannerScreen(padding, incoming = sharedText, onIncomingUsed = onSharedUsed)
                 ShellTab.Alerts -> AlertsScreen(padding, onOpen = { sheet = it })
             }
         }

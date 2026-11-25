@@ -113,17 +113,30 @@ Needs JDK 17+ (JDK 21 used here) and the Android SDK (platform 36, build-tools 3
 
    ```powershell
    $env:JAVA_HOME = 'C:\Users\<you>\Android\jdk21'
-   .\gradlew.bat assembleDebug lintDebug testDebugUnitTest
+   .\gradlew.bat assembleFullDebug assembleUniversalRelease lintFullDebug lintUniversalRelease testUniversalDebugUnitTest
    .\gradlew.bat --stop   # free the Gradle daemon's RAM
    ```
 
-   APK: `app/build/outputs/apk/debug/app-debug.apk`; lint report `app/build/reports/lint-results-debug.html`;
-   test report `app/build/reports/tests/testDebugUnitTest/index.html`.
+   Two editions, same package name (only one can be installed at a time):
+
+   | Edition | APK | What protects the phone |
+   |---|---|---|
+   | `full` | `app/build/outputs/apk/full/debug/app-full-debug.apk` | Message guard (notification access) + web blocker (accessibility). Install with `adb`; used for the demo. |
+   | `universal` | `app/build/outputs/apk/universal/release/app-universal-release.apk` | Scam-site firewall (local DNS filter), Share -> Saqr, Scanner. No notification-access or accessibility service in the manifest. **This is the one to share as a download.** |
+
+   Why two: Google Play Protect blocks sideloaded apps (from a browser, WhatsApp, a file manager) that declare a
+   notification-listener or accessibility service or SMS permissions. The `universal` manifest
+   (`app/src/universal/AndroidManifest.xml`) removes both services, so it installs from a link.
+
+   Release signing: `keystore.properties` + `saqr-release.jks` in `android-app/` (both git-ignored; back them up,
+   an update signed with another key cannot be installed over this one). Without them the release APK is unsigned.
+   Lint reports: `app/build/reports/lint-results-*.html`; tests: `app/build/reports/tests/`.
 
 3. Install on a running emulator or a USB-debugging phone:
 
    ```powershell
-   adb install -r app\build\outputs\apk\debug\app-debug.apk
+   adb install -r app\build\outputs\apk\full\debug\app-full-debug.apk
+   # switching edition (different signing key): adb uninstall ae.saqrintel.shield first
    ```
 
 ## Testing on the emulator
@@ -190,3 +203,20 @@ with `AUTO_SMS_GUARD` and keeps that for the rest of the process.
 - `app/src/test/` – JVM unit tests (filter, official domains, defang, X text, auto routing, JSON parsing,
   web-blocker URL rules / cooldown / thresholds).
 - `licenses/` – OFL licences of the bundled fonts (Inter, IBM Plex Sans Arabic, Gloock).
+
+## Universal edition: scam-site firewall, Share to Saqr (0.2.0)
+
+- **Scam-site firewall** (`guard/SaqrDnsVpnService`, `guard/DnsPacket`, `data/Blocklist`): a local VPN that receives
+  only the phone's DNS questions (route `10.111.222.2/32`, nothing else enters it and nothing goes to a VPN server).
+  Each name is compared **on the phone** with Saqr's published scam list (`GET /api/dns-blocklist`, refreshed every
+  10 minutes, cached in the app's files). A listed name gets "no such site" (NXDOMAIN) in every app and one
+  "Scam website blocked" alert per site per minute; every other question goes, unchanged, to the network's own DNS
+  server. The names a phone looks up are never sent to Saqr. Official UAE sites and Saqr's own hosts are never blocked.
+- Limits: it blocks what is already on the list (unlike the web blocker, it does not scan a new address); plain DNS
+  over IPv4 only; a phone set to a fixed Private DNS provider, or an app with its own encrypted DNS, bypasses it; no
+  full-screen block page (Android does not let a background service open one), the browser shows "site can't be
+  reached" and Saqr posts the alert; it stops with the app's process and restarts the next time Saqr is opened.
+- **Share to Saqr**: `MainActivity` accepts `ACTION_SEND` (text/plain) and `ACTION_PROCESS_TEXT`; the text opens in
+  the Scanner and is checked at once. **Check copied text** on the Scanner reads the clipboard only when tapped.
+- Tested on the emulator (API 36): install, VPN consent, a normal site loads, the demo scam site is blocked with an
+  alert, shared text is checked. Not tested: a real phone, Play Protect (the emulator image has no Play Store).

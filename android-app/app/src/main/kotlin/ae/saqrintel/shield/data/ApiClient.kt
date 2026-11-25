@@ -150,6 +150,17 @@ class ApiClient(private val baseUrl: suspend () -> String) {
             note?.takeIf { it.isNotBlank() }?.let { put("note", it.take(500)) }
         }).result
 
+    /** GET /api/dns-blocklist: Saqr's published scam-domain list (public, the telecom feed). */
+    suspend fun dnsBlocklist(): ApiResult<BlocklistResponse> {
+        val root = safeBase() ?: return ApiResult.Failed("bad_base_url")
+        val request = try {
+            Request.Builder().url("$root/api/dns-blocklist").get().build()
+        } catch (_: IllegalArgumentException) {
+            return ApiResult.Failed("bad_base_url")
+        }
+        return execute(request, BlocklistResponse.serializer()).result
+    }
+
     /** GET /health on [base] (or the saved URL). Ok carries the round-trip latency. */
     suspend fun health(base: String? = null): ApiResult<HealthResponse> {
         val root = base ?: safeBase() ?: return ApiResult.Failed("bad_base_url")

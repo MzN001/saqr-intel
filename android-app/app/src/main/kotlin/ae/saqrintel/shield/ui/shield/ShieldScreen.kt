@@ -1,9 +1,11 @@
 package ae.saqrintel.shield.ui.shield
 
+import ae.saqrintel.shield.BuildConfig
 import ae.saqrintel.shield.R
 import ae.saqrintel.shield.appGraph
 import ae.saqrintel.shield.guard.AlertNotifier
 import ae.saqrintel.shield.guard.SaqrBrowserGuardService
+import ae.saqrintel.shield.guard.SaqrDnsVpnService
 import ae.saqrintel.shield.guard.SaqrNotificationListenerService
 import ae.saqrintel.shield.ui.common.FalconMark
 import ae.saqrintel.shield.ui.common.SaqrCard
@@ -100,7 +102,21 @@ fun ShieldScreen(padding: PaddingValues) {
     val blocked by remember { graph?.alertStore?.blockedToday ?: flowOf(0) }.collectAsStateWithLifecycle(initialValue = 0)
     val checked by remember { graph?.settings?.checkedToday ?: flowOf(0) }.collectAsStateWithLifecycle(initialValue = 0)
     val guardOn = listenerOn && consent
-    val protected = notificationsOn && guardOn
+    // Two editions (see app/build.gradle.kts): "full" guards messages and the browser; "universal" has neither
+    // service and protects with the scam-site firewall instead.
+    val full = BuildConfig.FULL_GUARDS
+    val firewallOn by SaqrDnsVpnService.isRunning.collectAsStateWithLifecycle()
+    var showFirewallConsent by remember { mutableStateOf(false) }
+    var showManageFirewall by remember { mutableStateOf(false) }
+    val mainGuardOn = if (full) guardOn else firewallOn
+    val protected = notificationsOn && mainGuardOn
+    val turnFirewallOn = {
+        scope.launch { graph?.settings?.setDnsFirewall(true) }
+        SaqrDnsVpnService.start(context)
+    }
+    val vpnLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) turnFirewallOn()
+    }
 
     var showConsent by remember { mutableStateOf(false) }
     var showManageGuard by remember { mutableStateOf(false) }
@@ -113,7 +129,7 @@ fun ShieldScreen(padding: PaddingValues) {
     }
 
     // "Protected" needs steps 1-2; the web blocker is recommended, not required.
-    val guardsOff = listOf(notificationsOn, guardOn).count { !it }
+    val guardsOff = listOf(notificationsOn, mainGuardOn).count { !it }
     val askNotifications = {
         if (Build.VERSION.SDK_INT >= 33) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -178,15 +194,23 @@ fun ShieldScreen(padding: PaddingValues) {
         // Setup steps: one line each, gone once done --------------------------------------------
         val pending = buildList {
             if (!notificationsOn) add(Step(1, R.string.step1_title, R.string.step_allow, askNotifications))
-            if (!guardOn) add(Step(2, R.string.step2_title, R.string.step_turn_on) { showConsent = true })
-            if (!webOn) add(Step(3, R.string.step3_title, R.string.step_turn_on) { showWebConsent = true })
+            if (full) {
+                if (!guardOn) add(Step(2, R.string.step2_title, R.string.step_turn_on) { showConsent = true })
+                if (!webOn) add(Step(3, R.string.step3_title, R.string.step_turn_on) { showWebConsent = true })
+            } else if (!firewallOn) {
+                add(Step(2, R.string.fw_title, R.string.step_turn_on) { showFirewallConsent = true })
+            }
         }
         pending.forEachIndexed { i, step -> StepPill(step, primary = i == 0) }
 
         val done = buildList {
             if (notificationsOn) add(R.string.step1_short to { openAppNotificationSettings(context) })
-            if (guardOn) add(R.string.step2_short to { showManageGuard = true })
-            if (webOn) add(R.string.step3_short to { showManageWeb = true })
+            if (full) {
+                if (guardOn) add(R.string.step2_short to { showManageGuard = true })
+                if (webOn) add(R.string.step3_short to { showManageWeb = true })
+            } else if (firewallOn) {
+                add(R.string.fw_short to { showManageFirewall = true })
+            }
         }
         if (done.isNotEmpty()) {
             Row(
@@ -194,6 +218,13 @@ fun ShieldScreen(padding: PaddingValues) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 done.forEach { (label, onClick) -> DoneChip(stringResource(label), onClick) }
+            }
+        }
+
+        if (!full) {
+            SaqrCard {
+                Text(stringResource(R.string.share_hint_title), style = MaterialTheme.typography.titleSmall, color = c.ink)
+                Text(stringResource(R.string.share_hint_body), style = MaterialTheme.typography.bodyMedium, color = c.inkSoft)
             }
         }
 
@@ -208,6 +239,54 @@ fun ShieldScreen(padding: PaddingValues) {
         )
     }
 
+    if (showFirewallConsent) {
+        AlertDialog(
+            onDismissRequest = { showFirewallConsent = false },
+            title = { Text(stringResource(R.string.fw_consent_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(stringResource(R.string.fw_consent_body), style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showFirewallConsent = false
+                    val ask = SaqrDnsVpnService.consentIntent(context)
+                    if (ask != null) {
+                        try {
+                            vpnLauncher.launch(ask)
+                        } catch (_: ActivityNotFoundException) {
+                            // no VPN consent screen on this device
+                        }
+                    } else {
+                        turnFirewallOn()
+                    }
+                }) { Text(stringResource(R.string.consent_accept)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFirewallConsent = false }) { Text(stringResource(R.string.consent_decline)) }
+            },
+            containerColor = c.surface,
+        )
+    }
+    if (showManageFirewall) {
+        AlertDialog(
+            onDismissRequest = { showManageFirewall = false },
+            title = { Text(stringResource(R.string.fw_manage_title)) },
+            text = { Text(stringResource(R.string.fw_manage_body), style = MaterialTheme.typography.bodyMedium) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showManageFirewall = false
+                    scope.launch { graph?.settings?.setDnsFirewall(false) }
+                    SaqrDnsVpnService.stop(context)
+                }) { Text(stringResource(R.string.guard_turn_off)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showManageFirewall = false }) { Text(stringResource(R.string.action_close)) }
+            },
+            containerColor = c.surface,
+        )
+    }
     if (showConsent) {
         AlertDialog(
             onDismissRequest = { showConsent = false },
