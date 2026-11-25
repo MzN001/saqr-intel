@@ -135,4 +135,3 @@ The full rehearsable version (with what to say and what to do when something fai
   the restyle.
 - [ ] Android app: test the restyled app on a real phone (so far only the emulator).
 - [ ] Some small text links on phones are under 48px tall (tap target); make them bigger.
-- [ ] The 21st MCP (design components tool) is only available in a new Claude Code session: start one to use it.

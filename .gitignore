@@ -26,3 +26,5 @@ android-app/**/*.jks
 android-app/.kotlin/
 android-app/captures/
 android-app/.idea/
+# Local working notes (kept out of the repository)
+/CLAUDE.md
