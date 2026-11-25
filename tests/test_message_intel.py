@@ -386,3 +386,30 @@ def test_sms_guard_demo_message_is_quarantined(client):
     r = scan(client, "Emirates Post: Parcel held at Abu Dhabi customs. Pay AED 14.50 at "
                      "http://127.0.0.1:8000/mock-scam/emiratespost", "EmiratesPost", interception_channel="AUTO_SMS_GUARD")
     assert r["verdict"] == "HIGH-RISK SCAM" and r["links"][0]["domain"] == "emiratespost-track-uae.com"
+
+
+# ---- 2026-11-25: a named sender hiding its link behind a public shortener ----
+def _short_rules(text, url, whitelisted=False):
+    from saqr.intel.message_intel import run_message_rules
+
+    link = {"url": url, "domain": url.split("/")[2], "verdict": None, "risk_score": None,
+            "official": whitelisted, "whitelisted": whitelisted}
+    return run_message_rules(text, sender=None, links=[link], phones=[], sender_check=None)
+
+
+def test_brand_sms_with_a_public_shortener_is_suspicious():
+    rr = _short_rules("Aramex: Your Parcel is on hold because the house number was not included. Update your "
+                      "details within 24 hours: https://bit.ly/40JzQ96", "https://bit.ly/40JzQ96")
+    assert "MSG_SHORTENER_FOR_INSTITUTION" in {f.code for f in rr.flags if f.points > 0}
+    assert rr.verdict != "SAFE"
+
+
+def test_shortener_without_a_named_sender_stays_safe():
+    rr = _short_rules("Hey, here are the photos from Friday https://bit.ly/40JzQ96", "https://bit.ly/40JzQ96")
+    assert rr.verdict == "SAFE"
+
+
+def test_brand_sms_with_its_own_link_is_not_a_shortener_case():
+    rr = _short_rules("Aramex: your shipment is out for delivery. Track it: https://www.aramex.com/track/123",
+                      "https://www.aramex.com/track/123", whitelisted=True)
+    assert "MSG_SHORTENER_FOR_INSTITUTION" not in {f.code for f in rr.flags}

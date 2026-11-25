@@ -231,3 +231,14 @@ def test_brand_words_on_unpopular_or_hosted_addresses_still_flag(url, brand):
     rep = analyze_lexical(url)
     assert "BRAND_IMPERSONATION" in {f.code for f in rep.flags}
     assert rep.impersonated is not None and rep.impersonated.id == brand
+
+
+def test_deactivated_bitly_link_is_not_safe():
+    # Bitly's own "Link Deactivated" page (HTTP 410): the link was pulled, usually after abuse reports
+    url = "https://bit.ly/40JzQ96"
+    page = _page("<html></html>", url, "Bitly | Link Deactivated | 410",
+                 "Bitly | Link Deactivated | 410 Error 410 - Page deactivated Nothing to see here. It looks like "
+                 "this URL is no longer active.")
+    rr = run_rules(page_signals.lexical(url), {}, page, None)
+    assert "SHORTLINK_DISABLED" in _codes(rr)
+    assert rr.verdict != "SAFE"

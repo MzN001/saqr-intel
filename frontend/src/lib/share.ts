@@ -125,6 +125,7 @@ const REASON_BY_FLAG: Record<string, { en: string; ar: string }> = {
   CALLBACK_FOREIGN_FOR_INSTITUTION: { en: "it gives a foreign phone number for a UAE institution", ar: "يذكر رقم هاتف أجنبياً باسم جهة إماراتية" },
   SENDER_NO_MX: { en: "the sender's domain has no mail server", ar: "نطاق المرسل لا يملك خادم بريد" },
   TLS_INVALID: { en: "its security certificate is not valid", ar: "شهادة الأمان الخاصة به غير صالحة" },
+  MSG_SHORTENER_FOR_INSTITUTION: { en: "it names a known sender but hides its link behind a public link shortener", ar: "تذكر جهة معروفة لكنها تُخفي الرابط خلف خدمة اختصار روابط عامة" },
   MSG_SCAM_LINK: { en: "its link leads to a scam website", ar: "رابطها يقود إلى موقع احتيالي" },
   MSG_SUSPICIOUS_LINK: { en: "its link leads to a suspicious website", ar: "رابطها يقود إلى موقع مشبوه" },
   MSG_LOOKALIKE_LINK: { en: "its link imitates an official website", ar: "رابطها يقلّد موقعاً رسمياً" },

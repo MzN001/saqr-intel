@@ -38,7 +38,8 @@ PROVIDER_WARNING = re.compile(
     r"suspected phishing\s*\|\s*cloudflare|warning\s+suspected phishing\s+this (web)?site has been reported"
     r"|this link has been (flagged|disabled|blocked) (as|for) (possibly )?(malicious|phishing|abuse|spam)", re.I)
 SHORTLINK_TERMINATED = re.compile(r"\burl terminated\b|link (has been )?(disabled|removed|terminated) for (abuse|spam|"
-                                  r"violat)|this link has been disabled", re.I)
+                                  r"violat)|this link has been disabled|link deactivated|page deactivated"
+                                  r"|this url is no longer active", re.I)
 FORM_SERVICES = re.compile(
     r"weebly\.com/weebly/apps/formsubmit|formspree\.io|formsubmit\.co|getform\.io|submit-form\.com|web3forms\.com"
     r"|api\.telegram\.org/bot|script\.google\.com/macros|docs\.google\.com/forms/[^\s\"']*formresponse|jotform\.com"

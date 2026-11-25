@@ -111,6 +111,7 @@ object XAlert {
         ),
         "SENDER_NO_MX" to r("the sender's domain has no mail server", "نطاق المرسل لا يملك خادم بريد"),
         "TLS_INVALID" to r("its security certificate is not valid", "شهادة الأمان الخاصة به غير صالحة"),
+        "MSG_SHORTENER_FOR_INSTITUTION" to r("it names a known sender but hides its link behind a public link shortener", "تذكر جهة معروفة لكنها تُخفي الرابط خلف خدمة اختصار روابط عامة"),
         "MSG_SCAM_LINK" to r("its link leads to a scam website", "رابطها يقود إلى موقع احتيالي"),
         "MSG_SUSPICIOUS_LINK" to r("its link leads to a suspicious website", "رابطها يقود إلى موقع مشبوه"),
         "MSG_LOOKALIKE_LINK" to r("its link imitates an official website", "رابطها يقلّد موقعاً رسمياً"),

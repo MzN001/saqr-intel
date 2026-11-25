@@ -259,6 +259,7 @@ STRONG_CODES = {
     "MSG_SCAM_LINK", "MSG_SUSPICIOUS_LINK", "MSG_LOOKALIKE_LINK", "MSG_CREDENTIAL_REQUEST",
     "SENDER_MOBILE_FOR_INSTITUTION", "SENDER_FOREIGN_FOR_INSTITUTION",
     "CALLBACK_MOBILE_FOR_INSTITUTION", "CALLBACK_FOREIGN_FOR_INSTITUTION", "MSG_PHONE_LINKED_TO_SCAM",
+    "MSG_SHORTENER_FOR_INSTITUTION",
 }
 WEAK_CODES = {
     "MSG_URGENCY", "MSG_PAYMENT_DEMAND", "MSG_EMIRATES_ID_LURE", "MSG_PRIZE_LURE", "MSG_UNOFFICIAL_LINK",
@@ -365,6 +366,23 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
                 f"which is not one of its websites ({', '.join(claimed.domains[:2])}).",
                 f"تدّعي الرسالة أنها من {claimed.name_ar} لكنها تحتوي على رابط إلى {unofficial[0]['domain']}، "
                 f"وهو ليس من مواقعها ({'، '.join(claimed.domains[:2])}).", unofficial[0]["domain"])
+
+        # A named company / government body does not hide its address behind a public link shortener
+        # (bit.ly, tinyurl ...): the citizen cannot see where the link goes, and scammers rely on that.
+        from urllib.parse import urlsplit
+
+        from .url_features import SHORTENER_HOSTS
+
+        short = [h for h in ((urlsplit(l["url"]).hostname or "").lower().removeprefix("www.")
+                             for l in links if not l.get("whitelisted")) if h in SHORTENER_HOSTS]
+        if short:
+            add("MSG_SHORTENER_FOR_INSTITUTION", "high", 35,
+                f"The message claims to be from {claimed.name_en} but hides its link behind a public link "
+                f"shortener ({short[0]}). {claimed.name_en} uses its own website address "
+                f"({', '.join(claimed.domains[:2])}).",
+                f"تدّعي الرسالة أنها من {claimed.name_ar} لكنها تُخفي الرابط خلف خدمة اختصار روابط عامة "
+                f"({short[0]}). تستخدم {claimed.name_ar} عنوان موقعها الرسمي ({'، '.join(claimed.domains[:2])}).",
+                short[0])
 
     # -- the sender's number ------------------------------------------------------------------------
     st = (sender_check or {}).get("status")
