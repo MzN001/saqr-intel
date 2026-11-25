@@ -30,6 +30,7 @@ from . import page_signals, phone_intel
 from .ai_inspector import STRONG_LEXICAL, URGENCY, _entity_in_text, verdict_for
 from .domain_intel import _EXTRACT, RedFlag
 from .email_rules import NEGATION_RE, ROLE_WORDS, host_of
+from .email_unicode import deconfuse, scan_text, unescape
 from .maps_sentinel import INSTITUTION_CATEGORIES, is_official_uae, match_entity
 from .registry import ENTITIES, Entity
 
@@ -132,7 +133,9 @@ def claimed_entity(text: str, sender: str | None) -> tuple[Entity | None, str | 
     ent = sender_entity(sender)
     if ent:
         return ent, "sender_id"
-    found = _entity_in_text(text or "")
+    # as a person reads it: "Dubai P\u043eli\u0441\u0435" (Cyrillic look-alike letters) is "Dubai Police"
+    text = deconfuse(text or "")
+    found = _entity_in_text(text)
     if not found:
         return None, None
     if _opens_with(text, found):
@@ -259,7 +262,7 @@ STRONG_CODES = {
     "MSG_SCAM_LINK", "MSG_SUSPICIOUS_LINK", "MSG_LOOKALIKE_LINK", "MSG_CREDENTIAL_REQUEST",
     "SENDER_MOBILE_FOR_INSTITUTION", "SENDER_FOREIGN_FOR_INSTITUTION",
     "CALLBACK_MOBILE_FOR_INSTITUTION", "CALLBACK_FOREIGN_FOR_INSTITUTION", "MSG_PHONE_LINKED_TO_SCAM",
-    "MSG_SHORTENER_FOR_INSTITUTION",
+    "MSG_SHORTENER_FOR_INSTITUTION", "MSG_LOOKALIKE_LETTERS",
 }
 WEAK_CODES = {
     "MSG_URGENCY", "MSG_PAYMENT_DEMAND", "MSG_EMIRATES_ID_LURE", "MSG_PRIZE_LURE", "MSG_UNOFFICIAL_LINK",
@@ -326,6 +329,18 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
                                  strength=strength, evidence=(evidence or None) and evidence[:300]))
 
     claimed, how = claimed_entity(text, sender)
+    plain = deconfuse(text)  # wording rules read the text as a person does
+    # Words written with look-alike foreign letters (Latin-looking, Cyrillic / Greek inside): done to
+    # slip past spam filters. Only words that MIX scripts count, so real Russian / Greek text is fine.
+    mixed = [f for f in scan_text(text, "body") if f.get("kind") == "mixed_script"]
+    if mixed:
+        words = ", ".join(dict.fromkeys(f["skeleton"] for f in mixed[:4]))
+        add("MSG_LOOKALIKE_LETTERS", "critical", 50,
+            f"The message writes ordinary words ({words}) with look-alike foreign letters, a trick used to "
+            "slip past spam filters. Real organisations do not write like this.",
+            f"تكتب الرسالة كلمات عادية ({words}) بأحرف أجنبية شبيهة باللاتينية، وهي حيلة لتجاوز فلاتر الرسائل "
+            "المزعجة. الجهات الحقيقية لا تكتب بهذه الطريقة.",
+            ", ".join(unescape(f["sample_escaped"]) for f in mixed[:4]))
     name_en = claimed.name_en if claimed else ""
     name_ar = claimed.name_ar if claimed else ""
 
@@ -430,7 +445,7 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
     # -- credential requests -------------------------------------------------------------------------
     # "Enter ..." counts only with a non-official link, and never in a message that itself delivers a code.
     enter_counts = any(not l.get("whitelisted") for l in links) and not delivers_code(text)
-    asks = credential_requests(text, enter_counts=enter_counts)
+    asks = credential_requests(plain, enter_counts=enter_counts)
     if asks:
         add("MSG_CREDENTIAL_REQUEST", "critical", 40,
             "The message asks you to send or enter a one-time code (OTP), PIN, CVV, card number or UAE PASS "
@@ -439,19 +454,19 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
             "لا يطلب أي بنك أو جهة حكومية هذه البيانات عبر الرسائل أبداً.", "; ".join(asks))
 
     # -- weak wording ----------------------------------------------------------------------------------
-    urg = _hits(URGENCY, text) + _hits(_URGENCY_MORE, text)
+    urg = _hits(URGENCY, plain) + _hits(_URGENCY_MORE, plain)
     if urg:
         add("MSG_URGENCY", "low", 10, "It pressures you to act fast (deadlines, threats to block, arrest or impound).",
             "تضغط عليك للتصرف بسرعة (مهل زمنية أو تهديد بالحظر أو القبض أو الحجز).", "; ".join(urg[:4]))
-    pay = _hits(_PAYMENT, text)
+    pay = _hits(_PAYMENT, plain)
     if pay:
         add("MSG_PAYMENT_DEMAND", "low", 10, "It talks about a fine, fee or payment.",
             "تتحدث عن غرامة أو رسوم أو دفعة مالية.", "; ".join(pay))
-    eid = _hits(_EMIRATES_ID, text)
+    eid = _hits(_EMIRATES_ID, plain)
     if eid:
         add("MSG_EMIRATES_ID_LURE", "low", 10, "It says your Emirates ID must be updated or will be suspended.",
             "تقول إن هويتك الإماراتية يجب تحديثها أو سيتم إيقافها.", "; ".join(eid))
-    prize = _hits(_PRIZE, text)
+    prize = _hits(_PRIZE, plain)
     if prize:
         add("MSG_PRIZE_LURE", "low", 10, "It promises a prize, reward or refund.",
             "تعد بجائزة أو مكافأة أو مبلغ مسترد.", "; ".join(prize))

@@ -413,3 +413,43 @@ def test_brand_sms_with_its_own_link_is_not_a_shortener_case():
     rr = _short_rules("Aramex: your shipment is out for delivery. Track it: https://www.aramex.com/track/123",
                       "https://www.aramex.com/track/123", whitelisted=True)
     assert "MSG_SHORTENER_FOR_INSTITUTION" not in {f.code for f in rr.flags}
+
+
+# ---- 2026-11-25: look-alike (Cyrillic) letters inside Latin words ----
+TOLL = ("Dubai P\u043eli\u0441\u0435 kindly r\u0435minds y\u043eu th\u0430t y\u043eu h\u0430ven't p\u0430id a highway toll. "
+        "Please settl\u0435 th\u0435 \u0440ayment within 24 hours. https://shorturl.at/WHRq1?FlW=Ku6Gn0")
+
+
+def test_lookalike_letters_in_an_sms_are_a_scam_sign():
+    rr = _short_rules(TOLL, "https://shorturl.at/WHRq1?FlW=Ku6Gn0")
+    codes = {f.code for f in rr.flags if f.points > 0}
+    assert {"MSG_LOOKALIKE_LETTERS", "MSG_SHORTENER_FOR_INSTITUTION"} <= codes
+    assert rr.verdict == "HIGH-RISK SCAM"
+    assert rr.claimed is not None and rr.claimed.id == "dubaipolice"  # read as a person reads it
+
+
+def test_lookalike_letters_alone_are_enough_to_warn():
+    from saqr.intel.message_intel import run_message_rules
+
+    link = {"url": "https://example-shop.com/x", "domain": "example-shop.com", "verdict": None, "risk_score": None,
+            "official": False, "whitelisted": False}
+    rr = run_message_rules("Y\u043eur p\u0430rcel is w\u0430iting: https://example-shop.com/x", sender=None,
+                           links=[link], phones=[], sender_check=None)
+    assert "MSG_LOOKALIKE_LETTERS" in {f.code for f in rr.flags if f.points > 0}
+    assert rr.verdict != "SAFE"
+
+
+@pytest.mark.parametrize("text", [
+    "\u041f\u0440\u0438\u0432\u0435\u0442! \u0424\u043e\u0442\u043e \u0437\u0434\u0435\u0441\u044c: https://example-shop.com/x",   # plain Russian
+    "\u0645\u0631\u062d\u0628\u0627\u060c \u0627\u0644\u0635\u0648\u0631 \u0647\u0646\u0627: https://example-shop.com/x",       # plain Arabic
+    "Caf\u00e9 menu and na\u00efve r\u00e9sum\u00e9 tips: https://example-shop.com/x",                                          # accents
+    "Hi, the photos are here: https://example-shop.com/x",
+])
+def test_real_languages_and_accents_are_not_lookalike_tricks(text):
+    from saqr.intel.message_intel import run_message_rules
+
+    link = {"url": "https://example-shop.com/x", "domain": "example-shop.com", "verdict": None, "risk_score": None,
+            "official": False, "whitelisted": False}
+    rr = run_message_rules(text, sender=None, links=[link], phones=[], sender_check=None)
+    assert "MSG_LOOKALIKE_LETTERS" not in {f.code for f in rr.flags}
+    assert rr.verdict == "SAFE"
