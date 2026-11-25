@@ -1,0 +1,1361 @@
+[
+  {
+    "id": "scam-toll-001",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Darb-Alert\nPending Status: Please settle overdue toll fees (AED4.00) to avoid the issuance of a AED100.00 fine and traffic points today, Jan 20.\nReply Y to open the secure payment portal.",
+    "sender": "+63 917 555 0142",
+    "source": "https://www.khaleejtimes.com/uae/rak-police-warn-motorists-fake-toll-payment-messages",
+    "notes": "Verbatim body as quoted by Khaleej Times. No link: asks for a reply 'Y' (replying re-enables links in iMessage). Sender number invented (report says random/international numbers)."
+  },
+  {
+    "id": "scam-toll-002",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Roads and Transport Authority (RTA): The traffic management department has notified you that your unpaid traffic fine (50 dirhams) is due soon. Please pay immediately to avoid an automatic addition of 500 dirhams today, which could result in more severe penalties. https://rta-fines-ae.top/pay",
+    "sender": "+44 7700 900418",
+    "source": "https://gulfnews.com/uae/new-dh500-dubai-scam-alert-for-unpaid-traffic-fines-rta-warns-1.500418185",
+    "notes": "Near-verbatim body as quoted by Gulf News; link invented (look-alike domain brand+'-fines-ae' on .top). Urgency + escalating penalty."
+  },
+  {
+    "id": "scam-toll-003",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Salik: Your vehicle trip fee has not been paid, please deal with it as soon as possible to avoid fines. https://salik-pay.cc/ae",
+    "sender": "+84 89 555 0127",
+    "source": "https://www.khaleejtimes.com/uae/dubai-did-you-receive-this-fake-salik-message?amp=1",
+    "notes": "Verbatim body as quoted by Khaleej Times; link invented (look-alike domain brand+'-pay' on .cc). Genuine Salik messages come from sender ID SALIK, not a number."
+  },
+  {
+    "id": "scam-toll-004",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Dubai Police: According to our records, you have recently been penalised for a road traffic offence. It is imperative that you settle this fine within 24 hours from the receipt of this message. Pay: hxxps://dubaipolice-fines[.]com/pay",
+    "sender": "+62 812 5550 1934",
+    "source": "https://khaleejtimes.com/uae/local-plus/uae-new-scam-alert-have-you-received-this-fake-dubai-police-message-asking-you-to-pay-traffic-fines",
+    "notes": "Two sentences verbatim from the fake Dubai Police e-mail quoted by Khaleej Times, adapted to SMS ('email'->'message'); link invented and defanged (hxxps, [.])."
+  },
+  {
+    "id": "scam-toll-005",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Arizona toll services: We've noticed an outstanding balance of $11.69 on your record. To prevent a late fee of $50.00, please visit https://sunspasservicestoll.com",
+    "sender": "+1 (480) 555-0177",
+    "source": "https://consumer.ftc.gov/consumer-alerts/2024/05/text-about-overdue-toll-charges-probably-scam",
+    "notes": "Verbatim text quoted in a reader comment on the FTC alert; the link is the reported one (the page printed it defanged, re-assembled here). Typosquat on SunPass. Sender invented."
+  },
+  {
+    "id": "scam-toll-006",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Your vehicle has an unpaid toll bill. To avoid excessive late fees on your bill, please settle it promptly. https://toll-servicecenter.xyz/us",
+    "sender": "+1 (213) 555-0108",
+    "source": "https://www.yahoo.com/news/received-text-saying-unpaid-tolls-191437329.html",
+    "notes": "Body as quoted from the FTC/FBI toll warning coverage (taken from the search-result excerpt of this page); link invented (.xyz)."
+  },
+  {
+    "id": "scam-toll-008",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Dаrb: Your vehicle has unpaid toll trips totalling AED 36.00. Pay today to avoid a fine of AED 400 and black points: https://bit.ly/3Drb-AD",
+    "sender": "+44 7700 900562",
+    "source": "written in the style of the 'Darb-Alert' unpaid-toll campaign reported by Khaleej Times / Q-Mobility (https://www.khaleejtimes.com/uae/rak-police-warn-motorists-fake-toll-payment-messages)",
+    "notes": "Cyrillic look-alike letter: 'а' (U+0430) inside 'Darb'. Link shortener bit.ly."
+  },
+  {
+    "id": "scam-toll-009",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "شرطة أبوظبي: لديك مخالفة مرورية غير مسددة بقيمة 400 درهم. يرجى السداد خلال 24 ساعة لتجنب حجز المركبة ومضاعفة الغرامة: https://adpolice-fines.top/pay",
+    "sender": "+855 96 555 0173",
+    "source": "written in the style of the fake traffic-fine link campaign Abu Dhabi Police warned about (https://gulfnews.com/uae/crime/scam-alert-abu-dhabi-police-warn-against-traffic-fine-suspicious-link-1.500243502)",
+    "notes": "Arabic. Look-alike domain brand+'-fines' on .top. 24-hour deadline, impound threat."
+  },
+  {
+    "id": "scam-toll-010",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Du​bai Po​lice: تم تسجيل مخالفة مرورية على مركبتك. Fine AED 300 unpaid. ادفع الآن لتجنب حجز المركبة: https://tinyurl.com/dxb-fine-2026",
+    "sender": "+92 301 555 0166",
+    "source": "written in the style of the Dubai Police fake traffic-fine SMS campaign (https://khaleejtimes.com/uae/local-plus/uae-new-scam-alert-have-you-received-this-fake-dubai-police-message-asking-you-to-pay-traffic-fines)",
+    "notes": "Mixed Arabic/English. Zero-width spaces (U+200B) inside 'Dubai' and 'Police'. Link shortener tinyurl.com."
+  },
+  {
+    "id": "scam-toll-011",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "SALIK: Your Salik account balance is negative (AED -12). Top up within 12 hours to avoid a AED 100 fine per gate crossing: http://k7m2-pay.shop/salik.ae/topup",
+    "sender": "+86 152 5550 2281",
+    "source": "written in the style of the Salik 'unpaid trip fee' campaign (https://www.khaleejtimes.com/uae/dubai-did-you-receive-this-fake-salik-message?amp=1)",
+    "notes": "Brand only in the path ('/salik.ae/' looks like the real domain but is a folder). Plain HTTP link. Sender is a phone number, not the SALIK sender ID."
+  },
+  {
+    "id": "scam-toll-012",
+    "label": "scam",
+    "category": "toll-fine",
+    "text": "Notice: A discounted settlement is available for your toll gate violation. Pay only AED 4 today instead of AED 400. Offer expires at midnight: https://uae-tollgate-discount.xyz",
+    "sender": "+234 803 555 0114",
+    "source": "written in the style of the 'Dh4 traffic fine' discounted-payment SMS campaign (https://www.khaleejtimes.com/uae/crime/dh4-traffic-fine-cross-emirate-fraud-network-busted-over-fake-sms-scam)",
+    "notes": "Tiny fee lure to harvest card details. Look-alike generic domain on .xyz."
+  },
+  {
+    "id": "scam-parcel-001",
+    "label": "scam",
+    "category": "parcel",
+    "text": "Emirates Post: Due to incorrect address information, your package was not delivered, and the package was returned to the warehouse. Please update your shipping address and reschedule your delivery. https://emiratespost-verify.cc/track",
+    "sender": "+60 11-5550 3127",
+    "source": "https://khaleejtimes.com/life-and-living/uae-scam-alert-residents-warned-against-fake-delivery-messages-from-emirates-post",
+    "notes": "Body verbatim as quoted by Khaleej Times; brand prefix and link added (look-alike domain brand+'-verify' on .cc). Report mentions a Malaysian (+60) sender; number invented."
+  },
+  {
+    "id": "scam-parcel-002",
+    "label": "scam",
+    "category": "parcel",
+    "text": "Your parcel has been delayed. Please update the address as soon as possible to pay for shipping. Reply 1 to get the link.",
+    "sender": "+60 17-555 0193",
+    "source": "https://khaleejtimes.com/life-and-living/uae-scam-alert-residents-warned-against-fake-delivery-messages-from-emirates-post",
+    "notes": "Verbatim as quoted by Khaleej Times. No link: asks for a reply so a link can follow."
+  },
+  {
+    "id": "scam-parcel-003",
+    "label": "scam",
+    "category": "parcel",
+    "text": "[U.S. Postal Service] We're sorry to let you know that your package could not be delivered. To reschedule a delivery please visit https://bit.ly/3xUsPs9",
+    "sender": "+1 (626) 555-0181",
+    "source": "https://www.malwarebytes.com/blog/news/2022/04/usps-your-package-could-not-be-delivered-text-is-a-smishing-scam",
+    "notes": "Verbatim as quoted by Malwarebytes, which printed the link only as 'bit(dot)ly'; the bit.ly code after the slash is invented."
+  },
+  {
+    "id": "scam-parcel-004",
+    "label": "scam",
+    "category": "parcel",
+    "text": "The USPS package has arrived at the warehouse and cannot be delivered due to incomplete address information. Please confirm your address in the link within 12 hours. https://usps.com-trackfix.top/us",
+    "sender": "+63 966 555 0148",
+    "source": "https://it.brown.edu/phish-bowl-alerts/usps-delivery-scam-text-messages",
+    "notes": "First sentence verbatim from the Brown University phish-bowl alert; second sentence and link written to complete it. Look-alike subdomain trick: 'usps.com-trackfix.top' (real domain is trackfix.top)."
+  },
+  {
+    "id": "scam-parcel-005",
+    "label": "scam",
+    "category": "parcel",
+    "text": "USPS: Your package is pending delivery due to an unpaid shipping fee. Please update your information here to avoid return: https://usps-redelivery.info/fee",
+    "sender": "+1 (917) 555-0136",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim example from the Panda Security list; placeholder link filled with invented look-alike domain on .info."
+  },
+  {
+    "id": "scam-parcel-006",
+    "label": "scam",
+    "category": "parcel",
+    "text": "Ara﻿mex: Your shipment AWB 4482019375 is held at customs. A clearance fee of AED 12.50 is required. Pay within 24h or it will be returned to sender: https://cutt.ly/aramx-ae",
+    "sender": "+44 7700 900731",
+    "source": "written in the style of the courier customs-fee phishing campaign TDRA warned about (https://thenationalnews.com/uae/2023/01/05/uae-authority-warns-public-over-phishing-links-posing-as-major-courier-companies)",
+    "notes": "Zero-width no-break space (U+FEFF) inside 'Aramex'. Link shortener cutt.ly. Small customs-fee lure."
+  },
+  {
+    "id": "scam-parcel-007",
+    "label": "scam",
+    "category": "parcel",
+    "text": "DНL Express: Your parcel could not be delivered due to unpaid customs duty (AED 9.80). Pay here to release it: https://dhl-customs-ae.top/pay",
+    "sender": "Delivery",
+    "source": "written in the style of the DHL customs/delivery-fee SMS campaign described by TDRA and DHL (https://thenationalnews.com/uae/2023/01/05/uae-authority-warns-public-over-phishing-links-posing-as-major-courier-companies)",
+    "notes": "Cyrillic look-alike: 'Н' (U+041D) in 'DHL'. Look-alike domain brand+'-customs-ae' on .top. Generic alphanumeric sender 'Delivery', as DHL described."
+  },
+  {
+    "id": "scam-parcel-008",
+    "label": "scam",
+    "category": "parcel",
+    "text": "FedEx: We attempted to deliver your package today. A redelivery fee of AED 5 applies. Schedule a new delivery: http://fedx-delivery.xyz/ae/reschedule",
+    "sender": "+1 (702) 555-0152",
+    "source": "written in the style of the FedEx/courier redelivery-fee campaign (https://thenationalnews.com/uae/2023/01/05/uae-authority-warns-public-over-phishing-links-posing-as-major-courier-companies)",
+    "notes": "Plain HTTP link. Typosquat 'fedx' on .xyz."
+  },
+  {
+    "id": "scam-parcel-009",
+    "label": "scam",
+    "category": "parcel",
+    "text": "UPS: Your package 1Z8E44W90391827710 has an outstanding import duty of $2.99. Pay via https://is.gd/upsDuty to release it today.",
+    "sender": "+1 (347) 555-0129",
+    "source": "written in the style of the UPS/courier small-duty-fee campaign listed by Which? (https://www.which.co.uk/news/article/scam-alert-the-latest-delivery-scams-to-watch-out-for-a5pjA7i3M52o)",
+    "notes": "Link shortener is.gd."
+  },
+  {
+    "id": "scam-parcel-010",
+    "label": "scam",
+    "category": "parcel",
+    "text": "Royal Mail: Your parcel has a £2.99 shipping fee outstanding. To arrange redelivery please visit https://royalmail-redelivery.info/gb",
+    "sender": "+44 7700 900284",
+    "source": "written in the style of the Royal Mail £2.99 redelivery-fee texts described by Which? (https://www.which.co.uk/news/article/scam-alert-the-latest-delivery-scams-to-watch-out-for-a5pjA7i3M52o)",
+    "notes": "Look-alike domain brand+'-redelivery' on .info."
+  },
+  {
+    "id": "scam-parcel-011",
+    "label": "scam",
+    "category": "parcel",
+    "text": "Evri: We missed you today. Your parcel is on hold due to an unpaid shipping fee of £1.45. Pay now to rebook delivery: https://rb.gy/evri45",
+    "sender": "+44 7700 900617",
+    "source": "written in the style of the Evri £1.45 shipping-fee text scam described by Which? (https://www.which.co.uk/news/article/evri-hermes-text-delivery-scam-shipping-fee-ahKgx0F8kz9n)",
+    "notes": "Link shortener rb.gy."
+  },
+  {
+    "id": "scam-parcel-012",
+    "label": "scam",
+    "category": "parcel",
+    "text": "Bonjour c'est le livreur, votre colis ne rentre pas dans la boîte aux lettres, reprogrammez la livraison via https://livraison-rdv.top/x8K2",
+    "sender": "+33 6 55 50 12 34",
+    "source": "https://www.clubic.com/actualite-563448-alerte-reprogrammez-la-livraison-les-arnaques-au-colis-par-sms-continuent-encore-et-encore-attention.html",
+    "notes": "French. Verbatim wording as quoted by Clubic; the article printed the URL only as '[l'URL]' (a short .fr link), so the link is invented. Sender is an ordinary mobile number."
+  },
+  {
+    "id": "scam-parcel-013",
+    "label": "scam",
+    "category": "parcel",
+    "text": "Abu Dhabi Customs: Official Customs Hold Notice – Customs Tariff Classification Required (Harmonized System). Your shipment is on hold. Complete the classification and pay AED 27 within 48 hours: https://adcustoms-clearance.info/hs",
+    "sender": "+971 52 555 0188",
+    "source": "https://www.khaleejtimes.com/uae/abu-dhabi-customs-warning-fraudulent-message-residents",
+    "notes": "Subject line verbatim as quoted by Khaleej Times; the body and link were not printed and are written to match. Look-alike domain on .info."
+  },
+  {
+    "id": "scam-parcel-014",
+    "label": "scam",
+    "category": "parcel",
+    "text": "بريد الإمارات: طردك محتجز بسبب رسوم توصيل غير مدفوعة (2.50 درهم). يرجى الدفع عبر الرابط لإعادة جدولة التوصيل: https://t.co/eP9xQ2LmZa",
+    "sender": "+60 12-555 0164",
+    "source": "written in the style of the Emirates Post redelivery-fee SMS campaign (https://khaleejtimes.com/life-and-living/uae-scam-alert-residents-warned-against-fake-delivery-messages-from-emirates-post)",
+    "notes": "Arabic. Link shortener t.co."
+  },
+  {
+    "id": "scam-bank-001",
+    "label": "scam",
+    "category": "bank",
+    "text": "Dear customers, your ATM card has been blocked, because you did not have an update yet. If you want your ATM card to work properly, then contact us at this number, 0544529893.",
+    "sender": "+971 54 452 9893",
+    "source": "https://www.thenationalnews.com/uae/uae-central-bank-warns-against-malicious-whatsapp-messages-1.804654",
+    "notes": "Verbatim English text and call-back number as reproduced by The National (fake 'UAE Central Bank' WhatsApp message). No link; call-back. The original also had an Arabic translation and a URL that were not printed."
+  },
+  {
+    "id": "scam-bank-002",
+    "label": "scam",
+    "category": "bank",
+    "text": "Bank Alert: Unusual activity detected. Verify your account now to prevent suspension: https://secure-bankalert.xyz/verify",
+    "sender": "+44 7700 900845",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim example from the Panda Security list; placeholder link filled with invented domain on .xyz."
+  },
+  {
+    "id": "scam-bank-003",
+    "label": "scam",
+    "category": "bank",
+    "text": "АDСВ: Your debit card ending 4471 has been temporarily blocked due to a failed KYC update. Update your Emirates ID now to avoid account freeze: https://adcb-secure-ae.info/kyc",
+    "sender": "+971 56 555 0103",
+    "source": "written in the style of the 'ATM card blocked, update your info' SMS campaign reported in the UAE (https://www.khaleejtimes.com/nation/dubai/beware-new-atm-scam-message-in-uae-can-drain-your-bank-account)",
+    "notes": "Cyrillic look-alikes: 'А' (U+0410), 'С' (U+0421), 'В' (U+0412) spell 'ADCB'. Look-alike domain brand+'-secure-ae' on .info."
+  },
+  {
+    "id": "scam-bank-005",
+    "label": "scam",
+    "category": "bank",
+    "text": "Emirates N​BD: Your online banking access has been suspended due to incomplete verification. Reactivate in 2 steps: https://bit.ly/enbd-reactv",
+    "sender": "+971 58 555 0177",
+    "source": "written in the style of the Emirates NBD-impersonation SMS/WhatsApp phishing the bank warned about (https://www.emaratalyoum.com/business/local/2023-10-12-1.1790552)",
+    "notes": "Zero-width space (U+200B) inside 'NBD'. Link shortener bit.ly."
+  },
+  {
+    "id": "scam-bank-006",
+    "label": "scam",
+    "category": "bank",
+    "text": "Mashreq Alert: New device login detected from Lagos, NG. If this was not you, secure your account immediately: https://x9-auth.cc/mashreq/secure-login",
+    "sender": "+234 805 555 0162",
+    "source": "written in the style of bank 'unusual login, verify now' smishing (https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/)",
+    "notes": "Brand only in the path ('/mashreq/'); domain unrelated, on .cc."
+  },
+  {
+    "id": "scam-bank-007",
+    "label": "scam",
+    "category": "bank",
+    "text": "مصرف أبوظبي الإسلامي: تم تعليق بطاقتك لعدم تحديث بيانات الهوية الإماراتية. حدّث بياناتك الآن لتجنب الإيقاف الدائم: https://adib-update.top",
+    "sender": "+971 55 555 0129",
+    "source": "written in the style of the 'card suspended, update Emirates ID' bank SMS campaign (https://www.khaleejtimes.com/nation/dubai/beware-new-atm-scam-message-in-uae-can-drain-your-bank-account)",
+    "notes": "Arabic. Look-alike domain brand+'-update' on .top."
+  },
+  {
+    "id": "scam-bank-008",
+    "label": "scam",
+    "category": "bank",
+    "text": "HSBC: Did you attempt a payment of £1,284.00 to CryptoCom? Reply Y if this was you or N if it wasn't. Ref: 8827-XK",
+    "sender": "+44 7700 900372",
+    "source": "written in the style of the fake HSBC 'CryptoCom' Y/N texts described by Which? (https://www.which.co.uk/news/article/5-text-scams-to-watch-out-for-asQ611R5pfQM)",
+    "notes": "Fragments ('CryptoCom', reply Y/N, reference number) from the Which? description; full wording written. No link: reply-bait leading to a phone call."
+  },
+  {
+    "id": "scam-bank-009",
+    "label": "scam",
+    "category": "bank",
+    "text": "Dear Customer, your SBI YONO Account is Closed Today Contact now And Update your PAN NUMBER in the following link http://sbi-yono-kyc.xyz/pan",
+    "sender": "+91 70000 55541",
+    "source": "https://www.businesstoday.in/personal-finance/banking/story/beware-sbi-customers-sms-asking-pan-update-is-fake-352553-2022-11-11",
+    "notes": "Verbatim text as quoted in the PIB fact-check coverage; link invented (plain HTTP, .xyz)."
+  },
+  {
+    "id": "scam-bank-010",
+    "label": "scam",
+    "category": "bank",
+    "text": "Dear user your India post payment bank account has been blocked today please updated your PAN Card immediately click here the link-http://surl.li/iccpf",
+    "sender": "+91 90000 55528",
+    "source": "https://www.digit.in/news/general/govt-warns-about-this-fake-pan-card-related-sms-how-to-stay-safe.html",
+    "notes": "Verbatim including the reported link (plain HTTP, surl.li shortener). Do not open."
+  },
+  {
+    "id": "scam-bank-011",
+    "label": "scam",
+    "category": "bank",
+    "text": "DEAR USER, Your A/C will be blocked today. update PANCARD for KYC. verify your account login with NetBanking kyc Click here https://tinyurl.com/kyc-netbnk",
+    "sender": "+91 80000 55519",
+    "source": "https://www.freepressjournal.in/amp/mumbai/mumbai-cyber-safe-how-scammers-are-committing-online-banking-fraud-with-fake-kyc-update-smses",
+    "notes": "Verbatim wording as quoted by the Free Press Journal (taken from the search-result excerpt); link invented (tinyurl.com)."
+  },
+  {
+    "id": "scam-bank-013",
+    "label": "scam",
+    "category": "bank",
+    "text": "This is Βarclays. For security reasons, please verify your account information: https://barclays-verify.info/login",
+    "sender": "+44 7700 900911",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security example ('This is [Bank Name]...'); bank name and link filled in. Greek look-alike: 'Β' (U+0392) in 'Barclays'."
+  },
+  {
+    "id": "scam-gov-001",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "GDRFA: Please declare your residential address, otherwise you shall be held liable. Those who fail to declare will be filed Dh50,000 and restricted from leaving the country. Complete your application online https://gdrfa-address.top/declare or go to the GDRFA to apply",
+    "sender": "+86 137 5550 4419",
+    "source": "https://gulfnews.com/uae/crime/uae-residents-warned-against-e-fraud-in-gdrfas-name-1.1720246787042",
+    "notes": "Verbatim as quoted by Gulf News (including the 'filed' typo); the article printed '(link provided)', so the link is invented. Large-fine and travel-ban threat."
+  },
+  {
+    "id": "scam-gov-002",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "UΑΕ PASS: Your account will be suspended within 24 hours due to incomplete verification. Verify your identity now to keep access to government services: https://uaepass-verify.top/login",
+    "sender": "+44 7700 900155",
+    "source": "written in the style of the UAE PASS phishing messages Digital Dubai and TDRA warned about (https://www.gccbusinessnews.com/digital-dubai-tdra-warn-pass-phishing-scam/)",
+    "notes": "Greek look-alikes: 'Α' (U+0391) and 'Ε' (U+0395) in 'UAE'. Look-alike domain brand+'-verify' on .top."
+  },
+  {
+    "id": "scam-gov-003",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "ICP: Yоur Emirаtes ID has expired and a fine of AED 20 per day is being applied. Renew online to stop the fines: https://icp-renew.xyz",
+    "sender": "+971 52 555 0172",
+    "source": "written in the style of the fake 'update/renew your Emirates ID online' SMS the identity authority warned about (https://www.arabianbusiness.com/industries/industries-culture-society/420005-uae-hits-out-at-fake-sms-id-scams-hacking-reports)",
+    "notes": "Cyrillic look-alikes: 'о' (U+043E) in 'Your', 'а' (U+0430) in 'Emirates'. Look-alike domain on .xyz."
+  },
+  {
+    "id": "scam-gov-004",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "MOI UAE: Your Emirates ID is linked to a suspicious transaction. Update your details within 2 hours or your ID will be blocked: https://shorturl.at/moiUAE يرجى التحديث فوراً",
+    "sender": "+971 56 555 0124",
+    "source": "written in the style of the government-official impersonation scams Dubai Police warned about (https://www.khaleejtimes.com/uae/dubai-police-warn-scammers-impersonating-government-officials)",
+    "notes": "Mixed Arabic/English. Link shortener shorturl.at."
+  },
+  {
+    "id": "scam-gov-005",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "Federal Authority (ICP): Your residency record shows an overstay fine of AED 1,250. Pay today to avoid a travel ban: https://pay-gov-portal.cc/icp.gov.ae/fines",
+    "sender": "+971 50 555 0161",
+    "source": "written in the style of the GDRFA/ICP impersonation messages (https://khaleejtimes.com/uae/your-passport-is-suspended-uae-scammers-pose-as-gdrfa-to-dupe-travellers-authority-issues-adviso?amp=1)",
+    "notes": "Brand only in the path: '/icp.gov.ae/' is a folder on pay-gov-portal.cc."
+  },
+  {
+    "id": "scam-gov-006",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "GDRFA Dubai: Your passport has been suspended from travel due to an incomplete record. Contact the immigration officer on WhatsApp +92 300 555 0141 today to resolve.",
+    "sender": "+92 300 555 0141",
+    "source": "written in the style of the 'your passport is suspended' GDRFA-impersonation scam (https://khaleejtimes.com/uae/your-passport-is-suspended-uae-scammers-pose-as-gdrfa-to-dupe-travellers-authority-issues-adviso?amp=1)",
+    "notes": "No link; asks the victim to contact a WhatsApp number (invented)."
+  },
+  {
+    "id": "scam-gov-007",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "UAE P‌ASS: New sign-in request from an unknown device. If this wasn't you, lock your account now: hxxps://uaepass-secure[.]info/lock",
+    "sender": "+44 7700 900288",
+    "source": "written in the style of the UAE PASS phishing messages Digital Dubai and TDRA warned about (https://www.gccbusinessnews.com/digital-dubai-tdra-warn-pass-phishing-scam/)",
+    "notes": "Zero-width non-joiner (U+200C) inside 'PASS'. Defanged link (hxxps, [.]). Look-alike domain on .info."
+  },
+  {
+    "id": "scam-gov-008",
+    "label": "scam",
+    "category": "gov-id",
+    "text": "Aapka Emirates ID block ho gaya hai kyunki data update nahi hua. 24 ghante mein update karein warna jurmana lagega: https://rb.gy/eid-upd8",
+    "sender": "+971 55 555 0193",
+    "source": "written in the style of the fake Emirates ID update SMS (https://www.arabianbusiness.com/industries/industries-culture-society/420005-uae-hits-out-at-fake-sms-id-scams-hacking-reports)",
+    "notes": "Hindi/Urdu in Latin script. Link shortener rb.gy."
+  },
+  {
+    "id": "scam-tel-001",
+    "label": "scam",
+    "category": "telecom",
+    "text": "e&: Your 12,450 Smiles points expire today! Redeem them now for shopping vouchers before they are lost: https://etisalat-points.xyz/redeem",
+    "sender": "+44 7700 900537",
+    "source": "written in the style of the 'your loyalty points are expiring' text campaigns (EE in the UK, banks in Australia) described by ACMA (https://acma.gov.au/articles/2024-05/watch-out-loyalty-points-scams)",
+    "notes": "Look-alike domain brand+'-points' on .xyz. Expiry urgency."
+  },
+  {
+    "id": "scam-tel-002",
+    "label": "scam",
+    "category": "telecom",
+    "text": "du: Your bill of AED 289.50 is overdue. Your line will be suspended tonight. Pay now: http://du-billpay.top/ae",
+    "sender": "+971 55 555 0147",
+    "source": "written in the style of the e&/telecom reward and billing phishing reported in the UAE (https://www.thenationalnews.com/uae/2023/07/21/etisalat-users-in-the-uae-latest-targets-of-cyber-criminals)",
+    "notes": "Plain HTTP link. Look-alike domain brand+'-billpay' on .top."
+  },
+  {
+    "id": "scam-tel-003",
+    "label": "scam",
+    "category": "telecom",
+    "text": "Etisalat: Your SIM registration has expired as per TDRA rules. Your number will be blocked in 24 hours. Call 056 555 0172 now to re-register.",
+    "sender": "+971 56 555 0172",
+    "source": "written in the style of the Etisalat-impersonation phone scams Etisalat warned about (https://gulfnews.com/business/scamsters-back-with-bait-of-etisalat-prizes-1.1193696)",
+    "notes": "No link: call-back to an invented mobile number. SIM re-registration lure."
+  },
+  {
+    "id": "scam-tel-004",
+    "label": "scam",
+    "category": "telecom",
+    "text": "du: رصيد نقاطك 8,000 نقطة سينتهي اليوم. استبدلها الآن برصيد مجاني قبل انتهاء الصلاحية: https://is.gd/duPts",
+    "sender": "+971 52 555 0119",
+    "source": "written in the style of the loyalty-points-expiry text campaign (https://acma.gov.au/articles/2024-05/watch-out-loyalty-points-scams)",
+    "notes": "Mixed (Arabic body, Latin brand). Link shortener is.gd."
+  },
+  {
+    "id": "scam-tel-005",
+    "label": "scam",
+    "category": "telecom",
+    "text": "еtisalat by e&: Celebrate Eid Al Etihad with 53GB FREE data! Activate before midnight: https://tinyurl.com/53gb-uae",
+    "sender": "+971 50 555 0138",
+    "source": "written in the style of the viral '53GB free data' message e& and du said was fake (https://gulfnews.com/gulfnews/business/53gb-free-data-on-eid-al-etihad-holidays-uae-telcos-clarify-1.1732278730472)",
+    "notes": "Cyrillic look-alike: 'е' (U+0435) at the start of 'etisalat'. Link shortener tinyurl.com."
+  },
+  {
+    "id": "scam-prize-001",
+    "label": "scam",
+    "category": "prize-refund",
+    "text": "Congratulations! You've won a $100 Amazon gift card! Click here to claim your prize now: https://amzn-giftclaim.top",
+    "sender": "+1 (646) 555-0172",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security example; link invented (typosquat on .top)."
+  },
+  {
+    "id": "scam-prize-002",
+    "label": "scam",
+    "category": "prize-refund",
+    "text": "You received P1,250 bill adjustment refund from MERALCO. Confirm via https://meralco-refund.cc/gcash to credit to your GCash account. Expires bukas if not claimed",
+    "sender": "MERALCO",
+    "source": "https://interaksyon.philstar.com/trends-spotlights/2025/07/17/299193/pinoys-text-scams-conyo-speak/",
+    "notes": "Verbatim as shown by Interaksyon (Taglish); link invented. Spoofed alphanumeric sender."
+  },
+  {
+    "id": "scam-prize-003",
+    "label": "scam",
+    "category": "prize-refund",
+    "text": "P5,000 from DSWD Ayuda Sa Kapos Ang Kita. Confirm today https://dswd-ayuda.xyz or it will be forfeited bukas",
+    "sender": "GCash",
+    "source": "https://interaksyon.philstar.com/trends-spotlights/2025/07/17/299193/pinoys-text-scams-conyo-speak/",
+    "notes": "Verbatim as shown by Interaksyon (Taglish); link invented. Government-aid lure."
+  },
+  {
+    "id": "scam-prize-004",
+    "label": "scam",
+    "category": "prize-refund",
+    "text": "GRABE! Your ticket just won P15,000! This could be you! Claim your prize here https://shorturl.at/nbW15",
+    "sender": "NBDEALS",
+    "source": "https://interaksyon.philstar.com/trends-spotlights/2025/07/17/299193/pinoys-text-scams-conyo-speak/",
+    "notes": "Verbatim as shown by Interaksyon; link invented (shorturl.at)."
+  },
+  {
+    "id": "scam-prize-007",
+    "label": "scam",
+    "category": "prize-refund",
+    "text": "Congratulations! Your mobile number has won AED 200,000 in the Etisalat weekly draw. To claim, call our prize manager on 055 555 0119 and keep this message confidential.",
+    "sender": "+971 55 555 0119",
+    "source": "written in the style of the fake Etisalat prize calls/SMS (https://gulfnews.com/business/scamsters-back-with-bait-of-etisalat-prizes-1.1193696)",
+    "notes": "No link: call-back to invented mobile number. Secrecy request."
+  },
+  {
+    "id": "scam-prize-008",
+    "label": "scam",
+    "category": "prize-refund",
+    "text": "هيئة كهرباء ومياه دبي: لديك مبلغ مسترد بقيمة 315 درهم بسبب ازدواج الدفع. أدخل بيانات بطاقتك لاستلام المبلغ: https://dewa-refund.top",
+    "sender": "+971 52 555 0134",
+    "source": "written in the style of utility-refund phishing (https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/)",
+    "notes": "Arabic. Look-alike domain brand+'-refund' on .top."
+  },
+  {
+    "id": "scam-prize-009",
+    "label": "scam",
+    "category": "prize-refund",
+    "text": "Globe Rewards: Congrats! Nanalo ka ng P50,000. I-reply lang ang GCash number at MPIN mo para ma-claim bago mag-expire bukas.",
+    "sender": "+63 917 555 0188",
+    "source": "written in the style of the 'Globe/Smart Rewards' prize text described by IsThisAScam (https://isthisascam.to/blog/scams-in-philippines)",
+    "notes": "Tagalog/Taglish. No link: asks for GCash number and MPIN by reply."
+  },
+  {
+    "id": "scam-otp-001",
+    "label": "scam",
+    "category": "otp-handover",
+    "text": "Hello, sorry, I sent you a 6-digit code by mistake, can you pass it to me please? It's urgent",
+    "sender": "+971 50 555 0133",
+    "source": "https://news.trendmicro.com/2021/04/07/scam-alert-whatsapp-verification-code-scam/",
+    "notes": "Wording as quoted in coverage of the WhatsApp verification-code hijack (taken from the search-result excerpt). No link; code handover."
+  },
+  {
+    "id": "scam-otp-002",
+    "label": "scam",
+    "category": "otp-handover",
+    "text": "الهوية الرقمية UAE PASS: تم إيقاف حسابك مؤقتاً. لإعادة التفعيل يرجى إرسال رمز التحقق الذي سيصلك الآن إلى هذا الرقم.",
+    "sender": "+971 56 555 0115",
+    "source": "written in the style of the UAE PASS / Emirates ID credential-theft calls and messages Dubai Police warned about (https://www.khaleejtimes.com/uae/dubai-police-warn-scammers-impersonating-government-officials)",
+    "notes": "Mixed Arabic with English brand. No link: asks for the OTP to be sent back."
+  },
+  {
+    "id": "scam-otp-003",
+    "label": "scam",
+    "category": "otp-handover",
+    "text": "This is the FAB fraud department. To cancel the unauthorised transaction of AED 4,800 we have sent a code to your phone. Please reply with the code to confirm the cancellation.",
+    "sender": "+971 50 555 0192",
+    "source": "written in the style of bank-impersonation OTP theft the UAE police warned about (https://www.khaleejtimes.com/uae/crime/uae-never-disclose-banking-info-to-callers-on-the-phone-police-urge-as-cases-increase)",
+    "notes": "No link: asks for OTP by reply."
+  },
+  {
+    "id": "scam-otp-004",
+    "label": "scam",
+    "category": "otp-handover",
+    "text": "Your Microsoft verification code is: 482913. If you did not request this, secure your account here: https://ms-acct-secure.xyz",
+    "sender": "+1 (628) 555-0117",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security 'fake two-factor code' example; account name and link filled in. Looks like a real OTP notice but carries a phishing link."
+  },
+  {
+    "id": "scam-otp-005",
+    "label": "scam",
+    "category": "otp-handover",
+    "text": "Sir maine galti se aapke number pe OTP bhej diya hai, please wo 6 digit code mujhe WhatsApp kar dijiye, urgent hai.",
+    "sender": "+971 52 555 0151",
+    "source": "written in the style of the 'code sent by mistake' WhatsApp hijack (https://news.trendmicro.com/2021/04/07/scam-alert-whatsapp-verification-code-scam/)",
+    "notes": "Hindi/Urdu in Latin script. No link: code handover."
+  },
+  {
+    "id": "scam-otp-006",
+    "label": "scam",
+    "category": "otp-handover",
+    "text": "Bonjour, ici le service sécurité de votre banque. Pour bloquer l'opération suspecte de 1 450 €, merci de nous communiquer le code que vous venez de recevoir par SMS.",
+    "sender": "+33 7 55 50 98 21",
+    "source": "written in the style of the French 'faux conseiller bancaire' OTP scam (https://www.cybermalveillance.gouv.fr)",
+    "notes": "French. No link: asks for SMS code."
+  },
+  {
+    "id": "scam-otp-007",
+    "label": "scam",
+    "category": "otp-handover",
+    "text": "مرحبا، أنا من فريق دعم واتساب. Your account will be deleted today. أرسل لنا كود التحقق المكون من 6 أرقام to verify ownership.",
+    "sender": "+44 7700 900402",
+    "source": "written in the style of the fake 'WhatsApp support' verification-code scam (https://www.bitdefender.com/en-us/blog/hotforsecurity/received-a-whatsapp-verification-code-without-requesting-it-beware-you-might-be-about-to-have-your-account-stolen)",
+    "notes": "Mixed Arabic/English. No link: code handover."
+  },
+  {
+    "id": "scam-job-001",
+    "label": "scam",
+    "category": "job-task",
+    "text": "Congrats! You've been selected for a remote task role. Earn daily income by rating hotels. Start today!",
+    "sender": "+1 (209) 555-0145",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security task-scam example. No link."
+  },
+  {
+    "id": "scam-job-002",
+    "label": "scam",
+    "category": "job-task",
+    "text": "Hello, this is the HR department. We have reviewed your CV and we like your CV. Part-time remote role paying £200-500 a day. Continue the conversation on WhatsApp: https://wa.me/447700900123",
+    "sender": "+44 7700 900123",
+    "source": "written in the style of the 'HR department likes your CV' texts described by Which? (https://www.which.co.uk/news/article/scam-alert-job-scam-texts-to-watch-out-for-aGT6A6D3uzZI)",
+    "notes": "Fragments ('they like your CV', '£200-500 a day', WhatsApp link) from Which?; wording written. wa.me link with invented number."
+  },
+  {
+    "id": "scam-job-003",
+    "label": "scam",
+    "category": "job-task",
+    "text": "Hi, we have reviewed your profile on several online recruitment platforms and would like to offer you a flexible online job. Reply YES to learn more.",
+    "sender": "+44 7700 900509",
+    "source": "https://www.which.co.uk/news/article/five-text-message-scams-to-watch-out-for-aCGIh9K6Bjjg",
+    "notes": "Opening phrase verbatim from the Police Scotland example quoted by Which?; rest written. No link; reply-bait."
+  },
+  {
+    "id": "scam-job-004",
+    "label": "scam",
+    "category": "job-task",
+    "text": "Hi, I am a recruiter from a staffing agency. We are hiring for an online assessor remote position, AED 500-1,500 per day, only 60-90 minutes daily. Reply INTERESTED to get the details.",
+    "sender": "+971 58 555 0184",
+    "source": "written in the style of the job-offer texts in the FTC alert ('online assessor', 'remote position', reply 'INTERESTED') (https://www.consumer.ftc.gov/consumer-alerts/2026/04/job-offer-text-probably-scam)",
+    "notes": "No link; reply-bait."
+  },
+  {
+    "id": "scam-job-005",
+    "label": "scam",
+    "category": "job-task",
+    "text": "Namaste! Ghar baithe part-time kaam, YouTube videos like karo aur roz 800-3000 AED kamao. Joining ke liye WhatsApp karein: +91 70000 55512",
+    "sender": "+91 70000 55512",
+    "source": "written in the style of the like-and-earn task scam (https://www.consumer.ftc.gov/consumer-alerts/2026/04/job-offer-text-probably-scam)",
+    "notes": "Hindi in Latin script. No link; WhatsApp contact number (invented)."
+  },
+  {
+    "id": "scam-job-006",
+    "label": "scam",
+    "category": "job-task",
+    "text": "Hi po! Hiring kami ng part-time online workers. Kumita ng ₱3,000-₱8,000 kada araw, mag-like lang ng products. I-message kami sa Telegram: t.me/hr_job_ph_2026",
+    "sender": "+63 966 555 0172",
+    "source": "written in the style of the like-and-earn task scam (https://www.consumer.ftc.gov/consumer-alerts/2026/04/job-offer-text-probably-scam)",
+    "notes": "Tagalog. Telegram link."
+  },
+  {
+    "id": "scam-job-007",
+    "label": "scam",
+    "category": "job-task",
+    "text": "مرحباً، شركتنا تبحث عن موظفين للعمل عن بعد. مهام بسيطة يومياً براتب 500 درهم. التسجيل من هنا: https://jobs-task-uae.xyz/reg",
+    "sender": "+971 55 555 0126",
+    "source": "written in the style of remote task-job scams (https://www.which.co.uk/news/article/scam-alert-job-scam-texts-to-watch-out-for-aGT6A6D3uzZI)",
+    "notes": "Arabic. Look-alike generic domain on .xyz."
+  },
+  {
+    "id": "scam-family-001",
+    "label": "scam",
+    "category": "family-impersonation",
+    "text": "Hello mum, I've broken my phone and I'm using a friends old one. I need to talk its urgent can you text me on WhatsApp on my new number please.",
+    "sender": null,
+    "source": "https://www.which.co.uk/news/article/notorious-hi-mum-and-dad-scam-spreads-from-whatsapp-to-text-message-an7N34c0gVbP",
+    "notes": "Verbatim as shown by Which?. The sender number printed in the source is omitted (sender null) to avoid publishing a possibly reassigned private number. No link."
+  },
+  {
+    "id": "scam-family-002",
+    "label": "scam",
+    "category": "family-impersonation",
+    "text": "Hi mum I'm texting you off a friends phone I've smashed mine and their phones about to die, can you WhatsApp my new number please.",
+    "sender": null,
+    "source": "https://www.which.co.uk/news/article/notorious-hi-mum-and-dad-scam-spreads-from-whatsapp-to-text-message-an7N34c0gVbP",
+    "notes": "Verbatim as shown by Which?. Source's sender number omitted. No link."
+  },
+  {
+    "id": "scam-family-004",
+    "label": "scam",
+    "category": "family-impersonation",
+    "text": "Hi Mum, this is my new number, my old phone fell in water. Save this one and delete the old one. Can you do a quick bank transfer for me? I'll pay you back tomorrow, it's urgent 🙏",
+    "sender": "+971 52 555 0197",
+    "source": "written in the style of the 'Hello Mum' WhatsApp scam described in the Action Fraud alert (https://willinghamparishcouncil.gov.uk/2022/07/20/whatsapp-scam-costs-victims-1-5-million)",
+    "notes": "No link. New-number + urgent transfer."
+  },
+  {
+    "id": "scam-family-005",
+    "label": "scam",
+    "category": "family-impersonation",
+    "text": "ماما هذا رقمي الجديد، تلفوني انكسر. احتاج تحولين لي 2000 درهم ضروري اليوم وبرجعهم لك بكرة",
+    "sender": "+971 56 555 0108",
+    "source": "written in the style of the 'Hello Mum' WhatsApp scam (https://willinghamparishcouncil.gov.uk/2022/07/20/whatsapp-scam-costs-victims-1-5-million)",
+    "notes": "Arabic (Gulf dialect). No link."
+  },
+  {
+    "id": "scam-family-006",
+    "label": "scam",
+    "category": "family-impersonation",
+    "text": "Hi, it's your manager, I need you to purchase $500 in gift cards as soon as possible for a client and send me the codes. Let me know when done.",
+    "sender": "+971 50 555 0171",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security 'text from your boss' example ('[Boss's Name]' replaced by 'your manager'). No link."
+  },
+  {
+    "id": "scam-crypto-001",
+    "label": "scam",
+    "category": "crypto-investment",
+    "text": "Insiders say PEPEX is about to explode in value. Buy now while the price is still low: https://pepex-presale.top",
+    "sender": "+44 7700 900266",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security example; coin name and link invented."
+  },
+  {
+    "id": "scam-crypto-002",
+    "label": "scam",
+    "category": "crypto-investment",
+    "text": "Hi, is this Alex? Sorry, wrong number — but you seem nice. What do you do for work?",
+    "sender": "+852 5555 0182",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security 'wrong number' (pig-butchering opener) example. 'Alex' is the source's placeholder, not a real person. No link."
+  },
+  {
+    "id": "scam-crypto-003",
+    "label": "scam",
+    "category": "crypto-investment",
+    "text": "It was nice seeing you the other day, are we still on for dinner on Friday?",
+    "sender": "+44 7700 900947",
+    "source": "https://www.which.co.uk/news/article/5-text-scams-to-watch-out-for-asQ611R5pfQM",
+    "notes": "Opening clause verbatim from Which? 'wrong number' scam; rest written. No link; conversation starter for investment fraud."
+  },
+  {
+    "id": "scam-crypto-004",
+    "label": "scam",
+    "category": "crypto-investment",
+    "text": "Exclusive: Buy Salik shares at pre-IPO price and earn 30% monthly guaranteed returns. Limited slots. Register now: https://salik-invest.cc",
+    "sender": "+971 54 555 0113",
+    "source": "written in the style of the fake Salik share-deal messages Salik warned about (https://gulfnews.com/uae/crime/salik-warns-investors-against-fake-messages-promoting-share-deals-1.500406050)",
+    "notes": "Look-alike domain brand+'-invest' on .cc. Guaranteed returns."
+  },
+  {
+    "id": "scam-crypto-005",
+    "label": "scam",
+    "category": "crypto-investment",
+    "text": "استثمر 1000 درهم في البيتكوين واحصل على 7000 درهم خلال 48 ساعة. أرباح مضمونة 100٪. انضم الآن: https://t.co/btcUAE7x",
+    "sender": "+971 52 555 0168",
+    "source": "written in the style of crypto 'guaranteed returns' investment scams (https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/)",
+    "notes": "Arabic. Link shortener t.co."
+  },
+  {
+    "id": "scam-acct-001",
+    "label": "scam",
+    "category": "account-renewal",
+    "text": "ALRT: Your latest Netflix membership payment has been declined and account is locked. Please update your billing details: https://netflix-billing-ae.top",
+    "sender": "+1 (562) 555-0193",
+    "source": "https://www.snopes.com/fact-check/netflix-text-message-scam/",
+    "notes": "First sentence verbatim as quoted by Snopes (taken from the search-result excerpt; page is paywalled); second sentence and link written. Look-alike domain on .top."
+  },
+  {
+    "id": "scam-acct-002",
+    "label": "scam",
+    "category": "account-renewal",
+    "text": "Notification From Amazon: We've locked your Amazon account due to a billing issue. To unlock your Amazon account, please click link below: https://amzn-unlock.xyz/acct Please take action on your account within 48 hours to avoid permanent suspension. Regards, Amazon Service",
+    "sender": "+1 (626) 555-0120",
+    "source": "https://trendlife.com/en-us/blog/2022/08/19/amazon-paypal-scams-security-alert-text-billing",
+    "notes": "Verbatim as shown by Trend Micro; '<URL>' placeholder filled with an invented typosquat on .xyz."
+  },
+  {
+    "id": "scam-acct-003",
+    "label": "scam",
+    "category": "account-renewal",
+    "text": "we've suspend your pαypαl accοunt due to billing issue.we weren't able to process billing payment due to a problem with your card. this means your account are on hold. to update your pαypαl account, please verify with link below: https://paypal-verify.cc/hold you need to take action within 24 hours before account will be suspended. regards, pαypαl teams",
+    "sender": "+1 (209) 555-0157",
+    "source": "https://trendlife.com/en-us/blog/2022/08/19/amazon-paypal-scams-security-alert-text-billing",
+    "notes": "Verbatim as shown by Trend Micro, which used look-alike letters in 'paypal'/'account'; rendered here with Greek 'α' (U+03B1) and 'ο' (U+03BF). Link invented (brand+'-verify' on .cc)."
+  },
+  {
+    "id": "scam-acct-004",
+    "label": "scam",
+    "category": "account-renewal",
+    "text": "Notification We've suspended your Amazon due to unusual activity. Login attempt from: [ 58.30.57.191 – Brunei ] DeviceL Mozilla/5.0 (Windows NT 7.5) Our system has been locked your Amazon account To unlock your Amazon account, please verify your identity below : https://amazon.account-verify.top You need to verify your account before 26 Jun, 2022 or your Amazon account will be terminated",
+    "sender": "+1 (347) 555-0186",
+    "source": "https://trendlife.com/en-us/blog/2022/08/19/amazon-paypal-scams-security-alert-text-billing",
+    "notes": "Verbatim as shown by Trend Micro; link invented with subdomain trick ('amazon.' in front of account-verify.top)."
+  },
+  {
+    "id": "scam-acct-005",
+    "label": "scam",
+    "category": "account-renewal",
+    "text": "Аpple ID: Your Apple ID has been suspended for security reasons. Confirm your phone number and payment method to restore access: https://appleid-restore.info",
+    "sender": "+971 58 555 0144",
+    "source": "written in the style of the Apple-account-suspended SMS phishing the UAE Cyber Security Council warned about (https://khaleejtimes.com/uae/apple-users-alert-uae-issues-warning-against-phishing-campaign?amp=1)",
+    "notes": "Cyrillic look-alike: 'А' (U+0410) at the start of 'Apple'. Look-alike domain on .info."
+  },
+  {
+    "id": "scam-acct-008",
+    "label": "scam",
+    "category": "account-renewal",
+    "text": "Your Sha‍hid VIP account payment failed. Please update your payment details here to continue watching: https://shahid-vip-renew.cc",
+    "sender": "+971 55 555 0181",
+    "source": "https://www.pandasecurity.com/en/mediacenter/spam-text-message-examples/",
+    "notes": "Verbatim Panda Security 'payment failed' example with the streaming service filled in (Shahid, popular in the UAE). Zero-width joiner (U+200D) inside 'Shahid'. Link invented."
+  },
+  {
+    "id": "scam-acct-009",
+    "label": "scam",
+    "category": "account-renewal",
+    "text": "نتفليكس: لم نتمكن من تجديد اشتراكك. سيتم إيقاف حسابك خلال 24 ساعة. حدّث طريقة الدفع: https://cutt.ly/nflx-ae",
+    "sender": "+971 52 555 0110",
+    "source": "written in the style of the Netflix payment-failed / account-suspended campaign (https://www.snopes.com/fact-check/netflix-text-message-scam/)",
+    "notes": "Arabic. Link shortener cutt.ly."
+  },
+  {
+    "id": "scam-cb-001",
+    "label": "scam",
+    "category": "callback",
+    "text": "PayPal: Your account has been charged $549.49 for an order. If you did not authorise this, call PayPal Support at +1 (808) 555-0144 to dispute.",
+    "sender": "+1 (808) 555-0144",
+    "source": "written in the style of the PayPal '$549.49 charge, call to dispute' texts described by Nomorobo (https://www.nomorobo.com/?p=747)",
+    "notes": "No link: call-back to an invented number."
+  },
+  {
+    "id": "scam-cb-002",
+    "label": "scam",
+    "category": "callback",
+    "text": "Your iOS Pay ID was recently used at App Store for $149.99. If this was not you, call +1 (877) 555-0163 immediately.",
+    "sender": "+1 (877) 555-0163",
+    "source": "written in the style of the 'iOS Pay ID used at App Store for $149.99' call-back texts (https://www.nomorobo.com/?p=747)",
+    "notes": "No link: call-back to an invented number."
+  },
+  {
+    "id": "scam-cb-003",
+    "label": "scam",
+    "category": "callback",
+    "text": "Dubai Police: A case has been registered against your Emirates ID for money laundering. Call the investigating officer immediately on 04 555 0128 or a travel ban will be issued.",
+    "sender": "+971 4 555 0128",
+    "source": "written in the style of the government-official impersonation scams Dubai Police warned about (https://www.khaleejtimes.com/uae/dubai-police-warn-scammers-impersonating-government-officials)",
+    "notes": "No link: call-back to an invented number. Fear/authority lure."
+  },
+  {
+    "id": "scam-cb-005",
+    "label": "scam",
+    "category": "callback",
+    "text": "عميلنا العزيز، تم إيقاف بطاقتك المصرفية بسبب عدم تحديث البيانات. للتفعيل يرجى الاتصال على الرقم 0565550147",
+    "sender": "+971 56 555 0147",
+    "source": "written in the style of the 'ATM card blocked, call this number' campaign the UAE Central Bank warned about (https://www.thenationalnews.com/uae/uae-central-bank-warns-against-malicious-whatsapp-messages-1.804654)",
+    "notes": "Arabic. No link: call-back to an invented number."
+  },
+  {
+    "id": "scam-cb-006",
+    "label": "scam",
+    "category": "callback",
+    "text": "Аmаzon: Your order of iPhone 16 Pro (AED 5,199) has been confirmed. If you didn't place this order, call 800 555 0136 to cancel.",
+    "sender": "+971 54 555 0136",
+    "source": "written in the style of the fake Amazon order-confirmation call-back texts (https://www.nomorobo.com/?p=747)",
+    "notes": "Cyrillic look-alikes 'А' (U+0410) and 'а' (U+0430) in 'Amazon'. No link: call-back to an invented number."
+  },
+  {
+    "id": "legit-otp-001",
+    "label": "legit",
+    "category": "otp",
+    "text": "UAE PASS: Your verification code is 482913. Do not share this code with anyone. UAE PASS will never ask you for it.",
+    "sender": "UAEPASS",
+    "source": "written as a representative genuine message in the format of UAE PASS OTP SMS; not copied from a real message",
+    "notes": "Tricky: contains 'verification code' and 'share'."
+  },
+  {
+    "id": "legit-otp-002",
+    "label": "legit",
+    "category": "otp",
+    "text": "Your WhatsApp code: 381-204\nDon't share this code with others",
+    "sender": "WhatsApp",
+    "source": "written as a representative genuine message in the format of WhatsApp registration code SMS; not copied from a real message",
+    "notes": "Tricky: code + 'share'."
+  },
+  {
+    "id": "legit-otp-003",
+    "label": "legit",
+    "category": "otp",
+    "text": "Your OTP for the online purchase of AED 245.00 at CARREFOUR is 905114. Valid for 5 minutes. Do not share your OTP with anyone, including bank staff.",
+    "sender": "ADCB",
+    "source": "written as a representative genuine message in the format of UAE bank 3-D Secure OTP SMS; not copied from a real message",
+    "notes": "Tricky: payment amount + OTP."
+  },
+  {
+    "id": "legit-otp-004",
+    "label": "legit",
+    "category": "otp",
+    "text": "G-583920 is your Google verification code.",
+    "sender": "Google",
+    "source": "written as a representative genuine message in the format of Google verification SMS; not copied from a real message",
+    "notes": ""
+  },
+  {
+    "id": "legit-otp-005",
+    "label": "legit",
+    "category": "otp",
+    "text": "Your Careem verification code is 7731. Never share this code with anyone.",
+    "sender": "Careem",
+    "source": "written as a representative genuine message in the format of ride-hailing app OTP SMS; not copied from a real message",
+    "notes": ""
+  },
+  {
+    "id": "legit-otp-006",
+    "label": "legit",
+    "category": "otp",
+    "text": "رمز التحقق الخاص بك هو 650218. لا تشارك هذا الرمز مع أي شخص.",
+    "sender": "TAMM",
+    "source": "written as a representative genuine message in the format of Abu Dhabi government OTP SMS (Arabic); not copied from a real message",
+    "notes": "Arabic. Tricky: 'رمز التحقق' (verification code)."
+  },
+  {
+    "id": "legit-otp-007",
+    "label": "legit",
+    "category": "otp",
+    "text": "Emirates NBD: 774102 is your one-time password to verify your account login. It is valid for 3 minutes. Never share it with anyone.",
+    "sender": "EmiratesNBD",
+    "source": "written as a representative genuine message in the format of bank login OTP SMS; not copied from a real message",
+    "notes": "Tricky: 'verify your account'."
+  },
+  {
+    "id": "legit-bank-001",
+    "label": "legit",
+    "category": "bank-alert",
+    "text": "Your FAB Debit Card ending 2210 was used for AED 86.50 at LULU HYPERMARKET on 24/11/2026 18:42. Available balance AED 4,312.20.",
+    "sender": "FAB",
+    "source": "written as a representative genuine message in the format of UAE bank card transaction alert; not copied from a real message",
+    "notes": "No link."
+  },
+  {
+    "id": "legit-bank-002",
+    "label": "legit",
+    "category": "bank-alert",
+    "text": "Salary credit of AED 12,500.00 to your account XXXX4471 on 25-11-2026. Available balance AED 13,920.15.",
+    "sender": "EmiratesNBD",
+    "source": "written as a representative genuine message in the format of UAE bank credit alert; not copied from a real message",
+    "notes": "No link."
+  },
+  {
+    "id": "legit-bank-003",
+    "label": "legit",
+    "category": "bank-alert",
+    "text": "Mashreq: URGENT - did you just attempt a payment of AED 1,999 at SHARAF DG? If not, call us on the number on the back of your card. We will never ask for your PIN or OTP.",
+    "sender": "Mashreq",
+    "source": "written as a representative genuine message in the format of bank fraud-check SMS; not copied from a real message",
+    "notes": "Tricky: 'URGENT', payment, asks to call, but gives no number and comes from the bank sender ID."
+  },
+  {
+    "id": "legit-bank-004",
+    "label": "legit",
+    "category": "bank-alert",
+    "text": "Your ADCB credit card statement is ready. Minimum payment of AED 350 is due on 10/12/2026. View it in the ADCB app or at https://www.adcb.com",
+    "sender": "ADCB",
+    "source": "written as a representative genuine message in the format of bank statement-ready SMS; not copied from a real message",
+    "notes": "Tricky: payment due + link, but the link is the bank's real domain."
+  },
+  {
+    "id": "legit-bank-005",
+    "label": "legit",
+    "category": "bank-alert",
+    "text": "تم خصم مبلغ 150.00 درهم من حسابك رقم ****8821 لدى مصرف أبوظبي الإسلامي بتاريخ 23/11/2026. الرصيد المتاح 6,204.33 درهم.",
+    "sender": "ADIB",
+    "source": "written as a representative genuine message in the format of UAE bank debit alert (Arabic); not copied from a real message",
+    "notes": "Arabic. No link."
+  },
+  {
+    "id": "legit-bank-006",
+    "label": "legit",
+    "category": "bank-alert",
+    "text": "HSBC: Your payment of AED 2,000.00 to the account ending 3390 has been processed. If you don't recognise this payment, please contact us through the HSBC UAE app.",
+    "sender": "HSBC",
+    "source": "written as a representative genuine message in the format of bank transfer confirmation SMS; not copied from a real message",
+    "notes": "Tricky: 'payment', 'account', 'don't recognise'."
+  },
+  {
+    "id": "legit-bank-007",
+    "label": "legit",
+    "category": "bank-alert",
+    "text": "FAB: The Emirates ID registered with us expires on 15/12/2026. Please update it through FAB Mobile or at https://www.bankfab.com to avoid any interruption to your account. FAB will never ask for your password or OTP.",
+    "sender": "FAB",
+    "source": "written as a representative genuine message in the format of bank KYC-renewal reminder; not copied from a real message",
+    "notes": "Tricky: Emirates ID update + 'account' + link, but on the bank's real domain from the bank sender ID."
+  },
+  {
+    "id": "legit-courier-001",
+    "label": "legit",
+    "category": "courier",
+    "text": "Aramex: Your shipment 4482019375 from AMAZON.AE is out for delivery today. Track it here: https://www.aramex.com/track/results?ShipmentNumber=4482019375",
+    "sender": "Aramex",
+    "source": "written as a representative genuine message in the format of Aramex delivery notification; not copied from a real message",
+    "notes": "Real domain aramex.com."
+  },
+  {
+    "id": "legit-courier-002",
+    "label": "legit",
+    "category": "courier",
+    "text": "DHL: Your DHL Express shipment 1234567890 is scheduled for delivery on 26 Nov. Manage your delivery: https://www.dhl.com/ae-en/home/tracking.html",
+    "sender": "DHL",
+    "source": "written as a representative genuine message in the format of DHL Express delivery notification; not copied from a real message",
+    "notes": "Real domain dhl.com."
+  },
+  {
+    "id": "legit-courier-003",
+    "label": "legit",
+    "category": "courier",
+    "text": "Your item RR123456789AE has arrived at Al Karama post office and is ready for collection. Track it at https://www.emiratespost.ae",
+    "sender": "EMIRATEPOST",
+    "source": "written as a representative genuine message in the format of Emirates Post collection notice; not copied from a real message",
+    "notes": "Real domain; official sender ID EMIRATEPOST."
+  },
+  {
+    "id": "legit-courier-004",
+    "label": "legit",
+    "category": "courier",
+    "text": "FedEx: Import duties of AED 64.20 are due for shipment 771234567890. Pay securely at https://www.fedex.com/en-ae/billing.html or pay the courier on delivery.",
+    "sender": "FedEx",
+    "source": "written as a representative genuine message in the format of FedEx duties-and-taxes notice; not copied from a real message",
+    "notes": "Tricky: parcel + payment request, but link is the courier's real domain."
+  },
+  {
+    "id": "legit-courier-005",
+    "label": "legit",
+    "category": "courier",
+    "text": "أرامكس: شحنتك رقم 4471203381 في طريقها إليك اليوم. للتتبع: https://www.aramex.com",
+    "sender": "Aramex",
+    "source": "written as a representative genuine message in the format of Aramex delivery notification (Arabic); not copied from a real message",
+    "notes": "Arabic. Real domain."
+  },
+  {
+    "id": "legit-gov-001",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "ICP: Your Emirates ID ending 4471 will expire on 12/01/2027. Renew through the UAEICP app or https://icp.gov.ae",
+    "sender": "ICP",
+    "source": "written as a representative genuine message in the format of ICP renewal reminder; not copied from a real message",
+    "notes": "Real domain icp.gov.ae."
+  },
+  {
+    "id": "legit-gov-002",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "RTA: The registration of your vehicle (Dubai A 12345) expires on 05/12/2026. Renew online at https://www.rta.ae or through the RTA Dubai app.",
+    "sender": "RTA",
+    "source": "written as a representative genuine message in the format of RTA registration reminder; not copied from a real message",
+    "notes": "Real domain rta.ae."
+  },
+  {
+    "id": "legit-gov-003",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "Dubai Police: A traffic fine of AED 600 has been registered on your vehicle. View the details and pay through the Dubai Police app or https://www.dubaipolice.gov.ae",
+    "sender": "DubaiPolice",
+    "source": "written as a representative genuine message in the format of Dubai Police fine notification; not copied from a real message",
+    "notes": "Tricky: traffic fine + pay + link, but on the real domain dubaipolice.gov.ae."
+  },
+  {
+    "id": "legit-gov-004",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "TAMM: Your appointment at the customer happiness centre is confirmed for 27/11/2026 at 10:30. Manage it at https://www.tamm.abudhabi",
+    "sender": "TAMM",
+    "source": "written as a representative genuine message in the format of TAMM appointment confirmation; not copied from a real message",
+    "notes": "Real domain tamm.abudhabi."
+  },
+  {
+    "id": "legit-gov-005",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "Abu Dhabi Police: Your vehicle has 2 unpaid traffic fines totalling AED 800. Pay through TAMM or https://www.adpolice.gov.ae. Please ignore this message if already paid.",
+    "sender": "ADPolice",
+    "source": "written as a representative genuine message in the format of Abu Dhabi Police fine reminder; not copied from a real message",
+    "notes": "Tricky: unpaid fines + link, on the real domain adpolice.gov.ae."
+  },
+  {
+    "id": "legit-gov-006",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "MOHRE: Your work permit renewal application 1029384 has been approved. Check the status at https://www.mohre.gov.ae",
+    "sender": "MOHRE",
+    "source": "written as a representative genuine message in the format of MOHRE application update; not copied from a real message",
+    "notes": "Real domain mohre.gov.ae."
+  },
+  {
+    "id": "legit-gov-007",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "DEWA: Your bill of AED 412.30 for account 2001234567 is due on 05/12/2026. Pay via the DEWA app or https://www.dewa.gov.ae. Thank you.",
+    "sender": "DEWA",
+    "source": "written as a representative genuine message in the format of DEWA bill reminder; not copied from a real message",
+    "notes": "Tricky: bill + account + pay; real domain."
+  },
+  {
+    "id": "legit-gov-008",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "UAE PASS: Please verify your account by completing face verification in the UAE PASS app to keep access to government services. Learn more: https://uaepass.ae",
+    "sender": "UAEPASS",
+    "source": "written as a representative genuine message in the format of UAE PASS account-upgrade notice; not copied from a real message",
+    "notes": "Tricky: 'verify your account' + keep access; real domain uaepass.ae."
+  },
+  {
+    "id": "legit-gov-009",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "تذكير: يرجى تجديد رخصة القيادة قبل تاريخ انتهائها 20/12/2026. لمزيد من المعلومات: https://u.ae",
+    "sender": "UAEGov",
+    "source": "written as a representative genuine message in the format of UAE government renewal reminder (Arabic); not copied from a real message",
+    "notes": "Arabic. Real domain u.ae."
+  },
+  {
+    "id": "legit-gov-010",
+    "label": "legit",
+    "category": "gov-reminder",
+    "text": "SALIK: Your Salik balance is AED 18. Please recharge to avoid violations. Use the Salik app or https://www.salik.ae",
+    "sender": "SALIK",
+    "source": "written as a representative genuine message in the format of Salik low-balance notice; not copied from a real message",
+    "notes": "Tricky: near-identical topic to Salik scams, but official sender ID and real domain salik.ae."
+  },
+  {
+    "id": "legit-tel-001",
+    "label": "legit",
+    "category": "telecom",
+    "text": "du: You have used 80% of your 20GB data. Buy an add-on through the du app or dial *135#.",
+    "sender": "du",
+    "source": "written as a representative genuine message in the format of du data-usage notice; not copied from a real message",
+    "notes": "No link."
+  },
+  {
+    "id": "legit-tel-002",
+    "label": "legit",
+    "category": "telecom",
+    "text": "Your etisalat by e& bill of AED 289.50 is ready. Due date: 08/12/2026. Pay through the e& UAE app or https://www.etisalat.ae",
+    "sender": "etisalat",
+    "source": "written as a representative genuine message in the format of e& bill-ready SMS; not copied from a real message",
+    "notes": "Tricky: bill + pay; real domain etisalat.ae."
+  },
+  {
+    "id": "legit-tel-003",
+    "label": "legit",
+    "category": "telecom",
+    "text": "Your balance is AED 23.40, valid until 30/12/2026. Recharge now with *120*card number#.",
+    "sender": "du",
+    "source": "written as a representative genuine message in the format of prepaid balance SMS; not copied from a real message",
+    "notes": "No link."
+  },
+  {
+    "id": "legit-tel-004",
+    "label": "legit",
+    "category": "telecom",
+    "text": "اتصالات من e&: تم تجديد باقة البيانات الخاصة بك بنجاح. الرصيد المتبقي 10 جيجابايت.",
+    "sender": "etisalat",
+    "source": "written as a representative genuine message in the format of e& bundle-renewal SMS (Arabic); not copied from a real message",
+    "notes": "Arabic. No link."
+  },
+  {
+    "id": "legit-personal-001",
+    "label": "legit",
+    "category": "personal",
+    "text": "Running 10 min late, traffic on Sheikh Zayed Road is crazy. Order me a karak?",
+    "sender": "+971 50 555 0011",
+    "source": "written as a representative genuine message in the format of a personal text; not copied from a real message",
+    "notes": ""
+  },
+  {
+    "id": "legit-personal-002",
+    "label": "legit",
+    "category": "personal",
+    "text": "Watch this, it's the recipe I told you about https://www.youtube.com/watch?v=kX9mZ2pLq0Y",
+    "sender": "+971 55 555 0012",
+    "source": "written as a representative genuine message in the format of a personal text sharing a YouTube link; not copied from a real message",
+    "notes": "Normal YouTube link."
+  },
+  {
+    "id": "legit-personal-003",
+    "label": "legit",
+    "category": "personal",
+    "text": "Here's the location for Friday's BBQ https://maps.app.goo.gl/4fGh7JkLmN2pQr8s9",
+    "sender": "+971 52 555 0013",
+    "source": "written as a representative genuine message in the format of a personal text sharing a Google Maps link; not copied from a real message",
+    "notes": "Google Maps short link."
+  },
+  {
+    "id": "legit-personal-004",
+    "label": "legit",
+    "category": "personal",
+    "text": "Did you see this? They're opening a new metro line https://www.thenationalnews.com/uae/transport/",
+    "sender": "+971 56 555 0014",
+    "source": "written as a representative genuine message in the format of a personal text sharing a news link; not copied from a real message",
+    "notes": "News link."
+  },
+  {
+    "id": "legit-personal-005",
+    "label": "legit",
+    "category": "personal",
+    "text": "Urgent!! The plumber needs paying today, can you transfer your half of the AED 400 tonight? I'll send you the receipt.",
+    "sender": "+971 58 555 0015",
+    "source": "written as a representative genuine message in the format of a flatmate's personal text; not copied from a real message",
+    "notes": "Tricky: 'urgent' + money transfer between known flatmates; no new-number story, no link."
+  },
+  {
+    "id": "legit-personal-006",
+    "label": "legit",
+    "category": "personal",
+    "text": "Can you double check the account number I sent for the rent? Landlord says the payment bounced.",
+    "sender": "+971 54 555 0016",
+    "source": "written as a representative genuine message in the format of a personal text; not copied from a real message",
+    "notes": "Tricky: 'account', 'payment'."
+  },
+  {
+    "id": "legit-personal-007",
+    "label": "legit",
+    "category": "personal",
+    "text": "Happy birthday!! 🎉 Dinner is on me this weekend.",
+    "sender": "+971 50 555 0017",
+    "source": "written as a representative genuine message in the format of a personal text; not copied from a real message",
+    "notes": ""
+  },
+  {
+    "id": "legit-personal-008",
+    "label": "legit",
+    "category": "personal",
+    "text": "Mum, landed safely in Abu Dhabi. Phone on 5%, will call when I reach the hotel.",
+    "sender": "+971 55 555 0018",
+    "source": "written as a representative genuine message in the format of a personal text from a family member; not copied from a real message",
+    "notes": "Tricky: starts with 'Mum' and mentions phone battery, but no new number and no money request."
+  },
+  {
+    "id": "legit-personal-009",
+    "label": "legit",
+    "category": "personal",
+    "text": "The code for the building gym door is now 4471, security changed it today.",
+    "sender": "+971 52 555 0019",
+    "source": "written as a representative genuine message in the format of a personal text; not copied from a real message",
+    "notes": "Tricky: shares a 'code', but not an OTP and no request."
+  },
+  {
+    "id": "legit-shortlink-001",
+    "label": "legit",
+    "category": "personal-shortlink",
+    "text": "lol look at this 😂 https://bit.ly/3kTr9Wm",
+    "sender": "+971 56 555 0021",
+    "source": "written as a representative genuine message in the format of a personal text sharing a shortened link; not copied from a real message",
+    "notes": "bit.ly link, no brand or institution named: must stay legit."
+  },
+  {
+    "id": "legit-shortlink-002",
+    "label": "legit",
+    "category": "personal-shortlink",
+    "text": "Photos from the beach day are up here: https://tinyurl.com/beachday-pics",
+    "sender": "+971 58 555 0022",
+    "source": "written as a representative genuine message in the format of a personal text sharing a shortened link; not copied from a real message",
+    "notes": "tinyurl.com link, no brand named: must stay legit."
+  },
+  {
+    "id": "legit-shortlink-003",
+    "label": "legit",
+    "category": "personal-shortlink",
+    "text": "This is the playlist I was talking about bit.ly/roadtrip-mix",
+    "sender": "+971 54 555 0023",
+    "source": "written as a representative genuine message in the format of a personal text sharing a shortened link; not copied from a real message",
+    "notes": "bit.ly link without scheme, no brand named: must stay legit."
+  },
+  {
+    "id": "legit-mkt-001",
+    "label": "legit",
+    "category": "marketing",
+    "text": "noon: White Friday is live! Up to 70% off electronics. Shop now: https://www.noon.com",
+    "sender": "noon",
+    "source": "written as a representative genuine message in the format of retailer marketing SMS; not copied from a real message",
+    "notes": "Real domain noon.com."
+  },
+  {
+    "id": "legit-mkt-002",
+    "label": "legit",
+    "category": "marketing",
+    "text": "Carrefour: Your weekly offers are here. Fresh deals on fruit and veg this week. https://www.carrefouruae.com",
+    "sender": "Carrefour",
+    "source": "written as a representative genuine message in the format of retailer marketing SMS; not copied from a real message",
+    "notes": "Real domain carrefouruae.com."
+  },
+  {
+    "id": "legit-mkt-003",
+    "label": "legit",
+    "category": "marketing",
+    "text": "Amazon.ae: Your Prime membership renews on 01/12/2026 for AED 16. Manage your membership at https://www.amazon.ae/prime",
+    "sender": "Amazon",
+    "source": "written as a representative genuine message in the format of subscription renewal notice; not copied from a real message",
+    "notes": "Tricky: renewal + payment, real domain amazon.ae."
+  },
+  {
+    "id": "legit-mkt-004",
+    "label": "legit",
+    "category": "marketing",
+    "text": "IKEA: Your order is ready for pick-up at IKEA Festival City. Details: https://www.ikea.com/ae/en/",
+    "sender": "IKEA",
+    "source": "written as a representative genuine message in the format of retailer order notice; not copied from a real message",
+    "notes": "Real domain ikea.com."
+  },
+  {
+    "id": "legit-appt-001",
+    "label": "legit",
+    "category": "appointment",
+    "text": "Reminder: Your dental appointment at Smile Care Clinic is on 28/11 at 4:00 PM. Reply 1 to confirm or call 04 555 0100 to reschedule.",
+    "sender": "SmileCare",
+    "source": "written as a representative genuine message in the format of clinic appointment reminder; not copied from a real message",
+    "notes": "Tricky: asks for a reply and gives a phone number."
+  },
+  {
+    "id": "legit-appt-002",
+    "label": "legit",
+    "category": "appointment",
+    "text": "Your table for 4 is confirmed for Friday at 8:00 PM. See you soon!",
+    "sender": "Restaurant",
+    "source": "written as a representative genuine message in the format of restaurant booking confirmation; not copied from a real message",
+    "notes": ""
+  },
+  {
+    "id": "legit-appt-003",
+    "label": "legit",
+    "category": "appointment",
+    "text": "Dear parents, school will close at 12:30 on Thursday for the National Day celebrations. Please arrange early pick-up.",
+    "sender": "School",
+    "source": "written as a representative genuine message in the format of school notice; not copied from a real message",
+    "notes": ""
+  },
+  {
+    "id": "legit-appt-004",
+    "label": "legit",
+    "category": "appointment",
+    "text": "Reminder: Term 2 fees are due by 15 December. Please make the payment through the parent portal or at the school accounts office.",
+    "sender": "School",
+    "source": "written as a representative genuine message in the format of school fee reminder; not copied from a real message",
+    "notes": "Tricky: payment due, no link."
+  },
+  {
+    "id": "legit-lang-ru",
+    "label": "legit",
+    "category": "foreign-language",
+    "text": "Привет! Мы уже в торговом центре, встречаемся у фонтана в 7. Не опаздывай 🙂",
+    "sender": "+971 50 555 0031",
+    "source": "written as a representative genuine message in the format of a personal text in Russian; not copied from a real message",
+    "notes": "Russian (Cyrillic) text: Cyrillic letters alone must not trigger the look-alike rule."
+  },
+  {
+    "id": "legit-lang-ar",
+    "label": "legit",
+    "category": "foreign-language",
+    "text": "السلام عليكم، الاجتماع بكرة الساعة 10 الصبح في المكتب. لا تنسى الأوراق.",
+    "sender": "+971 55 555 0032",
+    "source": "written as a representative genuine message in the format of a personal text in Arabic; not copied from a real message",
+    "notes": "Arabic."
+  },
+  {
+    "id": "legit-lang-hi",
+    "label": "legit",
+    "category": "foreign-language",
+    "text": "माँ, मैं ठीक से पहुँच गया। रात को फ़ोन करूँगा।",
+    "sender": "+971 52 555 0033",
+    "source": "written as a representative genuine message in the format of a personal text in Hindi (Devanagari); not copied from a real message",
+    "notes": "Hindi in Devanagari."
+  },
+  {
+    "id": "legit-lang-hi-latin",
+    "label": "legit",
+    "category": "foreign-language",
+    "text": "Bhai kal cricket match hai 6 baje, ground pe time se aa jana.",
+    "sender": "+971 56 555 0034",
+    "source": "written as a representative genuine message in the format of a personal text in Hindi (Latin script); not copied from a real message",
+    "notes": "Hinglish."
+  },
+  {
+    "id": "legit-lang-tl",
+    "label": "legit",
+    "category": "foreign-language",
+    "text": "Ate, nakarating na ako sa Dubai. Tatawag ako mamaya pag may wifi na.",
+    "sender": "+971 58 555 0035",
+    "source": "written as a representative genuine message in the format of a personal text in Tagalog; not copied from a real message",
+    "notes": "Tagalog."
+  },
+  {
+    "id": "legit-lang-fr",
+    "label": "legit",
+    "category": "foreign-language",
+    "text": "Salut ! On se retrouve à 19h au restaurant ? J'ai réservé pour quatre.",
+    "sender": "+971 54 555 0036",
+    "source": "written as a representative genuine message in the format of a personal text in French; not copied from a real message",
+    "notes": "French."
+  }
+]

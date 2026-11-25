@@ -171,7 +171,7 @@ _SECRET_EN = (r"(?:otp|one[- ]time (?:password|passcode|code|pin)|verification c
               r"pin(?: code| number)?|atm pin|cvv|cvc|cvv2|card (?:number|details|no\.?)|full card details|"
               r"uae ?pass (?:code|pin|password|credentials|login|details)|password|passcode)")
 _FILL_EN = r"(?:\s+(?:us|me|back|with|over|the|your|this|that|its|a|an|\d[- ]?digit|six[- ]digit|new|received|it|to us|to me))*"
-_HANDOVER_EN = r"(?:send|reply|respond|forward|share|tell|give|provide|text|whatsapp|read(?: out)?)"
+_HANDOVER_EN = r"(?:send|reply|respond|forward|share|tell|give|provide|text|whatsapp|pass|read(?: out)?)"
 _ENTER_EN = r"(?:enter|type|submit|input|key in|fill in|update|confirm|verify)"
 _HANDOVER_RE = re.compile(rf"\b{_HANDOVER_EN}\b{_FILL_EN}\s+{_SECRET_EN}\b", re.I)
 _ENTER_RE = re.compile(rf"\b{_ENTER_EN}\b{_FILL_EN}\s+{_SECRET_EN}\b", re.I)
@@ -179,9 +179,15 @@ _ENTER_RE = re.compile(rf"\b{_ENTER_EN}\b{_FILL_EN}\s+{_SECRET_EN}\b", re.I)
 # only with a "to me / to us" or a "you received" next to it, so "share the code SAVE20" stays a promo.
 _HANDOVER_CODE_RE = re.compile(
     rf"\b{_HANDOVER_EN}\s+(?:it\s+)?(?:to\s+)?(?:me|us)\b(?:\s+\w+){{0,2}}\s+(?:the\s+|that\s+|this\s+)?code\b|"
-    rf"\b{_HANDOVER_EN}\b(?:\s+\w+){{0,2}}\s+code\b[^.\n]{{0,30}}\b(?:you (?:just )?(?:received|got)|sent to (?:you|your))",
+    rf"\b{_HANDOVER_EN}\b(?:\s+\w+){{0,2}}\s+code\b[^.\n]{{0,30}}\b(?:you (?:just )?(?:received|got)|sent to (?:you|your))|"
+    # "I sent you a code by mistake, can you pass it to me", "reply with the code"
+    r"\bcode\b[^.\n]{0,40}\bby mistake\b|\b(?:reply|respond|answer) with (?:the |that |this )?(?:\d[- ]?digit )?code\b|"
+    # the same request in French, Hindi / Urdu (Latin script) and Tagalog, as UAE residents receive them
+    r"\b(?:communiquer|envoyer|donner|transmettre)\b[^.\n]{0,25}\bcode\b|"
+    r"\b(?:otp|code)\b[^.\n]{0,45}\b(?:bhej|bhejo|bhejiye|bata|batao|bataiye|whatsapp kar)|"
+    r"\b(?:i-?reply|ibigay|ipadala|i-?send)\b[^.\n]{0,40}\b(?:mpin|otp|pin|code)\b",
     re.I)
-_SECRET_AR = (r"(?:رمز التحقق|رمز التحقيق|رمز OTP|الرمز السري|الرقم السري|رمز التفعيل|الرمز المؤقت|كلمة المرور|"
+_SECRET_AR = (r"(?:كود التحقق|كود التفعيل|رمز التحقق|رمز التحقيق|رمز OTP|الرمز السري|الرقم السري|رمز التفعيل|الرمز المؤقت|كلمة المرور|"
               r"كلمة السر|رقم البطاقة|بيانات البطاقة|رمز CVV|الرمز المكون من|رمز (?:ال)?(?:أمان|امان)|رمز UAE ?PASS)")
 _HANDOVER_AR = r"(?:أرسل|ارسل|أرسلي|ارسلي|أرسلوا|ارسلوا|ابعث|إبعث|ابعثي|ابعثلي|رد|ردّ|ردي|شارك|زودنا|زوّدنا|زودني|أخبرنا|اخبرنا|أعطنا|اعطنا|أعطني|اعطني|قل لنا)"
 _ENTER_AR = r"(?:أدخل|ادخل|أدخلي|ادخلي|اكتب|حدّث|حدث|قم بتحديث|قم بإدخال|قم بادخال|أكّد|أكد|اكد)"
@@ -244,6 +250,47 @@ _PRIZE = re.compile(
     r"gift|lucky draw|raffle|compensation)\b|ربحت|فزت|جائزة|مبروك|استرداد|مكافأة|مكافآة|مبلغ مسترد|تعويض|سحب", re.I)
 
 
+# ---------------------------------------------------------------------------
+# Scam scripts that need no link (call-back, job, "new number", gift cards, investment)
+# ---------------------------------------------------------------------------
+# "call / WhatsApp / contact ... <a phone number>" (7+ digits, any formatting)
+_CALL_NUMBER = re.compile(
+    r"(?:\b(?:call|contact|phone|dial|ring|whatsapp|text|message|reach)\b|اتصل|الاتصال|تواصل|التواصل|واتساب)"
+    r"[^.\n]{0,60}?(\+?\(?\d[\d\s().-]{6,18}\d)", re.I)
+# the account / card / number / case is in trouble
+_ACCOUNT_THREAT = re.compile(
+    r"\b(?:blocked|suspended|deactivated|frozen|locked|restricted|disconnected|terminated|has expired|"
+    r"will be (?:blocked|suspended|closed|deleted|deactivated|disconnected|cancelled|canceled)|"
+    r"(?:been )?charged|unauthori[sz]ed|did not authori[sz]e|was not you|not you\b|suspicious (?:activity|transaction|"
+    r"login|sign[- ]?in)|case (?:has been |was |is )?(?:registered|opened|filed)|money laundering|arrest warrant|"
+    r"legal action)\b|تم إيقاف|تم ايقاف|تم حظر|تم تعليق|سيتم إيقاف|سيتم ايقاف|سيتم حظر|معاملة مشبوهة|قضية", re.I)
+_JOB_OFFER = re.compile(
+    r"\b(?:part[- ]?time|remote (?:job|role|work|position|task)|work from home|online (?:job|work|workers?|assessor)|"
+    r"flexible (?:online )?job|task role|we are hiring|hiring (?:kami|for)|recruit(?:er|ment)|reviewed your (?:cv|resume|"
+    r"profile)|job offer)\b|ghar baithe|kaam\b", re.I)
+_EASY_PAY = re.compile(
+    r"\b(?:earn|income|paying|pays|salary|kamao|kumita)\b[^.\n]{0,45}\b(?:daily|per day|a day|every day|each day|"
+    r"kada araw|roz)\b|\b(?:daily|roz)\b[^.\n]{0,25}\b(?:income|earn|kamao)\b|"
+    r"[\d,.]+\s?(?:-|to|–)\s?[\d,.]+\s?(?:aed|dhs?|usd|gbp|php|inr)?\s?(?:per day|a day|daily|kada araw)", re.I)
+_UNSOLICITED_JOB = re.compile(
+    r"\breviewed your (?:cv|resume|profile)\b[^\n]{0,120}\b(?:job|role|position)\b|"
+    r"\b(?:selected|shortlisted) for a (?:remote|part[- ]?time|online)\b", re.I)
+_NEW_NUMBER = re.compile(
+    r"\b(?:my |a )?new (?:number|phone)\b|\bfriend'?s (?:old )?(?:phone|one)\b|\b(?:broke|broken|smashed|lost|dropped) "
+    r"(?:my |mine)|\bphone (?:fell|broke|is broken|got stolen)\b|رقمي الجديد|رقم جديد|تلفوني انكسر|جوالي انكسر", re.I)
+_FAMILY = re.compile(r"\b(?:mum|mom|mam|mummy|mommy|dad|daddy|papa|mama|mother|father)\b|ماما|بابا|أمي|امي|يمه|يبه", re.I)
+_MONEY_ASK = re.compile(
+    r"\b(?:bank transfer|transfer (?:me|some)|send (?:me )?(?:some )?money|lend me|pay (?:a|this|my) bill|need (?:some )?money|"
+    r"quick transfer)\b|تحول|تحولين|حوّل|حول لي|حوالة|احتاج فلوس", re.I)
+_GIFT_CARDS = re.compile(
+    r"\bgift ?cards?\b[^\n]{0,90}\b(?:codes?|numbers?|pins?|photos?|pictures?)\b|"
+    r"\b(?:buy|purchase|get)\b[^.\n]{0,40}\b(?:gift ?cards?|itunes cards?|google play cards?|steam cards?)\b", re.I)
+_INVESTMENT = re.compile(
+    r"\bguaranteed (?:returns?|profits?|income)\b|\b\d{1,3}\s?% (?:daily|weekly|monthly|per (?:day|week|month))\b|"
+    r"\b(?:double|triple) your (?:money|investment|capital)\b|\bpre-?ipo\b|\brisk[- ]free (?:investment|profit|returns?)\b|"
+    r"أرباح مضمونة|ارباح مضمونة|عائد مضمون", re.I)
+
+
 def _hits(rx: re.Pattern, text: str, n: int = 3) -> list[str]:
     out: list[str] = []
     for m in rx.finditer(text[:MAX_TEXT]):
@@ -263,6 +310,8 @@ STRONG_CODES = {
     "SENDER_MOBILE_FOR_INSTITUTION", "SENDER_FOREIGN_FOR_INSTITUTION",
     "CALLBACK_MOBILE_FOR_INSTITUTION", "CALLBACK_FOREIGN_FOR_INSTITUTION", "MSG_PHONE_LINKED_TO_SCAM",
     "MSG_SHORTENER_FOR_INSTITUTION", "MSG_LOOKALIKE_LETTERS",
+    "MSG_CALLBACK_PRESSURE", "MSG_JOB_LURE", "MSG_NEW_NUMBER_LURE", "MSG_GIFT_CARD_REQUEST",
+    "MSG_INVESTMENT_LURE", "MSG_PRESSURE_UNOFFICIAL_LINK",
 }
 WEAK_CODES = {
     "MSG_URGENCY", "MSG_PAYMENT_DEMAND", "MSG_EMIRATES_ID_LURE", "MSG_PRIZE_LURE", "MSG_UNOFFICIAL_LINK",
@@ -470,6 +519,53 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
     if prize:
         add("MSG_PRIZE_LURE", "low", 10, "It promises a prize, reward or refund.",
             "تعد بجائزة أو مكافأة أو مبلغ مسترد.", "; ".join(prize))
+    # -- scripts that need no link ------------------------------------------------------------------
+    threat = _hits(_ACCOUNT_THREAT, plain)
+    call = _CALL_NUMBER.search(plain.translate(phone_intel._ARABIC_DIGITS))  # noqa: SLF001
+    official_number = bool(phones) and all(p.get("status") in ("official", "verified_official") for p in phones)
+    # "never call ..." / "do not call ..." is advice, not a request ("if you did not authorise this, call" is one)
+    told_not_to = bool(call) and re.search(r"\b(?:never|do not|don'?t)\s+(?:\w+\s+){0,2}$",
+                                           plain[max(0, call.start() - 30):call.start()], re.I)
+    if call and not official_number and not told_not_to \
+            and ((claimed and (threat or urg or pay or prize)) or (threat and (urg or pay)) or prize):
+        add("MSG_CALLBACK_PRESSURE", "high", 35,
+            "It pushes you to call or message a phone number about a problem with your account, card or case. "
+            "Scammers do this so a person, not a website, takes your details. Use the number on the official website.",
+            "تدفعك الرسالة إلى الاتصال أو مراسلة رقم هاتف بسبب مشكلة في حسابك أو بطاقتك أو قضية. يفعل المحتالون ذلك "
+            "ليأخذ شخص بياناتك مباشرة. استخدم الرقم الموجود على الموقع الرسمي.", call.group(1).strip())
+    if (_JOB_OFFER.search(plain) and _EASY_PAY.search(plain)) or _UNSOLICITED_JOB.search(plain):
+        add("MSG_JOB_LURE", "high", 35,
+            "An unexpected job offer with easy pay for little work (rating, liking, short tasks). These 'task jobs' "
+            "end with a request to pay a deposit.",
+            "عرض عمل غير متوقع بأجر سهل مقابل عمل بسيط (تقييم، إعجابات، مهام قصيرة). تنتهي هذه «الوظائف» بطلب دفع مبلغ مقدّم.",
+            "; ".join(_hits(_JOB_OFFER, plain, 2) + _hits(_EASY_PAY, plain, 1)))
+    if _NEW_NUMBER.search(plain) and (_FAMILY.search(plain) or _MONEY_ASK.search(plain)):
+        add("MSG_NEW_NUMBER_LURE", "high", 35,
+            "Someone says they are family or a friend on a 'new number' or a borrowed phone. Call the number you "
+            "already have for them before you reply or send money.",
+            "شخص يدّعي أنه من العائلة أو الأصدقاء ويراسلك من «رقم جديد» أو هاتف مستعار. اتصل برقمه الذي تعرفه قبل الرد أو "
+            "إرسال أي مبلغ.", "; ".join(_hits(_NEW_NUMBER, plain, 2)))
+    if _GIFT_CARDS.search(plain):
+        add("MSG_GIFT_CARD_REQUEST", "critical", 50,
+            "It asks you to buy gift cards and send the codes. No employer, bank or government body is ever paid this way.",
+            "تطلب الرسالة شراء بطاقات هدايا وإرسال رموزها. لا تُدفع أي مبالغ لجهة عمل أو بنك أو جهة حكومية بهذه الطريقة.",
+            "; ".join(_hits(_GIFT_CARDS, plain, 1)))
+    if _INVESTMENT.search(plain):
+        add("MSG_INVESTMENT_LURE", "high", 35,
+            "It promises guaranteed or very high returns. No real investment can promise that.",
+            "تعد الرسالة بأرباح مضمونة أو مرتفعة جداً. لا يوجد استثمار حقيقي يضمن ذلك.",
+            "; ".join(_hits(_INVESTMENT, plain, 2)))
+    # a named sender + a link that is not theirs + pressure: the classic text-message scam shape
+    unofficial_link = any(not l.get("whitelisted") for l in links)
+    if claimed and unofficial_link and (threat or sum(bool(x) for x in (urg, pay, eid, prize)) >= 2):
+        add("MSG_PRESSURE_UNOFFICIAL_LINK", "high", 30,
+            f"It uses {name_en}'s name, pressures you (deadline, payment or a blocked account) and sends you to a "
+            f"website that is not {name_en}'s.",
+            f"تستخدم الرسالة اسم {name_ar} وتضغط عليك (مهلة أو دفع أو حساب موقوف) وتوجّهك إلى موقع لا يتبع {name_ar}.",
+            "; ".join((threat + urg + pay)[:3]))
+    social = any(f.code in ("MSG_CALLBACK_PRESSURE", "MSG_JOB_LURE", "MSG_NEW_NUMBER_LURE", "MSG_GIFT_CARD_REQUEST",
+                            "MSG_INVESTMENT_LURE") for f in flags)
+
     if claimed:
         add("MSG_CLAIMED_SENDER", "info", 0, f"The message presents itself as coming from {name_en}.",
             f"تقدّم الرسالة نفسها على أنها من {name_ar}.", how)
@@ -487,8 +583,8 @@ def run_message_rules(text: str, *, sender: str | None, links: list[dict[str, An
     codes = {f.code for f in flags if f.points > 0}
     if claimed and ("MSG_CREDENTIAL_REQUEST" in codes or max_link >= 30 or "MSG_LOOKALIKE_LINK" in codes):
         score = max(score, 70)
-    actionable = bool(links or phones or asks or st in ("mobile_for_institution", "foreign_for_institution",
-                                                         "linked_to_scam"))
+    actionable = bool(links or phones or asks or social or st in ("mobile_for_institution",
+                                                                   "foreign_for_institution", "linked_to_scam"))
     if not actionable:
         score = 0
     verdict = verdict_for(score)
